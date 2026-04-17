@@ -1,0 +1,32 @@
+### Request payload for pushing a card to the display.
+### All fields except source and title are optional.
+class: CardPushRequest
+
+fields:
+  ### Identifies the origin. Convention: "agent.<name>" or "skill.<name>"
+  source: String
+
+  ### Primary display text.
+  title: String
+
+  ### Secondary display text.
+  body: String?
+
+  ### Structured data for rich rendering, serialized as JSON string.
+  dataJson: String?
+
+  ### Size hint. Values: small | medium | large | full. Defaults to medium.
+  layout: String?
+
+  ### Priority tier. Values: ephemeral | normal | persistent. Defaults to normal.
+  priority: String?
+
+  ### Explicit expiry timestamp. Omit to use priority-based default TTL.
+  expiresAt: DateTime?
+
+  ### When true, card never auto-expires. Defaults to false.
+  persistent: bool?
+
+  ### Optional stable ID. When provided, re-pushing replaces the existing card.
+  ### When omitted, a new UUID is generated server-side.
+  externalId: String?

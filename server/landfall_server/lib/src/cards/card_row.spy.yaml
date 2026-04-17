@@ -1,0 +1,59 @@
+# Yaml-files in the `models` directory specify which serializable objects
+# should be generated. When you add or modify a file, you will need to run
+# `serverpod generate` to make the generated classes available in the server and
+# client.
+
+### A card displayed on a Landfall board.
+### Named CardRow to distinguish from the client-side Card domain model.
+class: CardRow
+table: cards
+
+fields:
+  ### Agent-facing UUID. Stable across updates — re-pushing with the same
+  ### externalId replaces the card rather than creating a duplicate.
+  externalId: String
+
+  ### Identifies the origin of this card.
+  ### Convention: "system.<widget>" or "agent.<name>" or "skill.<name>"
+  source: String
+
+  ### Primary display text.
+  title: String
+
+  ### Secondary display text. Optional.
+  body: String?
+
+  ### Structured data for rich rendering, serialized as JSON string.
+  dataJson: String?
+
+  ### Size hint for the display layout engine.
+  ### Values: small | medium | large | full
+  layout: String, default='medium'
+
+  ### Controls default TTL when expiresAt is null and persistent is false.
+  ### Values: ephemeral (2h) | normal (24h) | persistent (never)
+  priority: String, default='normal'
+
+  ### Explicit expiry timestamp. When set, overrides priority-based default TTL.
+  expiresAt: DateTime?
+
+  ### When true, never auto-expires. Overrides expiresAt and priority.
+  persistent: bool, default=false
+
+  ### Set when the user manually dismisses this card.
+  ### Non-null = card is in history, not on active display.
+  dismissedAt: DateTime?
+
+  ### When this card was first created / pushed.
+  createdAt: DateTime
+
+indexes:
+  cards_external_id_idx:
+    fields: externalId
+    unique: true
+  cards_dismissed_at_idx:
+    fields: dismissedAt
+  cards_expires_at_idx:
+    fields: expiresAt
+  cards_created_at_idx:
+    fields: createdAt

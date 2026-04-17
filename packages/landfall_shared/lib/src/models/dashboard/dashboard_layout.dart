@@ -1,0 +1,118 @@
+import 'package:landfall_shared/src/models/dashboard/card_config.dart';
+import 'package:landfall_shared/src/models/dashboard/dashboard_slot.dart';
+
+/// A named display configuration — a grid of [CardConfig] items.
+///
+/// Every visible card on the display corresponds to a [CardConfig] in the
+/// active [DashboardLayout]. Layouts are stored locally in the Drift database
+/// and loaded at startup.
+///
+/// The grid is [columns] × [rows] cells. Cell dimensions are computed at
+/// render time from the display's physical resolution. The default grid is
+/// 12 × 8, which gives a 160×135 pixel cell at 1920×1080.
+class DashboardLayout {
+  const DashboardLayout({
+    required this.id,
+    required this.name,
+    required this.cards,
+    this.columns = 12,
+    this.rows = 8,
+  });
+
+  /// Unique identifier for this layout.
+  final String id;
+
+  /// User-facing name for this layout (e.g., "Default", "Night", "Weekend").
+  final String name;
+
+  /// All card configurations — both visible and hidden.
+  final List<CardConfig> cards;
+
+  /// Number of columns in the display grid. Defaults to 12.
+  final int columns;
+
+  /// Number of rows in the display grid. Defaults to 8.
+  final int rows;
+
+  /// Cards with [CardConfig.visible] == true, in declaration order.
+  List<CardConfig> get visibleCards => cards.where((c) => c.visible).toList();
+
+  /// Returns the default layout — a starting configuration that serves as
+  /// the out-of-box experience.
+  ///
+  /// Grid: 12 columns × 8 rows (160×135 px per cell at 1920×1080).
+  ///
+  /// Default slot assignments:
+  /// ```
+  /// Columns 0–2, Rows 0–1   → Clock        (3×2)
+  /// Columns 3–11, Rows 0–3  → Weather      (9×4)
+  /// Columns 0–11, Rows 4–7  → (empty — reserved for calendar/photos)
+  /// ```
+  static DashboardLayout defaultLayout() {
+    return DashboardLayout(
+      id: 'layout-default',
+      name: 'Default',
+      cards: [
+        CardConfig(
+          id: 'slot_clock',
+          source: 'system.clock',
+          slot: DashboardSlot(column: 0, row: 0, columnSpan: 3, rowSpan: 2),
+        ),
+        CardConfig(
+          id: 'slot_weather',
+          source: 'system.weather',
+          slot: DashboardSlot(column: 3, row: 0, columnSpan: 9, rowSpan: 4),
+        ),
+        CardConfig(
+          id: 'slot_calendar',
+          source: 'system.calendar',
+          slot: DashboardSlot(column: 0, row: 4, columnSpan: 7, rowSpan: 4),
+        ),
+        CardConfig(
+          id: 'slot_photos',
+          source: 'system.photos',
+          slot: DashboardSlot(column: 7, row: 4, columnSpan: 5, rowSpan: 4),
+        ),
+      ],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'columns': columns,
+        'rows': rows,
+        'cards': cards.map((c) => c.toJson()).toList(),
+      };
+
+  factory DashboardLayout.fromJson(Map<String, dynamic> json) =>
+      DashboardLayout(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        columns: json['columns'] as int? ?? 12,
+        rows: json['rows'] as int? ?? 8,
+        cards: (json['cards'] as List<dynamic>)
+            .map((e) => CardConfig.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DashboardLayout &&
+          id == other.id &&
+          name == other.name &&
+          columns == other.columns &&
+          rows == other.rows &&
+          cards.length == other.cards.length &&
+          List.generate(cards.length, (i) => cards[i] == other.cards[i])
+              .every((e) => e);
+
+  @override
+  int get hashCode => Object.hash(id, name, columns, rows, Object.hashAll(cards));
+
+  @override
+  String toString() =>
+      'DashboardLayout(id: $id, name: $name, '
+      'grid: $columns×$rows, cards: ${cards.length})';
+}
