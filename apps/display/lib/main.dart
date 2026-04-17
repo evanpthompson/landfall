@@ -17,5 +17,7 @@ void main() async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   final database = AppDatabase();
-  runApp(LandfallApp(database: database));
+  // Development server URL — change to production URL before deploying.
+  const serverUrl = 'http://localhost:8080/';
+  runApp(LandfallApp(database: database, serverUrl: serverUrl));
 }

@@ -1,16 +1,26 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
+import 'package:display/src/features/cards/cubit/card_cubit.dart';
+import 'package:display/src/features/cards/cubit/card_state.dart';
+import 'package:display/src/features/cards/widgets/generic_agent_card.dart';
+import 'package:display/src/features/clock/cubit/clock_cubit.dart';
+import 'package:display/src/features/clock/cubit/clock_state.dart';
+import 'package:display/src/features/clock/widgets/clock_card.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_state.dart';
 
-/// The primary display surface — renders all active cards on a grid.
+/// The primary display surface — renders all active widgets on a grid and
+/// shows agent-pushed cards in a live feed panel.
 ///
-/// Drives from [DashboardLayoutCubit]. Each [CardConfig] in the layout maps
-/// to a placeholder tile at the correct grid position. In Phase 1 these tiles
-/// will be replaced by real card widgets; for Phase 0 they show the source
-/// label and color-code by card type.
+/// On [initState]:
+///   - [DashboardLayoutCubit.loadLayout] — loads the grid configuration
+///   - [ClockCubit.startTicking] — starts the 1-second clock stream
+///   - [CardCubit.fetchCards] — fetches the initial agent card set
+///   - A 30-second refresh timer keeps agent cards current
 class DisplayScreen extends StatefulWidget {
   const DisplayScreen({super.key});
 
@@ -19,22 +29,41 @@ class DisplayScreen extends StatefulWidget {
 }
 
 class _DisplayScreenState extends State<DisplayScreen> {
+  Timer? _refreshTimer;
+
   @override
   void initState() {
     super.initState();
     context.read<DashboardLayoutCubit>().loadLayout();
+    context.read<ClockCubit>().startTicking();
+    context.read<CardCubit>().fetchCards();
+
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) {
+        if (mounted) context.read<CardCubit>().fetchCards();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(0xFF0D0D0F),
       body: BlocBuilder<DashboardLayoutCubit, DashboardLayoutState>(
-        builder: (context, state) {
-          return switch (state) {
+        builder: (context, layoutState) {
+          return switch (layoutState) {
             DashboardLayoutLoading() => const _LoadingView(),
-            DashboardLayoutLoaded(:final layout) => _GridView(layout: layout),
-            DashboardLayoutError(:final message) => _ErrorView(message: message),
+            DashboardLayoutLoaded(:final layout) =>
+              _DisplayBody(layout: layout),
+            DashboardLayoutError(:final message) =>
+              _ErrorView(message: message),
           };
         },
       ),
@@ -43,7 +72,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Loading
+// Loading / Error
 // ---------------------------------------------------------------------------
 
 class _LoadingView extends StatelessWidget {
@@ -52,14 +81,10 @@ class _LoadingView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: CircularProgressIndicator(color: Color(0xFF4A9EFF)),
+      child: CircularProgressIndicator(color: Color(0xFF4F8EF7)),
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Error
-// ---------------------------------------------------------------------------
 
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.message});
@@ -78,16 +103,39 @@ class _ErrorView extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Main body — grid + agent feed
+// ---------------------------------------------------------------------------
+
+class _DisplayBody extends StatelessWidget {
+  const _DisplayBody({required this.layout});
+
+  final DashboardLayout layout;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // Grid: named widgets + placeholders
+        _GridView(layout: layout),
+
+        // Agent card feed: floats over the right portion of the screen.
+        // Sized to the weather slot area (cols 3–11, rows 0–3).
+        const Positioned(
+          right: 16,
+          top: 16,
+          width: 400,
+          bottom: 16,
+          child: _AgentCardFeed(),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Grid
 // ---------------------------------------------------------------------------
 
-/// Renders visible [CardConfig] items from [layout] as colored placeholder
-/// tiles positioned on the display grid.
-///
-/// Grid math: the full 1920×1080 display area is divided into [layout.columns]
-/// × [layout.rows] equal cells. Each [DashboardSlot] declares its origin and
-/// span in grid coordinates; this widget converts those to pixel positions
-/// using a [LayoutBuilder] measurement.
 class _GridView extends StatelessWidget {
   const _GridView({required this.layout});
 
@@ -108,7 +156,7 @@ class _GridView extends StatelessWidget {
               top: slot.row * cellH + _kGap,
               width: slot.columnSpan * cellW - _kGap * 2,
               height: slot.rowSpan * cellH - _kGap * 2,
-              child: _PlaceholderTile(config: config),
+              child: _widgetFor(context, config),
             );
           }).toList(),
         );
@@ -116,57 +164,77 @@ class _GridView extends StatelessWidget {
     );
   }
 
-  /// Gap in logical pixels between tiles.
+  Widget _widgetFor(BuildContext context, CardConfig config) {
+    return switch (config.source) {
+      'system.clock' => BlocBuilder<ClockCubit, ClockState>(
+          builder: (_, state) => switch (state) {
+            ClockTicking(:final entity) => ClockCard(entity: entity),
+            _ => const _PlaceholderTile(source: 'system.clock'),
+          },
+        ),
+      _ => _PlaceholderTile(source: config.source),
+    };
+  }
+
   static const double _kGap = 8.0;
+}
+
+// ---------------------------------------------------------------------------
+// Agent card feed
+// ---------------------------------------------------------------------------
+
+class _AgentCardFeed extends StatelessWidget {
+  const _AgentCardFeed();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CardCubit, CardState>(
+      builder: (_, state) {
+        if (state is! CardLoaded || state.cards.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return ListView.separated(
+          padding: EdgeInsets.zero,
+          itemCount: state.cards.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          itemBuilder: (_, i) => GenericAgentCard(card: state.cards[i]),
+        );
+      },
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Placeholder tile
 // ---------------------------------------------------------------------------
 
-/// A colored tile that represents a [CardConfig] on the grid.
-///
-/// Color-coded by source prefix so the layout is visually readable at a
-/// glance during development. Real card widgets replace these in Phase 1.
 class _PlaceholderTile extends StatelessWidget {
-  const _PlaceholderTile({required this.config});
+  const _PlaceholderTile({required this.source});
 
-  final CardConfig config;
+  final String source;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: _tileColor(config.source).withValues(alpha: 0.15),
+        color: _tileColor(source).withValues(alpha: 0.08),
         border: Border.all(
-          color: _tileColor(config.source).withValues(alpha: 0.6),
+          color: _tileColor(source).withValues(alpha: 0.3),
           width: 1.5,
         ),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              config.source,
-              style: TextStyle(
-                color: _tileColor(config.source),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.8,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              config.id,
-              style: const TextStyle(
-                color: Color(0xFF666666),
-                fontSize: 10,
-              ),
-            ),
-          ],
+        child: Text(
+          source,
+          style: TextStyle(
+            color: _tileColor(source).withValues(alpha: 0.5),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.8,
+          ),
         ),
       ),
     );
@@ -177,7 +245,6 @@ class _PlaceholderTile extends StatelessWidget {
     if (source.startsWith('system.weather')) return const Color(0xFF50C878);
     if (source.startsWith('system.calendar')) return const Color(0xFFFF9500);
     if (source.startsWith('system.photos')) return const Color(0xFFBF5AF2);
-    if (source.startsWith('agent.')) return const Color(0xFFFF6B6B);
     return const Color(0xFF888888);
   }
 }

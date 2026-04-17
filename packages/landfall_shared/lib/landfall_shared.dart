@@ -7,3 +7,5 @@ export 'src/models/dashboard/dashboard_slot.dart';
 export 'src/models/dashboard/card_config.dart';
 export 'src/models/dashboard/dashboard_layout.dart';
 export 'src/repositories/dashboard_layout_repository.dart';
+export 'src/models/clock/clock_entity.dart';
+export 'src/repositories/clock_repository.dart';
