@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  analyze_and_test:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.19.0"
+          channel: stable
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: |
+            pub-${{ runner.os }}-
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Melos bootstrap
+        run: melos bootstrap
+
+      - name: Analyze
+        run: melos run analyze
+
+      - name: Test (Dart packages)
+        run: melos run test
+
+      - name: Test (Flutter packages)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y xvfb
+          xvfb-run --auto-servernum melos run test:flutter

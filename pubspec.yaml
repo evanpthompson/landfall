@@ -1,0 +1,12 @@
+name: landfall_workspace
+publish_to: none
+
+environment:
+  sdk: "^3.8.0"
+
+workspace:
+  - apps/display
+  - server/landfall_server
+  - server/landfall_client
+  - packages/landfall_shared
+  - packages/ui_kit

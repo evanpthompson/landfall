@@ -1,0 +1,39 @@
+version: 2
+
+updates:
+  # Dart / Flutter packages
+  - package-ecosystem: pub
+    directory: /apps/display
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: pub
+    directory: /server/landfall_server
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: pub
+    directory: /packages/landfall_shared
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: pub
+    directory: /packages/ui_kit
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
