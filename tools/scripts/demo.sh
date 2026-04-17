@@ -62,18 +62,18 @@ push_card() {
   local layout="${4:-medium}"
   local priority="${5:-normal}"
 
-  local payload
-  payload=$(printf '{"__className__":"CardPushRequest","source":"%s","title":"%s","layout":"%s","priority":"%s"' \
+  local inner
+  inner=$(printf '{"__className__":"CardPushRequest","source":"%s","title":"%s","layout":"%s","priority":"%s"' \
     "${source}" "${title}" "${layout}" "${priority}")
   if [[ -n "${body}" ]]; then
-    payload+=,"\"body\":\"${body}\""
+    inner+=,"\"body\":\"${body}\""
   fi
-  payload+="}"
+  inner+="}"
 
   curl -sf \
     -X POST "${SERVER_URL}/card/pushCard" \
     -H "Content-Type: application/json" \
-    -d "${payload}" \
+    -d "{\"request\":${inner}}" \
     > /dev/null
 }
 

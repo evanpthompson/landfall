@@ -19,12 +19,14 @@ curl -sf \
   -X POST "${ENDPOINT}" \
   -H "Content-Type: application/json" \
   -d '{
-    "__className__": "CardPushRequest",
-    "source":   "agent.demo",
-    "title":    "Flight DEN→LAX dropped to $287",
-    "body":     "Round trip, departing June 14. Book before midnight.",
-    "layout":   "medium",
-    "priority": "normal"
+    "request": {
+      "__className__": "CardPushRequest",
+      "source":   "agent.demo",
+      "title":    "Flight DEN→LAX dropped to $287",
+      "body":     "Round trip, departing June 14. Book before midnight.",
+      "layout":   "medium",
+      "priority": "normal"
+    }
   }' \
 | python3 -m json.tool
 
