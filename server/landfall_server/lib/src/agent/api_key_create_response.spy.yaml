@@ -1,0 +1,11 @@
+### Returned once when an API key is generated.
+### The plainTextKey is never stored and cannot be recovered — the client
+### must save it immediately.
+class: ApiKeyCreateResponse
+
+fields:
+  ### The created key record (without the plaintext).
+  key: ApiKey
+
+  ### The full plaintext key. Shown once; treat like a password.
+  plainTextKey: String

@@ -10,24 +10,151 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
-    as _i1;
-import 'package:serverpod_client/serverpod_client.dart' as _i2;
-import 'dart:async' as _i3;
-import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
-    as _i4;
-import 'package:landfall_client/src/protocol/cards/card_row.dart' as _i5;
+import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'dart:async' as _i2;
+import 'package:landfall_client/src/protocol/cards/card_row.dart' as _i3;
 import 'package:landfall_client/src/protocol/cards/card_push_request.dart'
-    as _i6;
-import 'package:landfall_client/src/protocol/greetings/greeting.dart' as _i7;
-import 'protocol.dart' as _i8;
+    as _i4;
+import 'package:landfall_client/src/protocol/agent/api_key_create_response.dart'
+    as _i5;
+import 'package:landfall_client/src/protocol/agent/api_key.dart' as _i6;
+import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
+    as _i7;
+import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
+    as _i8;
+import 'package:landfall_client/src/protocol/greetings/greeting.dart' as _i9;
+import 'protocol.dart' as _i10;
+
+/// The authenticated agent push API.
+///
+/// All methods require [apiKey] — a valid plaintext API key generated via
+/// [ApiKeyEndpoint.generateKey]. Rate limit: 500 pushCard calls per day
+/// per key (configurable per key).
+/// {@category Endpoint}
+class EndpointAgent extends _i1.EndpointRef {
+  EndpointAgent(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'agent';
+
+  /// Returns all active (non-dismissed, non-expired) cards for this display.
+  ///
+  /// Cards are returned newest-first.
+  _i2.Future<List<_i3.CardRow>> listCards(String apiKey) =>
+      caller.callServerEndpoint<List<_i3.CardRow>>(
+        'agent',
+        'listCards',
+        {'apiKey': apiKey},
+      );
+
+  /// Pushes a card to the display.
+  ///
+  /// If [CardPushRequest.externalId] is provided and a card with that ID
+  /// already exists, the existing card is updated in-place. Otherwise a
+  /// new card is created with a generated UUID.
+  ///
+  /// Returns the created or updated [CardRow].
+  _i2.Future<_i3.CardRow> pushCard(
+    String apiKey,
+    _i4.CardPushRequest request,
+  ) => caller.callServerEndpoint<_i3.CardRow>(
+    'agent',
+    'pushCard',
+    {
+      'apiKey': apiKey,
+      'request': request,
+    },
+  );
+
+  /// Updates an existing card by [externalId].
+  ///
+  /// Title and source in [request] replace the existing values.
+  /// Returns the updated [CardRow], or throws if no card with that
+  /// [externalId] exists.
+  _i2.Future<_i3.CardRow> updateCard(
+    String apiKey,
+    String externalId,
+    _i4.CardPushRequest request,
+  ) => caller.callServerEndpoint<_i3.CardRow>(
+    'agent',
+    'updateCard',
+    {
+      'apiKey': apiKey,
+      'externalId': externalId,
+      'request': request,
+    },
+  );
+
+  /// Dismisses a card by its [externalId].
+  ///
+  /// Sets [CardRow.dismissedAt] to now. The card is retained in the database
+  /// for history queries. Returns true if a card was found and dismissed,
+  /// false if no card with that externalId exists.
+  _i2.Future<bool> dismissCard(
+    String apiKey,
+    String externalId,
+  ) => caller.callServerEndpoint<bool>(
+    'agent',
+    'dismissCard',
+    {
+      'apiKey': apiKey,
+      'externalId': externalId,
+    },
+  );
+}
+
+/// API key management endpoint.
+///
+/// Phase 2: Unauthenticated — open for local dev, matching Phase 0 CardEndpoint.
+/// Phase 5: Will require display-owner authentication before any mutation.
+/// {@category Endpoint}
+class EndpointApiKey extends _i1.EndpointRef {
+  EndpointApiKey(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'apiKey';
+
+  /// Generates a new API key with the given [name] label.
+  ///
+  /// The returned [ApiKeyCreateResponse.plainTextKey] is shown exactly once
+  /// and cannot be recovered. The caller must store it securely.
+  _i2.Future<_i5.ApiKeyCreateResponse> generateKey(String name) =>
+      caller.callServerEndpoint<_i5.ApiKeyCreateResponse>(
+        'apiKey',
+        'generateKey',
+        {'name': name},
+      );
+
+  /// Returns all non-revoked API keys.
+  ///
+  /// Only metadata is returned — hashes and plaintext keys are never exposed.
+  _i2.Future<List<_i6.ApiKey>> listKeys() =>
+      caller.callServerEndpoint<List<_i6.ApiKey>>(
+        'apiKey',
+        'listKeys',
+        {},
+      );
+
+  /// Revokes an API key by its database [id].
+  ///
+  /// The key is soft-deleted: its [ApiKey.revokedAt] is set to now.
+  /// Revoked keys are rejected by [AgentEndpoint] immediately.
+  ///
+  /// Returns true if the key existed and was revoked, false if not found
+  /// or already revoked.
+  _i2.Future<bool> revokeKey(int id) => caller.callServerEndpoint<bool>(
+    'apiKey',
+    'revokeKey',
+    {'id': id},
+  );
+}
 
 /// By extending [EmailIdpBaseEndpoint], the email identity provider endpoints
 /// are made available on the server and enable the corresponding sign-in widget
 /// on the client.
 /// {@category Endpoint}
-class EndpointEmailIdp extends _i1.EndpointEmailIdpBase {
-  EndpointEmailIdp(_i2.EndpointCaller caller) : super(caller);
+class EndpointEmailIdp extends _i7.EndpointEmailIdpBase {
+  EndpointEmailIdp(_i1.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'emailIdp';
@@ -42,10 +169,10 @@ class EndpointEmailIdp extends _i1.EndpointEmailIdpBase {
   ///
   /// Throws an [AuthUserBlockedException] if the auth user is blocked.
   @override
-  _i3.Future<_i4.AuthSuccess> login({
+  _i2.Future<_i8.AuthSuccess> login({
     required String email,
     required String password,
-  }) => caller.callServerEndpoint<_i4.AuthSuccess>(
+  }) => caller.callServerEndpoint<_i8.AuthSuccess>(
     'emailIdp',
     'login',
     {
@@ -65,8 +192,8 @@ class EndpointEmailIdp extends _i1.EndpointEmailIdpBase {
   /// registration. If the email is already registered, the returned ID will not
   /// be valid.
   @override
-  _i3.Future<_i2.UuidValue> startRegistration({required String email}) =>
-      caller.callServerEndpoint<_i2.UuidValue>(
+  _i2.Future<_i1.UuidValue> startRegistration({required String email}) =>
+      caller.callServerEndpoint<_i1.UuidValue>(
         'emailIdp',
         'startRegistration',
         {'email': email},
@@ -83,8 +210,8 @@ class EndpointEmailIdp extends _i1.EndpointEmailIdpBase {
   /// - [EmailAccountRequestExceptionReason.invalid] if no request exists
   ///   for the given [accountRequestId] or [verificationCode] is invalid.
   @override
-  _i3.Future<String> verifyRegistrationCode({
-    required _i2.UuidValue accountRequestId,
+  _i2.Future<String> verifyRegistrationCode({
+    required _i1.UuidValue accountRequestId,
     required String verificationCode,
   }) => caller.callServerEndpoint<String>(
     'emailIdp',
@@ -110,10 +237,10 @@ class EndpointEmailIdp extends _i1.EndpointEmailIdpBase {
   ///
   /// Returns a session for the newly created user.
   @override
-  _i3.Future<_i4.AuthSuccess> finishRegistration({
+  _i2.Future<_i8.AuthSuccess> finishRegistration({
     required String registrationToken,
     required String password,
-  }) => caller.callServerEndpoint<_i4.AuthSuccess>(
+  }) => caller.callServerEndpoint<_i8.AuthSuccess>(
     'emailIdp',
     'finishRegistration',
     {
@@ -136,8 +263,8 @@ class EndpointEmailIdp extends _i1.EndpointEmailIdpBase {
   ///   made too many attempts trying to request a password reset.
   ///
   @override
-  _i3.Future<_i2.UuidValue> startPasswordReset({required String email}) =>
-      caller.callServerEndpoint<_i2.UuidValue>(
+  _i2.Future<_i1.UuidValue> startPasswordReset({required String email}) =>
+      caller.callServerEndpoint<_i1.UuidValue>(
         'emailIdp',
         'startPasswordReset',
         {'email': email},
@@ -158,8 +285,8 @@ class EndpointEmailIdp extends _i1.EndpointEmailIdpBase {
   /// should be overridden to return credentials for the next step instead
   /// of the credentials for setting the password.
   @override
-  _i3.Future<String> verifyPasswordResetCode({
-    required _i2.UuidValue passwordResetRequestId,
+  _i2.Future<String> verifyPasswordResetCode({
+    required _i1.UuidValue passwordResetRequestId,
     required String verificationCode,
   }) => caller.callServerEndpoint<String>(
     'emailIdp',
@@ -185,7 +312,7 @@ class EndpointEmailIdp extends _i1.EndpointEmailIdpBase {
   ///
   /// Throws an [AuthUserBlockedException] if the auth user is blocked.
   @override
-  _i3.Future<void> finishPasswordReset({
+  _i2.Future<void> finishPasswordReset({
     required String finishPasswordResetToken,
     required String newPassword,
   }) => caller.callServerEndpoint<void>(
@@ -198,7 +325,7 @@ class EndpointEmailIdp extends _i1.EndpointEmailIdpBase {
   );
 
   @override
-  _i3.Future<bool> hasAccount() => caller.callServerEndpoint<bool>(
+  _i2.Future<bool> hasAccount() => caller.callServerEndpoint<bool>(
     'emailIdp',
     'hasAccount',
     {},
@@ -208,8 +335,8 @@ class EndpointEmailIdp extends _i1.EndpointEmailIdpBase {
 /// By extending [RefreshJwtTokensEndpoint], the JWT token refresh endpoint
 /// is made available on the server and enables automatic token refresh on the client.
 /// {@category Endpoint}
-class EndpointJwtRefresh extends _i4.EndpointRefreshJwtTokens {
-  EndpointJwtRefresh(_i2.EndpointCaller caller) : super(caller);
+class EndpointJwtRefresh extends _i8.EndpointRefreshJwtTokens {
+  EndpointJwtRefresh(_i1.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'jwtRefresh';
@@ -233,9 +360,9 @@ class EndpointJwtRefresh extends _i4.EndpointRefreshJwtTokens {
   /// This endpoint is unauthenticated, meaning the client won't include any
   /// authentication information with the call.
   @override
-  _i3.Future<_i4.AuthSuccess> refreshAccessToken({
+  _i2.Future<_i8.AuthSuccess> refreshAccessToken({
     required String refreshToken,
-  }) => caller.callServerEndpoint<_i4.AuthSuccess>(
+  }) => caller.callServerEndpoint<_i8.AuthSuccess>(
     'jwtRefresh',
     'refreshAccessToken',
     {'refreshToken': refreshToken},
@@ -248,8 +375,8 @@ class EndpointJwtRefresh extends _i4.EndpointRefreshJwtTokens {
 /// Phase 0: No authentication required — open for local development.
 /// Phase 2: API key authentication will be added to [pushCard] and [dismissCard].
 /// {@category Endpoint}
-class EndpointCard extends _i2.EndpointRef {
-  EndpointCard(_i2.EndpointCaller caller) : super(caller);
+class EndpointCard extends _i1.EndpointRef {
+  EndpointCard(_i1.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'card';
@@ -258,8 +385,8 @@ class EndpointCard extends _i2.EndpointRef {
   ///
   /// Active = not dismissed AND (persistent OR not yet expired).
   /// Cards are returned newest-first.
-  _i3.Future<List<_i5.CardRow>> getCards() =>
-      caller.callServerEndpoint<List<_i5.CardRow>>(
+  _i2.Future<List<_i3.CardRow>> getCards() =>
+      caller.callServerEndpoint<List<_i3.CardRow>>(
         'card',
         'getCards',
         {},
@@ -272,8 +399,8 @@ class EndpointCard extends _i2.EndpointRef {
   /// new card is created with a generated UUID.
   ///
   /// Returns the created or updated [CardRow].
-  _i3.Future<_i5.CardRow> pushCard(_i6.CardPushRequest request) =>
-      caller.callServerEndpoint<_i5.CardRow>(
+  _i2.Future<_i3.CardRow> pushCard(_i4.CardPushRequest request) =>
+      caller.callServerEndpoint<_i3.CardRow>(
         'card',
         'pushCard',
         {'request': request},
@@ -284,7 +411,7 @@ class EndpointCard extends _i2.EndpointRef {
   /// Sets [CardRow.dismissedAt] to now. The card is retained in the database
   /// for history queries. Returns true if a card was found and dismissed,
   /// false if no card with that externalId exists.
-  _i3.Future<bool> dismissCard(String externalId) =>
+  _i2.Future<bool> dismissCard(String externalId) =>
       caller.callServerEndpoint<bool>(
         'card',
         'dismissCard',
@@ -295,15 +422,15 @@ class EndpointCard extends _i2.EndpointRef {
 /// This is an example endpoint that returns a greeting message through
 /// its [hello] method.
 /// {@category Endpoint}
-class EndpointGreeting extends _i2.EndpointRef {
-  EndpointGreeting(_i2.EndpointCaller caller) : super(caller);
+class EndpointGreeting extends _i1.EndpointRef {
+  EndpointGreeting(_i1.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'greeting';
 
   /// Returns a personalized greeting message: "Hello {name}".
-  _i3.Future<_i7.Greeting> hello(String name) =>
-      caller.callServerEndpoint<_i7.Greeting>(
+  _i2.Future<_i9.Greeting> hello(String name) =>
+      caller.callServerEndpoint<_i9.Greeting>(
         'greeting',
         'hello',
         {'name': name},
@@ -312,16 +439,16 @@ class EndpointGreeting extends _i2.EndpointRef {
 
 class Modules {
   Modules(Client client) {
-    serverpod_auth_idp = _i1.Caller(client);
-    serverpod_auth_core = _i4.Caller(client);
+    serverpod_auth_idp = _i7.Caller(client);
+    serverpod_auth_core = _i8.Caller(client);
   }
 
-  late final _i1.Caller serverpod_auth_idp;
+  late final _i7.Caller serverpod_auth_idp;
 
-  late final _i4.Caller serverpod_auth_core;
+  late final _i8.Caller serverpod_auth_core;
 }
 
-class Client extends _i2.ServerpodClientShared {
+class Client extends _i1.ServerpodClientShared {
   Client(
     String host, {
     dynamic securityContext,
@@ -332,16 +459,16 @@ class Client extends _i2.ServerpodClientShared {
     Duration? streamingConnectionTimeout,
     Duration? connectionTimeout,
     Function(
-      _i2.MethodCallContext,
+      _i1.MethodCallContext,
       Object,
       StackTrace,
     )?
     onFailedCall,
-    Function(_i2.MethodCallContext)? onSucceededCall,
+    Function(_i1.MethodCallContext)? onSucceededCall,
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i8.Protocol(),
+         _i10.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -350,12 +477,18 @@ class Client extends _i2.ServerpodClientShared {
          disconnectStreamsOnLostInternetConnection:
              disconnectStreamsOnLostInternetConnection,
        ) {
+    agent = EndpointAgent(this);
+    apiKey = EndpointApiKey(this);
     emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
     card = EndpointCard(this);
     greeting = EndpointGreeting(this);
     modules = Modules(this);
   }
+
+  late final EndpointAgent agent;
+
+  late final EndpointApiKey apiKey;
 
   late final EndpointEmailIdp emailIdp;
 
@@ -368,7 +501,9 @@ class Client extends _i2.ServerpodClientShared {
   late final Modules modules;
 
   @override
-  Map<String, _i2.EndpointRef> get endpointRefLookup => {
+  Map<String, _i1.EndpointRef> get endpointRefLookup => {
+    'agent': agent,
+    'apiKey': apiKey,
     'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
     'card': card,
@@ -376,7 +511,7 @@ class Client extends _i2.ServerpodClientShared {
   };
 
   @override
-  Map<String, _i2.ModuleEndpointCaller> get moduleLookup => {
+  Map<String, _i1.ModuleEndpointCaller> get moduleLookup => {
     'serverpod_auth_idp': modules.serverpod_auth_idp,
     'serverpod_auth_core': modules.serverpod_auth_core,
   };

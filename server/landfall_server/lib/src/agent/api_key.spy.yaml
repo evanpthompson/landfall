@@ -1,0 +1,39 @@
+### An API key for agent clients pushing cards to the display.
+### The plaintext key is never stored — only the SHA-256 hash.
+class: ApiKey
+table: api_keys
+
+fields:
+  ### Human-readable label for this key.
+  name: String
+
+  ### SHA-256 hex digest of the plaintext key. Never expose this to clients.
+  keyHash: String
+
+  ### First 8 characters of the plaintext key, for display/identification.
+  prefix: String
+
+  ### When this key was created.
+  createdAt: DateTime
+
+  ### When this key was last used to authenticate a request.
+  lastUsedAt: DateTime?
+
+  ### When this key was revoked. Non-null = key is inactive.
+  revokedAt: DateTime?
+
+  ### Maximum pushCard calls per day. Resets at UTC midnight.
+  dailyLimit: int, default=500
+
+  ### Number of pushCard calls made since usageResetAt.
+  usageCount: int, default=0
+
+  ### Next time usageCount resets to zero (UTC midnight).
+  usageResetAt: DateTime
+
+indexes:
+  api_keys_hash_idx:
+    fields: keyHash
+    unique: true
+  api_keys_revoked_at_idx:
+    fields: revokedAt

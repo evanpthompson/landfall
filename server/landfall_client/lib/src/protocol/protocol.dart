@@ -11,14 +11,21 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-import 'cards/card_push_request.dart' as _i2;
-import 'cards/card_row.dart' as _i3;
-import 'greetings/greeting.dart' as _i4;
-import 'package:landfall_client/src/protocol/cards/card_row.dart' as _i5;
+import 'agent/api_key.dart' as _i2;
+import 'agent/api_key_create_response.dart' as _i3;
+import 'agent/landfall_exception.dart' as _i4;
+import 'cards/card_push_request.dart' as _i5;
+import 'cards/card_row.dart' as _i6;
+import 'greetings/greeting.dart' as _i7;
+import 'package:landfall_client/src/protocol/cards/card_row.dart' as _i8;
+import 'package:landfall_client/src/protocol/agent/api_key.dart' as _i9;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
-    as _i6;
+    as _i10;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
-    as _i7;
+    as _i11;
+export 'agent/api_key.dart';
+export 'agent/api_key_create_response.dart';
+export 'agent/landfall_exception.dart';
 export 'cards/card_push_request.dart';
 export 'cards/card_row.dart';
 export 'greetings/greeting.dart';
@@ -58,42 +65,68 @@ class Protocol extends _i1.SerializationManager {
       }
     }
 
-    if (t == _i2.CardPushRequest) {
-      return _i2.CardPushRequest.fromJson(data) as T;
+    if (t == _i2.ApiKey) {
+      return _i2.ApiKey.fromJson(data) as T;
     }
-    if (t == _i3.CardRow) {
-      return _i3.CardRow.fromJson(data) as T;
+    if (t == _i3.ApiKeyCreateResponse) {
+      return _i3.ApiKeyCreateResponse.fromJson(data) as T;
     }
-    if (t == _i4.Greeting) {
-      return _i4.Greeting.fromJson(data) as T;
+    if (t == _i4.LandfallException) {
+      return _i4.LandfallException.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i2.CardPushRequest?>()) {
-      return (data != null ? _i2.CardPushRequest.fromJson(data) : null) as T;
+    if (t == _i5.CardPushRequest) {
+      return _i5.CardPushRequest.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i3.CardRow?>()) {
-      return (data != null ? _i3.CardRow.fromJson(data) : null) as T;
+    if (t == _i6.CardRow) {
+      return _i6.CardRow.fromJson(data) as T;
     }
-    if (t == _i1.getType<_i4.Greeting?>()) {
-      return (data != null ? _i4.Greeting.fromJson(data) : null) as T;
+    if (t == _i7.Greeting) {
+      return _i7.Greeting.fromJson(data) as T;
     }
-    if (t == List<_i5.CardRow>) {
-      return (data as List).map((e) => deserialize<_i5.CardRow>(e)).toList()
+    if (t == _i1.getType<_i2.ApiKey?>()) {
+      return (data != null ? _i2.ApiKey.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i3.ApiKeyCreateResponse?>()) {
+      return (data != null ? _i3.ApiKeyCreateResponse.fromJson(data) : null)
+          as T;
+    }
+    if (t == _i1.getType<_i4.LandfallException?>()) {
+      return (data != null ? _i4.LandfallException.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i5.CardPushRequest?>()) {
+      return (data != null ? _i5.CardPushRequest.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i6.CardRow?>()) {
+      return (data != null ? _i6.CardRow.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i7.Greeting?>()) {
+      return (data != null ? _i7.Greeting.fromJson(data) : null) as T;
+    }
+    if (t == List<_i8.CardRow>) {
+      return (data as List).map((e) => deserialize<_i8.CardRow>(e)).toList()
+          as T;
+    }
+    if (t == List<_i9.ApiKey>) {
+      return (data as List).map((e) => deserialize<_i9.ApiKey>(e)).toList()
           as T;
     }
     try {
-      return _i6.Protocol().deserialize<T>(data, t);
+      return _i10.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     try {
-      return _i7.Protocol().deserialize<T>(data, t);
+      return _i11.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     return super.deserialize<T>(data, t);
   }
 
   static String? getClassNameForType(Type type) {
     return switch (type) {
-      _i2.CardPushRequest => 'CardPushRequest',
-      _i3.CardRow => 'CardRow',
-      _i4.Greeting => 'Greeting',
+      _i2.ApiKey => 'ApiKey',
+      _i3.ApiKeyCreateResponse => 'ApiKeyCreateResponse',
+      _i4.LandfallException => 'LandfallException',
+      _i5.CardPushRequest => 'CardPushRequest',
+      _i6.CardRow => 'CardRow',
+      _i7.Greeting => 'Greeting',
       _ => null,
     };
   }
@@ -108,18 +141,24 @@ class Protocol extends _i1.SerializationManager {
     }
 
     switch (data) {
-      case _i2.CardPushRequest():
+      case _i2.ApiKey():
+        return 'ApiKey';
+      case _i3.ApiKeyCreateResponse():
+        return 'ApiKeyCreateResponse';
+      case _i4.LandfallException():
+        return 'LandfallException';
+      case _i5.CardPushRequest():
         return 'CardPushRequest';
-      case _i3.CardRow():
+      case _i6.CardRow():
         return 'CardRow';
-      case _i4.Greeting():
+      case _i7.Greeting():
         return 'Greeting';
     }
-    className = _i6.Protocol().getClassNameForObject(data);
+    className = _i10.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_idp.$className';
     }
-    className = _i7.Protocol().getClassNameForObject(data);
+    className = _i11.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_core.$className';
     }
@@ -132,22 +171,31 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName is! String) {
       return super.deserializeByClassName(data);
     }
+    if (dataClassName == 'ApiKey') {
+      return deserialize<_i2.ApiKey>(data['data']);
+    }
+    if (dataClassName == 'ApiKeyCreateResponse') {
+      return deserialize<_i3.ApiKeyCreateResponse>(data['data']);
+    }
+    if (dataClassName == 'LandfallException') {
+      return deserialize<_i4.LandfallException>(data['data']);
+    }
     if (dataClassName == 'CardPushRequest') {
-      return deserialize<_i2.CardPushRequest>(data['data']);
+      return deserialize<_i5.CardPushRequest>(data['data']);
     }
     if (dataClassName == 'CardRow') {
-      return deserialize<_i3.CardRow>(data['data']);
+      return deserialize<_i6.CardRow>(data['data']);
     }
     if (dataClassName == 'Greeting') {
-      return deserialize<_i4.Greeting>(data['data']);
+      return deserialize<_i7.Greeting>(data['data']);
     }
     if (dataClassName.startsWith('serverpod_auth_idp.')) {
       data['className'] = dataClassName.substring(19);
-      return _i6.Protocol().deserializeByClassName(data);
+      return _i10.Protocol().deserializeByClassName(data);
     }
     if (dataClassName.startsWith('serverpod_auth_core.')) {
       data['className'] = dataClassName.substring(20);
-      return _i7.Protocol().deserializeByClassName(data);
+      return _i11.Protocol().deserializeByClassName(data);
     }
     return super.deserializeByClassName(data);
   }
@@ -162,10 +210,10 @@ class Protocol extends _i1.SerializationManager {
       return null;
     }
     try {
-      return _i6.Protocol().mapRecordToJson(record);
+      return _i10.Protocol().mapRecordToJson(record);
     } catch (_) {}
     try {
-      return _i7.Protocol().mapRecordToJson(record);
+      return _i11.Protocol().mapRecordToJson(record);
     } catch (_) {}
     throw Exception('Unsupported record type ${record.runtimeType}');
   }
