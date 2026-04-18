@@ -1,0 +1,5 @@
+### A domain exception surfaced to agent API callers.
+### Used for authentication failures, validation errors, and rate limiting.
+exception: LandfallException
+fields:
+  message: String
