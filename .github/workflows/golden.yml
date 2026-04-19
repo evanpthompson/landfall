@@ -23,23 +23,21 @@ jobs:
       - name: Cache pub dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.pub-cache
+          path: ~/.pub-cache
           key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
-          restore-keys: |
-            pub-${{ runner.os }}-
+          restore-keys: pub-${{ runner.os }}-
 
-      - name: Install Melos
-        run: dart pub global activate melos
+      - name: Install workspace deps (includes Melos)
+        run: dart pub get
 
       - name: Melos bootstrap
-        run: melos bootstrap
+        run: dart run melos bootstrap
 
       - name: Run golden tests
         run: |
           sudo apt-get update -y
           sudo apt-get install -y xvfb fonts-noto
-          xvfb-run --auto-servernum melos run test:flutter
+          xvfb-run --auto-servernum dart run melos run test:flutter
         env:
           CI: true
 
