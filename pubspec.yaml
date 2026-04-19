@@ -18,9 +18,10 @@ melos:
   scripts:
     test:
       run: dart run melos exec --fail-fast -- dart test
-      description: Run tests in all packages
+      description: Run tests in pure-Dart packages (non-Flutter)
       packageFilters:
         dirExists: test
+        flutter: false
 
     test:flutter:
       run: dart run melos exec --fail-fast -- flutter test
