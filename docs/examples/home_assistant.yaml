@@ -1,0 +1,124 @@
+# Landfall integration for Home Assistant
+#
+# Setup:
+# 1. Add the shell_command block to configuration.yaml (or a split config file).
+# 2. Set LANDFALL_URL and LANDFALL_API_KEY in your HA environment.
+#    With the default HA setup, add them to /config/.env or use the
+#    Secrets integration: https://www.home-assistant.io/docs/configuration/secrets/
+# 3. Add automations to automations.yaml (or via the UI in Developer Tools).
+# 4. Reload the shell_command integration after editing configuration.yaml.
+#
+# Each entity_id maps to one stable card slot — repeated triggers update
+# the existing card rather than creating new ones.
+
+# ── configuration.yaml ───────────────────────────────────────────────────────
+
+shell_command:
+  push_landfall_card: >
+    curl -sf -X POST "${LANDFALL_URL}/agent/pushCard"
+    -H "Content-Type: application/json"
+    -d "{
+      \"apiKey\": \"${LANDFALL_API_KEY}\",
+      \"request\": {
+        \"__className__\": \"CardPushRequest\",
+        \"source\": \"skill.home_assistant\",
+        \"title\": \"{{ title }}\",
+        \"body\": \"{{ body }}\",
+        \"layout\": \"small\",
+        \"priority\": \"ephemeral\",
+        \"externalId\": \"skill.home_assistant.{{ entity_id }}\"
+      }
+    }"
+
+  dismiss_landfall_card: >
+    curl -sf -X POST "${LANDFALL_URL}/agent/dismissCard"
+    -H "Content-Type: application/json"
+    -d "{
+      \"apiKey\": \"${LANDFALL_API_KEY}\",
+      \"externalId\": \"skill.home_assistant.{{ entity_id }}\"
+    }"
+
+
+# ── automations.yaml ─────────────────────────────────────────────────────────
+
+# Front door opened
+- alias: "Landfall: Front door opened"
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.front_door
+      to: "on"
+  action:
+    - service: shell_command.push_landfall_card
+      data:
+        title: "Front door opened"
+        body: "{{ now().strftime('%H:%M') }}"
+        entity_id: "front_door"
+
+# Front door closed — dismiss the card
+- alias: "Landfall: Front door closed"
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.front_door
+      to: "off"
+      for: "00:01:00"
+  action:
+    - service: shell_command.dismiss_landfall_card
+      data:
+        entity_id: "front_door"
+
+# Motion detected in living room
+- alias: "Landfall: Living room motion"
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.living_room_motion
+      to: "on"
+  action:
+    - service: shell_command.push_landfall_card
+      data:
+        title: "Motion: Living room"
+        body: "{{ now().strftime('%H:%M') }}"
+        entity_id: "living_room_motion"
+
+# Temperature threshold alert
+- alias: "Landfall: Garage too hot"
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.garage_temperature
+      above: 90
+  action:
+    - service: shell_command.push_landfall_card
+      data:
+        title: "Garage temperature alert"
+        body: >
+          {{ states('sensor.garage_temperature') }}°F — above threshold.
+          {{ now().strftime('%H:%M') }}
+        entity_id: "garage_temperature_alert"
+
+# Clear garage alert when temperature drops
+- alias: "Landfall: Garage temperature normal"
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.garage_temperature
+      below: 85
+  action:
+    - service: shell_command.dismiss_landfall_card
+      data:
+        entity_id: "garage_temperature_alert"
+
+# Washing machine finished (power draw drops below idle)
+- alias: "Landfall: Wash done"
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.washing_machine_power
+      below: 5
+      for: "00:02:00"
+  condition:
+    - condition: numeric_state
+      entity_id: sensor.washing_machine_power
+      above: 0
+  action:
+    - service: shell_command.push_landfall_card
+      data:
+        title: "Washing machine done"
+        body: "{{ now().strftime('%H:%M') }}"
+        entity_id: "washing_machine"

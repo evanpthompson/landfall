@@ -1,0 +1,59 @@
+{
+  "name": "Landfall Push Card",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "landfall-trigger",
+        "responseMode": "onReceived",
+        "responseData": "firstEntryJson"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.LANDFALL_URL }}/agent/pushCard",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={\n  \"apiKey\": \"{{ $env.LANDFALL_API_KEY }}\",\n  \"request\": {\n    \"__className__\": \"CardPushRequest\",\n    \"source\": \"agent.n8n\",\n    \"title\": \"{{ $json.title }}\",\n    \"body\": \"{{ $json.body }}\",\n    \"layout\": \"{{ $json.layout || 'medium' }}\",\n    \"priority\": \"{{ $json.priority || 'normal' }}\",\n    \"externalId\": \"agent.n8n.{{ $json.workflow_id || $workflow.id }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "push-card",
+      "name": "Push Card to Landfall",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [{ "node": "Push Card to Landfall", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "__landfall_notes": [
+    "Import this workflow into n8n via Settings → Import Workflow.",
+    "Set LANDFALL_URL and LANDFALL_API_KEY as n8n environment variables.",
+    "The webhook accepts POST requests with JSON body: { title, body, layout?, priority?, workflow_id? }.",
+    "Each workflow_id maps to one stable card slot on the display.",
+    "To test: POST to the webhook URL with { \"title\": \"Test\", \"body\": \"Hello from n8n\" }."
+  ]
+}
