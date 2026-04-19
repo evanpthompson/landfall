@@ -29,9 +29,6 @@ jobs:
       - name: Install workspace deps (includes Melos)
         run: dart pub get
 
-      - name: Melos bootstrap
-        run: dart run melos bootstrap
-
       - name: Run golden tests
         run: |
           sudo apt-get update -y

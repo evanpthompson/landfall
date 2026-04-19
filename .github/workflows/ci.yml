@@ -46,9 +46,6 @@ jobs:
       - name: Install workspace deps (includes Melos)
         run: dart pub get
 
-      - name: Melos bootstrap
-        run: dart run melos bootstrap
-
       - name: Write test passwords.yaml
         # These are CI-only test credentials for an ephemeral container.
         # Production secrets are never stored here — see docs/self_hosting_guide.md.

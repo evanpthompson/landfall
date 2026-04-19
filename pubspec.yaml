@@ -16,10 +16,6 @@ dev_dependencies:
 
 melos:
   scripts:
-    bootstrap:
-      run: melos exec -- flutter pub get
-      description: Bootstrap all packages
-
     test:
       run: melos exec --fail-fast -- dart test
       description: Run tests in all packages
