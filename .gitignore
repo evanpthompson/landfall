@@ -4,11 +4,12 @@
 .flutter-plugins-dependencies
 .packages
 build/
-*.g.dart
-*.freezed.dart
 
-# Serverpod generated
-generated/
+# Serverpod generated files are committed — CI has no serverpod CLI.
+# Drift / build_runner generated files are committed for the same reason.
+# Run `serverpod generate` or `dart run build_runner build` locally after
+# changing model files, then commit the result.
+
 
 # IntelliJ / Android Studio
 .idea/

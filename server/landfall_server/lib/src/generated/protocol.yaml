@@ -1,0 +1,26 @@
+agent:
+  - listCards:
+  - pushCard:
+  - updateCard:
+  - dismissCard:
+apiKey:
+  - generateKey:
+  - listKeys:
+  - revokeKey:
+emailIdp:
+  - login:
+  - startRegistration:
+  - verifyRegistrationCode:
+  - finishRegistration:
+  - startPasswordReset:
+  - verifyPasswordResetCode:
+  - finishPasswordReset:
+  - hasAccount:
+jwtRefresh:
+  - refreshAccessToken:
+card:
+  - getCards:
+  - pushCard:
+  - dismissCard:
+greeting:
+  - hello:
