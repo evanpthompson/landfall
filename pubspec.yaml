@@ -8,6 +8,7 @@ workspace:
   - apps/display
   - server/landfall_server
   - server/landfall_client
+  - server/landfall_mcp
   - packages/landfall_shared
   - packages/ui_kit
 

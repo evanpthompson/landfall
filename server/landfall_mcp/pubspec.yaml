@@ -1,0 +1,15 @@
+name: landfall_mcp
+description: MCP server for Landfall — push cards from Claude Desktop, Cursor, or any MCP-compatible agent.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: "^3.8.0"
+
+dependencies:
+  http: ^1.2.0
+
+dev_dependencies:
+  lints: ^4.0.0
+  mocktail: ^1.0.4
+  test: ^1.25.5
