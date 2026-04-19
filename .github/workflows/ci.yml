@@ -44,11 +44,11 @@ jobs:
           key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
           restore-keys: pub-${{ runner.os }}-
 
-      - name: Install Melos
-        run: dart pub global activate melos
+      - name: Install workspace deps (includes Melos)
+        run: dart pub get
 
       - name: Melos bootstrap
-        run: melos bootstrap
+        run: dart run melos bootstrap
 
       - name: Write test passwords.yaml
         # These are CI-only test credentials for an ephemeral container.
@@ -64,13 +64,13 @@ jobs:
           YAML
 
       - name: Analyze
-        run: melos run analyze
+        run: dart run melos run analyze
 
       - name: Test (Dart packages)
-        run: melos run test
+        run: dart run melos run test
 
       - name: Test (Flutter packages)
         run: |
           sudo apt-get update -y
           sudo apt-get install -y xvfb
-          xvfb-run --auto-servernum melos run test:flutter
+          xvfb-run --auto-servernum dart run melos run test:flutter

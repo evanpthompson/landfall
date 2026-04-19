@@ -10,3 +10,6 @@ workspace:
   - server/landfall_client
   - packages/landfall_shared
   - packages/ui_kit
+
+dev_dependencies:
+  melos: ^7.0.0
