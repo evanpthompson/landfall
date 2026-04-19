@@ -13,3 +13,38 @@ workspace:
 
 dev_dependencies:
   melos: ^7.0.0
+
+melos:
+  scripts:
+    bootstrap:
+      run: melos exec -- flutter pub get
+      description: Bootstrap all packages
+
+    test:
+      run: melos exec --fail-fast -- dart test
+      description: Run tests in all packages
+      packageFilters:
+        dirExists: test
+
+    test:flutter:
+      run: melos exec --fail-fast -- flutter test
+      description: Run flutter tests in all packages
+      packageFilters:
+        flutter: true
+        dirExists: test
+
+    analyze:
+      run: melos exec -- dart analyze --fatal-infos
+      description: Analyze all packages
+
+    build:
+      run: melos exec -- dart run build_runner build --delete-conflicting-outputs
+      description: Run build_runner in all packages
+      packageFilters:
+        dirExists: lib
+
+    clean:
+      run: melos exec -- flutter clean
+      description: Clean all packages
+      packageFilters:
+        flutter: true
