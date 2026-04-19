@@ -62,13 +62,13 @@ class LandfallClient implements LandfallApi {
         '__className__': 'CardPushRequest',
         'source': source,
         'title': title,
-        if (body != null) 'body': body,
-        if (dataJson != null) 'dataJson': dataJson,
-        if (layout != null) 'layout': layout,
-        if (priority != null) 'priority': priority,
-        if (expiresAt != null) 'expiresAt': expiresAt,
-        if (persistent != null) 'persistent': persistent,
-        if (externalId != null) 'externalId': externalId,
+        'body': ?body,
+        'dataJson': ?dataJson,
+        'layout': ?layout,
+        'priority': ?priority,
+        'expiresAt': ?expiresAt,
+        'persistent': ?persistent,
+        'externalId': ?externalId,
       },
     });
     return result as Map<String, dynamic>;
@@ -90,9 +90,9 @@ class LandfallClient implements LandfallApi {
         '__className__': 'CardPushRequest',
         'source': source,
         'title': title,
-        if (body != null) 'body': body,
-        if (layout != null) 'layout': layout,
-        if (priority != null) 'priority': priority,
+        'body': ?body,
+        'layout': ?layout,
+        'priority': ?priority,
       },
     });
     return result as Map<String, dynamic>;
