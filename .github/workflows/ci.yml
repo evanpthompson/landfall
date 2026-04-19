@@ -11,6 +11,21 @@ jobs:
     name: Analyze & Test
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: landfall_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_test_password
+        ports:
+          - 9090:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,17 +40,28 @@ jobs:
       - name: Cache pub dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.pub-cache
+          path: ~/.pub-cache
           key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
-          restore-keys: |
-            pub-${{ runner.os }}-
+          restore-keys: pub-${{ runner.os }}-
 
       - name: Install Melos
         run: dart pub global activate melos
 
       - name: Melos bootstrap
         run: melos bootstrap
+
+      - name: Write test passwords.yaml
+        # These are CI-only test credentials for an ephemeral container.
+        # Production secrets are never stored here — see docs/self_hosting_guide.md.
+        run: |
+          cat > server/landfall_server/config/passwords.yaml << 'YAML'
+          test:
+            database: 'ci_test_password'
+            serviceSecret: 'ci-service-secret-for-testing-only'
+            emailSecretHashPepper: 'ci-email-pepper-for-testing-only'
+            jwtHmacSha512PrivateKey: 'ci-jwt-key-for-testing-only'
+            jwtRefreshTokenHashPepper: 'ci-jwt-refresh-pepper-for-testing-only'
+          YAML
 
       - name: Analyze
         run: melos run analyze
