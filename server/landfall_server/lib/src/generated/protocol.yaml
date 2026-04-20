@@ -7,17 +7,16 @@ apiKey:
   - generateKey:
   - listKeys:
   - revokeKey:
-emailIdp:
-  - login:
-  - startRegistration:
-  - verifyRegistrationCode:
-  - finishRegistration:
-  - startPasswordReset:
-  - verifyPasswordResetCode:
-  - finishPasswordReset:
-  - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
+otp:
+  - sendCode:
+  - verifyCode:
+passkeyIdp:
+  - createChallenge:
+  - register:
+  - login:
+  - hasAccount:
 card:
   - getCards:
   - pushCard:

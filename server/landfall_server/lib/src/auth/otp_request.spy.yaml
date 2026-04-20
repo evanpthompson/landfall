@@ -1,0 +1,27 @@
+### A pending OTP challenge sent to an email address.
+### Records are kept after use for audit purposes; expired/used rows are
+### excluded from verification by the service layer.
+class: OtpRequest
+table: landfall_otp_requests
+
+fields:
+  ### The email address the code was sent to.
+  email: String
+
+  ### SHA-256 hex digest of the plaintext code.
+  codeHash: String
+
+  ### When this request was created.
+  createdAt: DateTime
+
+  ### When this code expires.
+  expiresAt: DateTime
+
+  ### Set when the code was successfully verified (fail-closed: can only be used once).
+  usedAt: DateTime?
+
+indexes:
+  landfall_otp_requests_email_idx:
+    fields: email
+  landfall_otp_requests_expires_at_idx:
+    fields: expiresAt

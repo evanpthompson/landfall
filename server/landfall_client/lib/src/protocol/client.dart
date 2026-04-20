@@ -18,16 +18,17 @@ import 'package:landfall_client/src/protocol/cards/card_push_request.dart'
 import 'package:landfall_client/src/protocol/agent/api_key_create_response.dart'
     as _i5;
 import 'package:landfall_client/src/protocol/agent/api_key.dart' as _i6;
-import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
-    as _i7;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
+    as _i7;
+import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _i8;
-import 'package:landfall_client/src/protocol/greetings/greeting.dart' as _i9;
+import 'dart:typed_data' as _i9;
+import 'package:landfall_client/src/protocol/greetings/greeting.dart' as _i10;
 import 'package:landfall_client/src/protocol/weather/weather_current.dart'
-    as _i10;
-import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
     as _i11;
-import 'protocol.dart' as _i12;
+import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+    as _i12;
+import 'protocol.dart' as _i13;
 
 /// The authenticated agent push API.
 ///
@@ -153,193 +154,10 @@ class EndpointApiKey extends _i1.EndpointRef {
   );
 }
 
-/// By extending [EmailIdpBaseEndpoint], the email identity provider endpoints
-/// are made available on the server and enable the corresponding sign-in widget
-/// on the client.
-/// {@category Endpoint}
-class EndpointEmailIdp extends _i7.EndpointEmailIdpBase {
-  EndpointEmailIdp(_i1.EndpointCaller caller) : super(caller);
-
-  @override
-  String get name => 'emailIdp';
-
-  /// Logs in the user and returns a new session.
-  ///
-  /// Throws an [EmailAccountLoginException] in case of errors, with reason:
-  /// - [EmailAccountLoginExceptionReason.invalidCredentials] if the email or
-  ///   password is incorrect.
-  /// - [EmailAccountLoginExceptionReason.tooManyAttempts] if there have been
-  ///   too many failed login attempts.
-  ///
-  /// Throws an [AuthUserBlockedException] if the auth user is blocked.
-  @override
-  _i2.Future<_i8.AuthSuccess> login({
-    required String email,
-    required String password,
-  }) => caller.callServerEndpoint<_i8.AuthSuccess>(
-    'emailIdp',
-    'login',
-    {
-      'email': email,
-      'password': password,
-    },
-  );
-
-  /// Starts the registration for a new user account with an email-based login
-  /// associated to it.
-  ///
-  /// Upon successful completion of this method, an email will have been
-  /// sent to [email] with a verification link, which the user must open to
-  /// complete the registration.
-  ///
-  /// Always returns a account request ID, which can be used to complete the
-  /// registration. If the email is already registered, the returned ID will not
-  /// be valid.
-  @override
-  _i2.Future<_i1.UuidValue> startRegistration({required String email}) =>
-      caller.callServerEndpoint<_i1.UuidValue>(
-        'emailIdp',
-        'startRegistration',
-        {'email': email},
-      );
-
-  /// Verifies an account request code and returns a token
-  /// that can be used to complete the account creation.
-  ///
-  /// Throws an [EmailAccountRequestException] in case of errors, with reason:
-  /// - [EmailAccountRequestExceptionReason.expired] if the account request has
-  ///   already expired.
-  /// - [EmailAccountRequestExceptionReason.policyViolation] if the password
-  ///   does not comply with the password policy.
-  /// - [EmailAccountRequestExceptionReason.invalid] if no request exists
-  ///   for the given [accountRequestId] or [verificationCode] is invalid.
-  @override
-  _i2.Future<String> verifyRegistrationCode({
-    required _i1.UuidValue accountRequestId,
-    required String verificationCode,
-  }) => caller.callServerEndpoint<String>(
-    'emailIdp',
-    'verifyRegistrationCode',
-    {
-      'accountRequestId': accountRequestId,
-      'verificationCode': verificationCode,
-    },
-  );
-
-  /// Completes a new account registration, creating a new auth user with a
-  /// profile and attaching the given email account to it.
-  ///
-  /// Throws an [EmailAccountRequestException] in case of errors, with reason:
-  /// - [EmailAccountRequestExceptionReason.expired] if the account request has
-  ///   already expired.
-  /// - [EmailAccountRequestExceptionReason.policyViolation] if the password
-  ///   does not comply with the password policy.
-  /// - [EmailAccountRequestExceptionReason.invalid] if the [registrationToken]
-  ///   is invalid.
-  ///
-  /// Throws an [AuthUserBlockedException] if the auth user is blocked.
-  ///
-  /// Returns a session for the newly created user.
-  @override
-  _i2.Future<_i8.AuthSuccess> finishRegistration({
-    required String registrationToken,
-    required String password,
-  }) => caller.callServerEndpoint<_i8.AuthSuccess>(
-    'emailIdp',
-    'finishRegistration',
-    {
-      'registrationToken': registrationToken,
-      'password': password,
-    },
-  );
-
-  /// Requests a password reset for [email].
-  ///
-  /// If the email address is registered, an email with reset instructions will
-  /// be send out. If the email is unknown, this method will have no effect.
-  ///
-  /// Always returns a password reset request ID, which can be used to complete
-  /// the reset. If the email is not registered, the returned ID will not be
-  /// valid.
-  ///
-  /// Throws an [EmailAccountPasswordResetException] in case of errors, with reason:
-  /// - [EmailAccountPasswordResetExceptionReason.tooManyAttempts] if the user has
-  ///   made too many attempts trying to request a password reset.
-  ///
-  @override
-  _i2.Future<_i1.UuidValue> startPasswordReset({required String email}) =>
-      caller.callServerEndpoint<_i1.UuidValue>(
-        'emailIdp',
-        'startPasswordReset',
-        {'email': email},
-      );
-
-  /// Verifies a password reset code and returns a finishPasswordResetToken
-  /// that can be used to finish the password reset.
-  ///
-  /// Throws an [EmailAccountPasswordResetException] in case of errors, with reason:
-  /// - [EmailAccountPasswordResetExceptionReason.expired] if the password reset
-  ///   request has already expired.
-  /// - [EmailAccountPasswordResetExceptionReason.tooManyAttempts] if the user has
-  ///   made too many attempts trying to verify the password reset.
-  /// - [EmailAccountPasswordResetExceptionReason.invalid] if no request exists
-  ///   for the given [passwordResetRequestId] or [verificationCode] is invalid.
-  ///
-  /// If multiple steps are required to complete the password reset, this endpoint
-  /// should be overridden to return credentials for the next step instead
-  /// of the credentials for setting the password.
-  @override
-  _i2.Future<String> verifyPasswordResetCode({
-    required _i1.UuidValue passwordResetRequestId,
-    required String verificationCode,
-  }) => caller.callServerEndpoint<String>(
-    'emailIdp',
-    'verifyPasswordResetCode',
-    {
-      'passwordResetRequestId': passwordResetRequestId,
-      'verificationCode': verificationCode,
-    },
-  );
-
-  /// Completes a password reset request by setting a new password.
-  ///
-  /// The [verificationCode] returned from [verifyPasswordResetCode] is used to
-  /// validate the password reset request.
-  ///
-  /// Throws an [EmailAccountPasswordResetException] in case of errors, with reason:
-  /// - [EmailAccountPasswordResetExceptionReason.expired] if the password reset
-  ///   request has already expired.
-  /// - [EmailAccountPasswordResetExceptionReason.policyViolation] if the new
-  ///   password does not comply with the password policy.
-  /// - [EmailAccountPasswordResetExceptionReason.invalid] if no request exists
-  ///   for the given [passwordResetRequestId] or [verificationCode] is invalid.
-  ///
-  /// Throws an [AuthUserBlockedException] if the auth user is blocked.
-  @override
-  _i2.Future<void> finishPasswordReset({
-    required String finishPasswordResetToken,
-    required String newPassword,
-  }) => caller.callServerEndpoint<void>(
-    'emailIdp',
-    'finishPasswordReset',
-    {
-      'finishPasswordResetToken': finishPasswordResetToken,
-      'newPassword': newPassword,
-    },
-  );
-
-  @override
-  _i2.Future<bool> hasAccount() => caller.callServerEndpoint<bool>(
-    'emailIdp',
-    'hasAccount',
-    {},
-  );
-}
-
 /// By extending [RefreshJwtTokensEndpoint], the JWT token refresh endpoint
 /// is made available on the server and enables automatic token refresh on the client.
 /// {@category Endpoint}
-class EndpointJwtRefresh extends _i8.EndpointRefreshJwtTokens {
+class EndpointJwtRefresh extends _i7.EndpointRefreshJwtTokens {
   EndpointJwtRefresh(_i1.EndpointCaller caller) : super(caller);
 
   @override
@@ -364,13 +182,105 @@ class EndpointJwtRefresh extends _i8.EndpointRefreshJwtTokens {
   /// This endpoint is unauthenticated, meaning the client won't include any
   /// authentication information with the call.
   @override
-  _i2.Future<_i8.AuthSuccess> refreshAccessToken({
+  _i2.Future<_i7.AuthSuccess> refreshAccessToken({
     required String refreshToken,
-  }) => caller.callServerEndpoint<_i8.AuthSuccess>(
+  }) => caller.callServerEndpoint<_i7.AuthSuccess>(
     'jwtRefresh',
     'refreshAccessToken',
     {'refreshToken': refreshToken},
     authenticated: false,
+  );
+}
+
+/// OTP email authentication endpoint.
+///
+/// Provides a passwordless login flow:
+///   1. Client calls [sendCode] with the user's email address.
+///   2. The server generates a 6-digit code, stores a SHA-256 hash, and logs
+///      (or emails) the plaintext code.
+///   3. Client calls [verifyCode] with the email and the code the user entered.
+///   4. On success, the server returns an [AuthSuccess] containing a JWT.
+///
+/// Fail-closed: wrong code, expired code, or replay all throw [ServerpodUnauthenticatedException].
+/// {@category Endpoint}
+class EndpointOtp extends _i1.EndpointRef {
+  EndpointOtp(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'otp';
+
+  /// Sends a one-time code to [email].
+  ///
+  /// Always returns void — do not reveal whether the email is registered.
+  _i2.Future<void> sendCode(String email) => caller.callServerEndpoint<void>(
+    'otp',
+    'sendCode',
+    {'email': email},
+  );
+
+  /// Verifies [code] for [email] and returns an [AuthSuccess] with a JWT.
+  ///
+  /// Throws [ServerpodUnauthenticatedException] on any failure.
+  _i2.Future<_i7.AuthSuccess> verifyCode(
+    String email,
+    String code,
+  ) => caller.callServerEndpoint<_i7.AuthSuccess>(
+    'otp',
+    'verifyCode',
+    {
+      'email': email,
+      'code': code,
+    },
+  );
+}
+
+/// Exposes the Passkey authentication endpoints.
+///
+/// The passkey IDP handles WebAuthn challenge creation, passkey registration,
+/// and passkey-based login. See [PasskeyIdpBaseEndpoint] for the full API.
+/// {@category Endpoint}
+class EndpointPasskeyIdp extends _i8.EndpointPasskeyIdpBase {
+  EndpointPasskeyIdp(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'passkeyIdp';
+
+  /// Returns a new challenge to be used for a login or registration request.
+  @override
+  _i2.Future<({_i9.ByteData challenge, _i1.UuidValue id})> createChallenge() =>
+      caller.callServerEndpoint<({_i9.ByteData challenge, _i1.UuidValue id})>(
+        'passkeyIdp',
+        'createChallenge',
+        {},
+      );
+
+  /// Registers a Passkey for the [session]'s current user.
+  ///
+  /// Throws if the user is not authenticated.
+  @override
+  _i2.Future<void> register({
+    required _i8.PasskeyRegistrationRequest registrationRequest,
+  }) => caller.callServerEndpoint<void>(
+    'passkeyIdp',
+    'register',
+    {'registrationRequest': registrationRequest},
+  );
+
+  /// Authenticates the user related to the given Passkey.
+  @override
+  _i2.Future<_i7.AuthSuccess> login({
+    required _i8.PasskeyLoginRequest loginRequest,
+  }) => caller.callServerEndpoint<_i7.AuthSuccess>(
+    'passkeyIdp',
+    'login',
+    {'loginRequest': loginRequest},
+  );
+
+  @override
+  _i2.Future<bool> hasAccount() => caller.callServerEndpoint<bool>(
+    'passkeyIdp',
+    'hasAccount',
+    {},
   );
 }
 
@@ -433,8 +343,8 @@ class EndpointGreeting extends _i1.EndpointRef {
   String get name => 'greeting';
 
   /// Returns a personalized greeting message: "Hello {name}".
-  _i2.Future<_i9.Greeting> hello(String name) =>
-      caller.callServerEndpoint<_i9.Greeting>(
+  _i2.Future<_i10.Greeting> hello(String name) =>
+      caller.callServerEndpoint<_i10.Greeting>(
         'greeting',
         'hello',
         {'name': name},
@@ -454,8 +364,8 @@ class EndpointWeather extends _i1.EndpointRef {
   String get name => 'weather';
 
   /// Returns the most recently cached current conditions, or null if none.
-  _i2.Future<_i10.WeatherCurrent?> getCurrentWeather() =>
-      caller.callServerEndpoint<_i10.WeatherCurrent?>(
+  _i2.Future<_i11.WeatherCurrent?> getCurrentWeather() =>
+      caller.callServerEndpoint<_i11.WeatherCurrent?>(
         'weather',
         'getCurrentWeather',
         {},
@@ -464,8 +374,8 @@ class EndpointWeather extends _i1.EndpointRef {
   /// Returns the cached 5-day forecast, oldest day first.
   ///
   /// Returns an empty list if no forecast data has been cached yet.
-  _i2.Future<List<_i11.WeatherForecast>> getForecast() =>
-      caller.callServerEndpoint<List<_i11.WeatherForecast>>(
+  _i2.Future<List<_i12.WeatherForecast>> getForecast() =>
+      caller.callServerEndpoint<List<_i12.WeatherForecast>>(
         'weather',
         'getForecast',
         {},
@@ -474,13 +384,13 @@ class EndpointWeather extends _i1.EndpointRef {
 
 class Modules {
   Modules(Client client) {
-    serverpod_auth_idp = _i7.Caller(client);
-    serverpod_auth_core = _i8.Caller(client);
+    serverpod_auth_idp = _i8.Caller(client);
+    serverpod_auth_core = _i7.Caller(client);
   }
 
-  late final _i7.Caller serverpod_auth_idp;
+  late final _i8.Caller serverpod_auth_idp;
 
-  late final _i8.Caller serverpod_auth_core;
+  late final _i7.Caller serverpod_auth_core;
 }
 
 class Client extends _i1.ServerpodClientShared {
@@ -503,7 +413,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i12.Protocol(),
+         _i13.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -514,8 +424,9 @@ class Client extends _i1.ServerpodClientShared {
        ) {
     agent = EndpointAgent(this);
     apiKey = EndpointApiKey(this);
-    emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
+    otp = EndpointOtp(this);
+    passkeyIdp = EndpointPasskeyIdp(this);
     card = EndpointCard(this);
     greeting = EndpointGreeting(this);
     weather = EndpointWeather(this);
@@ -526,9 +437,11 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointApiKey apiKey;
 
-  late final EndpointEmailIdp emailIdp;
-
   late final EndpointJwtRefresh jwtRefresh;
+
+  late final EndpointOtp otp;
+
+  late final EndpointPasskeyIdp passkeyIdp;
 
   late final EndpointCard card;
 
@@ -542,8 +455,9 @@ class Client extends _i1.ServerpodClientShared {
   Map<String, _i1.EndpointRef> get endpointRefLookup => {
     'agent': agent,
     'apiKey': apiKey,
-    'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
+    'otp': otp,
+    'passkeyIdp': passkeyIdp,
     'card': card,
     'greeting': greeting,
     'weather': weather,

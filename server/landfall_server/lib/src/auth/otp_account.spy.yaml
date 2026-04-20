@@ -1,0 +1,18 @@
+### Tracks the email → authUserId mapping for OTP-authenticated users.
+### Created on first successful OTP verification for an email address.
+class: OtpAccount
+table: landfall_otp_accounts
+
+fields:
+  ### The email address that was verified.
+  email: String
+
+  ### The Serverpod auth user ID linked to this email.
+  authUserId: UuidValue
+
+indexes:
+  landfall_otp_accounts_email_idx:
+    fields: email
+    unique: true
+  landfall_otp_accounts_auth_user_id_idx:
+    fields: authUserId

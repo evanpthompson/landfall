@@ -19,18 +19,23 @@ import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
 import 'agent/api_key.dart' as _i5;
 import 'agent/api_key_create_response.dart' as _i6;
 import 'agent/landfall_exception.dart' as _i7;
-import 'cards/card_push_request.dart' as _i8;
-import 'cards/card_row.dart' as _i9;
-import 'greetings/greeting.dart' as _i10;
-import 'weather/weather_current.dart' as _i11;
-import 'weather/weather_forecast.dart' as _i12;
-import 'package:landfall_server/src/generated/cards/card_row.dart' as _i13;
-import 'package:landfall_server/src/generated/agent/api_key.dart' as _i14;
+import 'auth/otp_account.dart' as _i8;
+import 'auth/otp_request.dart' as _i9;
+import 'cards/card_push_request.dart' as _i10;
+import 'cards/card_row.dart' as _i11;
+import 'greetings/greeting.dart' as _i12;
+import 'weather/weather_current.dart' as _i13;
+import 'weather/weather_forecast.dart' as _i14;
+import 'package:landfall_server/src/generated/cards/card_row.dart' as _i15;
+import 'package:landfall_server/src/generated/agent/api_key.dart' as _i16;
+import 'dart:typed_data' as _i17;
 import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
-    as _i15;
+    as _i18;
 export 'agent/api_key.dart';
 export 'agent/api_key_create_response.dart';
 export 'agent/landfall_exception.dart';
+export 'auth/otp_account.dart';
+export 'auth/otp_request.dart';
 export 'cards/card_push_request.dart';
 export 'cards/card_row.dart';
 export 'greetings/greeting.dart';
@@ -313,6 +318,164 @@ class Protocol extends _i1.SerializationManagerServer {
       managed: true,
     ),
     _i2.TableDefinition(
+      name: 'landfall_otp_accounts',
+      dartName: 'OtpAccount',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'landfall_otp_accounts_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'email',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'authUserId',
+          columnType: _i2.ColumnType.uuid,
+          isNullable: false,
+          dartType: 'UuidValue',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'landfall_otp_accounts_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'landfall_otp_accounts_email_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'email',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'landfall_otp_accounts_auth_user_id_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'authUserId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'landfall_otp_requests',
+      dartName: 'OtpRequest',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'landfall_otp_requests_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'email',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'codeHash',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'expiresAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'usedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'landfall_otp_requests_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'landfall_otp_requests_email_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'email',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'landfall_otp_requests_expires_at_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'expiresAt',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
       name: 'weather_current',
       dartName: 'WeatherCurrent',
       schema: 'public',
@@ -520,20 +683,26 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i7.LandfallException) {
       return _i7.LandfallException.fromJson(data) as T;
     }
-    if (t == _i8.CardPushRequest) {
-      return _i8.CardPushRequest.fromJson(data) as T;
+    if (t == _i8.OtpAccount) {
+      return _i8.OtpAccount.fromJson(data) as T;
     }
-    if (t == _i9.CardRow) {
-      return _i9.CardRow.fromJson(data) as T;
+    if (t == _i9.OtpRequest) {
+      return _i9.OtpRequest.fromJson(data) as T;
     }
-    if (t == _i10.Greeting) {
-      return _i10.Greeting.fromJson(data) as T;
+    if (t == _i10.CardPushRequest) {
+      return _i10.CardPushRequest.fromJson(data) as T;
     }
-    if (t == _i11.WeatherCurrent) {
-      return _i11.WeatherCurrent.fromJson(data) as T;
+    if (t == _i11.CardRow) {
+      return _i11.CardRow.fromJson(data) as T;
     }
-    if (t == _i12.WeatherForecast) {
-      return _i12.WeatherForecast.fromJson(data) as T;
+    if (t == _i12.Greeting) {
+      return _i12.Greeting.fromJson(data) as T;
+    }
+    if (t == _i13.WeatherCurrent) {
+      return _i13.WeatherCurrent.fromJson(data) as T;
+    }
+    if (t == _i14.WeatherForecast) {
+      return _i14.WeatherForecast.fromJson(data) as T;
     }
     if (t == _i1.getType<_i5.ApiKey?>()) {
       return (data != null ? _i5.ApiKey.fromJson(data) : null) as T;
@@ -545,32 +714,47 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i7.LandfallException?>()) {
       return (data != null ? _i7.LandfallException.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i8.CardPushRequest?>()) {
-      return (data != null ? _i8.CardPushRequest.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i8.OtpAccount?>()) {
+      return (data != null ? _i8.OtpAccount.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i9.CardRow?>()) {
-      return (data != null ? _i9.CardRow.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i9.OtpRequest?>()) {
+      return (data != null ? _i9.OtpRequest.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i10.Greeting?>()) {
-      return (data != null ? _i10.Greeting.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i10.CardPushRequest?>()) {
+      return (data != null ? _i10.CardPushRequest.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i11.WeatherCurrent?>()) {
-      return (data != null ? _i11.WeatherCurrent.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i11.CardRow?>()) {
+      return (data != null ? _i11.CardRow.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i12.WeatherForecast?>()) {
-      return (data != null ? _i12.WeatherForecast.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i12.Greeting?>()) {
+      return (data != null ? _i12.Greeting.fromJson(data) : null) as T;
     }
-    if (t == List<_i13.CardRow>) {
-      return (data as List).map((e) => deserialize<_i13.CardRow>(e)).toList()
+    if (t == _i1.getType<_i13.WeatherCurrent?>()) {
+      return (data != null ? _i13.WeatherCurrent.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i14.WeatherForecast?>()) {
+      return (data != null ? _i14.WeatherForecast.fromJson(data) : null) as T;
+    }
+    if (t == List<_i15.CardRow>) {
+      return (data as List).map((e) => deserialize<_i15.CardRow>(e)).toList()
           as T;
     }
-    if (t == List<_i14.ApiKey>) {
-      return (data as List).map((e) => deserialize<_i14.ApiKey>(e)).toList()
+    if (t == List<_i16.ApiKey>) {
+      return (data as List).map((e) => deserialize<_i16.ApiKey>(e)).toList()
           as T;
     }
-    if (t == List<_i15.WeatherForecast>) {
+    if (t == _i1.getType<({_i17.ByteData challenge, _i1.UuidValue id})>()) {
+      return (
+            challenge: deserialize<_i17.ByteData>(
+              ((data as Map)['n'] as Map)['challenge'],
+            ),
+            id: deserialize<_i1.UuidValue>(data['n']['id']),
+          )
+          as T;
+    }
+    if (t == List<_i18.WeatherForecast>) {
       return (data as List)
-              .map((e) => deserialize<_i15.WeatherForecast>(e))
+              .map((e) => deserialize<_i18.WeatherForecast>(e))
               .toList()
           as T;
     }
@@ -591,11 +775,13 @@ class Protocol extends _i1.SerializationManagerServer {
       _i5.ApiKey => 'ApiKey',
       _i6.ApiKeyCreateResponse => 'ApiKeyCreateResponse',
       _i7.LandfallException => 'LandfallException',
-      _i8.CardPushRequest => 'CardPushRequest',
-      _i9.CardRow => 'CardRow',
-      _i10.Greeting => 'Greeting',
-      _i11.WeatherCurrent => 'WeatherCurrent',
-      _i12.WeatherForecast => 'WeatherForecast',
+      _i8.OtpAccount => 'OtpAccount',
+      _i9.OtpRequest => 'OtpRequest',
+      _i10.CardPushRequest => 'CardPushRequest',
+      _i11.CardRow => 'CardRow',
+      _i12.Greeting => 'Greeting',
+      _i13.WeatherCurrent => 'WeatherCurrent',
+      _i14.WeatherForecast => 'WeatherForecast',
       _ => null,
     };
   }
@@ -616,15 +802,19 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'ApiKeyCreateResponse';
       case _i7.LandfallException():
         return 'LandfallException';
-      case _i8.CardPushRequest():
+      case _i8.OtpAccount():
+        return 'OtpAccount';
+      case _i9.OtpRequest():
+        return 'OtpRequest';
+      case _i10.CardPushRequest():
         return 'CardPushRequest';
-      case _i9.CardRow():
+      case _i11.CardRow():
         return 'CardRow';
-      case _i10.Greeting():
+      case _i12.Greeting():
         return 'Greeting';
-      case _i11.WeatherCurrent():
+      case _i13.WeatherCurrent():
         return 'WeatherCurrent';
-      case _i12.WeatherForecast():
+      case _i14.WeatherForecast():
         return 'WeatherForecast';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -657,20 +847,26 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'LandfallException') {
       return deserialize<_i7.LandfallException>(data['data']);
     }
+    if (dataClassName == 'OtpAccount') {
+      return deserialize<_i8.OtpAccount>(data['data']);
+    }
+    if (dataClassName == 'OtpRequest') {
+      return deserialize<_i9.OtpRequest>(data['data']);
+    }
     if (dataClassName == 'CardPushRequest') {
-      return deserialize<_i8.CardPushRequest>(data['data']);
+      return deserialize<_i10.CardPushRequest>(data['data']);
     }
     if (dataClassName == 'CardRow') {
-      return deserialize<_i9.CardRow>(data['data']);
+      return deserialize<_i11.CardRow>(data['data']);
     }
     if (dataClassName == 'Greeting') {
-      return deserialize<_i10.Greeting>(data['data']);
+      return deserialize<_i12.Greeting>(data['data']);
     }
     if (dataClassName == 'WeatherCurrent') {
-      return deserialize<_i11.WeatherCurrent>(data['data']);
+      return deserialize<_i13.WeatherCurrent>(data['data']);
     }
     if (dataClassName == 'WeatherForecast') {
-      return deserialize<_i12.WeatherForecast>(data['data']);
+      return deserialize<_i14.WeatherForecast>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -710,12 +906,16 @@ class Protocol extends _i1.SerializationManagerServer {
     switch (t) {
       case _i5.ApiKey:
         return _i5.ApiKey.t;
-      case _i9.CardRow:
-        return _i9.CardRow.t;
-      case _i11.WeatherCurrent:
-        return _i11.WeatherCurrent.t;
-      case _i12.WeatherForecast:
-        return _i12.WeatherForecast.t;
+      case _i8.OtpAccount:
+        return _i8.OtpAccount.t;
+      case _i9.OtpRequest:
+        return _i9.OtpRequest.t;
+      case _i11.CardRow:
+        return _i11.CardRow.t;
+      case _i13.WeatherCurrent:
+        return _i13.WeatherCurrent.t;
+      case _i14.WeatherForecast:
+        return _i14.WeatherForecast.t;
     }
     return null;
   }
@@ -736,6 +936,14 @@ class Protocol extends _i1.SerializationManagerServer {
     if (record == null) {
       return null;
     }
+    if (record is ({_i17.ByteData challenge, _i1.UuidValue id})) {
+      return {
+        "n": {
+          "challenge": record.challenge.toJson(),
+          "id": record.id.toJson(),
+        },
+      };
+    }
     try {
       return _i3.Protocol().mapRecordToJson(record);
     } catch (_) {}
@@ -743,5 +951,57 @@ class Protocol extends _i1.SerializationManagerServer {
       return _i4.Protocol().mapRecordToJson(record);
     } catch (_) {}
     throw Exception('Unsupported record type ${record.runtimeType}');
+  }
+
+  /// Maps container types (like [List], [Map], [Set]) containing
+  /// [Record]s or non-String-keyed [Map]s to their JSON representation.
+  ///
+  /// It should not be called for [SerializableModel] types. These
+  /// handle the "[Record] in container" mapping internally already.
+  ///
+  /// It is only supposed to be called from generated protocol code.
+  ///
+  /// Returns either a `List<dynamic>` (for List, Sets, and Maps with
+  /// non-String keys) or a `Map<String, dynamic>` in case the input was
+  /// a `Map<String, …>`.
+  Object? mapContainerToJson(Object obj) {
+    if (obj is! Iterable && obj is! Map) {
+      throw ArgumentError.value(
+        obj,
+        'obj',
+        'The object to serialize should be of type List, Map, or Set',
+      );
+    }
+
+    dynamic mapIfNeeded(Object? obj) {
+      return switch (obj) {
+        Record record => mapRecordToJson(record),
+        Iterable iterable => mapContainerToJson(iterable),
+        Map map => mapContainerToJson(map),
+        Object? value => value,
+      };
+    }
+
+    switch (obj) {
+      case Map<String, dynamic>():
+        return {
+          for (var entry in obj.entries) entry.key: mapIfNeeded(entry.value),
+        };
+      case Map():
+        return [
+          for (var entry in obj.entries)
+            {
+              'k': mapIfNeeded(entry.key),
+              'v': mapIfNeeded(entry.value),
+            },
+        ];
+
+      case Iterable():
+        return [
+          for (var e in obj) mapIfNeeded(e),
+        ];
+    }
+
+    return obj;
   }
 }
