@@ -219,7 +219,7 @@ push_card_agent \
   "agent.home" \
   "Front door unlocked for 9 min" \
   "No motion detected inside. Lock remotely?" \
-  "medium" "urgent"
+  "medium" "ephemeral"
 ok "Card 2 — Home automation alert, urgent priority (agent API)"
 
 push_card_agent \
