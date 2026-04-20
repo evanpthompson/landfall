@@ -3,7 +3,6 @@ import 'package:landfall_client/landfall_client.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
 import 'package:display/src/data/local/app_database.dart';
-import 'package:display/src/data/local/tables/weather_cache.dart';
 
 /// Fetches weather from the Serverpod server and caches the result in Drift.
 ///
