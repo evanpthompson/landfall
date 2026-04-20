@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart';
-import 'package:serverpod_auth_idp_server/providers/passkey.dart';
 import 'package:test/test.dart';
 
 import 'package:landfall_server/src/generated/protocol.dart';
@@ -35,11 +34,11 @@ Future<OtpRequest> _insertRequest(
 void main() {
   withServerpod('Given OtpEndpoint', (sessionBuilder, endpoints) {
     setUpAll(() {
-      // The test Serverpod starts before this runs, so Serverpod.instance is
-      // available. Initialize auth services so verifyCode can issue JWTs.
+      // The test Serverpod starts before this runs, so Serverpod.instance and
+      // passwords.yaml are available. Initialize auth services with only the
+      // JWT token manager — no IDP needed to issue tokens in these tests.
       AuthServices.set(
         tokenManagerBuilders: [JwtConfigFromPasswords()],
-        identityProviderBuilders: [PasskeyIdpConfigFromPasswords()],
       );
     });
 
