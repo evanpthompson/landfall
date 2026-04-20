@@ -17,12 +17,13 @@ import '../auth/email_idp_endpoint.dart' as _i4;
 import '../auth/jwt_refresh_endpoint.dart' as _i5;
 import '../cards/card_endpoint.dart' as _i6;
 import '../greetings/greeting_endpoint.dart' as _i7;
+import '../weather/weather_endpoint.dart' as _i8;
 import 'package:landfall_server/src/generated/cards/card_push_request.dart'
-    as _i8;
-import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i9;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i10;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _i11;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -64,6 +65,12 @@ class Endpoints extends _i1.EndpointDispatch {
           'greeting',
           null,
         ),
+      'weather': _i8.WeatherEndpoint()
+        ..initialize(
+          server,
+          'weather',
+          null,
+        ),
     };
     connectors['agent'] = _i1.EndpointConnector(
       name: 'agent',
@@ -97,7 +104,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i8.CardPushRequest>(),
+              type: _i1.getType<_i9.CardPushRequest>(),
               nullable: false,
             ),
           },
@@ -126,7 +133,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i8.CardPushRequest>(),
+              type: _i1.getType<_i9.CardPushRequest>(),
               nullable: false,
             ),
           },
@@ -443,7 +450,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i8.CardPushRequest>(),
+              type: _i1.getType<_i9.CardPushRequest>(),
               nullable: false,
             ),
           },
@@ -500,9 +507,35 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    modules['serverpod_auth_idp'] = _i9.Endpoints()
+    connectors['weather'] = _i1.EndpointConnector(
+      name: 'weather',
+      endpoint: endpoints['weather']!,
+      methodConnectors: {
+        'getCurrentWeather': _i1.MethodConnector(
+          name: 'getCurrentWeather',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['weather'] as _i8.WeatherEndpoint)
+                  .getCurrentWeather(session),
+        ),
+        'getForecast': _i1.MethodConnector(
+          name: 'getForecast',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['weather'] as _i8.WeatherEndpoint)
+                  .getForecast(session),
+        ),
+      },
+    );
+    modules['serverpod_auth_idp'] = _i10.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_core'] = _i10.Endpoints()
+    modules['serverpod_auth_core'] = _i11.Endpoints()
       ..initializeEndpoints(server);
   }
 }

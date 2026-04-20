@@ -9,3 +9,5 @@ export 'src/models/dashboard/dashboard_layout.dart';
 export 'src/repositories/dashboard_layout_repository.dart';
 export 'src/models/clock/clock_entity.dart';
 export 'src/repositories/clock_repository.dart';
+export 'src/models/weather/weather_entity.dart';
+export 'src/models/weather/forecast_day_entity.dart';

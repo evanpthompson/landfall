@@ -23,6 +23,10 @@ import 'package:landfall_server/src/generated/agent/api_key.dart' as _i7;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i8;
 import 'package:landfall_server/src/generated/greetings/greeting.dart' as _i9;
+import 'package:landfall_server/src/generated/weather/weather_current.dart'
+    as _i10;
+import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
+    as _i11;
 import 'package:landfall_server/src/generated/protocol.dart';
 import 'package:landfall_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -147,6 +151,8 @@ class TestEndpoints {
   late final _CardEndpoint card;
 
   late final _GreetingEndpoint greeting;
+
+  late final _WeatherEndpoint weather;
 }
 
 class _InternalTestEndpoints extends TestEndpoints
@@ -177,6 +183,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     greeting = _GreetingEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    weather = _WeatherEndpoint(
       endpoints,
       serializationManager,
     );
@@ -890,6 +900,77 @@ class _GreetingEndpoint {
                   _localCallContext.arguments,
                 )
                 as _i3.Future<_i9.Greeting>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _WeatherEndpoint {
+  _WeatherEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<_i10.WeatherCurrent?> getCurrentWeather(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'weather',
+            method: 'getCurrentWeather',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'weather',
+          methodName: 'getCurrentWeather',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i10.WeatherCurrent?>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<List<_i11.WeatherForecast>> getForecast(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'weather',
+            method: 'getForecast',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'weather',
+          methodName: 'getForecast',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i11.WeatherForecast>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

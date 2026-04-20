@@ -1,0 +1,29 @@
+### Current weather conditions cached from OpenWeatherMap.
+### A single row is maintained per location — the service upserts on each refresh.
+class: WeatherCurrent
+table: weather_current
+
+fields:
+  ### Human-readable location name, e.g. "Chicago".
+  locationName: String
+
+  ### Current temperature in Celsius.
+  tempC: double
+
+  ### "Feels like" temperature in Celsius.
+  feelsLikeC: double
+
+  ### Short text description, e.g. "Clear sky".
+  condition: String
+
+  ### OpenWeatherMap icon code, e.g. "01d". Used to resolve icon assets.
+  iconCode: String
+
+  ### Relative humidity, 0–100.
+  humidity: int
+
+  ### Wind speed in m/s.
+  windSpeedMs: double
+
+  ### When this row was last fetched from the upstream API.
+  fetchedAt: DateTime

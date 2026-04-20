@@ -8,6 +8,7 @@ import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
 import 'src/web/routes/app_config_route.dart';
 import 'src/web/routes/root.dart';
+import 'src/weather/weather_refresh_call.dart';
 
 /// The starting point of the Serverpod server.
 void run(List<String> args) async {
@@ -73,8 +74,16 @@ void run(List<String> args) async {
     );
   }
 
+  // Register future calls.
+  pod.registerFutureCall(WeatherRefreshCall(), 'weatherRefresh');
+
   // Start the server.
   await pod.start();
+
+  // ignore: deprecated_member_use
+  // Schedule the first weather refresh immediately after startup.
+  // ignore: deprecated_member_use
+  await pod.futureCallWithDelay('weatherRefresh', null, Duration.zero);
 }
 
 void _sendRegistrationCode(

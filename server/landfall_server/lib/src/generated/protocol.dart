@@ -22,14 +22,20 @@ import 'agent/landfall_exception.dart' as _i7;
 import 'cards/card_push_request.dart' as _i8;
 import 'cards/card_row.dart' as _i9;
 import 'greetings/greeting.dart' as _i10;
-import 'package:landfall_server/src/generated/cards/card_row.dart' as _i11;
-import 'package:landfall_server/src/generated/agent/api_key.dart' as _i12;
+import 'weather/weather_current.dart' as _i11;
+import 'weather/weather_forecast.dart' as _i12;
+import 'package:landfall_server/src/generated/cards/card_row.dart' as _i13;
+import 'package:landfall_server/src/generated/agent/api_key.dart' as _i14;
+import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
+    as _i15;
 export 'agent/api_key.dart';
 export 'agent/api_key_create_response.dart';
 export 'agent/landfall_exception.dart';
 export 'cards/card_push_request.dart';
 export 'cards/card_row.dart';
 export 'greetings/greeting.dart';
+export 'weather/weather_current.dart';
+export 'weather/weather_forecast.dart';
 
 class Protocol extends _i1.SerializationManagerServer {
   Protocol._();
@@ -306,6 +312,173 @@ class Protocol extends _i1.SerializationManagerServer {
       ],
       managed: true,
     ),
+    _i2.TableDefinition(
+      name: 'weather_current',
+      dartName: 'WeatherCurrent',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'weather_current_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'locationName',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'tempC',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+        ),
+        _i2.ColumnDefinition(
+          name: 'feelsLikeC',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+        ),
+        _i2.ColumnDefinition(
+          name: 'condition',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'iconCode',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'humidity',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'windSpeedMs',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+        ),
+        _i2.ColumnDefinition(
+          name: 'fetchedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'weather_current_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'weather_forecasts',
+      dartName: 'WeatherForecast',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'weather_forecasts_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'locationName',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'forecastDate',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'minTempC',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+        ),
+        _i2.ColumnDefinition(
+          name: 'maxTempC',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+        ),
+        _i2.ColumnDefinition(
+          name: 'condition',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'iconCode',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'fetchedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'weather_forecasts_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'weather_forecasts_date_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'forecastDate',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
     ..._i3.Protocol.targetTableDefinitions,
     ..._i4.Protocol.targetTableDefinitions,
     ..._i2.Protocol.targetTableDefinitions,
@@ -356,6 +529,12 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i10.Greeting) {
       return _i10.Greeting.fromJson(data) as T;
     }
+    if (t == _i11.WeatherCurrent) {
+      return _i11.WeatherCurrent.fromJson(data) as T;
+    }
+    if (t == _i12.WeatherForecast) {
+      return _i12.WeatherForecast.fromJson(data) as T;
+    }
     if (t == _i1.getType<_i5.ApiKey?>()) {
       return (data != null ? _i5.ApiKey.fromJson(data) : null) as T;
     }
@@ -375,12 +554,24 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i10.Greeting?>()) {
       return (data != null ? _i10.Greeting.fromJson(data) : null) as T;
     }
-    if (t == List<_i11.CardRow>) {
-      return (data as List).map((e) => deserialize<_i11.CardRow>(e)).toList()
+    if (t == _i1.getType<_i11.WeatherCurrent?>()) {
+      return (data != null ? _i11.WeatherCurrent.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i12.WeatherForecast?>()) {
+      return (data != null ? _i12.WeatherForecast.fromJson(data) : null) as T;
+    }
+    if (t == List<_i13.CardRow>) {
+      return (data as List).map((e) => deserialize<_i13.CardRow>(e)).toList()
           as T;
     }
-    if (t == List<_i12.ApiKey>) {
-      return (data as List).map((e) => deserialize<_i12.ApiKey>(e)).toList()
+    if (t == List<_i14.ApiKey>) {
+      return (data as List).map((e) => deserialize<_i14.ApiKey>(e)).toList()
+          as T;
+    }
+    if (t == List<_i15.WeatherForecast>) {
+      return (data as List)
+              .map((e) => deserialize<_i15.WeatherForecast>(e))
+              .toList()
           as T;
     }
     try {
@@ -403,6 +594,8 @@ class Protocol extends _i1.SerializationManagerServer {
       _i8.CardPushRequest => 'CardPushRequest',
       _i9.CardRow => 'CardRow',
       _i10.Greeting => 'Greeting',
+      _i11.WeatherCurrent => 'WeatherCurrent',
+      _i12.WeatherForecast => 'WeatherForecast',
       _ => null,
     };
   }
@@ -429,6 +622,10 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'CardRow';
       case _i10.Greeting():
         return 'Greeting';
+      case _i11.WeatherCurrent():
+        return 'WeatherCurrent';
+      case _i12.WeatherForecast():
+        return 'WeatherForecast';
     }
     className = _i2.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -468,6 +665,12 @@ class Protocol extends _i1.SerializationManagerServer {
     }
     if (dataClassName == 'Greeting') {
       return deserialize<_i10.Greeting>(data['data']);
+    }
+    if (dataClassName == 'WeatherCurrent') {
+      return deserialize<_i11.WeatherCurrent>(data['data']);
+    }
+    if (dataClassName == 'WeatherForecast') {
+      return deserialize<_i12.WeatherForecast>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -509,6 +712,10 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i5.ApiKey.t;
       case _i9.CardRow:
         return _i9.CardRow.t;
+      case _i11.WeatherCurrent:
+        return _i11.WeatherCurrent.t;
+      case _i12.WeatherForecast:
+        return _i12.WeatherForecast.t;
     }
     return null;
   }

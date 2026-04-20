@@ -1,0 +1,30 @@
+### One row per forecast day cached from OpenWeatherMap.
+### Five rows (today+4) are replaced wholesale on each refresh.
+class: WeatherForecast
+table: weather_forecasts
+
+fields:
+  ### Location this forecast belongs to.
+  locationName: String
+
+  ### Midnight UTC for the forecast date.
+  forecastDate: DateTime
+
+  ### Low temperature in Celsius.
+  minTempC: double
+
+  ### High temperature in Celsius.
+  maxTempC: double
+
+  ### Short text description, e.g. "Light rain".
+  condition: String
+
+  ### OpenWeatherMap icon code for the representative period of the day.
+  iconCode: String
+
+  ### When this row was last fetched from the upstream API.
+  fetchedAt: DateTime
+
+indexes:
+  weather_forecasts_date_idx:
+    fields: forecastDate

@@ -23,7 +23,11 @@ import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _i8;
 import 'package:landfall_client/src/protocol/greetings/greeting.dart' as _i9;
-import 'protocol.dart' as _i10;
+import 'package:landfall_client/src/protocol/weather/weather_current.dart'
+    as _i10;
+import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+    as _i11;
+import 'protocol.dart' as _i12;
 
 /// The authenticated agent push API.
 ///
@@ -437,6 +441,37 @@ class EndpointGreeting extends _i1.EndpointRef {
       );
 }
 
+/// Serves cached weather data to the Flutter display client.
+///
+/// Data is populated by [WeatherRefreshCall] on a 10-minute schedule.
+/// Endpoints return null / empty list gracefully if no data has been
+/// cached yet (e.g., on a fresh server start before the first refresh).
+/// {@category Endpoint}
+class EndpointWeather extends _i1.EndpointRef {
+  EndpointWeather(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'weather';
+
+  /// Returns the most recently cached current conditions, or null if none.
+  _i2.Future<_i10.WeatherCurrent?> getCurrentWeather() =>
+      caller.callServerEndpoint<_i10.WeatherCurrent?>(
+        'weather',
+        'getCurrentWeather',
+        {},
+      );
+
+  /// Returns the cached 5-day forecast, oldest day first.
+  ///
+  /// Returns an empty list if no forecast data has been cached yet.
+  _i2.Future<List<_i11.WeatherForecast>> getForecast() =>
+      caller.callServerEndpoint<List<_i11.WeatherForecast>>(
+        'weather',
+        'getForecast',
+        {},
+      );
+}
+
 class Modules {
   Modules(Client client) {
     serverpod_auth_idp = _i7.Caller(client);
@@ -468,7 +503,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i10.Protocol(),
+         _i12.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -483,6 +518,7 @@ class Client extends _i1.ServerpodClientShared {
     jwtRefresh = EndpointJwtRefresh(this);
     card = EndpointCard(this);
     greeting = EndpointGreeting(this);
+    weather = EndpointWeather(this);
     modules = Modules(this);
   }
 
@@ -498,6 +534,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointGreeting greeting;
 
+  late final EndpointWeather weather;
+
   late final Modules modules;
 
   @override
@@ -508,6 +546,7 @@ class Client extends _i1.ServerpodClientShared {
     'jwtRefresh': jwtRefresh,
     'card': card,
     'greeting': greeting,
+    'weather': weather,
   };
 
   @override
