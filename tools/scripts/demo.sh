@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Landfall interactive demo launcher.
-# Starts the full stack, pushes demo cards, and launches the display.
+# Starts the full stack, generates an API key, pushes demo cards, and
+# launches the display.
 #
 # Usage:  ./tools/scripts/demo.sh
 
@@ -20,6 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SERVER_DIR="${REPO_ROOT}/server/landfall_server"
 DISPLAY_DIR="${REPO_ROOT}/apps/display"
+PASSWORDS_YAML="${SERVER_DIR}/config/passwords.yaml"
 SERVER_URL="http://localhost:8080"
 SERVER_LOG="${REPO_ROOT}/tools/scripts/.server.log"
 
@@ -55,6 +57,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+# Push a card via the unauthenticated card endpoint (Phase 0 / open API).
 push_card() {
   local source="$1"
   local title="$2"
@@ -74,6 +77,30 @@ push_card() {
     -X POST "${SERVER_URL}/card/pushCard" \
     -H "Content-Type: application/json" \
     -d "{\"request\":${inner}}" \
+    > /dev/null
+}
+
+# Push a card via the authenticated agent endpoint (requires API key).
+push_card_agent() {
+  local api_key="$1"
+  local source="$2"
+  local title="$3"
+  local body="${4:-}"
+  local layout="${5:-medium}"
+  local priority="${6:-normal}"
+
+  local request
+  request=$(printf '{"__className__":"CardPushRequest","source":"%s","title":"%s","layout":"%s","priority":"%s"' \
+    "${source}" "${title}" "${layout}" "${priority}")
+  if [[ -n "${body}" ]]; then
+    request+=,"\"body\":\"${body}\""
+  fi
+  request+="}"
+
+  curl -sf \
+    -X POST "${SERVER_URL}/agent/pushCard" \
+    -H "Content-Type: application/json" \
+    -d "{\"apiKey\":\"${api_key}\",\"request\":${request}}" \
     > /dev/null
 }
 
@@ -110,7 +137,7 @@ echo "${RESET}"
 echo "  ${DIM}The ambient display layer for the agentic era${RESET}"
 echo ""
 
-pause "Welcome to the Landfall demo. We'll start the server, launch the display, and push some live cards."
+pause "Welcome to the Landfall demo. We'll start the server, generate an API key, push some live cards, and launch the display."
 
 # Check prerequisites
 step "Checking prerequisites"
@@ -118,7 +145,19 @@ command -v docker   > /dev/null || die "Docker is not installed or not in PATH"
 command -v dart     > /dev/null || die "Dart SDK is not installed or not in PATH"
 command -v flutter  > /dev/null || die "Flutter SDK is not installed or not in PATH"
 command -v curl     > /dev/null || die "curl is not installed"
+command -v python3  > /dev/null || die "python3 is not installed"
 ok "All prerequisites found"
+
+# ── Weather config check ───────────────────────────────────────────────────
+step "Checking weather configuration"
+if grep -q "your-owm-api-key-here" "${PASSWORDS_YAML}" 2>/dev/null; then
+  warn "OpenWeatherMap API key is not configured."
+  info "The weather slot will show a placeholder tile during the demo."
+  info "To enable live weather: edit ${PASSWORDS_YAML}"
+  info "and set openWeatherMapApiKey to your key from openweathermap.org/api"
+else
+  ok "OpenWeatherMap API key is configured — weather widget will be live"
+fi
 
 # ── Step 1: Docker ─────────────────────────────────────────────────────────
 step "Starting Postgres and Redis (Docker)"
@@ -145,39 +184,89 @@ else
   die "Aborting demo"
 fi
 
-# ── Step 3: Demo cards ─────────────────────────────────────────────────────
-pause "Server is running. Now let's push a few demo cards — these simulate what AI agents will push to the display."
+# ── Step 3: API key ────────────────────────────────────────────────────────
+pause "Server is running and migrations are applied. Now let's generate an API key — this is how any agent or automation authenticates with Landfall."
 
-step "Pushing demo cards"
+step "Generating demo API key"
+KEY_RESPONSE=$(curl -sf \
+  -X POST "${SERVER_URL}/apiKey/generateKey" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"demo"}')
 
-push_card \
+DEMO_API_KEY=$(echo "${KEY_RESPONSE}" | python3 -c \
+  "import sys,json; d=json.load(sys.stdin); print(d['plainTextKey'])" 2>/dev/null) \
+  || die "Failed to parse API key response. Check ${SERVER_LOG}"
+
+ok "API key generated: ${BOLD}${DEMO_API_KEY}${RESET}"
+info "In production, agents store this key securely and include it in every push."
+info "Keys can be revoked at any time via /apiKey/revokeKey."
+
+# ── Step 4: Demo cards ─────────────────────────────────────────────────────
+pause "Key in hand. Now let's push some cards — these simulate live output from AI agents."
+
+step "Pushing demo cards via authenticated agent API"
+
+push_card_agent \
+  "${DEMO_API_KEY}" \
+  "agent.claude" \
+  "3 items before your 2 PM" \
+  "Reply to Sarah re: Q3 plan, review budget doc, confirm dinner reservation." \
+  "medium" "normal"
+ok "Card 1 — Claude pre-meeting briefing (agent API)"
+
+push_card_agent \
+  "${DEMO_API_KEY}" \
+  "agent.home" \
+  "Front door unlocked for 9 min" \
+  "No motion detected inside. Lock remotely?" \
+  "medium" "urgent"
+ok "Card 2 — Home automation alert, urgent priority (agent API)"
+
+push_card_agent \
+  "${DEMO_API_KEY}" \
   "agent.flights" \
   "Flight DEN→LAX dropped to \$287" \
-  "Round trip, departing June 14. Book before midnight." \
+  "Round trip, departing June 14. Sale ends tonight." \
   "medium" "normal"
-ok "Card 1 — flight deal alert"
+ok "Card 3 — Price alert (agent API)"
 
 push_card \
-  "agent.claude" \
-  "3 items need attention before your 2 PM meeting" \
-  "Reply to Sarah, review Q2 budget doc, and confirm dinner reservation." \
+  "agent.research" \
+  "New paper: LLM reasoning benchmarks" \
+  "Three Stanford papers dropped overnight matching your saved topics." \
   "medium" "normal"
-ok "Card 2 — pre-meeting briefing"
+ok "Card 4 — Research digest (open endpoint)"
 
-push_card \
-  "agent.home" \
-  "Front door left unlocked" \
-  "Detected 8 minutes ago. Tap to lock remotely." \
-  "medium" "normal"
-ok "Card 3 — smart home alert"
+info "Cards arrive on the display within seconds of the 30-second refresh cycle."
 
-info "Cards will appear on the display within a few seconds of launch."
+# ── Step 5: MCP info ───────────────────────────────────────────────────────
+pause "Cards are queued. One more thing — Landfall ships with an MCP server so AI agents with tool-use support (Claude Desktop, Cursor) can push cards directly."
 
-# ── Step 4: Display ────────────────────────────────────────────────────────
-pause "Cards are queued. Let's launch the display."
+step "MCP server (landfall_mcp)"
+echo ""
+echo "  ${BOLD}Build the binary:${RESET}"
+echo "  ${DIM}dart compile exe server/landfall_mcp/bin/landfall_mcp.dart -o /usr/local/bin/landfall_mcp${RESET}"
+echo ""
+echo "  ${BOLD}Add to Claude Desktop${RESET} (~/.config/claude/claude_desktop_config.json):"
+echo "  ${DIM}{${RESET}"
+echo "  ${DIM}  \"mcpServers\": {${RESET}"
+echo "  ${DIM}    \"landfall\": {${RESET}"
+echo "  ${DIM}      \"command\": \"/usr/local/bin/landfall_mcp\",${RESET}"
+echo "  ${DIM}      \"env\": {${RESET}"
+echo "  ${DIM}        \"LANDFALL_URL\": \"${SERVER_URL}\",${RESET}"
+echo "  ${DIM}        \"LANDFALL_API_KEY\": \"${DEMO_API_KEY}\"${RESET}"
+echo "  ${DIM}      }${RESET}"
+echo "  ${DIM}    }${RESET}"
+echo "  ${DIM}  }${RESET}"
+echo "  ${DIM}}${RESET}"
+echo ""
+info "Once connected, Claude can call push_card, list_cards, and dismiss_card as native tools."
+
+# ── Step 6: Display ────────────────────────────────────────────────────────
+pause "Let's launch the display. The clock and weather widget will load automatically. Agent cards appear in the right-side feed."
 
 step "Launching Landfall display (macOS)"
-info "The app will open in a new window. Press Cmd+Q to quit when you're done."
+info "The app will open in a new window. Press Cmd+Q to quit when done."
 echo ""
 
 (cd "${DISPLAY_DIR}" && flutter run -d macos lib/main.dart)
