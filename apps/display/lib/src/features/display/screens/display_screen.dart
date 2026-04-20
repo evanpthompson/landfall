@@ -12,6 +12,10 @@ import 'package:display/src/features/clock/cubit/clock_state.dart';
 import 'package:display/src/features/clock/widgets/clock_card.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_state.dart';
+import 'package:display/src/features/weather/cubit/weather_cubit.dart';
+import 'package:display/src/features/weather/cubit/weather_state.dart';
+import 'package:display/src/features/weather/widgets/current_weather_card.dart';
+import 'package:display/src/features/weather/widgets/forecast_strip_card.dart';
 
 /// The primary display surface — renders all active widgets on a grid and
 /// shows agent-pushed cards in a live feed panel.
@@ -20,7 +24,9 @@ import 'package:display/src/features/layout/cubit/dashboard_layout_state.dart';
 ///   - [DashboardLayoutCubit.loadLayout] — loads the grid configuration
 ///   - [ClockCubit.startTicking] — starts the 1-second clock stream
 ///   - [CardCubit.fetchCards] — fetches the initial agent card set
-///   - A 30-second refresh timer keeps agent cards current
+///   - [WeatherCubit.loadWeather] — fetches initial weather data
+///   - A 30-second timer refreshes agent cards
+///   - A 10-minute timer refreshes weather data
 class DisplayScreen extends StatefulWidget {
   const DisplayScreen({super.key});
 
@@ -29,7 +35,8 @@ class DisplayScreen extends StatefulWidget {
 }
 
 class _DisplayScreenState extends State<DisplayScreen> {
-  Timer? _refreshTimer;
+  Timer? _cardRefreshTimer;
+  Timer? _weatherRefreshTimer;
 
   @override
   void initState() {
@@ -37,18 +44,27 @@ class _DisplayScreenState extends State<DisplayScreen> {
     context.read<DashboardLayoutCubit>().loadLayout();
     context.read<ClockCubit>().startTicking();
     context.read<CardCubit>().fetchCards();
+    context.read<WeatherCubit>().loadWeather();
 
-    _refreshTimer = Timer.periodic(
+    _cardRefreshTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) {
         if (mounted) context.read<CardCubit>().fetchCards();
+      },
+    );
+
+    _weatherRefreshTimer = Timer.periodic(
+      const Duration(minutes: 10),
+      (_) {
+        if (mounted) context.read<WeatherCubit>().loadWeather();
       },
     );
   }
 
   @override
   void dispose() {
-    _refreshTimer?.cancel();
+    _cardRefreshTimer?.cancel();
+    _weatherRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -170,6 +186,20 @@ class _GridView extends StatelessWidget {
           builder: (_, state) => switch (state) {
             ClockTicking(:final entity) => ClockCard(entity: entity),
             _ => const _PlaceholderTile(source: 'system.clock'),
+          },
+        ),
+      'system.weather' => BlocBuilder<WeatherCubit, WeatherState>(
+          builder: (_, state) => switch (state) {
+            WeatherLoaded(:final current) =>
+              CurrentWeatherCard(entity: current),
+            _ => const _PlaceholderTile(source: 'system.weather'),
+          },
+        ),
+      'system.weather.forecast' => BlocBuilder<WeatherCubit, WeatherState>(
+          builder: (_, state) => switch (state) {
+            WeatherLoaded(:final forecast) =>
+              ForecastStripCard(forecast: forecast),
+            _ => const _PlaceholderTile(source: 'system.weather.forecast'),
           },
         ),
       _ => _PlaceholderTile(source: config.source),

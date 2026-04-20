@@ -7,11 +7,13 @@ import 'package:display/src/data/cards/serverpod_card_repository.dart';
 import 'package:display/src/data/clock/system_clock_repository.dart';
 import 'package:display/src/data/local/app_database.dart';
 import 'package:display/src/data/local/repositories/drift_dashboard_layout_repository.dart';
+import 'package:display/src/data/weather/serverpod_weather_repository.dart';
 import 'package:display/src/domain/use_cases/get_current_time_use_case.dart';
 import 'package:display/src/features/cards/cubit/card_cubit.dart';
 import 'package:display/src/features/clock/cubit/clock_cubit.dart';
 import 'package:display/src/features/display/screens/display_screen.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
+import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 /// Root application widget.
@@ -38,6 +40,7 @@ class LandfallApp extends StatelessWidget {
     final client = Client(serverUrl);
     final layoutRepository = DriftDashboardLayoutRepository(database);
     final cardRepository = ServerpodCardRepository(client);
+    final weatherRepository = ServerpodWeatherRepository(client, database);
     final clockRepository = const SystemClockRepository();
     final getCurrentTime = GetCurrentTimeUseCase(clockRepository);
 
@@ -48,6 +51,9 @@ class LandfallApp extends StatelessWidget {
         ),
         RepositoryProvider<CardRepository>(
           create: (_) => cardRepository,
+        ),
+        RepositoryProvider<WeatherRepository>(
+          create: (_) => weatherRepository,
         ),
       ],
       child: MultiBlocProvider(
@@ -62,6 +68,9 @@ class LandfallApp extends StatelessWidget {
           ),
           BlocProvider(
             create: (ctx) => CardCubit(ctx.read<CardRepository>()),
+          ),
+          BlocProvider(
+            create: (ctx) => WeatherCubit(ctx.read<WeatherRepository>()),
           ),
         ],
         child: MaterialApp(

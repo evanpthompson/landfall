@@ -404,15 +404,1065 @@ class LayoutEntriesCompanion extends UpdateCompanion<LayoutEntry> {
   }
 }
 
+class $WeatherCurrentCacheEntriesTable extends WeatherCurrentCacheEntries
+    with TableInfo<$WeatherCurrentCacheEntriesTable, WeatherCurrentCacheEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WeatherCurrentCacheEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _locationNameMeta = const VerificationMeta(
+    'locationName',
+  );
+  @override
+  late final GeneratedColumn<String> locationName = GeneratedColumn<String>(
+    'location_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tempCMeta = const VerificationMeta('tempC');
+  @override
+  late final GeneratedColumn<double> tempC = GeneratedColumn<double>(
+    'temp_c',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _feelsLikeCMeta = const VerificationMeta(
+    'feelsLikeC',
+  );
+  @override
+  late final GeneratedColumn<double> feelsLikeC = GeneratedColumn<double>(
+    'feels_like_c',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _conditionMeta = const VerificationMeta(
+    'condition',
+  );
+  @override
+  late final GeneratedColumn<String> condition = GeneratedColumn<String>(
+    'condition',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _iconCodeMeta = const VerificationMeta(
+    'iconCode',
+  );
+  @override
+  late final GeneratedColumn<String> iconCode = GeneratedColumn<String>(
+    'icon_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _humidityMeta = const VerificationMeta(
+    'humidity',
+  );
+  @override
+  late final GeneratedColumn<int> humidity = GeneratedColumn<int>(
+    'humidity',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _windSpeedMsMeta = const VerificationMeta(
+    'windSpeedMs',
+  );
+  @override
+  late final GeneratedColumn<double> windSpeedMs = GeneratedColumn<double>(
+    'wind_speed_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    locationName,
+    tempC,
+    feelsLikeC,
+    condition,
+    iconCode,
+    humidity,
+    windSpeedMs,
+    fetchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'weather_current_cache_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WeatherCurrentCacheEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('location_name')) {
+      context.handle(
+        _locationNameMeta,
+        locationName.isAcceptableOrUnknown(
+          data['location_name']!,
+          _locationNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_locationNameMeta);
+    }
+    if (data.containsKey('temp_c')) {
+      context.handle(
+        _tempCMeta,
+        tempC.isAcceptableOrUnknown(data['temp_c']!, _tempCMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tempCMeta);
+    }
+    if (data.containsKey('feels_like_c')) {
+      context.handle(
+        _feelsLikeCMeta,
+        feelsLikeC.isAcceptableOrUnknown(
+          data['feels_like_c']!,
+          _feelsLikeCMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_feelsLikeCMeta);
+    }
+    if (data.containsKey('condition')) {
+      context.handle(
+        _conditionMeta,
+        condition.isAcceptableOrUnknown(data['condition']!, _conditionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_conditionMeta);
+    }
+    if (data.containsKey('icon_code')) {
+      context.handle(
+        _iconCodeMeta,
+        iconCode.isAcceptableOrUnknown(data['icon_code']!, _iconCodeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_iconCodeMeta);
+    }
+    if (data.containsKey('humidity')) {
+      context.handle(
+        _humidityMeta,
+        humidity.isAcceptableOrUnknown(data['humidity']!, _humidityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_humidityMeta);
+    }
+    if (data.containsKey('wind_speed_ms')) {
+      context.handle(
+        _windSpeedMsMeta,
+        windSpeedMs.isAcceptableOrUnknown(
+          data['wind_speed_ms']!,
+          _windSpeedMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_windSpeedMsMeta);
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WeatherCurrentCacheEntry map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WeatherCurrentCacheEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      locationName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}location_name'],
+      )!,
+      tempC: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}temp_c'],
+      )!,
+      feelsLikeC: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}feels_like_c'],
+      )!,
+      condition: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}condition'],
+      )!,
+      iconCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon_code'],
+      )!,
+      humidity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}humidity'],
+      )!,
+      windSpeedMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}wind_speed_ms'],
+      )!,
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+    );
+  }
+
+  @override
+  $WeatherCurrentCacheEntriesTable createAlias(String alias) {
+    return $WeatherCurrentCacheEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class WeatherCurrentCacheEntry extends DataClass
+    implements Insertable<WeatherCurrentCacheEntry> {
+  final int id;
+  final String locationName;
+  final double tempC;
+  final double feelsLikeC;
+  final String condition;
+  final String iconCode;
+  final int humidity;
+  final double windSpeedMs;
+  final DateTime fetchedAt;
+  const WeatherCurrentCacheEntry({
+    required this.id,
+    required this.locationName,
+    required this.tempC,
+    required this.feelsLikeC,
+    required this.condition,
+    required this.iconCode,
+    required this.humidity,
+    required this.windSpeedMs,
+    required this.fetchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['location_name'] = Variable<String>(locationName);
+    map['temp_c'] = Variable<double>(tempC);
+    map['feels_like_c'] = Variable<double>(feelsLikeC);
+    map['condition'] = Variable<String>(condition);
+    map['icon_code'] = Variable<String>(iconCode);
+    map['humidity'] = Variable<int>(humidity);
+    map['wind_speed_ms'] = Variable<double>(windSpeedMs);
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    return map;
+  }
+
+  WeatherCurrentCacheEntriesCompanion toCompanion(bool nullToAbsent) {
+    return WeatherCurrentCacheEntriesCompanion(
+      id: Value(id),
+      locationName: Value(locationName),
+      tempC: Value(tempC),
+      feelsLikeC: Value(feelsLikeC),
+      condition: Value(condition),
+      iconCode: Value(iconCode),
+      humidity: Value(humidity),
+      windSpeedMs: Value(windSpeedMs),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory WeatherCurrentCacheEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WeatherCurrentCacheEntry(
+      id: serializer.fromJson<int>(json['id']),
+      locationName: serializer.fromJson<String>(json['locationName']),
+      tempC: serializer.fromJson<double>(json['tempC']),
+      feelsLikeC: serializer.fromJson<double>(json['feelsLikeC']),
+      condition: serializer.fromJson<String>(json['condition']),
+      iconCode: serializer.fromJson<String>(json['iconCode']),
+      humidity: serializer.fromJson<int>(json['humidity']),
+      windSpeedMs: serializer.fromJson<double>(json['windSpeedMs']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'locationName': serializer.toJson<String>(locationName),
+      'tempC': serializer.toJson<double>(tempC),
+      'feelsLikeC': serializer.toJson<double>(feelsLikeC),
+      'condition': serializer.toJson<String>(condition),
+      'iconCode': serializer.toJson<String>(iconCode),
+      'humidity': serializer.toJson<int>(humidity),
+      'windSpeedMs': serializer.toJson<double>(windSpeedMs),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+    };
+  }
+
+  WeatherCurrentCacheEntry copyWith({
+    int? id,
+    String? locationName,
+    double? tempC,
+    double? feelsLikeC,
+    String? condition,
+    String? iconCode,
+    int? humidity,
+    double? windSpeedMs,
+    DateTime? fetchedAt,
+  }) => WeatherCurrentCacheEntry(
+    id: id ?? this.id,
+    locationName: locationName ?? this.locationName,
+    tempC: tempC ?? this.tempC,
+    feelsLikeC: feelsLikeC ?? this.feelsLikeC,
+    condition: condition ?? this.condition,
+    iconCode: iconCode ?? this.iconCode,
+    humidity: humidity ?? this.humidity,
+    windSpeedMs: windSpeedMs ?? this.windSpeedMs,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
+  WeatherCurrentCacheEntry copyWithCompanion(
+    WeatherCurrentCacheEntriesCompanion data,
+  ) {
+    return WeatherCurrentCacheEntry(
+      id: data.id.present ? data.id.value : this.id,
+      locationName: data.locationName.present
+          ? data.locationName.value
+          : this.locationName,
+      tempC: data.tempC.present ? data.tempC.value : this.tempC,
+      feelsLikeC: data.feelsLikeC.present
+          ? data.feelsLikeC.value
+          : this.feelsLikeC,
+      condition: data.condition.present ? data.condition.value : this.condition,
+      iconCode: data.iconCode.present ? data.iconCode.value : this.iconCode,
+      humidity: data.humidity.present ? data.humidity.value : this.humidity,
+      windSpeedMs: data.windSpeedMs.present
+          ? data.windSpeedMs.value
+          : this.windSpeedMs,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeatherCurrentCacheEntry(')
+          ..write('id: $id, ')
+          ..write('locationName: $locationName, ')
+          ..write('tempC: $tempC, ')
+          ..write('feelsLikeC: $feelsLikeC, ')
+          ..write('condition: $condition, ')
+          ..write('iconCode: $iconCode, ')
+          ..write('humidity: $humidity, ')
+          ..write('windSpeedMs: $windSpeedMs, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    locationName,
+    tempC,
+    feelsLikeC,
+    condition,
+    iconCode,
+    humidity,
+    windSpeedMs,
+    fetchedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WeatherCurrentCacheEntry &&
+          other.id == this.id &&
+          other.locationName == this.locationName &&
+          other.tempC == this.tempC &&
+          other.feelsLikeC == this.feelsLikeC &&
+          other.condition == this.condition &&
+          other.iconCode == this.iconCode &&
+          other.humidity == this.humidity &&
+          other.windSpeedMs == this.windSpeedMs &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class WeatherCurrentCacheEntriesCompanion
+    extends UpdateCompanion<WeatherCurrentCacheEntry> {
+  final Value<int> id;
+  final Value<String> locationName;
+  final Value<double> tempC;
+  final Value<double> feelsLikeC;
+  final Value<String> condition;
+  final Value<String> iconCode;
+  final Value<int> humidity;
+  final Value<double> windSpeedMs;
+  final Value<DateTime> fetchedAt;
+  const WeatherCurrentCacheEntriesCompanion({
+    this.id = const Value.absent(),
+    this.locationName = const Value.absent(),
+    this.tempC = const Value.absent(),
+    this.feelsLikeC = const Value.absent(),
+    this.condition = const Value.absent(),
+    this.iconCode = const Value.absent(),
+    this.humidity = const Value.absent(),
+    this.windSpeedMs = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+  });
+  WeatherCurrentCacheEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    required String locationName,
+    required double tempC,
+    required double feelsLikeC,
+    required String condition,
+    required String iconCode,
+    required int humidity,
+    required double windSpeedMs,
+    required DateTime fetchedAt,
+  }) : locationName = Value(locationName),
+       tempC = Value(tempC),
+       feelsLikeC = Value(feelsLikeC),
+       condition = Value(condition),
+       iconCode = Value(iconCode),
+       humidity = Value(humidity),
+       windSpeedMs = Value(windSpeedMs),
+       fetchedAt = Value(fetchedAt);
+  static Insertable<WeatherCurrentCacheEntry> custom({
+    Expression<int>? id,
+    Expression<String>? locationName,
+    Expression<double>? tempC,
+    Expression<double>? feelsLikeC,
+    Expression<String>? condition,
+    Expression<String>? iconCode,
+    Expression<int>? humidity,
+    Expression<double>? windSpeedMs,
+    Expression<DateTime>? fetchedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (locationName != null) 'location_name': locationName,
+      if (tempC != null) 'temp_c': tempC,
+      if (feelsLikeC != null) 'feels_like_c': feelsLikeC,
+      if (condition != null) 'condition': condition,
+      if (iconCode != null) 'icon_code': iconCode,
+      if (humidity != null) 'humidity': humidity,
+      if (windSpeedMs != null) 'wind_speed_ms': windSpeedMs,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+    });
+  }
+
+  WeatherCurrentCacheEntriesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? locationName,
+    Value<double>? tempC,
+    Value<double>? feelsLikeC,
+    Value<String>? condition,
+    Value<String>? iconCode,
+    Value<int>? humidity,
+    Value<double>? windSpeedMs,
+    Value<DateTime>? fetchedAt,
+  }) {
+    return WeatherCurrentCacheEntriesCompanion(
+      id: id ?? this.id,
+      locationName: locationName ?? this.locationName,
+      tempC: tempC ?? this.tempC,
+      feelsLikeC: feelsLikeC ?? this.feelsLikeC,
+      condition: condition ?? this.condition,
+      iconCode: iconCode ?? this.iconCode,
+      humidity: humidity ?? this.humidity,
+      windSpeedMs: windSpeedMs ?? this.windSpeedMs,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (locationName.present) {
+      map['location_name'] = Variable<String>(locationName.value);
+    }
+    if (tempC.present) {
+      map['temp_c'] = Variable<double>(tempC.value);
+    }
+    if (feelsLikeC.present) {
+      map['feels_like_c'] = Variable<double>(feelsLikeC.value);
+    }
+    if (condition.present) {
+      map['condition'] = Variable<String>(condition.value);
+    }
+    if (iconCode.present) {
+      map['icon_code'] = Variable<String>(iconCode.value);
+    }
+    if (humidity.present) {
+      map['humidity'] = Variable<int>(humidity.value);
+    }
+    if (windSpeedMs.present) {
+      map['wind_speed_ms'] = Variable<double>(windSpeedMs.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeatherCurrentCacheEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('locationName: $locationName, ')
+          ..write('tempC: $tempC, ')
+          ..write('feelsLikeC: $feelsLikeC, ')
+          ..write('condition: $condition, ')
+          ..write('iconCode: $iconCode, ')
+          ..write('humidity: $humidity, ')
+          ..write('windSpeedMs: $windSpeedMs, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WeatherForecastDayCacheEntriesTable
+    extends WeatherForecastDayCacheEntries
+    with
+        TableInfo<
+          $WeatherForecastDayCacheEntriesTable,
+          WeatherForecastDayCacheEntry
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WeatherForecastDayCacheEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _locationNameMeta = const VerificationMeta(
+    'locationName',
+  );
+  @override
+  late final GeneratedColumn<String> locationName = GeneratedColumn<String>(
+    'location_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _forecastDateMeta = const VerificationMeta(
+    'forecastDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> forecastDate = GeneratedColumn<DateTime>(
+    'forecast_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _minTempCMeta = const VerificationMeta(
+    'minTempC',
+  );
+  @override
+  late final GeneratedColumn<double> minTempC = GeneratedColumn<double>(
+    'min_temp_c',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _maxTempCMeta = const VerificationMeta(
+    'maxTempC',
+  );
+  @override
+  late final GeneratedColumn<double> maxTempC = GeneratedColumn<double>(
+    'max_temp_c',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _conditionMeta = const VerificationMeta(
+    'condition',
+  );
+  @override
+  late final GeneratedColumn<String> condition = GeneratedColumn<String>(
+    'condition',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _iconCodeMeta = const VerificationMeta(
+    'iconCode',
+  );
+  @override
+  late final GeneratedColumn<String> iconCode = GeneratedColumn<String>(
+    'icon_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    locationName,
+    forecastDate,
+    minTempC,
+    maxTempC,
+    condition,
+    iconCode,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'weather_forecast_day_cache_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WeatherForecastDayCacheEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('location_name')) {
+      context.handle(
+        _locationNameMeta,
+        locationName.isAcceptableOrUnknown(
+          data['location_name']!,
+          _locationNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_locationNameMeta);
+    }
+    if (data.containsKey('forecast_date')) {
+      context.handle(
+        _forecastDateMeta,
+        forecastDate.isAcceptableOrUnknown(
+          data['forecast_date']!,
+          _forecastDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_forecastDateMeta);
+    }
+    if (data.containsKey('min_temp_c')) {
+      context.handle(
+        _minTempCMeta,
+        minTempC.isAcceptableOrUnknown(data['min_temp_c']!, _minTempCMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_minTempCMeta);
+    }
+    if (data.containsKey('max_temp_c')) {
+      context.handle(
+        _maxTempCMeta,
+        maxTempC.isAcceptableOrUnknown(data['max_temp_c']!, _maxTempCMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_maxTempCMeta);
+    }
+    if (data.containsKey('condition')) {
+      context.handle(
+        _conditionMeta,
+        condition.isAcceptableOrUnknown(data['condition']!, _conditionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_conditionMeta);
+    }
+    if (data.containsKey('icon_code')) {
+      context.handle(
+        _iconCodeMeta,
+        iconCode.isAcceptableOrUnknown(data['icon_code']!, _iconCodeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_iconCodeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WeatherForecastDayCacheEntry map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WeatherForecastDayCacheEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      locationName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}location_name'],
+      )!,
+      forecastDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}forecast_date'],
+      )!,
+      minTempC: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}min_temp_c'],
+      )!,
+      maxTempC: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}max_temp_c'],
+      )!,
+      condition: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}condition'],
+      )!,
+      iconCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon_code'],
+      )!,
+    );
+  }
+
+  @override
+  $WeatherForecastDayCacheEntriesTable createAlias(String alias) {
+    return $WeatherForecastDayCacheEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class WeatherForecastDayCacheEntry extends DataClass
+    implements Insertable<WeatherForecastDayCacheEntry> {
+  final int id;
+  final String locationName;
+  final DateTime forecastDate;
+  final double minTempC;
+  final double maxTempC;
+  final String condition;
+  final String iconCode;
+  const WeatherForecastDayCacheEntry({
+    required this.id,
+    required this.locationName,
+    required this.forecastDate,
+    required this.minTempC,
+    required this.maxTempC,
+    required this.condition,
+    required this.iconCode,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['location_name'] = Variable<String>(locationName);
+    map['forecast_date'] = Variable<DateTime>(forecastDate);
+    map['min_temp_c'] = Variable<double>(minTempC);
+    map['max_temp_c'] = Variable<double>(maxTempC);
+    map['condition'] = Variable<String>(condition);
+    map['icon_code'] = Variable<String>(iconCode);
+    return map;
+  }
+
+  WeatherForecastDayCacheEntriesCompanion toCompanion(bool nullToAbsent) {
+    return WeatherForecastDayCacheEntriesCompanion(
+      id: Value(id),
+      locationName: Value(locationName),
+      forecastDate: Value(forecastDate),
+      minTempC: Value(minTempC),
+      maxTempC: Value(maxTempC),
+      condition: Value(condition),
+      iconCode: Value(iconCode),
+    );
+  }
+
+  factory WeatherForecastDayCacheEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WeatherForecastDayCacheEntry(
+      id: serializer.fromJson<int>(json['id']),
+      locationName: serializer.fromJson<String>(json['locationName']),
+      forecastDate: serializer.fromJson<DateTime>(json['forecastDate']),
+      minTempC: serializer.fromJson<double>(json['minTempC']),
+      maxTempC: serializer.fromJson<double>(json['maxTempC']),
+      condition: serializer.fromJson<String>(json['condition']),
+      iconCode: serializer.fromJson<String>(json['iconCode']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'locationName': serializer.toJson<String>(locationName),
+      'forecastDate': serializer.toJson<DateTime>(forecastDate),
+      'minTempC': serializer.toJson<double>(minTempC),
+      'maxTempC': serializer.toJson<double>(maxTempC),
+      'condition': serializer.toJson<String>(condition),
+      'iconCode': serializer.toJson<String>(iconCode),
+    };
+  }
+
+  WeatherForecastDayCacheEntry copyWith({
+    int? id,
+    String? locationName,
+    DateTime? forecastDate,
+    double? minTempC,
+    double? maxTempC,
+    String? condition,
+    String? iconCode,
+  }) => WeatherForecastDayCacheEntry(
+    id: id ?? this.id,
+    locationName: locationName ?? this.locationName,
+    forecastDate: forecastDate ?? this.forecastDate,
+    minTempC: minTempC ?? this.minTempC,
+    maxTempC: maxTempC ?? this.maxTempC,
+    condition: condition ?? this.condition,
+    iconCode: iconCode ?? this.iconCode,
+  );
+  WeatherForecastDayCacheEntry copyWithCompanion(
+    WeatherForecastDayCacheEntriesCompanion data,
+  ) {
+    return WeatherForecastDayCacheEntry(
+      id: data.id.present ? data.id.value : this.id,
+      locationName: data.locationName.present
+          ? data.locationName.value
+          : this.locationName,
+      forecastDate: data.forecastDate.present
+          ? data.forecastDate.value
+          : this.forecastDate,
+      minTempC: data.minTempC.present ? data.minTempC.value : this.minTempC,
+      maxTempC: data.maxTempC.present ? data.maxTempC.value : this.maxTempC,
+      condition: data.condition.present ? data.condition.value : this.condition,
+      iconCode: data.iconCode.present ? data.iconCode.value : this.iconCode,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeatherForecastDayCacheEntry(')
+          ..write('id: $id, ')
+          ..write('locationName: $locationName, ')
+          ..write('forecastDate: $forecastDate, ')
+          ..write('minTempC: $minTempC, ')
+          ..write('maxTempC: $maxTempC, ')
+          ..write('condition: $condition, ')
+          ..write('iconCode: $iconCode')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    locationName,
+    forecastDate,
+    minTempC,
+    maxTempC,
+    condition,
+    iconCode,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WeatherForecastDayCacheEntry &&
+          other.id == this.id &&
+          other.locationName == this.locationName &&
+          other.forecastDate == this.forecastDate &&
+          other.minTempC == this.minTempC &&
+          other.maxTempC == this.maxTempC &&
+          other.condition == this.condition &&
+          other.iconCode == this.iconCode);
+}
+
+class WeatherForecastDayCacheEntriesCompanion
+    extends UpdateCompanion<WeatherForecastDayCacheEntry> {
+  final Value<int> id;
+  final Value<String> locationName;
+  final Value<DateTime> forecastDate;
+  final Value<double> minTempC;
+  final Value<double> maxTempC;
+  final Value<String> condition;
+  final Value<String> iconCode;
+  const WeatherForecastDayCacheEntriesCompanion({
+    this.id = const Value.absent(),
+    this.locationName = const Value.absent(),
+    this.forecastDate = const Value.absent(),
+    this.minTempC = const Value.absent(),
+    this.maxTempC = const Value.absent(),
+    this.condition = const Value.absent(),
+    this.iconCode = const Value.absent(),
+  });
+  WeatherForecastDayCacheEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    required String locationName,
+    required DateTime forecastDate,
+    required double minTempC,
+    required double maxTempC,
+    required String condition,
+    required String iconCode,
+  }) : locationName = Value(locationName),
+       forecastDate = Value(forecastDate),
+       minTempC = Value(minTempC),
+       maxTempC = Value(maxTempC),
+       condition = Value(condition),
+       iconCode = Value(iconCode);
+  static Insertable<WeatherForecastDayCacheEntry> custom({
+    Expression<int>? id,
+    Expression<String>? locationName,
+    Expression<DateTime>? forecastDate,
+    Expression<double>? minTempC,
+    Expression<double>? maxTempC,
+    Expression<String>? condition,
+    Expression<String>? iconCode,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (locationName != null) 'location_name': locationName,
+      if (forecastDate != null) 'forecast_date': forecastDate,
+      if (minTempC != null) 'min_temp_c': minTempC,
+      if (maxTempC != null) 'max_temp_c': maxTempC,
+      if (condition != null) 'condition': condition,
+      if (iconCode != null) 'icon_code': iconCode,
+    });
+  }
+
+  WeatherForecastDayCacheEntriesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? locationName,
+    Value<DateTime>? forecastDate,
+    Value<double>? minTempC,
+    Value<double>? maxTempC,
+    Value<String>? condition,
+    Value<String>? iconCode,
+  }) {
+    return WeatherForecastDayCacheEntriesCompanion(
+      id: id ?? this.id,
+      locationName: locationName ?? this.locationName,
+      forecastDate: forecastDate ?? this.forecastDate,
+      minTempC: minTempC ?? this.minTempC,
+      maxTempC: maxTempC ?? this.maxTempC,
+      condition: condition ?? this.condition,
+      iconCode: iconCode ?? this.iconCode,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (locationName.present) {
+      map['location_name'] = Variable<String>(locationName.value);
+    }
+    if (forecastDate.present) {
+      map['forecast_date'] = Variable<DateTime>(forecastDate.value);
+    }
+    if (minTempC.present) {
+      map['min_temp_c'] = Variable<double>(minTempC.value);
+    }
+    if (maxTempC.present) {
+      map['max_temp_c'] = Variable<double>(maxTempC.value);
+    }
+    if (condition.present) {
+      map['condition'] = Variable<String>(condition.value);
+    }
+    if (iconCode.present) {
+      map['icon_code'] = Variable<String>(iconCode.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeatherForecastDayCacheEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('locationName: $locationName, ')
+          ..write('forecastDate: $forecastDate, ')
+          ..write('minTempC: $minTempC, ')
+          ..write('maxTempC: $maxTempC, ')
+          ..write('condition: $condition, ')
+          ..write('iconCode: $iconCode')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $LayoutEntriesTable layoutEntries = $LayoutEntriesTable(this);
+  late final $WeatherCurrentCacheEntriesTable weatherCurrentCacheEntries =
+      $WeatherCurrentCacheEntriesTable(this);
+  late final $WeatherForecastDayCacheEntriesTable
+  weatherForecastDayCacheEntries = $WeatherForecastDayCacheEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [layoutEntries];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    layoutEntries,
+    weatherCurrentCacheEntries,
+    weatherForecastDayCacheEntries,
+  ];
 }
 
 typedef $$LayoutEntriesTableCreateCompanionBuilder =
@@ -630,10 +1680,572 @@ typedef $$LayoutEntriesTableProcessedTableManager =
       LayoutEntry,
       PrefetchHooks Function()
     >;
+typedef $$WeatherCurrentCacheEntriesTableCreateCompanionBuilder =
+    WeatherCurrentCacheEntriesCompanion Function({
+      Value<int> id,
+      required String locationName,
+      required double tempC,
+      required double feelsLikeC,
+      required String condition,
+      required String iconCode,
+      required int humidity,
+      required double windSpeedMs,
+      required DateTime fetchedAt,
+    });
+typedef $$WeatherCurrentCacheEntriesTableUpdateCompanionBuilder =
+    WeatherCurrentCacheEntriesCompanion Function({
+      Value<int> id,
+      Value<String> locationName,
+      Value<double> tempC,
+      Value<double> feelsLikeC,
+      Value<String> condition,
+      Value<String> iconCode,
+      Value<int> humidity,
+      Value<double> windSpeedMs,
+      Value<DateTime> fetchedAt,
+    });
+
+class $$WeatherCurrentCacheEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $WeatherCurrentCacheEntriesTable> {
+  $$WeatherCurrentCacheEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get locationName => $composableBuilder(
+    column: $table.locationName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get tempC => $composableBuilder(
+    column: $table.tempC,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get feelsLikeC => $composableBuilder(
+    column: $table.feelsLikeC,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get condition => $composableBuilder(
+    column: $table.condition,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get iconCode => $composableBuilder(
+    column: $table.iconCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get humidity => $composableBuilder(
+    column: $table.humidity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get windSpeedMs => $composableBuilder(
+    column: $table.windSpeedMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WeatherCurrentCacheEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $WeatherCurrentCacheEntriesTable> {
+  $$WeatherCurrentCacheEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get locationName => $composableBuilder(
+    column: $table.locationName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get tempC => $composableBuilder(
+    column: $table.tempC,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get feelsLikeC => $composableBuilder(
+    column: $table.feelsLikeC,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get condition => $composableBuilder(
+    column: $table.condition,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get iconCode => $composableBuilder(
+    column: $table.iconCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get humidity => $composableBuilder(
+    column: $table.humidity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get windSpeedMs => $composableBuilder(
+    column: $table.windSpeedMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WeatherCurrentCacheEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WeatherCurrentCacheEntriesTable> {
+  $$WeatherCurrentCacheEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get locationName => $composableBuilder(
+    column: $table.locationName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get tempC =>
+      $composableBuilder(column: $table.tempC, builder: (column) => column);
+
+  GeneratedColumn<double> get feelsLikeC => $composableBuilder(
+    column: $table.feelsLikeC,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get condition =>
+      $composableBuilder(column: $table.condition, builder: (column) => column);
+
+  GeneratedColumn<String> get iconCode =>
+      $composableBuilder(column: $table.iconCode, builder: (column) => column);
+
+  GeneratedColumn<int> get humidity =>
+      $composableBuilder(column: $table.humidity, builder: (column) => column);
+
+  GeneratedColumn<double> get windSpeedMs => $composableBuilder(
+    column: $table.windSpeedMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $$WeatherCurrentCacheEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WeatherCurrentCacheEntriesTable,
+          WeatherCurrentCacheEntry,
+          $$WeatherCurrentCacheEntriesTableFilterComposer,
+          $$WeatherCurrentCacheEntriesTableOrderingComposer,
+          $$WeatherCurrentCacheEntriesTableAnnotationComposer,
+          $$WeatherCurrentCacheEntriesTableCreateCompanionBuilder,
+          $$WeatherCurrentCacheEntriesTableUpdateCompanionBuilder,
+          (
+            WeatherCurrentCacheEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $WeatherCurrentCacheEntriesTable,
+              WeatherCurrentCacheEntry
+            >,
+          ),
+          WeatherCurrentCacheEntry,
+          PrefetchHooks Function()
+        > {
+  $$WeatherCurrentCacheEntriesTableTableManager(
+    _$AppDatabase db,
+    $WeatherCurrentCacheEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WeatherCurrentCacheEntriesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WeatherCurrentCacheEntriesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WeatherCurrentCacheEntriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> locationName = const Value.absent(),
+                Value<double> tempC = const Value.absent(),
+                Value<double> feelsLikeC = const Value.absent(),
+                Value<String> condition = const Value.absent(),
+                Value<String> iconCode = const Value.absent(),
+                Value<int> humidity = const Value.absent(),
+                Value<double> windSpeedMs = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+              }) => WeatherCurrentCacheEntriesCompanion(
+                id: id,
+                locationName: locationName,
+                tempC: tempC,
+                feelsLikeC: feelsLikeC,
+                condition: condition,
+                iconCode: iconCode,
+                humidity: humidity,
+                windSpeedMs: windSpeedMs,
+                fetchedAt: fetchedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String locationName,
+                required double tempC,
+                required double feelsLikeC,
+                required String condition,
+                required String iconCode,
+                required int humidity,
+                required double windSpeedMs,
+                required DateTime fetchedAt,
+              }) => WeatherCurrentCacheEntriesCompanion.insert(
+                id: id,
+                locationName: locationName,
+                tempC: tempC,
+                feelsLikeC: feelsLikeC,
+                condition: condition,
+                iconCode: iconCode,
+                humidity: humidity,
+                windSpeedMs: windSpeedMs,
+                fetchedAt: fetchedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WeatherCurrentCacheEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WeatherCurrentCacheEntriesTable,
+      WeatherCurrentCacheEntry,
+      $$WeatherCurrentCacheEntriesTableFilterComposer,
+      $$WeatherCurrentCacheEntriesTableOrderingComposer,
+      $$WeatherCurrentCacheEntriesTableAnnotationComposer,
+      $$WeatherCurrentCacheEntriesTableCreateCompanionBuilder,
+      $$WeatherCurrentCacheEntriesTableUpdateCompanionBuilder,
+      (
+        WeatherCurrentCacheEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $WeatherCurrentCacheEntriesTable,
+          WeatherCurrentCacheEntry
+        >,
+      ),
+      WeatherCurrentCacheEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$WeatherForecastDayCacheEntriesTableCreateCompanionBuilder =
+    WeatherForecastDayCacheEntriesCompanion Function({
+      Value<int> id,
+      required String locationName,
+      required DateTime forecastDate,
+      required double minTempC,
+      required double maxTempC,
+      required String condition,
+      required String iconCode,
+    });
+typedef $$WeatherForecastDayCacheEntriesTableUpdateCompanionBuilder =
+    WeatherForecastDayCacheEntriesCompanion Function({
+      Value<int> id,
+      Value<String> locationName,
+      Value<DateTime> forecastDate,
+      Value<double> minTempC,
+      Value<double> maxTempC,
+      Value<String> condition,
+      Value<String> iconCode,
+    });
+
+class $$WeatherForecastDayCacheEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $WeatherForecastDayCacheEntriesTable> {
+  $$WeatherForecastDayCacheEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get locationName => $composableBuilder(
+    column: $table.locationName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get forecastDate => $composableBuilder(
+    column: $table.forecastDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get minTempC => $composableBuilder(
+    column: $table.minTempC,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get maxTempC => $composableBuilder(
+    column: $table.maxTempC,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get condition => $composableBuilder(
+    column: $table.condition,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get iconCode => $composableBuilder(
+    column: $table.iconCode,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WeatherForecastDayCacheEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $WeatherForecastDayCacheEntriesTable> {
+  $$WeatherForecastDayCacheEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get locationName => $composableBuilder(
+    column: $table.locationName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get forecastDate => $composableBuilder(
+    column: $table.forecastDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get minTempC => $composableBuilder(
+    column: $table.minTempC,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get maxTempC => $composableBuilder(
+    column: $table.maxTempC,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get condition => $composableBuilder(
+    column: $table.condition,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get iconCode => $composableBuilder(
+    column: $table.iconCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WeatherForecastDayCacheEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WeatherForecastDayCacheEntriesTable> {
+  $$WeatherForecastDayCacheEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get locationName => $composableBuilder(
+    column: $table.locationName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get forecastDate => $composableBuilder(
+    column: $table.forecastDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get minTempC =>
+      $composableBuilder(column: $table.minTempC, builder: (column) => column);
+
+  GeneratedColumn<double> get maxTempC =>
+      $composableBuilder(column: $table.maxTempC, builder: (column) => column);
+
+  GeneratedColumn<String> get condition =>
+      $composableBuilder(column: $table.condition, builder: (column) => column);
+
+  GeneratedColumn<String> get iconCode =>
+      $composableBuilder(column: $table.iconCode, builder: (column) => column);
+}
+
+class $$WeatherForecastDayCacheEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WeatherForecastDayCacheEntriesTable,
+          WeatherForecastDayCacheEntry,
+          $$WeatherForecastDayCacheEntriesTableFilterComposer,
+          $$WeatherForecastDayCacheEntriesTableOrderingComposer,
+          $$WeatherForecastDayCacheEntriesTableAnnotationComposer,
+          $$WeatherForecastDayCacheEntriesTableCreateCompanionBuilder,
+          $$WeatherForecastDayCacheEntriesTableUpdateCompanionBuilder,
+          (
+            WeatherForecastDayCacheEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $WeatherForecastDayCacheEntriesTable,
+              WeatherForecastDayCacheEntry
+            >,
+          ),
+          WeatherForecastDayCacheEntry,
+          PrefetchHooks Function()
+        > {
+  $$WeatherForecastDayCacheEntriesTableTableManager(
+    _$AppDatabase db,
+    $WeatherForecastDayCacheEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WeatherForecastDayCacheEntriesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WeatherForecastDayCacheEntriesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WeatherForecastDayCacheEntriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> locationName = const Value.absent(),
+                Value<DateTime> forecastDate = const Value.absent(),
+                Value<double> minTempC = const Value.absent(),
+                Value<double> maxTempC = const Value.absent(),
+                Value<String> condition = const Value.absent(),
+                Value<String> iconCode = const Value.absent(),
+              }) => WeatherForecastDayCacheEntriesCompanion(
+                id: id,
+                locationName: locationName,
+                forecastDate: forecastDate,
+                minTempC: minTempC,
+                maxTempC: maxTempC,
+                condition: condition,
+                iconCode: iconCode,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String locationName,
+                required DateTime forecastDate,
+                required double minTempC,
+                required double maxTempC,
+                required String condition,
+                required String iconCode,
+              }) => WeatherForecastDayCacheEntriesCompanion.insert(
+                id: id,
+                locationName: locationName,
+                forecastDate: forecastDate,
+                minTempC: minTempC,
+                maxTempC: maxTempC,
+                condition: condition,
+                iconCode: iconCode,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WeatherForecastDayCacheEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WeatherForecastDayCacheEntriesTable,
+      WeatherForecastDayCacheEntry,
+      $$WeatherForecastDayCacheEntriesTableFilterComposer,
+      $$WeatherForecastDayCacheEntriesTableOrderingComposer,
+      $$WeatherForecastDayCacheEntriesTableAnnotationComposer,
+      $$WeatherForecastDayCacheEntriesTableCreateCompanionBuilder,
+      $$WeatherForecastDayCacheEntriesTableUpdateCompanionBuilder,
+      (
+        WeatherForecastDayCacheEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $WeatherForecastDayCacheEntriesTable,
+          WeatherForecastDayCacheEntry
+        >,
+      ),
+      WeatherForecastDayCacheEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
   $$LayoutEntriesTableTableManager get layoutEntries =>
       $$LayoutEntriesTableTableManager(_db, _db.layoutEntries);
+  $$WeatherCurrentCacheEntriesTableTableManager
+  get weatherCurrentCacheEntries =>
+      $$WeatherCurrentCacheEntriesTableTableManager(
+        _db,
+        _db.weatherCurrentCacheEntries,
+      );
+  $$WeatherForecastDayCacheEntriesTableTableManager
+  get weatherForecastDayCacheEntries =>
+      $$WeatherForecastDayCacheEntriesTableTableManager(
+        _db,
+        _db.weatherForecastDayCacheEntries,
+      );
 }
