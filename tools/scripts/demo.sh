@@ -201,6 +201,17 @@ else
   ok "OpenWeatherMap API key is configured — weather widget will be live"
 fi
 
+# ── Step 0: Clear stale server ────────────────────────────────────────────
+step "Checking for stale server on :8080"
+STALE_PID=$(lsof -ti :8080 2>/dev/null || true)
+if [[ -n "${STALE_PID}" ]]; then
+  kill "${STALE_PID}" 2>/dev/null || true
+  sleep 1
+  ok "Stopped stale server (PID ${STALE_PID})"
+else
+  ok "Port 8080 is free"
+fi
+
 # ── Step 1: Docker ─────────────────────────────────────────────────────────
 step "Starting Postgres and Redis (Docker)"
 (cd "${SERVER_DIR}" && docker compose up -d --quiet-pull 2>&1) || die "docker compose up failed"
