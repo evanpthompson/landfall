@@ -146,15 +146,16 @@ dismiss_card_agent() {
 
 wait_for_server() {
   local attempts=0
-  while [[ ${attempts} -lt 30 ]]; do
-    if curl -sf "${SERVER_URL}/card/getCards" -H "Content-Type: application/json" \
-       -d '{"method":"getCards"}' > /dev/null 2>&1; then
-      return 0
-    fi
-    # Also accept a non-5xx response — getCards with wrong body still means server is up
+  # Poll getCards until it returns 200 — proves the API server is up and the
+  # DB connection pool is ready. The fallback that accepted any non-000 status
+  # was removed because the web server can respond before the API is ready.
+  while [[ ${attempts} -lt 40 ]]; do
     local status
-    status=$(curl -s -o /dev/null -w "%{http_code}" "${SERVER_URL}" 2>/dev/null || echo "000")
-    if [[ "${status}" != "000" ]]; then
+    status=$(curl -s -o /dev/null -w "%{http_code}" \
+      -X POST "${SERVER_URL}/card/getCards" \
+      -H "Content-Type: application/json" \
+      -d '{}' 2>/dev/null || echo "000")
+    if [[ "${status}" == "200" ]]; then
       return 0
     fi
     sleep 1
@@ -241,14 +242,15 @@ fi
 pause "Server is running and migrations are applied. Now let's generate an API key — this is how any agent or automation authenticates with Landfall."
 
 step "Generating demo API key"
-KEY_RESPONSE=$(curl -sf \
+KEY_RESPONSE=$(curl -s \
   -X POST "${SERVER_URL}/apiKey/generateKey" \
   -H "Content-Type: application/json" \
-  -d '{"name":"demo"}')
+  -d '{"name":"demo"}') \
+  || die "Could not reach server at ${SERVER_URL}. Check ${SERVER_LOG}"
 
 DEMO_API_KEY=$(echo "${KEY_RESPONSE}" | python3 -c \
   "import sys,json; d=json.load(sys.stdin); print(d['plainTextKey'])" 2>/dev/null) \
-  || die "Failed to parse API key response. Check ${SERVER_LOG}"
+  || die "Failed to parse API key response: ${KEY_RESPONSE}"
 
 ok "API key generated: ${BOLD}${DEMO_API_KEY}${RESET}"
 info "In production, agents store this key securely and include it in every push."

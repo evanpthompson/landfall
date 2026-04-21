@@ -19,9 +19,13 @@ class AuthCubit extends Cubit<AuthState> {
   final SecureStorageAuthKeyProvider _keyProvider;
 
   Future<void> _init() async {
-    final token = await _keyProvider.readToken();
-    if (token != null && token.isNotEmpty) {
-      emit(AuthAuthenticated(accessToken: token));
+    try {
+      final token = await _keyProvider.readToken();
+      if (token != null && token.isNotEmpty) {
+        emit(AuthAuthenticated(accessToken: token));
+      }
+    } catch (_) {
+      // Keychain unavailable (e.g. ad-hoc signing in dev) — start unauthenticated.
     }
   }
 
@@ -44,7 +48,11 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthVerifying(email: email));
     try {
       final result = await _client.otp.verifyCode(email, code);
-      await _keyProvider.saveToken(result.token);
+      // Best-effort persistence — if the Keychain is unavailable (e.g. ad-hoc
+      // signing in dev), the JWT lives in memory for this session only.
+      try {
+        await _keyProvider.saveToken(result.token);
+      } catch (_) {}
       emit(AuthAuthenticated(accessToken: result.token));
     } catch (_) {
       emit(
@@ -59,7 +67,9 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> resendCode(String email) => sendCode(email);
 
   Future<void> signOut() async {
-    await _keyProvider.deleteToken();
+    try {
+      await _keyProvider.deleteToken();
+    } catch (_) {}
     emit(const AuthUnauthenticated());
   }
 }
