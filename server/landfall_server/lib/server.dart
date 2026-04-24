@@ -4,9 +4,11 @@ import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:serverpod_auth_idp_server/providers/passkey.dart';
 
+import 'src/calendar/calendar_refresh_call.dart';
 import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
 import 'src/web/routes/app_config_route.dart';
+import 'src/web/routes/calendar_oauth_route.dart';
 import 'src/web/routes/root.dart';
 import 'src/weather/weather_refresh_call.dart';
 
@@ -74,6 +76,14 @@ void run(List<String> args) async {
 
   // Register future calls.
   pod.registerFutureCall(WeatherRefreshCall(), 'weatherRefresh');
+  pod.registerFutureCall(CalendarRefreshCall(), 'calendarRefresh');
+
+  // OAuth routes for connecting calendar providers.
+  pod.webServer.addRoute(CalendarOAuthStartRoute(), '/calendar/oauth/start');
+  pod.webServer.addRoute(
+    CalendarOAuthCallbackRoute(),
+    '/calendar/oauth/callback',
+  );
 
   // Start the server.
   await pod.start();
@@ -82,5 +92,9 @@ void run(List<String> args) async {
   // Schedule the first weather refresh immediately after startup.
   // ignore: deprecated_member_use
   await pod.futureCallWithDelay('weatherRefresh', null, Duration.zero);
+  // ignore: deprecated_member_use
+  // Calendar refresh starts immediately; skips quietly if no credentials exist.
+  // ignore: deprecated_member_use
+  await pod.futureCallWithDelay('calendarRefresh', null, Duration.zero);
 }
 

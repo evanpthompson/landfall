@@ -4,6 +4,9 @@ import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
+import 'package:display/src/features/calendar/cubit/calendar_cubit.dart';
+import 'package:display/src/features/calendar/cubit/calendar_state.dart';
+import 'package:display/src/features/calendar/widgets/calendar_card.dart';
 import 'package:display/src/features/cards/cubit/card_cubit.dart';
 import 'package:display/src/features/cards/cubit/card_state.dart';
 import 'package:display/src/features/cards/widgets/generic_agent_card.dart';
@@ -25,8 +28,10 @@ import 'package:display/src/features/weather/widgets/forecast_strip_card.dart';
 ///   - [ClockCubit.startTicking] — starts the 1-second clock stream
 ///   - [CardCubit.fetchCards] — fetches the initial agent card set
 ///   - [WeatherCubit.loadWeather] — fetches initial weather data
+///   - [CalendarCubit.loadEvents] — fetches initial calendar events
 ///   - A 30-second timer refreshes agent cards
 ///   - A 10-minute timer refreshes weather data
+///   - A 15-minute timer refreshes calendar events
 class DisplayScreen extends StatefulWidget {
   const DisplayScreen({super.key});
 
@@ -37,6 +42,7 @@ class DisplayScreen extends StatefulWidget {
 class _DisplayScreenState extends State<DisplayScreen> {
   Timer? _cardRefreshTimer;
   Timer? _weatherRefreshTimer;
+  Timer? _calendarRefreshTimer;
 
   @override
   void initState() {
@@ -45,6 +51,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
     context.read<ClockCubit>().startTicking();
     context.read<CardCubit>().fetchCards();
     context.read<WeatherCubit>().loadWeather();
+    context.read<CalendarCubit>().loadEvents();
 
     _cardRefreshTimer = Timer.periodic(
       const Duration(seconds: 30),
@@ -59,12 +66,20 @@ class _DisplayScreenState extends State<DisplayScreen> {
         if (mounted) context.read<WeatherCubit>().loadWeather();
       },
     );
+
+    _calendarRefreshTimer = Timer.periodic(
+      const Duration(minutes: 15),
+      (_) {
+        if (mounted) context.read<CalendarCubit>().loadEvents();
+      },
+    );
   }
 
   @override
   void dispose() {
     _cardRefreshTimer?.cancel();
     _weatherRefreshTimer?.cancel();
+    _calendarRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -200,6 +215,12 @@ class _GridView extends StatelessWidget {
             WeatherLoaded(:final forecast) =>
               ForecastStripCard(forecast: forecast),
             _ => const _PlaceholderTile(source: 'system.weather.forecast'),
+          },
+        ),
+      'system.calendar' => BlocBuilder<CalendarCubit, CalendarState>(
+          builder: (_, state) => switch (state) {
+            CalendarLoaded(:final events) => CalendarCard(events: events),
+            _ => const _PlaceholderTile(source: 'system.calendar'),
           },
         ),
       _ => _PlaceholderTile(source: config.source),

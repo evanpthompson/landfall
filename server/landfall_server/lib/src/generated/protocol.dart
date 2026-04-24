@@ -21,21 +21,27 @@ import 'agent/api_key_create_response.dart' as _i6;
 import 'agent/landfall_exception.dart' as _i7;
 import 'auth/otp_account.dart' as _i8;
 import 'auth/otp_request.dart' as _i9;
-import 'cards/card_push_request.dart' as _i10;
-import 'cards/card_row.dart' as _i11;
-import 'greetings/greeting.dart' as _i12;
-import 'weather/weather_current.dart' as _i13;
-import 'weather/weather_forecast.dart' as _i14;
-import 'package:landfall_server/src/generated/cards/card_row.dart' as _i15;
-import 'package:landfall_server/src/generated/agent/api_key.dart' as _i16;
-import 'dart:typed_data' as _i17;
+import 'calendar/calendar_event.dart' as _i10;
+import 'calendar/linked_credential.dart' as _i11;
+import 'cards/card_push_request.dart' as _i12;
+import 'cards/card_row.dart' as _i13;
+import 'greetings/greeting.dart' as _i14;
+import 'weather/weather_current.dart' as _i15;
+import 'weather/weather_forecast.dart' as _i16;
+import 'package:landfall_server/src/generated/cards/card_row.dart' as _i17;
+import 'package:landfall_server/src/generated/agent/api_key.dart' as _i18;
+import 'dart:typed_data' as _i19;
+import 'package:landfall_server/src/generated/calendar/calendar_event.dart'
+    as _i20;
 import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
-    as _i18;
+    as _i21;
 export 'agent/api_key.dart';
 export 'agent/api_key_create_response.dart';
 export 'agent/landfall_exception.dart';
 export 'auth/otp_account.dart';
 export 'auth/otp_request.dart';
+export 'calendar/calendar_event.dart';
+export 'calendar/linked_credential.dart';
 export 'cards/card_push_request.dart';
 export 'cards/card_row.dart';
 export 'greetings/greeting.dart';
@@ -155,6 +161,285 @@ class Protocol extends _i1.SerializationManagerServer {
             _i2.IndexElementDefinition(
               type: _i2.IndexElementDefinitionType.column,
               definition: 'revokedAt',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'calendar_events',
+      dartName: 'CalendarEvent',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'calendar_events_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'credentialId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'calendarId',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'calendarName',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'externalEventId',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'title',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'startTime',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'endTime',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'isAllDay',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'location',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'description',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'fetchedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'calendar_events_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'calendar_events_credential_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'credentialId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'calendar_events_start_time_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'startTime',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'calendar_events_external_id_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'credentialId',
+            ),
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'externalEventId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'calendar_linked_credentials',
+      dartName: 'LinkedCredential',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault:
+              'nextval(\'calendar_linked_credentials_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'authUserId',
+          columnType: _i2.ColumnType.uuid,
+          isNullable: false,
+          dartType: 'UuidValue',
+        ),
+        _i2.ColumnDefinition(
+          name: 'provider',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'providerEmail',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'accessToken',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'refreshToken',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'tokenExpiresAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'scopes',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'isActive',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'true',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'updatedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'calendar_linked_credentials_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'calendar_linked_credentials_auth_user_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'authUserId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'calendar_linked_credentials_provider_email_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'provider',
+            ),
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'providerEmail',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'calendar_linked_credentials_active_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'isActive',
             ),
           ],
           type: 'btree',
@@ -689,20 +974,26 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i9.OtpRequest) {
       return _i9.OtpRequest.fromJson(data) as T;
     }
-    if (t == _i10.CardPushRequest) {
-      return _i10.CardPushRequest.fromJson(data) as T;
+    if (t == _i10.CalendarEvent) {
+      return _i10.CalendarEvent.fromJson(data) as T;
     }
-    if (t == _i11.CardRow) {
-      return _i11.CardRow.fromJson(data) as T;
+    if (t == _i11.LinkedCredential) {
+      return _i11.LinkedCredential.fromJson(data) as T;
     }
-    if (t == _i12.Greeting) {
-      return _i12.Greeting.fromJson(data) as T;
+    if (t == _i12.CardPushRequest) {
+      return _i12.CardPushRequest.fromJson(data) as T;
     }
-    if (t == _i13.WeatherCurrent) {
-      return _i13.WeatherCurrent.fromJson(data) as T;
+    if (t == _i13.CardRow) {
+      return _i13.CardRow.fromJson(data) as T;
     }
-    if (t == _i14.WeatherForecast) {
-      return _i14.WeatherForecast.fromJson(data) as T;
+    if (t == _i14.Greeting) {
+      return _i14.Greeting.fromJson(data) as T;
+    }
+    if (t == _i15.WeatherCurrent) {
+      return _i15.WeatherCurrent.fromJson(data) as T;
+    }
+    if (t == _i16.WeatherForecast) {
+      return _i16.WeatherForecast.fromJson(data) as T;
     }
     if (t == _i1.getType<_i5.ApiKey?>()) {
       return (data != null ? _i5.ApiKey.fromJson(data) : null) as T;
@@ -720,41 +1011,53 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i9.OtpRequest?>()) {
       return (data != null ? _i9.OtpRequest.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i10.CardPushRequest?>()) {
-      return (data != null ? _i10.CardPushRequest.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i10.CalendarEvent?>()) {
+      return (data != null ? _i10.CalendarEvent.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i11.CardRow?>()) {
-      return (data != null ? _i11.CardRow.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i11.LinkedCredential?>()) {
+      return (data != null ? _i11.LinkedCredential.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i12.Greeting?>()) {
-      return (data != null ? _i12.Greeting.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i12.CardPushRequest?>()) {
+      return (data != null ? _i12.CardPushRequest.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i13.WeatherCurrent?>()) {
-      return (data != null ? _i13.WeatherCurrent.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i13.CardRow?>()) {
+      return (data != null ? _i13.CardRow.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i14.WeatherForecast?>()) {
-      return (data != null ? _i14.WeatherForecast.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i14.Greeting?>()) {
+      return (data != null ? _i14.Greeting.fromJson(data) : null) as T;
     }
-    if (t == List<_i15.CardRow>) {
-      return (data as List).map((e) => deserialize<_i15.CardRow>(e)).toList()
+    if (t == _i1.getType<_i15.WeatherCurrent?>()) {
+      return (data != null ? _i15.WeatherCurrent.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i16.WeatherForecast?>()) {
+      return (data != null ? _i16.WeatherForecast.fromJson(data) : null) as T;
+    }
+    if (t == List<_i17.CardRow>) {
+      return (data as List).map((e) => deserialize<_i17.CardRow>(e)).toList()
           as T;
     }
-    if (t == List<_i16.ApiKey>) {
-      return (data as List).map((e) => deserialize<_i16.ApiKey>(e)).toList()
+    if (t == List<_i18.ApiKey>) {
+      return (data as List).map((e) => deserialize<_i18.ApiKey>(e)).toList()
           as T;
     }
-    if (t == _i1.getType<({_i17.ByteData challenge, _i1.UuidValue id})>()) {
+    if (t == _i1.getType<({_i19.ByteData challenge, _i1.UuidValue id})>()) {
       return (
-            challenge: deserialize<_i17.ByteData>(
+            challenge: deserialize<_i19.ByteData>(
               ((data as Map)['n'] as Map)['challenge'],
             ),
             id: deserialize<_i1.UuidValue>(data['n']['id']),
           )
           as T;
     }
-    if (t == List<_i18.WeatherForecast>) {
+    if (t == List<_i20.CalendarEvent>) {
       return (data as List)
-              .map((e) => deserialize<_i18.WeatherForecast>(e))
+              .map((e) => deserialize<_i20.CalendarEvent>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i21.WeatherForecast>) {
+      return (data as List)
+              .map((e) => deserialize<_i21.WeatherForecast>(e))
               .toList()
           as T;
     }
@@ -777,11 +1080,13 @@ class Protocol extends _i1.SerializationManagerServer {
       _i7.LandfallException => 'LandfallException',
       _i8.OtpAccount => 'OtpAccount',
       _i9.OtpRequest => 'OtpRequest',
-      _i10.CardPushRequest => 'CardPushRequest',
-      _i11.CardRow => 'CardRow',
-      _i12.Greeting => 'Greeting',
-      _i13.WeatherCurrent => 'WeatherCurrent',
-      _i14.WeatherForecast => 'WeatherForecast',
+      _i10.CalendarEvent => 'CalendarEvent',
+      _i11.LinkedCredential => 'LinkedCredential',
+      _i12.CardPushRequest => 'CardPushRequest',
+      _i13.CardRow => 'CardRow',
+      _i14.Greeting => 'Greeting',
+      _i15.WeatherCurrent => 'WeatherCurrent',
+      _i16.WeatherForecast => 'WeatherForecast',
       _ => null,
     };
   }
@@ -806,15 +1111,19 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'OtpAccount';
       case _i9.OtpRequest():
         return 'OtpRequest';
-      case _i10.CardPushRequest():
+      case _i10.CalendarEvent():
+        return 'CalendarEvent';
+      case _i11.LinkedCredential():
+        return 'LinkedCredential';
+      case _i12.CardPushRequest():
         return 'CardPushRequest';
-      case _i11.CardRow():
+      case _i13.CardRow():
         return 'CardRow';
-      case _i12.Greeting():
+      case _i14.Greeting():
         return 'Greeting';
-      case _i13.WeatherCurrent():
+      case _i15.WeatherCurrent():
         return 'WeatherCurrent';
-      case _i14.WeatherForecast():
+      case _i16.WeatherForecast():
         return 'WeatherForecast';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -853,20 +1162,26 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'OtpRequest') {
       return deserialize<_i9.OtpRequest>(data['data']);
     }
+    if (dataClassName == 'CalendarEvent') {
+      return deserialize<_i10.CalendarEvent>(data['data']);
+    }
+    if (dataClassName == 'LinkedCredential') {
+      return deserialize<_i11.LinkedCredential>(data['data']);
+    }
     if (dataClassName == 'CardPushRequest') {
-      return deserialize<_i10.CardPushRequest>(data['data']);
+      return deserialize<_i12.CardPushRequest>(data['data']);
     }
     if (dataClassName == 'CardRow') {
-      return deserialize<_i11.CardRow>(data['data']);
+      return deserialize<_i13.CardRow>(data['data']);
     }
     if (dataClassName == 'Greeting') {
-      return deserialize<_i12.Greeting>(data['data']);
+      return deserialize<_i14.Greeting>(data['data']);
     }
     if (dataClassName == 'WeatherCurrent') {
-      return deserialize<_i13.WeatherCurrent>(data['data']);
+      return deserialize<_i15.WeatherCurrent>(data['data']);
     }
     if (dataClassName == 'WeatherForecast') {
-      return deserialize<_i14.WeatherForecast>(data['data']);
+      return deserialize<_i16.WeatherForecast>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -910,12 +1225,16 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i8.OtpAccount.t;
       case _i9.OtpRequest:
         return _i9.OtpRequest.t;
-      case _i11.CardRow:
-        return _i11.CardRow.t;
-      case _i13.WeatherCurrent:
-        return _i13.WeatherCurrent.t;
-      case _i14.WeatherForecast:
-        return _i14.WeatherForecast.t;
+      case _i10.CalendarEvent:
+        return _i10.CalendarEvent.t;
+      case _i11.LinkedCredential:
+        return _i11.LinkedCredential.t;
+      case _i13.CardRow:
+        return _i13.CardRow.t;
+      case _i15.WeatherCurrent:
+        return _i15.WeatherCurrent.t;
+      case _i16.WeatherForecast:
+        return _i16.WeatherForecast.t;
     }
     return null;
   }
@@ -936,7 +1255,7 @@ class Protocol extends _i1.SerializationManagerServer {
     if (record == null) {
       return null;
     }
-    if (record is ({_i17.ByteData challenge, _i1.UuidValue id})) {
+    if (record is ({_i19.ByteData challenge, _i1.UuidValue id})) {
       return {
         "n": {
           "challenge": record.challenge.toJson(),

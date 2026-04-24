@@ -17,6 +17,8 @@ passkeyIdp:
   - register:
   - login:
   - hasAccount:
+calendar:
+  - getUpcomingEvents:
 card:
   - getCards:
   - pushCard:

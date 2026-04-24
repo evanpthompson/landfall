@@ -5,6 +5,7 @@ import 'package:landfall_client/landfall_client.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
 import 'package:display/src/data/auth/secure_storage_auth_key_provider.dart';
+import 'package:display/src/data/calendar/serverpod_calendar_repository.dart';
 import 'package:display/src/data/cards/serverpod_card_repository.dart';
 import 'package:display/src/data/clock/system_clock_repository.dart';
 import 'package:display/src/data/local/app_database.dart';
@@ -13,6 +14,7 @@ import 'package:display/src/data/weather/serverpod_weather_repository.dart';
 import 'package:display/src/domain/use_cases/get_current_time_use_case.dart';
 import 'package:display/src/features/auth/cubit/auth_cubit.dart';
 import 'package:display/src/features/auth/screens/login_screen.dart';
+import 'package:display/src/features/calendar/cubit/calendar_cubit.dart';
 import 'package:display/src/features/cards/cubit/card_cubit.dart';
 import 'package:display/src/features/clock/cubit/clock_cubit.dart';
 import 'package:display/src/features/display/screens/display_screen.dart';
@@ -51,6 +53,7 @@ class LandfallApp extends StatelessWidget {
     final layoutRepository = DriftDashboardLayoutRepository(database);
     final cardRepository = ServerpodCardRepository(client);
     final weatherRepository = ServerpodWeatherRepository(client, database);
+    final calendarRepository = ServerpodCalendarRepository(client);
     final clockRepository = const SystemClockRepository();
     final getCurrentTime = GetCurrentTimeUseCase(clockRepository);
 
@@ -64,6 +67,9 @@ class LandfallApp extends StatelessWidget {
         ),
         RepositoryProvider<WeatherRepository>(
           create: (_) => weatherRepository,
+        ),
+        RepositoryProvider<CalendarRepository>(
+          create: (_) => calendarRepository,
         ),
       ],
       child: MultiBlocProvider(
@@ -84,6 +90,9 @@ class LandfallApp extends StatelessWidget {
           ),
           BlocProvider(
             create: (ctx) => WeatherCubit(ctx.read<WeatherRepository>()),
+          ),
+          BlocProvider(
+            create: (ctx) => CalendarCubit(ctx.read<CalendarRepository>()),
           ),
         ],
         child: MaterialApp(

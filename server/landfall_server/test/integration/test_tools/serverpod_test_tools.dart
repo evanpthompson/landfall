@@ -26,11 +26,14 @@ import 'dart:typed_data' as _i9;
 import 'package:landfall_server/src/generated/protocol.dart' as _i10;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i11;
-import 'package:landfall_server/src/generated/greetings/greeting.dart' as _i12;
+import 'package:landfall_server/src/generated/calendar/calendar_event.dart'
+    as _i12;
+import 'package:landfall_server/src/generated/greetings/greeting.dart' as _i13;
 import 'package:landfall_server/src/generated/weather/weather_current.dart'
-    as _i13;
-import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
     as _i14;
+import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
+    as _i15;
+import 'package:landfall_server/src/generated/future_calls.dart' as _i16;
 import 'package:landfall_server/src/generated/protocol.dart';
 import 'package:landfall_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -144,6 +147,8 @@ void withServerpod(
 }
 
 class TestEndpoints {
+  late final futureCalls = _FutureCalls();
+
   late final _AgentEndpoint agent;
 
   late final _ApiKeyEndpoint apiKey;
@@ -153,6 +158,8 @@ class TestEndpoints {
   late final _OtpEndpoint otp;
 
   late final _PasskeyIdpEndpoint passkeyIdp;
+
+  late final _CalendarEndpoint calendar;
 
   late final _CardEndpoint card;
 
@@ -188,6 +195,10 @@ class _InternalTestEndpoints extends TestEndpoints
       endpoints,
       serializationManager,
     );
+    calendar = _CalendarEndpoint(
+      endpoints,
+      serializationManager,
+    );
     card = _CardEndpoint(
       endpoints,
       serializationManager,
@@ -201,6 +212,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
   }
+}
+
+class _FutureCalls {
+  late final calendarRefreshCall = _CalendarRefreshCallFutureCall();
 }
 
 class _AgentEndpoint {
@@ -712,6 +727,47 @@ class _PasskeyIdpEndpoint {
   }
 }
 
+class _CalendarEndpoint {
+  _CalendarEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<List<_i12.CalendarEvent>> getUpcomingEvents(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'calendar',
+            method: 'getUpcomingEvents',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'calendar',
+          methodName: 'getUpcomingEvents',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i12.CalendarEvent>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
 class _CardEndpoint {
   _CardEndpoint(
     this._endpointDispatch,
@@ -825,7 +881,7 @@ class _GreetingEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i12.Greeting> hello(
+  _i3.Future<_i13.Greeting> hello(
     _i1.TestSessionBuilder sessionBuilder,
     String name,
   ) async {
@@ -848,7 +904,7 @@ class _GreetingEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i12.Greeting>);
+                as _i3.Future<_i13.Greeting>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -867,7 +923,7 @@ class _WeatherEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i13.WeatherCurrent?> getCurrentWeather(
+  _i3.Future<_i14.WeatherCurrent?> getCurrentWeather(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -889,7 +945,7 @@ class _WeatherEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i13.WeatherCurrent?>);
+                as _i3.Future<_i14.WeatherCurrent?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -897,7 +953,7 @@ class _WeatherEndpoint {
     });
   }
 
-  _i3.Future<List<_i14.WeatherForecast>> getForecast(
+  _i3.Future<List<_i15.WeatherForecast>> getForecast(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -919,11 +975,29 @@ class _WeatherEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i14.WeatherForecast>>);
+                as _i3.Future<List<_i15.WeatherForecast>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
       }
     });
+  }
+}
+
+class _CalendarRefreshCallFutureCall {
+  Future<void> invoke(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i2.SerializableModel? object,
+  ) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i16.CalendarRefreshCallInvokeFutureCall().invoke(
+        _localUniqueSession,
+        object,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
   }
 }

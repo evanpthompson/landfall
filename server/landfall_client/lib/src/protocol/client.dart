@@ -23,12 +23,14 @@ import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _i8;
 import 'dart:typed_data' as _i9;
-import 'package:landfall_client/src/protocol/greetings/greeting.dart' as _i10;
+import 'package:landfall_client/src/protocol/calendar/calendar_event.dart'
+    as _i10;
+import 'package:landfall_client/src/protocol/greetings/greeting.dart' as _i11;
 import 'package:landfall_client/src/protocol/weather/weather_current.dart'
-    as _i11;
-import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
     as _i12;
-import 'protocol.dart' as _i13;
+import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+    as _i13;
+import 'protocol.dart' as _i14;
 
 /// The authenticated agent push API.
 ///
@@ -284,6 +286,27 @@ class EndpointPasskeyIdp extends _i8.EndpointPasskeyIdpBase {
   );
 }
 
+/// Serves cached calendar events to the Flutter display client.
+///
+/// Events are populated by [CalendarRefreshCall] on a 15-minute schedule.
+/// Returns an empty list gracefully if no credentials have been connected yet.
+/// {@category Endpoint}
+class EndpointCalendar extends _i1.EndpointRef {
+  EndpointCalendar(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'calendar';
+
+  /// Returns the next 20 upcoming events across all active calendar feeds,
+  /// sorted by start time.
+  _i2.Future<List<_i10.CalendarEvent>> getUpcomingEvents() =>
+      caller.callServerEndpoint<List<_i10.CalendarEvent>>(
+        'calendar',
+        'getUpcomingEvents',
+        {},
+      );
+}
+
 /// Endpoint for card management.
 ///
 /// Phase 0: No authentication required — open for local development.
@@ -343,8 +366,8 @@ class EndpointGreeting extends _i1.EndpointRef {
   String get name => 'greeting';
 
   /// Returns a personalized greeting message: "Hello {name}".
-  _i2.Future<_i10.Greeting> hello(String name) =>
-      caller.callServerEndpoint<_i10.Greeting>(
+  _i2.Future<_i11.Greeting> hello(String name) =>
+      caller.callServerEndpoint<_i11.Greeting>(
         'greeting',
         'hello',
         {'name': name},
@@ -364,8 +387,8 @@ class EndpointWeather extends _i1.EndpointRef {
   String get name => 'weather';
 
   /// Returns the most recently cached current conditions, or null if none.
-  _i2.Future<_i11.WeatherCurrent?> getCurrentWeather() =>
-      caller.callServerEndpoint<_i11.WeatherCurrent?>(
+  _i2.Future<_i12.WeatherCurrent?> getCurrentWeather() =>
+      caller.callServerEndpoint<_i12.WeatherCurrent?>(
         'weather',
         'getCurrentWeather',
         {},
@@ -374,8 +397,8 @@ class EndpointWeather extends _i1.EndpointRef {
   /// Returns the cached 5-day forecast, oldest day first.
   ///
   /// Returns an empty list if no forecast data has been cached yet.
-  _i2.Future<List<_i12.WeatherForecast>> getForecast() =>
-      caller.callServerEndpoint<List<_i12.WeatherForecast>>(
+  _i2.Future<List<_i13.WeatherForecast>> getForecast() =>
+      caller.callServerEndpoint<List<_i13.WeatherForecast>>(
         'weather',
         'getForecast',
         {},
@@ -413,7 +436,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i13.Protocol(),
+         _i14.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -427,6 +450,7 @@ class Client extends _i1.ServerpodClientShared {
     jwtRefresh = EndpointJwtRefresh(this);
     otp = EndpointOtp(this);
     passkeyIdp = EndpointPasskeyIdp(this);
+    calendar = EndpointCalendar(this);
     card = EndpointCard(this);
     greeting = EndpointGreeting(this);
     weather = EndpointWeather(this);
@@ -443,6 +467,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointPasskeyIdp passkeyIdp;
 
+  late final EndpointCalendar calendar;
+
   late final EndpointCard card;
 
   late final EndpointGreeting greeting;
@@ -458,6 +484,7 @@ class Client extends _i1.ServerpodClientShared {
     'jwtRefresh': jwtRefresh,
     'otp': otp,
     'passkeyIdp': passkeyIdp,
+    'calendar': calendar,
     'card': card,
     'greeting': greeting,
     'weather': weather,

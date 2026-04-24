@@ -12,3 +12,5 @@ export 'src/repositories/clock_repository.dart';
 export 'src/models/weather/weather_entity.dart';
 export 'src/models/weather/forecast_day_entity.dart';
 export 'src/repositories/weather_repository.dart';
+export 'src/models/calendar/calendar_event_entity.dart';
+export 'src/repositories/calendar_repository.dart';

@@ -16,16 +16,19 @@ import '../agent/api_key_endpoint.dart' as _i3;
 import '../auth/jwt_refresh_endpoint.dart' as _i4;
 import '../auth/otp_endpoint.dart' as _i5;
 import '../auth/passkey_idp_endpoint.dart' as _i6;
-import '../cards/card_endpoint.dart' as _i7;
-import '../greetings/greeting_endpoint.dart' as _i8;
-import '../weather/weather_endpoint.dart' as _i9;
+import '../calendar/calendar_endpoint.dart' as _i7;
+import '../cards/card_endpoint.dart' as _i8;
+import '../greetings/greeting_endpoint.dart' as _i9;
+import '../weather/weather_endpoint.dart' as _i10;
 import 'package:landfall_server/src/generated/cards/card_push_request.dart'
-    as _i10;
-import 'package:landfall_server/src/generated/protocol.dart' as _i11;
+    as _i11;
+import 'package:landfall_server/src/generated/protocol.dart' as _i12;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
-    as _i12;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i13;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _i14;
+import 'package:landfall_server/src/generated/future_calls.dart' as _i15;
+export 'future_calls.dart' show ServerpodFutureCallsGetter;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -61,19 +64,25 @@ class Endpoints extends _i1.EndpointDispatch {
           'passkeyIdp',
           null,
         ),
-      'card': _i7.CardEndpoint()
+      'calendar': _i7.CalendarEndpoint()
+        ..initialize(
+          server,
+          'calendar',
+          null,
+        ),
+      'card': _i8.CardEndpoint()
         ..initialize(
           server,
           'card',
           null,
         ),
-      'greeting': _i8.GreetingEndpoint()
+      'greeting': _i9.GreetingEndpoint()
         ..initialize(
           server,
           'greeting',
           null,
         ),
-      'weather': _i9.WeatherEndpoint()
+      'weather': _i10.WeatherEndpoint()
         ..initialize(
           server,
           'weather',
@@ -112,7 +121,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i10.CardPushRequest>(),
+              type: _i1.getType<_i11.CardPushRequest>(),
               nullable: false,
             ),
           },
@@ -141,7 +150,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i10.CardPushRequest>(),
+              type: _i1.getType<_i11.CardPushRequest>(),
               nullable: false,
             ),
           },
@@ -321,14 +330,14 @@ class Endpoints extends _i1.EndpointDispatch {
                 Map<String, dynamic> params,
               ) async => (endpoints['passkeyIdp'] as _i6.PasskeyIdpEndpoint)
                   .createChallenge(session)
-                  .then((record) => _i11.Protocol().mapRecordToJson(record)),
+                  .then((record) => _i12.Protocol().mapRecordToJson(record)),
         ),
         'register': _i1.MethodConnector(
           name: 'register',
           params: {
             'registrationRequest': _i1.ParameterDescription(
               name: 'registrationRequest',
-              type: _i1.getType<_i12.PasskeyRegistrationRequest>(),
+              type: _i1.getType<_i13.PasskeyRegistrationRequest>(),
               nullable: false,
             ),
           },
@@ -347,7 +356,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'loginRequest': _i1.ParameterDescription(
               name: 'loginRequest',
-              type: _i1.getType<_i12.PasskeyLoginRequest>(),
+              type: _i1.getType<_i13.PasskeyLoginRequest>(),
               nullable: false,
             ),
           },
@@ -373,6 +382,22 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
+    connectors['calendar'] = _i1.EndpointConnector(
+      name: 'calendar',
+      endpoint: endpoints['calendar']!,
+      methodConnectors: {
+        'getUpcomingEvents': _i1.MethodConnector(
+          name: 'getUpcomingEvents',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['calendar'] as _i7.CalendarEndpoint)
+                  .getUpcomingEvents(session),
+        ),
+      },
+    );
     connectors['card'] = _i1.EndpointConnector(
       name: 'card',
       endpoint: endpoints['card']!,
@@ -385,14 +410,14 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['card'] as _i7.CardEndpoint).getCards(session),
+                  (endpoints['card'] as _i8.CardEndpoint).getCards(session),
         ),
         'pushCard': _i1.MethodConnector(
           name: 'pushCard',
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i10.CardPushRequest>(),
+              type: _i1.getType<_i11.CardPushRequest>(),
               nullable: false,
             ),
           },
@@ -400,7 +425,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['card'] as _i7.CardEndpoint).pushCard(
+              ) async => (endpoints['card'] as _i8.CardEndpoint).pushCard(
                 session,
                 params['request'],
               ),
@@ -418,7 +443,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['card'] as _i7.CardEndpoint).dismissCard(
+              ) async => (endpoints['card'] as _i8.CardEndpoint).dismissCard(
                 session,
                 params['externalId'],
               ),
@@ -442,7 +467,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['greeting'] as _i8.GreetingEndpoint).hello(
+              ) async => (endpoints['greeting'] as _i9.GreetingEndpoint).hello(
                 session,
                 params['name'],
               ),
@@ -460,7 +485,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['weather'] as _i9.WeatherEndpoint)
+              ) async => (endpoints['weather'] as _i10.WeatherEndpoint)
                   .getCurrentWeather(session),
         ),
         'getForecast': _i1.MethodConnector(
@@ -470,14 +495,19 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['weather'] as _i9.WeatherEndpoint)
+              ) async => (endpoints['weather'] as _i10.WeatherEndpoint)
                   .getForecast(session),
         ),
       },
     );
-    modules['serverpod_auth_idp'] = _i12.Endpoints()
+    modules['serverpod_auth_idp'] = _i13.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_core'] = _i13.Endpoints()
+    modules['serverpod_auth_core'] = _i14.Endpoints()
       ..initializeEndpoints(server);
+  }
+
+  @override
+  _i1.FutureCallDispatch? get futureCalls {
+    return _i15.FutureCalls();
   }
 }

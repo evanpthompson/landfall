@@ -1,0 +1,51 @@
+### A calendar event cached from an external provider.
+###
+### Events are scoped to a LinkedCredential + calendarId pair.
+### On each refresh, all events for a given credential are replaced.
+### All-day events have startTime and endTime set to midnight UTC of the event date.
+class: CalendarEvent
+table: calendar_events
+
+fields:
+  ### The LinkedCredential this event was fetched from.
+  credentialId: int
+
+  ### Provider-assigned calendar ID within the account.
+  ### e.g. "primary", "user@example.com", or a long opaque Google calendar ID.
+  calendarId: String
+
+  ### Human-readable calendar name, e.g. "Work", "Family", "Shared".
+  calendarName: String
+
+  ### Provider-assigned event ID. Stable across refreshes for the same event.
+  externalEventId: String
+
+  ### Event title / summary.
+  title: String
+
+  ### Start time in UTC. For all-day events, midnight UTC of the event date.
+  startTime: DateTime
+
+  ### End time in UTC. For all-day events, midnight UTC of the day after the event.
+  endTime: DateTime
+
+  ### True for all-day events (no specific time).
+  isAllDay: bool, default=false
+
+  ### Optional location string.
+  location: String?
+
+  ### Optional event description / notes.
+  description: String?
+
+  ### When this event was last fetched from the upstream provider.
+  fetchedAt: DateTime
+
+indexes:
+  calendar_events_credential_idx:
+    fields: credentialId
+  calendar_events_start_time_idx:
+    fields: startTime
+  calendar_events_external_id_idx:
+    fields: credentialId, externalEventId
+    unique: true

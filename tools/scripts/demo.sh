@@ -132,6 +132,62 @@ update_card_agent() {
     > /dev/null
 }
 
+# Seed demo calendar events directly into the Postgres DB, bypassing OAuth.
+# Inserts a fake LinkedCredential + 5 realistic upcoming events spanning
+# Work, Personal, and Family calendars so the system.calendar widget renders.
+seed_demo_calendar_data() {
+  local db_pass
+  db_pass=$(python3 -c "
+lines = open('${PASSWORDS_YAML}').readlines()
+in_dev = False
+for line in lines:
+    stripped = line.strip()
+    if stripped == 'development:':
+        in_dev = True
+    elif in_dev and 'database:' in stripped:
+        val = stripped.split('database:')[1].strip().strip(\"'\\\"\")
+        print(val)
+        break
+    elif in_dev and not line.startswith(' ') and stripped:
+        break
+" 2>/dev/null)
+
+  [[ -z "${db_pass}" ]] && return 1
+
+  PGPASSWORD="${db_pass}" psql -h localhost -p 8090 -U postgres landfall -q <<'SQL'
+DELETE FROM calendar_events
+  WHERE "credentialId" IN (
+    SELECT id FROM calendar_linked_credentials WHERE "providerEmail" = 'demo@landfall.local'
+  );
+DELETE FROM calendar_linked_credentials WHERE "providerEmail" = 'demo@landfall.local';
+
+INSERT INTO calendar_linked_credentials
+  ("authUserId", provider, "providerEmail", "accessToken", "isActive", "createdAt", "updatedAt")
+VALUES
+  ('00000000-0000-0000-0000-000000000001', 'google', 'demo@landfall.local',
+   'demo-access-token', true, now(), now());
+
+WITH cred AS (SELECT id FROM calendar_linked_credentials WHERE "providerEmail" = 'demo@landfall.local')
+INSERT INTO calendar_events
+  ("credentialId", "calendarId", "calendarName", "externalEventId",
+   title, "startTime", "endTime", "isAllDay", "fetchedAt")
+SELECT c.id, 'primary',      'Work',     'demo-standup',  'Team standup',
+       NOW() + interval '1 hour',       NOW() + interval '1 hour 30 minutes', false, NOW() FROM cred c
+UNION ALL
+SELECT c.id, 'primary',      'Work',     'demo-1on1',     '1:1 with Sarah',
+       NOW() + interval '3 hours',      NOW() + interval '4 hours',           false, NOW() FROM cred c
+UNION ALL
+SELECT c.id, 'personal_cal', 'Personal', 'demo-dentist',  'Dentist appointment',
+       NOW() + interval '25 hours',     NOW() + interval '26 hours',          false, NOW() FROM cred c
+UNION ALL
+SELECT c.id, 'family_cal',   'Family',   'demo-soccer',   'Kids soccer game',
+       NOW() + interval '27 hours',     NOW() + interval '28 hours 30 minutes', false, NOW() FROM cred c
+UNION ALL
+SELECT c.id, 'primary',      'Work',     'demo-planning', 'Q3 planning session',
+       NOW() + interval '50 hours',     NOW() + interval '52 hours',          false, NOW() FROM cred c;
+SQL
+}
+
 # Dismiss a card by externalId.
 dismiss_card_agent() {
   local api_key="$1"
@@ -200,6 +256,20 @@ if grep -q "your-owm-api-key-here" "${PASSWORDS_YAML}" 2>/dev/null; then
 else
   WEATHER_LIVE=true
   ok "OpenWeatherMap API key is configured — weather widget will be live"
+fi
+
+# ── Google Calendar config check ──────────────────────────────────────────
+step "Checking Google Calendar configuration"
+GOOGLE_OAUTH_READY=false
+if grep -q "googleOAuthRedirectUri" "${PASSWORDS_YAML}" 2>/dev/null && \
+   ! grep -q "your-redirect-uri" "${PASSWORDS_YAML}" 2>/dev/null; then
+  GOOGLE_OAUTH_READY=true
+  ok "Google OAuth credentials configured — live calendar connect available"
+  info "Connect URL (after server starts): ${SERVER_URL}/calendar/oauth/start?authUserId=<your-uuid>"
+else
+  warn "googleOAuthRedirectUri not configured in passwords.yaml."
+  info "Demo will seed sample calendar events directly."
+  info "To enable live Google Calendar: set googleOAuthRedirectUri in ${PASSWORDS_YAML}"
 fi
 
 # ── Step 0: Clear stale server ────────────────────────────────────────────
@@ -404,8 +474,48 @@ else
   info "Set openWeatherMapApiKey in ${PASSWORDS_YAML} to enable live data."
 fi
 
-# ── Step 10: Display ────────────────────────────────────────────────────────
-pause "Let's launch the display. The clock and weather widget load automatically. Agent cards appear in the right-side feed."
+# ── Step 10: Calendar ─────────────────────────────────────────────────────
+pause "Landfall also has a built-in calendar widget. It aggregates events from multiple feeds — work, personal, shared family calendars — into a single upcoming-events view."
+
+step "Calendar widget (Session 10)"
+echo ""
+echo "  ${BOLD}Provider support:${RESET}"
+echo "  ${DIM}• Google Calendar   — OAuth 2.0, all calendars visible to the account${RESET}"
+echo "  ${DIM}• Microsoft Outlook — OAuth 2.0, Microsoft Graph API (coming next)${RESET}"
+echo "  ${DIM}• Apple iCloud      — CalDAV + app-specific password (coming next)${RESET}"
+echo ""
+echo "  ${BOLD}Multi-feed design:${RESET}"
+echo "  ${DIM}Each connected account is a LinkedCredential row. Events from all active${RESET}"
+echo "  ${DIM}credentials merge into one view sorted by start time. You can link your${RESET}"
+echo "  ${DIM}work Google account and personal Google account as two separate credentials.${RESET}"
+echo "  ${DIM}Shared family calendars visible in any linked account appear automatically.${RESET}"
+echo ""
+echo "  ${BOLD}Refresh cadence:${RESET}  ${DIM}every 15 minutes, server-side${RESET}"
+echo "  ${BOLD}Display slot:${RESET}     ${DIM}system.calendar — bottom-left of the default layout${RESET}"
+echo ""
+
+if [[ "${GOOGLE_OAUTH_READY}" == "true" ]]; then
+  echo "  ${BOLD}Connect a Google Calendar account:${RESET}"
+  echo "  ${CYAN}  ${SERVER_URL}/calendar/oauth/start?authUserId=00000000-0000-0000-0000-000000000001${RESET}"
+  echo ""
+fi
+
+step "Seeding demo calendar events"
+if seed_demo_calendar_data; then
+  ok "5 demo events inserted across Work, Personal, and Family calendars"
+  info "Today:    Team standup  •  1:1 with Sarah"
+  info "Tomorrow: Dentist appointment  •  Kids soccer game"
+  info "Day 3:    Q3 planning session"
+  info ""
+  info "The calendar widget will show these events on the display."
+  info "In production, the server fetches live events every 15 minutes."
+else
+  warn "Could not connect to Postgres — calendar widget will show placeholder."
+  info "Start Postgres first or check ${SERVER_LOG} for errors."
+fi
+
+# ── Step 11: Display ────────────────────────────────────────────────────────
+pause "Let's launch the display. Clock, weather, and calendar widgets load automatically. Agent cards appear in the right-side feed."
 
 step "Launching Landfall display (macOS)"
 info "The app will open in a new window. Press Cmd+Q to quit when done."
