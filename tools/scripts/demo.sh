@@ -135,26 +135,9 @@ update_card_agent() {
 # Seed demo calendar events directly into the Postgres DB, bypassing OAuth.
 # Inserts a fake LinkedCredential + 5 realistic upcoming events spanning
 # Work, Personal, and Family calendars so the system.calendar widget renders.
+# Uses docker compose exec so no host-side psql installation is required.
 seed_demo_calendar_data() {
-  local db_pass
-  db_pass=$(python3 -c "
-lines = open('${PASSWORDS_YAML}').readlines()
-in_dev = False
-for line in lines:
-    stripped = line.strip()
-    if stripped == 'development:':
-        in_dev = True
-    elif in_dev and 'database:' in stripped:
-        val = stripped.split('database:')[1].strip().strip(\"'\\\"\")
-        print(val)
-        break
-    elif in_dev and not line.startswith(' ') and stripped:
-        break
-" 2>/dev/null)
-
-  [[ -z "${db_pass}" ]] && return 1
-
-  PGPASSWORD="${db_pass}" psql -h localhost -p 8090 -U postgres landfall -q <<'SQL'
+  (cd "${SERVER_DIR}" && docker compose exec -T postgres psql -U postgres landfall -q) <<'SQL'
 DELETE FROM calendar_events
   WHERE "credentialId" IN (
     SELECT id FROM calendar_linked_credentials WHERE "providerEmail" = 'demo@landfall.local'
@@ -172,19 +155,19 @@ INSERT INTO calendar_events
   ("credentialId", "calendarId", "calendarName", "externalEventId",
    title, "startTime", "endTime", "isAllDay", "fetchedAt")
 SELECT c.id, 'primary',      'Work',     'demo-standup',  'Team standup',
-       NOW() + interval '1 hour',       NOW() + interval '1 hour 30 minutes', false, NOW() FROM cred c
+       NOW() + interval '1 hour',         NOW() + interval '1 hour 30 minutes',  false, NOW() FROM cred c
 UNION ALL
 SELECT c.id, 'primary',      'Work',     'demo-1on1',     '1:1 with Sarah',
-       NOW() + interval '3 hours',      NOW() + interval '4 hours',           false, NOW() FROM cred c
+       NOW() + interval '3 hours',        NOW() + interval '4 hours',            false, NOW() FROM cred c
 UNION ALL
 SELECT c.id, 'personal_cal', 'Personal', 'demo-dentist',  'Dentist appointment',
-       NOW() + interval '25 hours',     NOW() + interval '26 hours',          false, NOW() FROM cred c
+       NOW() + interval '25 hours',       NOW() + interval '26 hours',           false, NOW() FROM cred c
 UNION ALL
 SELECT c.id, 'family_cal',   'Family',   'demo-soccer',   'Kids soccer game',
-       NOW() + interval '27 hours',     NOW() + interval '28 hours 30 minutes', false, NOW() FROM cred c
+       NOW() + interval '27 hours',       NOW() + interval '28 hours 30 minutes', false, NOW() FROM cred c
 UNION ALL
 SELECT c.id, 'primary',      'Work',     'demo-planning', 'Q3 planning session',
-       NOW() + interval '50 hours',     NOW() + interval '52 hours',          false, NOW() FROM cred c;
+       NOW() + interval '50 hours',       NOW() + interval '52 hours',           false, NOW() FROM cred c;
 SQL
 }
 
