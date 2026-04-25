@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'package:display/src/data/local/tables/display_settings_table.dart';
 import 'package:display/src/data/local/tables/layout_entries.dart';
 import 'package:display/src/data/local/tables/weather_cache.dart';
 
@@ -14,6 +15,7 @@ part 'app_database.g.dart';
   LayoutEntries,
   WeatherCurrentCacheEntries,
   WeatherForecastDayCacheEntries,
+  DisplaySettingsEntries,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
@@ -22,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -33,6 +35,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await m.createTable(weatherCurrentCacheEntries);
             await m.createTable(weatherForecastDayCacheEntries);
+          }
+          if (from < 3) {
+            await m.createTable(displaySettingsEntries);
           }
         },
       );

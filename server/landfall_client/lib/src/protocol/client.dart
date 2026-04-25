@@ -27,11 +27,13 @@ import 'package:landfall_client/src/protocol/calendar/calendar_event.dart'
     as _i10;
 import 'package:landfall_client/src/protocol/greetings/greeting.dart' as _i11;
 import 'package:landfall_client/src/protocol/photo/photo.dart' as _i12;
-import 'package:landfall_client/src/protocol/weather/weather_current.dart'
+import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
     as _i13;
-import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+import 'package:landfall_client/src/protocol/weather/weather_current.dart'
     as _i14;
-import 'protocol.dart' as _i15;
+import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+    as _i15;
+import 'protocol.dart' as _i16;
 
 /// The authenticated agent push API.
 ///
@@ -398,6 +400,36 @@ class EndpointPhoto extends _i1.EndpointRef {
       );
 }
 
+/// Provides settings data to the display client.
+///
+/// All methods require an authenticated session.
+/// {@category Endpoint}
+class EndpointSettings extends _i1.EndpointRef {
+  EndpointSettings(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'settings';
+
+  /// Returns all linked credentials for the current user, token-free.
+  _i2.Future<List<_i13.LinkedCredentialSummary>> getLinkedCredentials() =>
+      caller.callServerEndpoint<List<_i13.LinkedCredentialSummary>>(
+        'settings',
+        'getLinkedCredentials',
+        {},
+      );
+
+  /// Returns a stable, deterministic auth user ID string suitable for use in
+  /// OAuth link URLs (e.g. /calendar/oauth/start?authUserId=...).
+  ///
+  /// The ID is derived from the authenticated Serverpod user's identifier and
+  /// formatted as a valid UUID so it can be stored in LinkedCredential.authUserId.
+  _i2.Future<String> getMyAuthUserId() => caller.callServerEndpoint<String>(
+    'settings',
+    'getMyAuthUserId',
+    {},
+  );
+}
+
 /// Serves cached weather data to the Flutter display client.
 ///
 /// Data is populated by [WeatherRefreshCall] on a 10-minute schedule.
@@ -411,8 +443,8 @@ class EndpointWeather extends _i1.EndpointRef {
   String get name => 'weather';
 
   /// Returns the most recently cached current conditions, or null if none.
-  _i2.Future<_i13.WeatherCurrent?> getCurrentWeather() =>
-      caller.callServerEndpoint<_i13.WeatherCurrent?>(
+  _i2.Future<_i14.WeatherCurrent?> getCurrentWeather() =>
+      caller.callServerEndpoint<_i14.WeatherCurrent?>(
         'weather',
         'getCurrentWeather',
         {},
@@ -421,8 +453,8 @@ class EndpointWeather extends _i1.EndpointRef {
   /// Returns the cached 5-day forecast, oldest day first.
   ///
   /// Returns an empty list if no forecast data has been cached yet.
-  _i2.Future<List<_i14.WeatherForecast>> getForecast() =>
-      caller.callServerEndpoint<List<_i14.WeatherForecast>>(
+  _i2.Future<List<_i15.WeatherForecast>> getForecast() =>
+      caller.callServerEndpoint<List<_i15.WeatherForecast>>(
         'weather',
         'getForecast',
         {},
@@ -460,7 +492,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i15.Protocol(),
+         _i16.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -478,6 +510,7 @@ class Client extends _i1.ServerpodClientShared {
     card = EndpointCard(this);
     greeting = EndpointGreeting(this);
     photo = EndpointPhoto(this);
+    settings = EndpointSettings(this);
     weather = EndpointWeather(this);
     modules = Modules(this);
   }
@@ -500,6 +533,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointPhoto photo;
 
+  late final EndpointSettings settings;
+
   late final EndpointWeather weather;
 
   late final Modules modules;
@@ -515,6 +550,7 @@ class Client extends _i1.ServerpodClientShared {
     'card': card,
     'greeting': greeting,
     'photo': photo,
+    'settings': settings,
     'weather': weather,
   };
 

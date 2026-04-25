@@ -27,6 +27,9 @@ greeting:
   - hello:
 photo:
   - getPhotos:
+settings:
+  - getLinkedCredentials:
+  - getMyAuthUserId:
 weather:
   - getCurrentWeather:
   - getForecast:

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:landfall_client/landfall_client.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
 import 'package:display/src/features/calendar/cubit/calendar_cubit.dart';
@@ -13,10 +14,13 @@ import 'package:display/src/features/cards/widgets/generic_agent_card.dart';
 import 'package:display/src/features/clock/cubit/clock_cubit.dart';
 import 'package:display/src/features/clock/cubit/clock_state.dart';
 import 'package:display/src/features/clock/widgets/clock_card.dart';
+import 'package:display/src/features/display/widgets/ambient_dim_overlay.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_state.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/photo/widgets/photo_frame_card.dart';
+import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
+import 'package:display/src/features/settings/screens/settings_screen.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_state.dart';
 import 'package:display/src/features/weather/widgets/current_weather_card.dart';
@@ -32,13 +36,20 @@ import 'package:display/src/features/weather/widgets/forecast_strip_card.dart';
 ///   - [WeatherCubit.loadWeather] — fetches initial weather data
 ///   - [CalendarCubit.loadEvents] — fetches initial calendar events
 ///   - [PhotoCubit.loadPhotos] — fetches initial photo list
-///   - A 30-second timer refreshes agent cards
-///   - A 10-minute timer refreshes weather data
-///   - A 15-minute timer refreshes calendar events
-///   - A 45-second timer advances the photo slideshow
-///   - A 30-minute timer refreshes the photo list
+///   - [DisplaySettingsCubit.loadSettings] — loads display settings
+///   - Periodic refresh timers for each data source
+///
+/// A gear icon appears in the bottom-right corner on tap and navigates to
+/// [SettingsScreen]. The [AmbientDimOverlay] dims the display on schedule.
 class DisplayScreen extends StatefulWidget {
-  const DisplayScreen({super.key});
+  const DisplayScreen({
+    super.key,
+    required this.client,
+    required this.serverUrl,
+  });
+
+  final Client client;
+  final String serverUrl;
 
   @override
   State<DisplayScreen> createState() => _DisplayScreenState();
@@ -50,8 +61,33 @@ class _DisplayScreenState extends State<DisplayScreen> {
   Timer? _calendarRefreshTimer;
   Timer? _photoSlideshowTimer;
   Timer? _photoRefreshTimer;
+  Timer? _gearHideTimer;
+
+  bool _gearVisible = false;
 
   static const _photoSlideshowInterval = Duration(seconds: 45);
+  static const _gearAutoHideDuration = Duration(seconds: 5);
+
+  void _showGear() {
+    _gearHideTimer?.cancel();
+    setState(() => _gearVisible = true);
+    _gearHideTimer = Timer(_gearAutoHideDuration, () {
+      if (mounted) setState(() => _gearVisible = false);
+    });
+  }
+
+  void _openSettings() {
+    _gearHideTimer?.cancel();
+    setState(() => _gearVisible = false);
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SettingsScreen(
+          client: widget.client,
+          serverUrl: widget.serverUrl,
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -62,6 +98,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
     context.read<WeatherCubit>().loadWeather();
     context.read<CalendarCubit>().loadEvents();
     context.read<PhotoCubit>().loadPhotos();
+    context.read<DisplaySettingsCubit>().loadSettings();
 
     _cardRefreshTimer = Timer.periodic(
       const Duration(seconds: 30),
@@ -106,23 +143,53 @@ class _DisplayScreenState extends State<DisplayScreen> {
     _calendarRefreshTimer?.cancel();
     _photoSlideshowTimer?.cancel();
     _photoRefreshTimer?.cancel();
+    _gearHideTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0F),
-      body: BlocBuilder<DashboardLayoutCubit, DashboardLayoutState>(
-        builder: (context, layoutState) {
-          return switch (layoutState) {
-            DashboardLayoutLoading() => const _LoadingView(),
-            DashboardLayoutLoaded(:final layout) =>
-              _DisplayBody(layout: layout),
-            DashboardLayoutError(:final message) =>
-              _ErrorView(message: message),
-          };
-        },
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: _showGear,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0D0D0F),
+        body: Stack(
+          children: [
+            BlocBuilder<DashboardLayoutCubit, DashboardLayoutState>(
+              builder: (context, layoutState) {
+                return switch (layoutState) {
+                  DashboardLayoutLoading() => const _LoadingView(),
+                  DashboardLayoutLoaded(:final layout) =>
+                    _DisplayBody(layout: layout),
+                  DashboardLayoutError(:final message) =>
+                    _ErrorView(message: message),
+                };
+              },
+            ),
+            // Ambient dim overlay — sits above content, ignores pointer events
+            const AmbientDimOverlay(),
+            // Gear icon — appears on tap, fades after 5 seconds
+            Positioned(
+              right: 16,
+              bottom: 16,
+              child: AnimatedOpacity(
+                opacity: _gearVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 300),
+                child: IgnorePointer(
+                  ignoring: !_gearVisible,
+                  child: IconButton(
+                    onPressed: _openSettings,
+                    icon: const Icon(Icons.settings),
+                    color: Colors.white.withValues(alpha: 0.7),
+                    iconSize: 28,
+                    tooltip: 'Settings',
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

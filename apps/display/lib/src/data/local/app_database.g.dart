@@ -1446,6 +1446,468 @@ class WeatherForecastDayCacheEntriesCompanion
   }
 }
 
+class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
+    with TableInfo<$DisplaySettingsEntriesTable, DisplaySettingsEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DisplaySettingsEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dimEnabledMeta = const VerificationMeta(
+    'dimEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> dimEnabled = GeneratedColumn<bool>(
+    'dim_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("dim_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _dimStartHourMeta = const VerificationMeta(
+    'dimStartHour',
+  );
+  @override
+  late final GeneratedColumn<int> dimStartHour = GeneratedColumn<int>(
+    'dim_start_hour',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(22),
+  );
+  static const VerificationMeta _dimEndHourMeta = const VerificationMeta(
+    'dimEndHour',
+  );
+  @override
+  late final GeneratedColumn<int> dimEndHour = GeneratedColumn<int>(
+    'dim_end_hour',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(7),
+  );
+  static const VerificationMeta _dimLevelMeta = const VerificationMeta(
+    'dimLevel',
+  );
+  @override
+  late final GeneratedColumn<double> dimLevel = GeneratedColumn<double>(
+    'dim_level',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.85),
+  );
+  static const VerificationMeta _locationNameMeta = const VerificationMeta(
+    'locationName',
+  );
+  @override
+  late final GeneratedColumn<String> locationName = GeneratedColumn<String>(
+    'location_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    dimEnabled,
+    dimStartHour,
+    dimEndHour,
+    dimLevel,
+    locationName,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'display_settings_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DisplaySettingsEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('dim_enabled')) {
+      context.handle(
+        _dimEnabledMeta,
+        dimEnabled.isAcceptableOrUnknown(data['dim_enabled']!, _dimEnabledMeta),
+      );
+    }
+    if (data.containsKey('dim_start_hour')) {
+      context.handle(
+        _dimStartHourMeta,
+        dimStartHour.isAcceptableOrUnknown(
+          data['dim_start_hour']!,
+          _dimStartHourMeta,
+        ),
+      );
+    }
+    if (data.containsKey('dim_end_hour')) {
+      context.handle(
+        _dimEndHourMeta,
+        dimEndHour.isAcceptableOrUnknown(
+          data['dim_end_hour']!,
+          _dimEndHourMeta,
+        ),
+      );
+    }
+    if (data.containsKey('dim_level')) {
+      context.handle(
+        _dimLevelMeta,
+        dimLevel.isAcceptableOrUnknown(data['dim_level']!, _dimLevelMeta),
+      );
+    }
+    if (data.containsKey('location_name')) {
+      context.handle(
+        _locationNameMeta,
+        locationName.isAcceptableOrUnknown(
+          data['location_name']!,
+          _locationNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DisplaySettingsEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DisplaySettingsEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      dimEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}dim_enabled'],
+      )!,
+      dimStartHour: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}dim_start_hour'],
+      )!,
+      dimEndHour: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}dim_end_hour'],
+      )!,
+      dimLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}dim_level'],
+      )!,
+      locationName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}location_name'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DisplaySettingsEntriesTable createAlias(String alias) {
+    return $DisplaySettingsEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class DisplaySettingsEntry extends DataClass
+    implements Insertable<DisplaySettingsEntry> {
+  final int id;
+  final bool dimEnabled;
+  final int dimStartHour;
+  final int dimEndHour;
+  final double dimLevel;
+  final String locationName;
+  final DateTime updatedAt;
+  const DisplaySettingsEntry({
+    required this.id,
+    required this.dimEnabled,
+    required this.dimStartHour,
+    required this.dimEndHour,
+    required this.dimLevel,
+    required this.locationName,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['dim_enabled'] = Variable<bool>(dimEnabled);
+    map['dim_start_hour'] = Variable<int>(dimStartHour);
+    map['dim_end_hour'] = Variable<int>(dimEndHour);
+    map['dim_level'] = Variable<double>(dimLevel);
+    map['location_name'] = Variable<String>(locationName);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  DisplaySettingsEntriesCompanion toCompanion(bool nullToAbsent) {
+    return DisplaySettingsEntriesCompanion(
+      id: Value(id),
+      dimEnabled: Value(dimEnabled),
+      dimStartHour: Value(dimStartHour),
+      dimEndHour: Value(dimEndHour),
+      dimLevel: Value(dimLevel),
+      locationName: Value(locationName),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory DisplaySettingsEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DisplaySettingsEntry(
+      id: serializer.fromJson<int>(json['id']),
+      dimEnabled: serializer.fromJson<bool>(json['dimEnabled']),
+      dimStartHour: serializer.fromJson<int>(json['dimStartHour']),
+      dimEndHour: serializer.fromJson<int>(json['dimEndHour']),
+      dimLevel: serializer.fromJson<double>(json['dimLevel']),
+      locationName: serializer.fromJson<String>(json['locationName']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'dimEnabled': serializer.toJson<bool>(dimEnabled),
+      'dimStartHour': serializer.toJson<int>(dimStartHour),
+      'dimEndHour': serializer.toJson<int>(dimEndHour),
+      'dimLevel': serializer.toJson<double>(dimLevel),
+      'locationName': serializer.toJson<String>(locationName),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  DisplaySettingsEntry copyWith({
+    int? id,
+    bool? dimEnabled,
+    int? dimStartHour,
+    int? dimEndHour,
+    double? dimLevel,
+    String? locationName,
+    DateTime? updatedAt,
+  }) => DisplaySettingsEntry(
+    id: id ?? this.id,
+    dimEnabled: dimEnabled ?? this.dimEnabled,
+    dimStartHour: dimStartHour ?? this.dimStartHour,
+    dimEndHour: dimEndHour ?? this.dimEndHour,
+    dimLevel: dimLevel ?? this.dimLevel,
+    locationName: locationName ?? this.locationName,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  DisplaySettingsEntry copyWithCompanion(DisplaySettingsEntriesCompanion data) {
+    return DisplaySettingsEntry(
+      id: data.id.present ? data.id.value : this.id,
+      dimEnabled: data.dimEnabled.present
+          ? data.dimEnabled.value
+          : this.dimEnabled,
+      dimStartHour: data.dimStartHour.present
+          ? data.dimStartHour.value
+          : this.dimStartHour,
+      dimEndHour: data.dimEndHour.present
+          ? data.dimEndHour.value
+          : this.dimEndHour,
+      dimLevel: data.dimLevel.present ? data.dimLevel.value : this.dimLevel,
+      locationName: data.locationName.present
+          ? data.locationName.value
+          : this.locationName,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DisplaySettingsEntry(')
+          ..write('id: $id, ')
+          ..write('dimEnabled: $dimEnabled, ')
+          ..write('dimStartHour: $dimStartHour, ')
+          ..write('dimEndHour: $dimEndHour, ')
+          ..write('dimLevel: $dimLevel, ')
+          ..write('locationName: $locationName, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    dimEnabled,
+    dimStartHour,
+    dimEndHour,
+    dimLevel,
+    locationName,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DisplaySettingsEntry &&
+          other.id == this.id &&
+          other.dimEnabled == this.dimEnabled &&
+          other.dimStartHour == this.dimStartHour &&
+          other.dimEndHour == this.dimEndHour &&
+          other.dimLevel == this.dimLevel &&
+          other.locationName == this.locationName &&
+          other.updatedAt == this.updatedAt);
+}
+
+class DisplaySettingsEntriesCompanion
+    extends UpdateCompanion<DisplaySettingsEntry> {
+  final Value<int> id;
+  final Value<bool> dimEnabled;
+  final Value<int> dimStartHour;
+  final Value<int> dimEndHour;
+  final Value<double> dimLevel;
+  final Value<String> locationName;
+  final Value<DateTime> updatedAt;
+  const DisplaySettingsEntriesCompanion({
+    this.id = const Value.absent(),
+    this.dimEnabled = const Value.absent(),
+    this.dimStartHour = const Value.absent(),
+    this.dimEndHour = const Value.absent(),
+    this.dimLevel = const Value.absent(),
+    this.locationName = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  DisplaySettingsEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    this.dimEnabled = const Value.absent(),
+    this.dimStartHour = const Value.absent(),
+    this.dimEndHour = const Value.absent(),
+    this.dimLevel = const Value.absent(),
+    this.locationName = const Value.absent(),
+    required DateTime updatedAt,
+  }) : updatedAt = Value(updatedAt);
+  static Insertable<DisplaySettingsEntry> custom({
+    Expression<int>? id,
+    Expression<bool>? dimEnabled,
+    Expression<int>? dimStartHour,
+    Expression<int>? dimEndHour,
+    Expression<double>? dimLevel,
+    Expression<String>? locationName,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (dimEnabled != null) 'dim_enabled': dimEnabled,
+      if (dimStartHour != null) 'dim_start_hour': dimStartHour,
+      if (dimEndHour != null) 'dim_end_hour': dimEndHour,
+      if (dimLevel != null) 'dim_level': dimLevel,
+      if (locationName != null) 'location_name': locationName,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  DisplaySettingsEntriesCompanion copyWith({
+    Value<int>? id,
+    Value<bool>? dimEnabled,
+    Value<int>? dimStartHour,
+    Value<int>? dimEndHour,
+    Value<double>? dimLevel,
+    Value<String>? locationName,
+    Value<DateTime>? updatedAt,
+  }) {
+    return DisplaySettingsEntriesCompanion(
+      id: id ?? this.id,
+      dimEnabled: dimEnabled ?? this.dimEnabled,
+      dimStartHour: dimStartHour ?? this.dimStartHour,
+      dimEndHour: dimEndHour ?? this.dimEndHour,
+      dimLevel: dimLevel ?? this.dimLevel,
+      locationName: locationName ?? this.locationName,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (dimEnabled.present) {
+      map['dim_enabled'] = Variable<bool>(dimEnabled.value);
+    }
+    if (dimStartHour.present) {
+      map['dim_start_hour'] = Variable<int>(dimStartHour.value);
+    }
+    if (dimEndHour.present) {
+      map['dim_end_hour'] = Variable<int>(dimEndHour.value);
+    }
+    if (dimLevel.present) {
+      map['dim_level'] = Variable<double>(dimLevel.value);
+    }
+    if (locationName.present) {
+      map['location_name'] = Variable<String>(locationName.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DisplaySettingsEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('dimEnabled: $dimEnabled, ')
+          ..write('dimStartHour: $dimStartHour, ')
+          ..write('dimEndHour: $dimEndHour, ')
+          ..write('dimLevel: $dimLevel, ')
+          ..write('locationName: $locationName, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1454,6 +1916,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WeatherCurrentCacheEntriesTable(this);
   late final $WeatherForecastDayCacheEntriesTable
   weatherForecastDayCacheEntries = $WeatherForecastDayCacheEntriesTable(this);
+  late final $DisplaySettingsEntriesTable displaySettingsEntries =
+      $DisplaySettingsEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1462,6 +1926,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     layoutEntries,
     weatherCurrentCacheEntries,
     weatherForecastDayCacheEntries,
+    displaySettingsEntries,
   ];
 }
 
@@ -2230,6 +2695,265 @@ typedef $$WeatherForecastDayCacheEntriesTableProcessedTableManager =
       WeatherForecastDayCacheEntry,
       PrefetchHooks Function()
     >;
+typedef $$DisplaySettingsEntriesTableCreateCompanionBuilder =
+    DisplaySettingsEntriesCompanion Function({
+      Value<int> id,
+      Value<bool> dimEnabled,
+      Value<int> dimStartHour,
+      Value<int> dimEndHour,
+      Value<double> dimLevel,
+      Value<String> locationName,
+      required DateTime updatedAt,
+    });
+typedef $$DisplaySettingsEntriesTableUpdateCompanionBuilder =
+    DisplaySettingsEntriesCompanion Function({
+      Value<int> id,
+      Value<bool> dimEnabled,
+      Value<int> dimStartHour,
+      Value<int> dimEndHour,
+      Value<double> dimLevel,
+      Value<String> locationName,
+      Value<DateTime> updatedAt,
+    });
+
+class $$DisplaySettingsEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $DisplaySettingsEntriesTable> {
+  $$DisplaySettingsEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get dimEnabled => $composableBuilder(
+    column: $table.dimEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dimStartHour => $composableBuilder(
+    column: $table.dimStartHour,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dimEndHour => $composableBuilder(
+    column: $table.dimEndHour,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get dimLevel => $composableBuilder(
+    column: $table.dimLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get locationName => $composableBuilder(
+    column: $table.locationName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DisplaySettingsEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $DisplaySettingsEntriesTable> {
+  $$DisplaySettingsEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get dimEnabled => $composableBuilder(
+    column: $table.dimEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dimStartHour => $composableBuilder(
+    column: $table.dimStartHour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dimEndHour => $composableBuilder(
+    column: $table.dimEndHour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get dimLevel => $composableBuilder(
+    column: $table.dimLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get locationName => $composableBuilder(
+    column: $table.locationName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DisplaySettingsEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DisplaySettingsEntriesTable> {
+  $$DisplaySettingsEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<bool> get dimEnabled => $composableBuilder(
+    column: $table.dimEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get dimStartHour => $composableBuilder(
+    column: $table.dimStartHour,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get dimEndHour => $composableBuilder(
+    column: $table.dimEndHour,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get dimLevel =>
+      $composableBuilder(column: $table.dimLevel, builder: (column) => column);
+
+  GeneratedColumn<String> get locationName => $composableBuilder(
+    column: $table.locationName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$DisplaySettingsEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DisplaySettingsEntriesTable,
+          DisplaySettingsEntry,
+          $$DisplaySettingsEntriesTableFilterComposer,
+          $$DisplaySettingsEntriesTableOrderingComposer,
+          $$DisplaySettingsEntriesTableAnnotationComposer,
+          $$DisplaySettingsEntriesTableCreateCompanionBuilder,
+          $$DisplaySettingsEntriesTableUpdateCompanionBuilder,
+          (
+            DisplaySettingsEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $DisplaySettingsEntriesTable,
+              DisplaySettingsEntry
+            >,
+          ),
+          DisplaySettingsEntry,
+          PrefetchHooks Function()
+        > {
+  $$DisplaySettingsEntriesTableTableManager(
+    _$AppDatabase db,
+    $DisplaySettingsEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DisplaySettingsEntriesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$DisplaySettingsEntriesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$DisplaySettingsEntriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<bool> dimEnabled = const Value.absent(),
+                Value<int> dimStartHour = const Value.absent(),
+                Value<int> dimEndHour = const Value.absent(),
+                Value<double> dimLevel = const Value.absent(),
+                Value<String> locationName = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => DisplaySettingsEntriesCompanion(
+                id: id,
+                dimEnabled: dimEnabled,
+                dimStartHour: dimStartHour,
+                dimEndHour: dimEndHour,
+                dimLevel: dimLevel,
+                locationName: locationName,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<bool> dimEnabled = const Value.absent(),
+                Value<int> dimStartHour = const Value.absent(),
+                Value<int> dimEndHour = const Value.absent(),
+                Value<double> dimLevel = const Value.absent(),
+                Value<String> locationName = const Value.absent(),
+                required DateTime updatedAt,
+              }) => DisplaySettingsEntriesCompanion.insert(
+                id: id,
+                dimEnabled: dimEnabled,
+                dimStartHour: dimStartHour,
+                dimEndHour: dimEndHour,
+                dimLevel: dimLevel,
+                locationName: locationName,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DisplaySettingsEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DisplaySettingsEntriesTable,
+      DisplaySettingsEntry,
+      $$DisplaySettingsEntriesTableFilterComposer,
+      $$DisplaySettingsEntriesTableOrderingComposer,
+      $$DisplaySettingsEntriesTableAnnotationComposer,
+      $$DisplaySettingsEntriesTableCreateCompanionBuilder,
+      $$DisplaySettingsEntriesTableUpdateCompanionBuilder,
+      (
+        DisplaySettingsEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $DisplaySettingsEntriesTable,
+          DisplaySettingsEntry
+        >,
+      ),
+      DisplaySettingsEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2247,5 +2971,10 @@ class $AppDatabaseManager {
       $$WeatherForecastDayCacheEntriesTableTableManager(
         _db,
         _db.weatherForecastDayCacheEntries,
+      );
+  $$DisplaySettingsEntriesTableTableManager get displaySettingsEntries =>
+      $$DisplaySettingsEntriesTableTableManager(
+        _db,
+        _db.displaySettingsEntries,
       );
 }

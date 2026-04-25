@@ -11,6 +11,7 @@ import 'package:display/src/data/clock/system_clock_repository.dart';
 import 'package:display/src/data/local/app_database.dart';
 import 'package:display/src/data/local/repositories/drift_dashboard_layout_repository.dart';
 import 'package:display/src/data/photo/serverpod_photo_repository.dart';
+import 'package:display/src/data/settings/drift_display_settings_repository.dart';
 import 'package:display/src/data/weather/serverpod_weather_repository.dart';
 import 'package:display/src/domain/use_cases/get_current_time_use_case.dart';
 import 'package:display/src/features/auth/cubit/auth_cubit.dart';
@@ -21,6 +22,7 @@ import 'package:display/src/features/clock/cubit/clock_cubit.dart';
 import 'package:display/src/features/display/screens/display_screen.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
+import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:ui_kit/ui_kit.dart';
 
@@ -57,6 +59,7 @@ class LandfallApp extends StatelessWidget {
     final weatherRepository = ServerpodWeatherRepository(client, database);
     final calendarRepository = ServerpodCalendarRepository(client);
     final photoRepository = ServerpodPhotoRepository(client, serverUrl);
+    final displaySettingsRepository = DriftDisplaySettingsRepository(database);
     final clockRepository = const SystemClockRepository();
     final getCurrentTime = GetCurrentTimeUseCase(clockRepository);
 
@@ -76,6 +79,9 @@ class LandfallApp extends StatelessWidget {
         ),
         RepositoryProvider<PhotoRepository>(
           create: (_) => photoRepository,
+        ),
+        RepositoryProvider<DisplaySettingsRepository>(
+          create: (_) => displaySettingsRepository,
         ),
       ],
       child: MultiBlocProvider(
@@ -103,12 +109,16 @@ class LandfallApp extends StatelessWidget {
           BlocProvider(
             create: (ctx) => PhotoCubit(ctx.read<PhotoRepository>()),
           ),
+          BlocProvider(
+            create: (ctx) =>
+                DisplaySettingsCubit(ctx.read<DisplaySettingsRepository>()),
+          ),
         ],
         child: MaterialApp(
           title: 'Landfall',
           debugShowCheckedModeBanner: false,
           theme: LandfallTheme.dark,
-          home: const _AuthGate(),
+          home: _AuthGate(client: client, serverUrl: serverUrl),
         ),
       ),
     );
@@ -117,14 +127,17 @@ class LandfallApp extends StatelessWidget {
 
 /// Switches between [LoginScreen] and [DisplayScreen] based on auth state.
 class _AuthGate extends StatelessWidget {
-  const _AuthGate();
+  const _AuthGate({required this.client, required this.serverUrl});
+
+  final Client client;
+  final String serverUrl;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
         if (state is AuthAuthenticated) {
-          return const DisplayScreen();
+          return DisplayScreen(client: client, serverUrl: serverUrl);
         }
         return const LoginScreen();
       },
