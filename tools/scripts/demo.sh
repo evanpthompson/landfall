@@ -464,8 +464,8 @@ step "Calendar widget (Session 10)"
 echo ""
 echo "  ${BOLD}Provider support:${RESET}"
 echo "  ${DIM}• Google Calendar   — OAuth 2.0, all calendars visible to the account${RESET}"
-echo "  ${DIM}• Microsoft Outlook — OAuth 2.0, Microsoft Graph API (coming next)${RESET}"
-echo "  ${DIM}• Apple iCloud      — CalDAV + app-specific password (coming next)${RESET}"
+echo "  ${DIM}• Microsoft Outlook — OAuth 2.0, Microsoft Graph API (add Azure credentials to enable)${RESET}"
+echo "  ${DIM}• Apple iCloud      — CalDAV + app-specific password (coming soon)${RESET}"
 echo ""
 echo "  ${BOLD}Multi-feed design:${RESET}"
 echo "  ${DIM}Each connected account is a LinkedCredential row. Events from all active${RESET}"
@@ -497,8 +497,74 @@ else
   info "Start Postgres first or check ${SERVER_LOG} for errors."
 fi
 
-# ── Step 11: Display ────────────────────────────────────────────────────────
-pause "Let's launch the display. Clock, weather, and calendar widgets load automatically. Agent cards appear in the right-side feed."
+# ── Step 11: Photo frame ──────────────────────────────────────────────────
+pause "Session 11 added a photo frame slot and Microsoft Calendar. Let's walk through both."
+
+step "Photo frame (system.photos)"
+echo ""
+echo "  ${BOLD}How it works:${RESET}"
+echo "  ${DIM}• A 30-min server-side FutureCall syncs image metadata from a Google Drive folder${RESET}"
+echo "  ${DIM}• The display fetches metadata via PhotoEndpoint.getPhotos()${RESET}"
+echo "  ${DIM}• Image bytes are proxied on-demand through GET /photos/{id} — nothing stored on disk${RESET}"
+echo "  ${DIM}• Photos rotate every 45 seconds with an animated crossfade${RESET}"
+echo ""
+echo "  ${BOLD}Display slot:${RESET}  ${DIM}system.photos — bottom-right of the default layout${RESET}"
+echo "  ${BOLD}Refresh cadence:${RESET}  ${DIM}metadata every 30 min, bytes fetched live on each transition${RESET}"
+echo ""
+echo "  ${BOLD}To enable live photos:${RESET}"
+echo "  ${DIM}1. Create a folder in Google Drive and share it with your connected Google account${RESET}"
+echo "  ${DIM}2. Set googleDriveFolderId in ${PASSWORDS_YAML}${RESET}"
+echo "  ${DIM}3. The 30-min refresh call picks it up automatically — no restart needed${RESET}"
+echo ""
+GDRIVE_FOLDER_ID=$(python3 -c "
+import re, sys
+text = open('${PASSWORDS_YAML}').read()
+m = re.search(r'googleDriveFolderId\s*:\s*[\'\"](.*?)[\'\"]\s*\$', text, re.MULTILINE)
+print(m.group(1) if m else '')
+" 2>/dev/null || echo "")
+if [[ -n "${GDRIVE_FOLDER_ID}" ]]; then
+  ok "googleDriveFolderId configured — photo sync will run on startup"
+else
+  warn "googleDriveFolderId not set — photo slot will show 'No photos configured'"
+fi
+
+echo ""
+echo "  ${BOLD}Microsoft Calendar:${RESET}"
+echo "  ${DIM}MicrosoftCalendarService is fully implemented (Microsoft Graph API, OAuth 2.0).${RESET}"
+echo "  ${DIM}Routes are live at /calendar/microsoft/oauth/start and /calendar/microsoft/oauth/callback.${RESET}"
+echo "  ${DIM}Add microsoftClientId + microsoftClientSecret + microsoftOAuthRedirectUri to${RESET}"
+echo "  ${DIM}passwords.yaml (from an Azure app registration) and the connect flow works immediately.${RESET}"
+echo ""
+
+# ── Step 12: Settings ─────────────────────────────────────────────────────
+pause "Session 12 added a settings screen, ambient dim mode, and a drag-to-move layout editor."
+
+step "Settings screen"
+echo ""
+echo "  ${BOLD}How to access:${RESET}"
+echo "  ${DIM}Single-tap anywhere on the display — a gear icon (⚙) appears in the bottom-right${RESET}"
+echo "  ${DIM}corner. Tap the icon to open Settings. It auto-hides after 5 seconds.${RESET}"
+echo ""
+echo "  ${BOLD}Display tab:${RESET}"
+echo "  ${DIM}• Ambient dim — toggle on/off, set start hour and end hour (default: 10 pm → 7 am)${RESET}"
+echo "  ${DIM}• Dim level slider — default 85% opacity (still viewable, noticeably dimmer)${RESET}"
+echo "  ${DIM}• Location name — override the label shown on the weather card${RESET}"
+echo "  ${DIM}All changes are saved immediately to local SQLite storage.${RESET}"
+echo ""
+echo "  ${BOLD}Accounts tab:${RESET}"
+echo "  ${DIM}• Lists all connected credentials (Google Calendar, Microsoft Calendar)${RESET}"
+echo "  ${DIM}• Shows copyable OAuth connect URLs — visit from any device on the same network${RESET}"
+echo "  ${DIM}  (wall displays don't have browsers; copy the URL to your phone/laptop)${RESET}"
+echo ""
+echo "  ${BOLD}Layout tab:${RESET}"
+echo "  ${DIM}• Drag cards to move them anywhere in the 12×8 grid${RESET}"
+echo "  ${DIM}• Tap a card to toggle its visibility (hidden cards keep their slot)${RESET}"
+echo "  ${DIM}• Changes persist immediately — layout survives app restarts${RESET}"
+echo "  ${DIM}• Resize support is next (drag corners to change column/row span)${RESET}"
+echo ""
+
+# ── Step 13: Display ────────────────────────────────────────────────────────
+pause "Let's launch the display. Clock, weather, calendar, photo, and all agent cards load automatically. Tap anywhere to reveal the gear icon and explore settings."
 
 step "Launching Landfall display (macOS)"
 info "The app will open in a new window. Press Cmd+Q to quit when done."
