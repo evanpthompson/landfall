@@ -19,15 +19,16 @@ import '../auth/passkey_idp_endpoint.dart' as _i6;
 import '../calendar/calendar_endpoint.dart' as _i7;
 import '../cards/card_endpoint.dart' as _i8;
 import '../greetings/greeting_endpoint.dart' as _i9;
-import '../weather/weather_endpoint.dart' as _i10;
+import '../photo/photo_endpoint.dart' as _i10;
+import '../weather/weather_endpoint.dart' as _i11;
 import 'package:landfall_server/src/generated/cards/card_push_request.dart'
-    as _i11;
-import 'package:landfall_server/src/generated/protocol.dart' as _i12;
+    as _i12;
+import 'package:landfall_server/src/generated/protocol.dart' as _i13;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
-    as _i13;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i14;
-import 'package:landfall_server/src/generated/future_calls.dart' as _i15;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _i15;
+import 'package:landfall_server/src/generated/future_calls.dart' as _i16;
 export 'future_calls.dart' show ServerpodFutureCallsGetter;
 
 class Endpoints extends _i1.EndpointDispatch {
@@ -82,7 +83,13 @@ class Endpoints extends _i1.EndpointDispatch {
           'greeting',
           null,
         ),
-      'weather': _i10.WeatherEndpoint()
+      'photo': _i10.PhotoEndpoint()
+        ..initialize(
+          server,
+          'photo',
+          null,
+        ),
+      'weather': _i11.WeatherEndpoint()
         ..initialize(
           server,
           'weather',
@@ -121,7 +128,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i11.CardPushRequest>(),
+              type: _i1.getType<_i12.CardPushRequest>(),
               nullable: false,
             ),
           },
@@ -150,7 +157,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i11.CardPushRequest>(),
+              type: _i1.getType<_i12.CardPushRequest>(),
               nullable: false,
             ),
           },
@@ -330,14 +337,14 @@ class Endpoints extends _i1.EndpointDispatch {
                 Map<String, dynamic> params,
               ) async => (endpoints['passkeyIdp'] as _i6.PasskeyIdpEndpoint)
                   .createChallenge(session)
-                  .then((record) => _i12.Protocol().mapRecordToJson(record)),
+                  .then((record) => _i13.Protocol().mapRecordToJson(record)),
         ),
         'register': _i1.MethodConnector(
           name: 'register',
           params: {
             'registrationRequest': _i1.ParameterDescription(
               name: 'registrationRequest',
-              type: _i1.getType<_i13.PasskeyRegistrationRequest>(),
+              type: _i1.getType<_i14.PasskeyRegistrationRequest>(),
               nullable: false,
             ),
           },
@@ -356,7 +363,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'loginRequest': _i1.ParameterDescription(
               name: 'loginRequest',
-              type: _i1.getType<_i13.PasskeyLoginRequest>(),
+              type: _i1.getType<_i14.PasskeyLoginRequest>(),
               nullable: false,
             ),
           },
@@ -417,7 +424,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i11.CardPushRequest>(),
+              type: _i1.getType<_i12.CardPushRequest>(),
               nullable: false,
             ),
           },
@@ -474,6 +481,22 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
+    connectors['photo'] = _i1.EndpointConnector(
+      name: 'photo',
+      endpoint: endpoints['photo']!,
+      methodConnectors: {
+        'getPhotos': _i1.MethodConnector(
+          name: 'getPhotos',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['photo'] as _i10.PhotoEndpoint).getPhotos(session),
+        ),
+      },
+    );
     connectors['weather'] = _i1.EndpointConnector(
       name: 'weather',
       endpoint: endpoints['weather']!,
@@ -485,7 +508,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['weather'] as _i10.WeatherEndpoint)
+              ) async => (endpoints['weather'] as _i11.WeatherEndpoint)
                   .getCurrentWeather(session),
         ),
         'getForecast': _i1.MethodConnector(
@@ -495,19 +518,19 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['weather'] as _i10.WeatherEndpoint)
+              ) async => (endpoints['weather'] as _i11.WeatherEndpoint)
                   .getForecast(session),
         ),
       },
     );
-    modules['serverpod_auth_idp'] = _i13.Endpoints()
+    modules['serverpod_auth_idp'] = _i14.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_core'] = _i14.Endpoints()
+    modules['serverpod_auth_core'] = _i15.Endpoints()
       ..initializeEndpoints(server);
   }
 
   @override
   _i1.FutureCallDispatch? get futureCalls {
-    return _i15.FutureCalls();
+    return _i16.FutureCalls();
   }
 }

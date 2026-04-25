@@ -15,6 +15,8 @@ import 'package:display/src/features/clock/cubit/clock_state.dart';
 import 'package:display/src/features/clock/widgets/clock_card.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_state.dart';
+import 'package:display/src/features/photo/cubit/photo_cubit.dart';
+import 'package:display/src/features/photo/widgets/photo_frame_card.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_state.dart';
 import 'package:display/src/features/weather/widgets/current_weather_card.dart';
@@ -29,9 +31,12 @@ import 'package:display/src/features/weather/widgets/forecast_strip_card.dart';
 ///   - [CardCubit.fetchCards] — fetches the initial agent card set
 ///   - [WeatherCubit.loadWeather] — fetches initial weather data
 ///   - [CalendarCubit.loadEvents] — fetches initial calendar events
+///   - [PhotoCubit.loadPhotos] — fetches initial photo list
 ///   - A 30-second timer refreshes agent cards
 ///   - A 10-minute timer refreshes weather data
 ///   - A 15-minute timer refreshes calendar events
+///   - A 45-second timer advances the photo slideshow
+///   - A 30-minute timer refreshes the photo list
 class DisplayScreen extends StatefulWidget {
   const DisplayScreen({super.key});
 
@@ -43,6 +48,10 @@ class _DisplayScreenState extends State<DisplayScreen> {
   Timer? _cardRefreshTimer;
   Timer? _weatherRefreshTimer;
   Timer? _calendarRefreshTimer;
+  Timer? _photoSlideshowTimer;
+  Timer? _photoRefreshTimer;
+
+  static const _photoSlideshowInterval = Duration(seconds: 45);
 
   @override
   void initState() {
@@ -52,6 +61,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
     context.read<CardCubit>().fetchCards();
     context.read<WeatherCubit>().loadWeather();
     context.read<CalendarCubit>().loadEvents();
+    context.read<PhotoCubit>().loadPhotos();
 
     _cardRefreshTimer = Timer.periodic(
       const Duration(seconds: 30),
@@ -73,6 +83,20 @@ class _DisplayScreenState extends State<DisplayScreen> {
         if (mounted) context.read<CalendarCubit>().loadEvents();
       },
     );
+
+    _photoSlideshowTimer = Timer.periodic(
+      _photoSlideshowInterval,
+      (_) {
+        if (mounted) context.read<PhotoCubit>().advance();
+      },
+    );
+
+    _photoRefreshTimer = Timer.periodic(
+      const Duration(minutes: 30),
+      (_) {
+        if (mounted) context.read<PhotoCubit>().loadPhotos();
+      },
+    );
   }
 
   @override
@@ -80,6 +104,8 @@ class _DisplayScreenState extends State<DisplayScreen> {
     _cardRefreshTimer?.cancel();
     _weatherRefreshTimer?.cancel();
     _calendarRefreshTimer?.cancel();
+    _photoSlideshowTimer?.cancel();
+    _photoRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -223,6 +249,7 @@ class _GridView extends StatelessWidget {
             _ => const _PlaceholderTile(source: 'system.calendar'),
           },
         ),
+      'system.photos' => const PhotoFrameCard(),
       _ => _PlaceholderTile(source: config.source),
     };
   }

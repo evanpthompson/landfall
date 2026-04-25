@@ -10,6 +10,7 @@ import 'package:display/src/data/cards/serverpod_card_repository.dart';
 import 'package:display/src/data/clock/system_clock_repository.dart';
 import 'package:display/src/data/local/app_database.dart';
 import 'package:display/src/data/local/repositories/drift_dashboard_layout_repository.dart';
+import 'package:display/src/data/photo/serverpod_photo_repository.dart';
 import 'package:display/src/data/weather/serverpod_weather_repository.dart';
 import 'package:display/src/domain/use_cases/get_current_time_use_case.dart';
 import 'package:display/src/features/auth/cubit/auth_cubit.dart';
@@ -19,6 +20,7 @@ import 'package:display/src/features/cards/cubit/card_cubit.dart';
 import 'package:display/src/features/clock/cubit/clock_cubit.dart';
 import 'package:display/src/features/display/screens/display_screen.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
+import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:ui_kit/ui_kit.dart';
 
@@ -54,6 +56,7 @@ class LandfallApp extends StatelessWidget {
     final cardRepository = ServerpodCardRepository(client);
     final weatherRepository = ServerpodWeatherRepository(client, database);
     final calendarRepository = ServerpodCalendarRepository(client);
+    final photoRepository = ServerpodPhotoRepository(client, serverUrl);
     final clockRepository = const SystemClockRepository();
     final getCurrentTime = GetCurrentTimeUseCase(clockRepository);
 
@@ -70,6 +73,9 @@ class LandfallApp extends StatelessWidget {
         ),
         RepositoryProvider<CalendarRepository>(
           create: (_) => calendarRepository,
+        ),
+        RepositoryProvider<PhotoRepository>(
+          create: (_) => photoRepository,
         ),
       ],
       child: MultiBlocProvider(
@@ -93,6 +99,9 @@ class LandfallApp extends StatelessWidget {
           ),
           BlocProvider(
             create: (ctx) => CalendarCubit(ctx.read<CalendarRepository>()),
+          ),
+          BlocProvider(
+            create: (ctx) => PhotoCubit(ctx.read<PhotoRepository>()),
           ),
         ],
         child: MaterialApp(

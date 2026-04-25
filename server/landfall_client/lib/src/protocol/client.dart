@@ -26,11 +26,12 @@ import 'dart:typed_data' as _i9;
 import 'package:landfall_client/src/protocol/calendar/calendar_event.dart'
     as _i10;
 import 'package:landfall_client/src/protocol/greetings/greeting.dart' as _i11;
+import 'package:landfall_client/src/protocol/photo/photo.dart' as _i12;
 import 'package:landfall_client/src/protocol/weather/weather_current.dart'
-    as _i12;
-import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
     as _i13;
-import 'protocol.dart' as _i14;
+import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+    as _i14;
+import 'protocol.dart' as _i15;
 
 /// The authenticated agent push API.
 ///
@@ -374,6 +375,29 @@ class EndpointGreeting extends _i1.EndpointRef {
       );
 }
 
+/// Serves cached photo metadata to the Flutter display client.
+///
+/// Photo entries are populated by [PhotoRefreshCall] on a 30-minute schedule.
+/// Returns an empty list gracefully if no photos have been synced yet.
+///
+/// Image bytes are NOT served through this endpoint. The display client
+/// fetches images via the [PhotoServeRoute] web route at /photos/{id}.
+/// {@category Endpoint}
+class EndpointPhoto extends _i1.EndpointRef {
+  EndpointPhoto(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'photo';
+
+  /// Returns all available photos ordered by filename.
+  _i2.Future<List<_i12.Photo>> getPhotos() =>
+      caller.callServerEndpoint<List<_i12.Photo>>(
+        'photo',
+        'getPhotos',
+        {},
+      );
+}
+
 /// Serves cached weather data to the Flutter display client.
 ///
 /// Data is populated by [WeatherRefreshCall] on a 10-minute schedule.
@@ -387,8 +411,8 @@ class EndpointWeather extends _i1.EndpointRef {
   String get name => 'weather';
 
   /// Returns the most recently cached current conditions, or null if none.
-  _i2.Future<_i12.WeatherCurrent?> getCurrentWeather() =>
-      caller.callServerEndpoint<_i12.WeatherCurrent?>(
+  _i2.Future<_i13.WeatherCurrent?> getCurrentWeather() =>
+      caller.callServerEndpoint<_i13.WeatherCurrent?>(
         'weather',
         'getCurrentWeather',
         {},
@@ -397,8 +421,8 @@ class EndpointWeather extends _i1.EndpointRef {
   /// Returns the cached 5-day forecast, oldest day first.
   ///
   /// Returns an empty list if no forecast data has been cached yet.
-  _i2.Future<List<_i13.WeatherForecast>> getForecast() =>
-      caller.callServerEndpoint<List<_i13.WeatherForecast>>(
+  _i2.Future<List<_i14.WeatherForecast>> getForecast() =>
+      caller.callServerEndpoint<List<_i14.WeatherForecast>>(
         'weather',
         'getForecast',
         {},
@@ -436,7 +460,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i14.Protocol(),
+         _i15.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -453,6 +477,7 @@ class Client extends _i1.ServerpodClientShared {
     calendar = EndpointCalendar(this);
     card = EndpointCard(this);
     greeting = EndpointGreeting(this);
+    photo = EndpointPhoto(this);
     weather = EndpointWeather(this);
     modules = Modules(this);
   }
@@ -473,6 +498,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointGreeting greeting;
 
+  late final EndpointPhoto photo;
+
   late final EndpointWeather weather;
 
   late final Modules modules;
@@ -487,6 +514,7 @@ class Client extends _i1.ServerpodClientShared {
     'calendar': calendar,
     'card': card,
     'greeting': greeting,
+    'photo': photo,
     'weather': weather,
   };
 

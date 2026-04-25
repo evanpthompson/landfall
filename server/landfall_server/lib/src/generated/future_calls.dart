@@ -13,6 +13,7 @@
 import 'package:serverpod/serverpod.dart' as _i1;
 import 'dart:async' as _i2;
 import '../calendar/calendar_refresh_call.dart' as _i3;
+import '../photo/photo_refresh_call.dart' as _i4;
 
 /// Invokes a future call.
 typedef _InvokeFutureCall =
@@ -58,6 +59,7 @@ class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
     var registeredFutureCalls = <String, _i1.FutureCall>{
       'CalendarRefreshCallInvokeFutureCall':
           CalendarRefreshCallInvokeFutureCall(),
+      'PhotoRefreshCallInvokeFutureCall': PhotoRefreshCallInvokeFutureCall(),
     };
     _futureCallManager = futureCallManager;
     _serverId = serverId;
@@ -116,6 +118,10 @@ class _FutureCallRef {
   late final calendarRefreshCall = _CalendarRefreshCallFutureCallDispatcher(
     _invokeFutureCall,
   );
+
+  late final photoRefreshCall = _PhotoRefreshCallFutureCallDispatcher(
+    _invokeFutureCall,
+  );
 }
 
 class _CalendarRefreshCallFutureCallDispatcher {
@@ -131,6 +137,19 @@ class _CalendarRefreshCallFutureCallDispatcher {
   }
 }
 
+class _PhotoRefreshCallFutureCallDispatcher {
+  _PhotoRefreshCallFutureCallDispatcher(this._invokeFutureCall);
+
+  final _InvokeFutureCall _invokeFutureCall;
+
+  Future<void> invoke(_i1.SerializableModel? object) {
+    return _invokeFutureCall(
+      'PhotoRefreshCallInvokeFutureCall',
+      object,
+    );
+  }
+}
+
 class CalendarRefreshCallInvokeFutureCall
     extends _i1.FutureCall<_i1.SerializableModel> {
   @override
@@ -139,6 +158,20 @@ class CalendarRefreshCallInvokeFutureCall
     _i1.SerializableModel? object,
   ) async {
     await _i3.CalendarRefreshCall().invoke(
+      session,
+      object,
+    );
+  }
+}
+
+class PhotoRefreshCallInvokeFutureCall
+    extends _i1.FutureCall<_i1.SerializableModel> {
+  @override
+  _i2.Future<void> invoke(
+    _i1.Session session,
+    _i1.SerializableModel? object,
+  ) async {
+    await _i4.PhotoRefreshCall().invoke(
       session,
       object,
     );

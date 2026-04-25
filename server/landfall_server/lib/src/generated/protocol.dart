@@ -26,15 +26,17 @@ import 'calendar/linked_credential.dart' as _i11;
 import 'cards/card_push_request.dart' as _i12;
 import 'cards/card_row.dart' as _i13;
 import 'greetings/greeting.dart' as _i14;
-import 'weather/weather_current.dart' as _i15;
-import 'weather/weather_forecast.dart' as _i16;
-import 'package:landfall_server/src/generated/cards/card_row.dart' as _i17;
-import 'package:landfall_server/src/generated/agent/api_key.dart' as _i18;
-import 'dart:typed_data' as _i19;
+import 'photo/photo.dart' as _i15;
+import 'weather/weather_current.dart' as _i16;
+import 'weather/weather_forecast.dart' as _i17;
+import 'package:landfall_server/src/generated/cards/card_row.dart' as _i18;
+import 'package:landfall_server/src/generated/agent/api_key.dart' as _i19;
+import 'dart:typed_data' as _i20;
 import 'package:landfall_server/src/generated/calendar/calendar_event.dart'
-    as _i20;
-import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
     as _i21;
+import 'package:landfall_server/src/generated/photo/photo.dart' as _i22;
+import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
+    as _i23;
 export 'agent/api_key.dart';
 export 'agent/api_key_create_response.dart';
 export 'agent/landfall_exception.dart';
@@ -45,6 +47,7 @@ export 'calendar/linked_credential.dart';
 export 'cards/card_push_request.dart';
 export 'cards/card_row.dart';
 export 'greetings/greeting.dart';
+export 'photo/photo.dart';
 export 'weather/weather_current.dart';
 export 'weather/weather_forecast.dart';
 
@@ -761,6 +764,94 @@ class Protocol extends _i1.SerializationManagerServer {
       managed: true,
     ),
     _i2.TableDefinition(
+      name: 'photos',
+      dartName: 'Photo',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'photos_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'credentialId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'providerFileId',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'filename',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'mimeType',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'fetchedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'photos_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'photos_credential_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'credentialId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'photos_provider_file_id_uniq',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'providerFileId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
       name: 'weather_current',
       dartName: 'WeatherCurrent',
       schema: 'public',
@@ -989,11 +1080,14 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i14.Greeting) {
       return _i14.Greeting.fromJson(data) as T;
     }
-    if (t == _i15.WeatherCurrent) {
-      return _i15.WeatherCurrent.fromJson(data) as T;
+    if (t == _i15.Photo) {
+      return _i15.Photo.fromJson(data) as T;
     }
-    if (t == _i16.WeatherForecast) {
-      return _i16.WeatherForecast.fromJson(data) as T;
+    if (t == _i16.WeatherCurrent) {
+      return _i16.WeatherCurrent.fromJson(data) as T;
+    }
+    if (t == _i17.WeatherForecast) {
+      return _i17.WeatherForecast.fromJson(data) as T;
     }
     if (t == _i1.getType<_i5.ApiKey?>()) {
       return (data != null ? _i5.ApiKey.fromJson(data) : null) as T;
@@ -1026,38 +1120,45 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i14.Greeting?>()) {
       return (data != null ? _i14.Greeting.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i15.WeatherCurrent?>()) {
-      return (data != null ? _i15.WeatherCurrent.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i15.Photo?>()) {
+      return (data != null ? _i15.Photo.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i16.WeatherForecast?>()) {
-      return (data != null ? _i16.WeatherForecast.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i16.WeatherCurrent?>()) {
+      return (data != null ? _i16.WeatherCurrent.fromJson(data) : null) as T;
     }
-    if (t == List<_i17.CardRow>) {
-      return (data as List).map((e) => deserialize<_i17.CardRow>(e)).toList()
+    if (t == _i1.getType<_i17.WeatherForecast?>()) {
+      return (data != null ? _i17.WeatherForecast.fromJson(data) : null) as T;
+    }
+    if (t == List<_i18.CardRow>) {
+      return (data as List).map((e) => deserialize<_i18.CardRow>(e)).toList()
           as T;
     }
-    if (t == List<_i18.ApiKey>) {
-      return (data as List).map((e) => deserialize<_i18.ApiKey>(e)).toList()
+    if (t == List<_i19.ApiKey>) {
+      return (data as List).map((e) => deserialize<_i19.ApiKey>(e)).toList()
           as T;
     }
-    if (t == _i1.getType<({_i19.ByteData challenge, _i1.UuidValue id})>()) {
+    if (t == _i1.getType<({_i20.ByteData challenge, _i1.UuidValue id})>()) {
       return (
-            challenge: deserialize<_i19.ByteData>(
+            challenge: deserialize<_i20.ByteData>(
               ((data as Map)['n'] as Map)['challenge'],
             ),
             id: deserialize<_i1.UuidValue>(data['n']['id']),
           )
           as T;
     }
-    if (t == List<_i20.CalendarEvent>) {
+    if (t == List<_i21.CalendarEvent>) {
       return (data as List)
-              .map((e) => deserialize<_i20.CalendarEvent>(e))
+              .map((e) => deserialize<_i21.CalendarEvent>(e))
               .toList()
           as T;
     }
-    if (t == List<_i21.WeatherForecast>) {
+    if (t == List<_i22.Photo>) {
+      return (data as List).map((e) => deserialize<_i22.Photo>(e)).toList()
+          as T;
+    }
+    if (t == List<_i23.WeatherForecast>) {
       return (data as List)
-              .map((e) => deserialize<_i21.WeatherForecast>(e))
+              .map((e) => deserialize<_i23.WeatherForecast>(e))
               .toList()
           as T;
     }
@@ -1085,8 +1186,9 @@ class Protocol extends _i1.SerializationManagerServer {
       _i12.CardPushRequest => 'CardPushRequest',
       _i13.CardRow => 'CardRow',
       _i14.Greeting => 'Greeting',
-      _i15.WeatherCurrent => 'WeatherCurrent',
-      _i16.WeatherForecast => 'WeatherForecast',
+      _i15.Photo => 'Photo',
+      _i16.WeatherCurrent => 'WeatherCurrent',
+      _i17.WeatherForecast => 'WeatherForecast',
       _ => null,
     };
   }
@@ -1121,9 +1223,11 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'CardRow';
       case _i14.Greeting():
         return 'Greeting';
-      case _i15.WeatherCurrent():
+      case _i15.Photo():
+        return 'Photo';
+      case _i16.WeatherCurrent():
         return 'WeatherCurrent';
-      case _i16.WeatherForecast():
+      case _i17.WeatherForecast():
         return 'WeatherForecast';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -1177,11 +1281,14 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'Greeting') {
       return deserialize<_i14.Greeting>(data['data']);
     }
+    if (dataClassName == 'Photo') {
+      return deserialize<_i15.Photo>(data['data']);
+    }
     if (dataClassName == 'WeatherCurrent') {
-      return deserialize<_i15.WeatherCurrent>(data['data']);
+      return deserialize<_i16.WeatherCurrent>(data['data']);
     }
     if (dataClassName == 'WeatherForecast') {
-      return deserialize<_i16.WeatherForecast>(data['data']);
+      return deserialize<_i17.WeatherForecast>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -1231,10 +1338,12 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i11.LinkedCredential.t;
       case _i13.CardRow:
         return _i13.CardRow.t;
-      case _i15.WeatherCurrent:
-        return _i15.WeatherCurrent.t;
-      case _i16.WeatherForecast:
-        return _i16.WeatherForecast.t;
+      case _i15.Photo:
+        return _i15.Photo.t;
+      case _i16.WeatherCurrent:
+        return _i16.WeatherCurrent.t;
+      case _i17.WeatherForecast:
+        return _i17.WeatherForecast.t;
     }
     return null;
   }
@@ -1255,7 +1364,7 @@ class Protocol extends _i1.SerializationManagerServer {
     if (record == null) {
       return null;
     }
-    if (record is ({_i19.ByteData challenge, _i1.UuidValue id})) {
+    if (record is ({_i20.ByteData challenge, _i1.UuidValue id})) {
       return {
         "n": {
           "challenge": record.challenge.toJson(),

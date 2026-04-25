@@ -1,0 +1,31 @@
+### A photo entry synced from an external provider (e.g. Google Drive).
+###
+### Each row represents one image file available for the photo frame slideshow.
+### Photo bytes are not stored here — they are fetched on demand via the
+### provider service and proxied through the photo serve route.
+class: Photo
+table: photos
+
+fields:
+  ### The LinkedCredential used to access this photo.
+  credentialId: int
+
+  ### Provider-assigned file identifier. Opaque to the client — used server-side
+  ### when proxying image bytes from the upstream provider.
+  providerFileId: String
+
+  ### Original filename, e.g. "IMG_1234.jpg".
+  filename: String
+
+  ### MIME type, e.g. "image/jpeg", "image/png".
+  mimeType: String
+
+  ### When this photo entry was last synced from the upstream provider.
+  fetchedAt: DateTime
+
+indexes:
+  photos_credential_idx:
+    fields: credentialId
+  photos_provider_file_id_uniq:
+    fields: providerFileId
+    unique: true

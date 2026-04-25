@@ -7,8 +7,11 @@ import 'package:serverpod_auth_idp_server/providers/passkey.dart';
 import 'src/calendar/calendar_refresh_call.dart';
 import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
+import 'src/photo/photo_refresh_call.dart';
 import 'src/web/routes/app_config_route.dart';
 import 'src/web/routes/calendar_oauth_route.dart';
+import 'src/web/routes/microsoft_calendar_oauth_route.dart';
+import 'src/web/routes/photo_serve_route.dart';
 import 'src/web/routes/root.dart';
 import 'src/weather/weather_refresh_call.dart';
 
@@ -77,6 +80,7 @@ void run(List<String> args) async {
   // Register future calls.
   pod.registerFutureCall(WeatherRefreshCall(), 'weatherRefresh');
   pod.registerFutureCall(CalendarRefreshCall(), 'calendarRefresh');
+  pod.registerFutureCall(PhotoRefreshCall(), 'photoRefresh');
 
   // OAuth routes for connecting calendar providers.
   pod.webServer.addRoute(CalendarOAuthStartRoute(), '/calendar/oauth/start');
@@ -84,6 +88,18 @@ void run(List<String> args) async {
     CalendarOAuthCallbackRoute(),
     '/calendar/oauth/callback',
   );
+  pod.webServer.addRoute(
+    MicrosoftCalendarOAuthStartRoute(),
+    '/calendar/microsoft/oauth/start',
+  );
+  pod.webServer.addRoute(
+    MicrosoftCalendarOAuthCallbackRoute(),
+    '/calendar/microsoft/oauth/callback',
+  );
+
+  // Photo serve route — proxies image bytes from the upstream provider.
+  // Uses /photos/** so any path under /photos/ is matched.
+  pod.webServer.addRoute(PhotoServeRoute(), '/photos/**');
 
   // Start the server.
   await pod.start();
@@ -96,5 +112,9 @@ void run(List<String> args) async {
   // Calendar refresh starts immediately; skips quietly if no credentials exist.
   // ignore: deprecated_member_use
   await pod.futureCallWithDelay('calendarRefresh', null, Duration.zero);
+  // ignore: deprecated_member_use
+  // Photo refresh starts immediately; skips quietly if no folder is configured.
+  // ignore: deprecated_member_use
+  await pod.futureCallWithDelay('photoRefresh', null, Duration.zero);
 }
 

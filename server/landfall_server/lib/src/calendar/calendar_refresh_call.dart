@@ -5,6 +5,7 @@ import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 import 'calendar_service.dart';
 import 'google_calendar_service.dart';
+import 'microsoft_calendar_service.dart';
 
 const _refreshInterval = Duration(minutes: 15);
 
@@ -103,6 +104,7 @@ class CalendarRefreshCall extends FutureCall<SerializableModel> {
   CalendarService _serviceFor(LinkedCredential credential) {
     return switch (credential.provider) {
       'google' => GoogleCalendarService(),
+      'microsoft' => MicrosoftCalendarService(),
       _ => throw UnimplementedError(
           'Calendar provider "${credential.provider}" is not yet supported.',
         ),
