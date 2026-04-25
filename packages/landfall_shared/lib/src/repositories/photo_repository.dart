@@ -1,4 +1,4 @@
-import '../models/photo/photo_entity.dart';
+import 'package:landfall_shared/src/models/photo/photo_entity.dart';
 
 export '../models/photo/photo_entity.dart';
 
