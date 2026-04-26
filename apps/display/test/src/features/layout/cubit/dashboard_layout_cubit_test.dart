@@ -8,6 +8,10 @@ import 'package:display/src/features/layout/cubit/dashboard_layout_state.dart';
 class MockDashboardLayoutRepository extends Mock
     implements DashboardLayoutRepository {}
 
+final _weekdayLayout = DashboardLayout.weekdayLayout();
+final _weekendLayout = DashboardLayout.weekendLayout();
+final _allPresets = [_weekdayLayout, _weekendLayout, DashboardLayout.nightLayout()];
+
 void main() {
   late MockDashboardLayoutRepository repository;
 
@@ -19,6 +23,8 @@ void main() {
 
   setUp(() {
     repository = MockDashboardLayoutRepository();
+    when(() => repository.getAllLayouts())
+        .thenAnswer((_) async => _allPresets);
   });
 
   group('DashboardLayoutCubit', () {
@@ -31,18 +37,35 @@ void main() {
       blocTest<DashboardLayoutCubit, DashboardLayoutState>(
         'emits [Loading, Loaded] when repository returns a layout',
         build: () {
-          when(() => repository.getActiveLayout()).thenAnswer(
-            (_) async => DashboardLayout.defaultLayout(),
-          );
+          when(() => repository.getActiveLayout())
+              .thenAnswer((_) async => _weekdayLayout);
           return DashboardLayoutCubit(repository);
         },
         act: (cubit) => cubit.loadLayout(),
         expect: () => [
           isA<DashboardLayoutLoading>(),
           isA<DashboardLayoutLoaded>().having(
-            (s) => s.layout.name,
-            'layout.name',
-            'Default',
+            (s) => s.layout.presetType,
+            'presetType',
+            LayoutPresetType.weekday,
+          ),
+        ],
+      );
+
+      blocTest<DashboardLayoutCubit, DashboardLayoutState>(
+        'Loaded state carries allLayouts from repository',
+        build: () {
+          when(() => repository.getActiveLayout())
+              .thenAnswer((_) async => _weekdayLayout);
+          return DashboardLayoutCubit(repository);
+        },
+        act: (cubit) => cubit.loadLayout(),
+        expect: () => [
+          isA<DashboardLayoutLoading>(),
+          isA<DashboardLayoutLoaded>().having(
+            (s) => s.allLayouts.length,
+            'allLayouts.length',
+            3,
           ),
         ],
       );
@@ -64,9 +87,8 @@ void main() {
       blocTest<DashboardLayoutCubit, DashboardLayoutState>(
         'always emits Loading before Loaded on re-load',
         build: () {
-          when(() => repository.getActiveLayout()).thenAnswer(
-            (_) async => DashboardLayout.defaultLayout(),
-          );
+          when(() => repository.getActiveLayout())
+              .thenAnswer((_) async => _weekdayLayout);
           return DashboardLayoutCubit(repository);
         },
         act: (cubit) async {
@@ -85,7 +107,8 @@ void main() {
     group('saveLayout', () {
       final customLayout = DashboardLayout(
         id: 'layout-custom',
-        name: 'Custom',
+        name: 'My Custom',
+        presetType: LayoutPresetType.custom,
         cards: [
           CardConfig(
             id: 'slot_clock',
@@ -98,12 +121,10 @@ void main() {
       blocTest<DashboardLayoutCubit, DashboardLayoutState>(
         'emits Loaded with the saved layout after save succeeds',
         build: () {
-          when(() => repository.getActiveLayout()).thenAnswer(
-            (_) async => DashboardLayout.defaultLayout(),
-          );
-          when(() => repository.saveLayout(any())).thenAnswer(
-            (_) async {},
-          );
+          when(() => repository.getActiveLayout())
+              .thenAnswer((_) async => _weekdayLayout);
+          when(() => repository.saveLayout(any()))
+              .thenAnswer((_) async {});
           return DashboardLayoutCubit(repository);
         },
         act: (cubit) async {
@@ -113,18 +134,18 @@ void main() {
         expect: () => [
           isA<DashboardLayoutLoading>(),
           isA<DashboardLayoutLoaded>()
-              .having((s) => s.layout.name, 'layout.name', 'Default'),
+              .having((s) => s.layout.presetType, 'presetType',
+                  LayoutPresetType.weekday),
           isA<DashboardLayoutLoaded>()
-              .having((s) => s.layout.name, 'layout.name', 'Custom'),
+              .having((s) => s.layout.name, 'name', 'My Custom'),
         ],
       );
 
       blocTest<DashboardLayoutCubit, DashboardLayoutState>(
-        'does not change state if saveLayout throws',
+        'emits Error if saveLayout throws',
         build: () {
-          when(() => repository.getActiveLayout()).thenAnswer(
-            (_) async => DashboardLayout.defaultLayout(),
-          );
+          when(() => repository.getActiveLayout())
+              .thenAnswer((_) async => _weekdayLayout);
           when(() => repository.saveLayout(any()))
               .thenThrow(Exception('Write error'));
           return DashboardLayoutCubit(repository);
@@ -135,9 +156,7 @@ void main() {
         },
         expect: () => [
           isA<DashboardLayoutLoading>(),
-          isA<DashboardLayoutLoaded>()
-              .having((s) => s.layout.name, 'layout.name', 'Default'),
-          // state remains Default — save failure does not overwrite
+          isA<DashboardLayoutLoaded>(),
           isA<DashboardLayoutError>(),
         ],
       );
@@ -145,12 +164,10 @@ void main() {
       blocTest<DashboardLayoutCubit, DashboardLayoutState>(
         'calls repository.saveLayout with the provided layout',
         build: () {
-          when(() => repository.getActiveLayout()).thenAnswer(
-            (_) async => DashboardLayout.defaultLayout(),
-          );
-          when(() => repository.saveLayout(any())).thenAnswer(
-            (_) async {},
-          );
+          when(() => repository.getActiveLayout())
+              .thenAnswer((_) async => _weekdayLayout);
+          when(() => repository.saveLayout(any()))
+              .thenAnswer((_) async {});
           return DashboardLayoutCubit(repository);
         },
         act: (cubit) async {
@@ -160,6 +177,49 @@ void main() {
         verify: (_) {
           verify(() => repository.saveLayout(customLayout)).called(1);
         },
+      );
+    });
+
+    group('switchPreset', () {
+      blocTest<DashboardLayoutCubit, DashboardLayoutState>(
+        'switches to weekend layout and emits Loaded with weekend preset',
+        build: () {
+          when(() => repository.getActiveLayout())
+              .thenAnswer((_) async => _weekdayLayout);
+          when(() => repository.setActiveLayout(any()))
+              .thenAnswer((_) async {});
+          return DashboardLayoutCubit(repository);
+        },
+        seed: () => DashboardLayoutLoaded(_weekdayLayout,
+            allLayouts: _allPresets),
+        act: (cubit) async {
+          // After switchPreset, getActiveLayout returns the weekend layout.
+          when(() => repository.getActiveLayout())
+              .thenAnswer((_) async => _weekendLayout);
+          await cubit.switchPreset(LayoutPresetType.weekend);
+        },
+        expect: () => [
+          isA<DashboardLayoutLoaded>().having(
+            (s) => s.layout.presetType,
+            'presetType',
+            LayoutPresetType.weekend,
+          ),
+        ],
+      );
+
+      blocTest<DashboardLayoutCubit, DashboardLayoutState>(
+        'emits Error when setActiveLayout throws',
+        build: () {
+          when(() => repository.getActiveLayout())
+              .thenAnswer((_) async => _weekdayLayout);
+          when(() => repository.setActiveLayout(any()))
+              .thenThrow(Exception('Network error'));
+          return DashboardLayoutCubit(repository);
+        },
+        seed: () => DashboardLayoutLoaded(_weekdayLayout,
+            allLayouts: _allPresets),
+        act: (cubit) => cubit.switchPreset(LayoutPresetType.weekend),
+        expect: () => [isA<DashboardLayoutError>()],
       );
     });
   });

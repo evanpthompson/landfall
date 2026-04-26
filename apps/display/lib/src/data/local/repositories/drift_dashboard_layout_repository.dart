@@ -40,6 +40,45 @@ class DriftDashboardLayoutRepository implements DashboardLayoutRepository {
   }
 
   @override
+  Future<List<DashboardLayout>> getAllLayouts() async {
+    final entry = await (_db.select(_db.layoutEntries)
+          ..where((t) => t.id.equals(_layoutId)))
+        .getSingleOrNull();
+    if (entry == null) {
+      return [
+        DashboardLayout.weekdayLayout(),
+        DashboardLayout.weekendLayout(),
+        DashboardLayout.nightLayout(),
+      ];
+    }
+    // Drift stores one active layout — return the three presets with the
+    // saved one replacing the matching preset slot.
+    final active = await getActiveLayout();
+    final presets = [
+      DashboardLayout.weekdayLayout(),
+      DashboardLayout.weekendLayout(),
+      DashboardLayout.nightLayout(),
+    ];
+    return presets.map((p) {
+      if (p.presetType == active.presetType) return active;
+      return p;
+    }).toList();
+  }
+
+  @override
+  Future<void> setActiveLayout(String layoutId) async {
+    // Drift only stores one layout; switching preset loads the preset default
+    // unless a saved layout with that id already exists.
+    final presetMap = {
+      'layout-weekday': DashboardLayout.weekdayLayout(),
+      'layout-weekend': DashboardLayout.weekendLayout(),
+      'layout-night': DashboardLayout.nightLayout(),
+    };
+    final target = presetMap[layoutId];
+    if (target != null) await saveLayout(target);
+  }
+
+  @override
   Future<void> saveLayout(DashboardLayout layout) async {
     final cardsJson =
         jsonEncode(layout.cards.map((c) => c.toJson()).toList());

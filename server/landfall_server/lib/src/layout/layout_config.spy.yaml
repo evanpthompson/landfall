@@ -1,0 +1,33 @@
+### A saved display layout configuration.
+### One row per named layout (weekday, weekend, night, custom).
+### isActive marks which layout is currently shown on the display.
+class: LayoutConfig
+table: layout_configs
+
+fields:
+  ### User-facing name (e.g. "Weekday", "Night", "My Custom").
+  name: String
+
+  ### Preset category: weekday | weekend | night | custom
+  presetType: String, default='custom'
+
+  ### Number of columns in the grid.
+  columnsCount: int, default=12
+
+  ### Number of rows in the grid.
+  rowsCount: int, default=8
+
+  ### JSON-encoded List<CardConfig>.
+  cardsJson: String
+
+  ### True when this is the layout currently shown on the display.
+  isActive: bool, default=false
+
+  ### Last modified timestamp.
+  updatedAt: DateTime
+
+indexes:
+  layout_configs_preset_idx:
+    fields: presetType
+  layout_configs_active_idx:
+    fields: isActive

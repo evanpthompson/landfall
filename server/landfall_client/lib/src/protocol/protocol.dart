@@ -46,6 +46,7 @@ export 'auth/otp_request.dart';
 export 'calendar/calendar_event.dart';
 export 'cards/card_push_request.dart';
 export 'cards/card_row.dart';
+export 'layout/layout_config.dart';
 export 'greetings/greeting.dart';
 export 'photo/photo.dart';
 export 'settings/linked_credential_summary.dart';

@@ -12,17 +12,22 @@ final class DashboardLayoutLoading extends DashboardLayoutState {
 
 /// The layout has loaded successfully.
 final class DashboardLayoutLoaded extends DashboardLayoutState {
-  const DashboardLayoutLoaded(this.layout);
+  const DashboardLayoutLoaded(this.layout, {this.allLayouts = const []});
 
   final DashboardLayout layout;
+
+  /// All saved layouts (one per preset + any custom). Used by the preset switcher.
+  final List<DashboardLayout> allLayouts;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is DashboardLayoutLoaded && layout == other.layout;
+      other is DashboardLayoutLoaded &&
+          layout == other.layout &&
+          allLayouts.length == other.allLayouts.length;
 
   @override
-  int get hashCode => layout.hashCode;
+  int get hashCode => Object.hash(layout, Object.hashAll(allLayouts));
 }
 
 /// An error occurred while loading or saving the layout.

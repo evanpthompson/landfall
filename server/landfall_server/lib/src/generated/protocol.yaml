@@ -25,6 +25,11 @@ card:
   - pushCard:
   - dismissCard:
   - getTickerMessages:
+layout:
+  - getLayouts:
+  - saveLayout:
+  - setActiveLayout:
+  - deleteLayout:
 greeting:
   - hello:
 photo:

@@ -29,6 +29,11 @@ class _LayoutEditorState extends State<LayoutEditor> {
   int? _ghostCol;
   int? _ghostRow;
 
+  // Resize state
+  String? _resizingId;
+  int? _ghostColSpan;
+  int? _ghostRowSpan;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -45,6 +50,11 @@ class _LayoutEditorState extends State<LayoutEditor> {
             // Ghost drop-target while dragging
             if (_draggingId != null && _ghostCol != null && _ghostRow != null)
               _buildGhost(cellW, cellH),
+            // Ghost resize outline while resizing
+            if (_resizingId != null &&
+                _ghostColSpan != null &&
+                _ghostRowSpan != null)
+              _buildResizeGhost(cellW, cellH),
             // Cards — all cards including hidden ones (shown with reduced opacity)
             ...widget.layout.cards.map(
               (c) => _buildCardTile(c, cellW, cellH),
@@ -65,8 +75,27 @@ class _LayoutEditorState extends State<LayoutEditor> {
       height: slot.rowSpan * cellH - _kGap * 2,
       child: DecoratedBox(
         decoration: BoxDecoration(
+          border: Border.all(color: LandfallColors.accent, width: 2),
+          borderRadius: BorderRadius.circular(6),
+          color: LandfallColors.accentMuted,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResizeGhost(double cellW, double cellH) {
+    final resizing =
+        widget.layout.cards.firstWhere((c) => c.id == _resizingId);
+    final slot = resizing.slot;
+    return Positioned(
+      left: slot.column * cellW + _kGap,
+      top: slot.row * cellH + _kGap,
+      width: _ghostColSpan! * cellW - _kGap * 2,
+      height: _ghostRowSpan! * cellH - _kGap * 2,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
           border: Border.all(
-            color: LandfallColors.accent,
+            color: LandfallColors.accent.withValues(alpha: 0.6),
             width: 2,
           ),
           borderRadius: BorderRadius.circular(6),
@@ -121,67 +150,158 @@ class _LayoutEditorState extends State<LayoutEditor> {
             _ghostRow = null;
           });
         },
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 200),
-          opacity: isBeingDragged
-              ? 0.3
-              : config.visible
-                  ? 1.0
-                  : 0.35,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
-              border: Border.all(
-                color: config.visible
-                    ? color.withValues(alpha: 0.7)
-                    : color.withValues(alpha: 0.3),
-                width: 1.5,
-              ),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _cardLabel(config.source),
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: isBeingDragged
+                    ? 0.3
+                    : config.visible
+                        ? 1.0
+                        : 0.35,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.2),
+                    border: Border.all(
+                      color: config.visible
+                          ? color.withValues(alpha: 0.7)
+                          : color.withValues(alpha: 0.3),
+                      width: 1.5,
                     ),
-                    textAlign: TextAlign.center,
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                  if (!config.visible) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'hidden',
-                      style: TextStyle(
-                        color: color.withValues(alpha: 0.5),
-                        fontSize: 9,
-                      ),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _cardLabel(config.source),
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        if (!config.visible) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'hidden',
+                            style: TextStyle(
+                              color: color.withValues(alpha: 0.5),
+                              fontSize: 9,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
+                  ),
+                ),
               ),
             ),
-          ),
+            // Resize handle — bottom-right corner
+            Positioned(
+              right: 2,
+              bottom: 2,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanStart: (_) {
+                  setState(() {
+                    _resizingId = config.id;
+                    _ghostColSpan = slot.columnSpan;
+                    _ghostRowSpan = slot.rowSpan;
+                  });
+                },
+                onPanUpdate: (details) {
+                  final box =
+                      context.findRenderObject() as RenderBox?;
+                  if (box == null) return;
+                  final local =
+                      box.globalToLocal(details.globalPosition);
+                  setState(() {
+                    _ghostColSpan = ((local.dx / cellW).ceil() -
+                            slot.column)
+                        .clamp(1,
+                            widget.layout.columns - slot.column);
+                    _ghostRowSpan = ((local.dy / cellH).ceil() -
+                            slot.row)
+                        .clamp(1,
+                            widget.layout.rows - slot.row);
+                  });
+                },
+                onPanEnd: (_) {
+                  if (_resizingId != null &&
+                      _ghostColSpan != null &&
+                      _ghostRowSpan != null &&
+                      (_ghostColSpan != slot.columnSpan ||
+                          _ghostRowSpan != slot.rowSpan)) {
+                    _commitResize(
+                        config, _ghostColSpan!, _ghostRowSpan!);
+                  }
+                  setState(() {
+                    _resizingId = null;
+                    _ghostColSpan = null;
+                    _ghostRowSpan = null;
+                  });
+                },
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Icon(
+                    Icons.open_in_full,
+                    size: 10,
+                    color: LandfallColors.background,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
+  DashboardLayout _rebuild(List<CardConfig> cards) => DashboardLayout(
+        id: widget.layout.id,
+        name: widget.layout.name,
+        columns: widget.layout.columns,
+        rows: widget.layout.rows,
+        presetType: widget.layout.presetType,
+        cards: cards,
+      );
+
   void _toggleVisible(CardConfig config) {
     final updated = widget.layout.cards
         .map((c) => c.id == config.id ? c.copyWith(visible: !c.visible) : c)
         .toList();
+    widget.onLayoutChanged(_rebuild(updated));
+  }
+
+  void _commitResize(CardConfig config, int newColSpan, int newRowSpan) {
+    final updated = widget.layout.cards.map((c) {
+      if (c.id != config.id) return c;
+      return c.copyWith(
+        slot: DashboardSlot(
+          column: c.slot.column,
+          row: c.slot.row,
+          columnSpan: newColSpan,
+          rowSpan: newRowSpan,
+        ),
+      );
+    }).toList();
     widget.onLayoutChanged(
       DashboardLayout(
         id: widget.layout.id,
         name: widget.layout.name,
         columns: widget.layout.columns,
         rows: widget.layout.rows,
+        presetType: widget.layout.presetType,
         cards: updated,
       ),
     );
@@ -199,15 +319,7 @@ class _LayoutEditorState extends State<LayoutEditor> {
         ),
       );
     }).toList();
-    widget.onLayoutChanged(
-      DashboardLayout(
-        id: widget.layout.id,
-        name: widget.layout.name,
-        columns: widget.layout.columns,
-        rows: widget.layout.rows,
-        cards: updated,
-      ),
-    );
+    widget.onLayoutChanged(_rebuild(updated));
   }
 
   static Color _cardColor(String source) {

@@ -10,6 +10,7 @@ import 'package:display/src/data/cards/serverpod_card_repository.dart';
 import 'package:display/src/data/clock/system_clock_repository.dart';
 import 'package:display/src/data/local/app_database.dart';
 import 'package:display/src/data/local/repositories/drift_dashboard_layout_repository.dart';
+import 'package:display/src/data/layout/serverpod_layout_repository.dart';
 import 'package:display/src/data/photo/serverpod_photo_repository.dart';
 import 'package:display/src/data/settings/drift_display_settings_repository.dart';
 import 'package:display/src/data/weather/serverpod_weather_repository.dart';
@@ -55,7 +56,9 @@ class LandfallApp extends StatelessWidget {
     final client = Client(serverUrl)
       ..authKeyProvider = keyProvider;
 
-    final layoutRepository = DriftDashboardLayoutRepository(database);
+    final driftLayoutRepo = DriftDashboardLayoutRepository(database);
+    final layoutRepository =
+        ServerpodLayoutRepository(client, driftLayoutRepo);
     final cardRepository = ServerpodCardRepository(client);
     final weatherRepository = ServerpodWeatherRepository(client, database);
     final calendarRepository = ServerpodCalendarRepository(client);

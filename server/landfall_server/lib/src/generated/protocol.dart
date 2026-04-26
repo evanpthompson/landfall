@@ -40,6 +40,8 @@ import 'package:landfall_server/src/generated/settings/linked_credential_summary
     as _i24;
 import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
     as _i25;
+import 'package:landfall_server/src/generated/layout/layout_config.dart'
+    as _i26;
 export 'agent/api_key.dart';
 export 'agent/api_key_create_response.dart';
 export 'agent/landfall_exception.dart';
@@ -49,6 +51,7 @@ export 'calendar/calendar_event.dart';
 export 'calendar/linked_credential.dart';
 export 'cards/card_push_request.dart';
 export 'cards/card_row.dart';
+export 'layout/layout_config.dart';
 export 'greetings/greeting.dart';
 export 'photo/photo.dart';
 export 'settings/linked_credential_summary.dart';
@@ -1028,6 +1031,110 @@ class Protocol extends _i1.SerializationManagerServer {
       ],
       managed: true,
     ),
+    _i2.TableDefinition(
+      name: 'layout_configs',
+      dartName: 'LayoutConfig',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'layout_configs_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'name',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'presetType',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'custom\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'columnsCount',
+          columnType: _i2.ColumnType.integer,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '12',
+        ),
+        _i2.ColumnDefinition(
+          name: 'rowsCount',
+          columnType: _i2.ColumnType.integer,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '8',
+        ),
+        _i2.ColumnDefinition(
+          name: 'cardsJson',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'isActive',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'updatedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'layout_configs_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'layout_configs_preset_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'presetType',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'layout_configs_active_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'isActive',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
     ..._i3.Protocol.targetTableDefinitions,
     ..._i4.Protocol.targetTableDefinitions,
     ..._i2.Protocol.targetTableDefinitions,
@@ -1084,6 +1191,9 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i12.CardPushRequest) {
       return _i12.CardPushRequest.fromJson(data) as T;
     }
+    if (t == _i26.LayoutConfig) {
+      return _i26.LayoutConfig.fromJson(data) as T;
+    }
     if (t == _i13.CardRow) {
       return _i13.CardRow.fromJson(data) as T;
     }
@@ -1126,6 +1236,14 @@ class Protocol extends _i1.SerializationManagerServer {
     }
     if (t == _i1.getType<_i12.CardPushRequest?>()) {
       return (data != null ? _i12.CardPushRequest.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i26.LayoutConfig?>()) {
+      return (data != null ? _i26.LayoutConfig.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<List<_i26.LayoutConfig>>()) {
+      return (data as List)
+              .map((e) => deserialize<_i26.LayoutConfig>(e))
+              .toList() as dynamic;
     }
     if (t == _i1.getType<_i13.CardRow?>()) {
       return (data != null ? _i13.CardRow.fromJson(data) : null) as T;
@@ -1213,6 +1331,7 @@ class Protocol extends _i1.SerializationManagerServer {
       _i16.LinkedCredentialSummary => 'LinkedCredentialSummary',
       _i17.WeatherCurrent => 'WeatherCurrent',
       _i18.WeatherForecast => 'WeatherForecast',
+      _i26.LayoutConfig => 'LayoutConfig',
       _ => null,
     };
   }
@@ -1255,6 +1374,8 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'WeatherCurrent';
       case _i18.WeatherForecast():
         return 'WeatherForecast';
+      case _i26.LayoutConfig():
+        return 'LayoutConfig';
     }
     className = _i2.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -1319,6 +1440,9 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'WeatherForecast') {
       return deserialize<_i18.WeatherForecast>(data['data']);
     }
+    if (dataClassName == 'LayoutConfig') {
+      return deserialize<_i26.LayoutConfig>(data['data']);
+    }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
       return _i2.Protocol().deserializeByClassName(data);
@@ -1373,6 +1497,8 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i17.WeatherCurrent.t;
       case _i18.WeatherForecast:
         return _i18.WeatherForecast.t;
+      case _i26.LayoutConfig:
+        return _i26.LayoutConfig.t;
     }
     return null;
   }

@@ -563,13 +563,12 @@ class _LayoutTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SectionHeader('Drag to move cards. Tap to toggle visibility.'),
-              const SizedBox(height: 4),
-              const Text(
-                'Resize support coming soon.',
-                style: TextStyle(
-                    color: LandfallColors.textTertiary, fontSize: 12),
-              ),
+              _SectionHeader('Preset'),
+              const SizedBox(height: 12),
+              _PresetSwitcher(active: state.layout),
+              const SizedBox(height: 24),
+              _SectionHeader(
+                  'Drag to move  •  drag corner to resize  •  tap to toggle visibility'),
               const SizedBox(height: 16),
               Expanded(
                 child: LayoutEditor(
@@ -582,6 +581,84 @@ class _LayoutTab extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _PresetSwitcher extends StatelessWidget {
+  const _PresetSwitcher({required this.active});
+
+  final DashboardLayout active;
+
+  static const _presets = [
+    LayoutPresetType.weekday,
+    LayoutPresetType.weekend,
+    LayoutPresetType.night,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: _presets.map((preset) {
+        final isActive = active.presetType == preset;
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: _PresetChip(
+            preset: preset,
+            isActive: isActive,
+            onTap: () => context
+                .read<DashboardLayoutCubit>()
+                .switchPreset(preset),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _PresetChip extends StatelessWidget {
+  const _PresetChip({
+    required this.preset,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final LayoutPresetType preset;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive
+              ? LandfallColors.accent.withValues(alpha: 0.15)
+              : LandfallColors.surface,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isActive
+                ? LandfallColors.accent
+                : LandfallColors.cardBorder,
+            width: isActive ? 1.5 : 1,
+          ),
+        ),
+        child: Text(
+          preset.label,
+          style: TextStyle(
+            color: isActive
+                ? LandfallColors.accent
+                : LandfallColors.textSecondary,
+            fontSize: 13,
+            fontWeight:
+                isActive ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+      ),
     );
   }
 }

@@ -22,8 +22,11 @@ import '../greetings/greeting_endpoint.dart' as _i9;
 import '../photo/photo_endpoint.dart' as _i10;
 import '../settings/settings_endpoint.dart' as _i11;
 import '../weather/weather_endpoint.dart' as _i12;
+import '../layout/layout_endpoint.dart' as _i18;
 import 'package:landfall_server/src/generated/cards/card_push_request.dart'
     as _i13;
+import 'package:landfall_server/src/generated/layout/layout_config.dart'
+    as _i19;
 import 'package:landfall_server/src/generated/protocol.dart' as _i14;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i15;
@@ -100,6 +103,12 @@ class Endpoints extends _i1.EndpointDispatch {
         ..initialize(
           server,
           'weather',
+          null,
+        ),
+      'layout': _i18.LayoutEndpoint()
+        ..initialize(
+          server,
+          'layout',
           null,
         ),
     };
@@ -599,6 +608,70 @@ class Endpoints extends _i1.EndpointDispatch {
                 Map<String, dynamic> params,
               ) async => (endpoints['weather'] as _i12.WeatherEndpoint)
                   .getForecast(session),
+        ),
+      },
+    );
+    connectors['layout'] = _i1.EndpointConnector(
+      name: 'layout',
+      endpoint: endpoints['layout']!,
+      methodConnectors: {
+        'getLayouts': _i1.MethodConnector(
+          name: 'getLayouts',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['layout'] as _i18.LayoutEndpoint)
+                  .getLayouts(session),
+        ),
+        'saveLayout': _i1.MethodConnector(
+          name: 'saveLayout',
+          params: {
+            'layout': _i1.ParameterDescription(
+              name: 'layout',
+              type: _i1.getType<_i19.LayoutConfig>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['layout'] as _i18.LayoutEndpoint)
+                  .saveLayout(session, params['layout']),
+        ),
+        'setActiveLayout': _i1.MethodConnector(
+          name: 'setActiveLayout',
+          params: {
+            'layoutId': _i1.ParameterDescription(
+              name: 'layoutId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['layout'] as _i18.LayoutEndpoint)
+                  .setActiveLayout(session, params['layoutId']),
+        ),
+        'deleteLayout': _i1.MethodConnector(
+          name: 'deleteLayout',
+          params: {
+            'id': _i1.ParameterDescription(
+              name: 'id',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['layout'] as _i18.LayoutEndpoint)
+                  .deleteLayout(session, params['id']),
         ),
       },
     );

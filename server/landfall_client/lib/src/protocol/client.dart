@@ -34,6 +34,8 @@ import 'package:landfall_client/src/protocol/weather/weather_current.dart'
 import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
     as _i15;
 import 'protocol.dart' as _i16;
+import 'package:landfall_client/src/protocol/layout/layout_config.dart'
+    as _i17;
 
 /// The authenticated agent push API.
 ///
@@ -460,6 +462,47 @@ class EndpointSettings extends _i1.EndpointRef {
   );
 }
 
+/// Layout configuration endpoint — manages named preset layouts.
+/// {@category Endpoint}
+class EndpointLayout extends _i1.EndpointRef {
+  EndpointLayout(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'layout';
+
+  /// Returns all saved layouts, newest-updated first.
+  _i2.Future<List<_i17.LayoutConfig>> getLayouts() =>
+      caller.callServerEndpoint<List<_i17.LayoutConfig>>(
+        'layout',
+        'getLayouts',
+        {},
+      );
+
+  /// Saves [layout] (insert if id is null, update otherwise).
+  _i2.Future<_i17.LayoutConfig> saveLayout(_i17.LayoutConfig layout) =>
+      caller.callServerEndpoint<_i17.LayoutConfig>(
+        'layout',
+        'saveLayout',
+        {'layout': layout},
+      );
+
+  /// Marks [layoutId] as the active layout; clears all other active flags.
+  _i2.Future<_i17.LayoutConfig> setActiveLayout(int layoutId) =>
+      caller.callServerEndpoint<_i17.LayoutConfig>(
+        'layout',
+        'setActiveLayout',
+        {'layoutId': layoutId},
+      );
+
+  /// Deletes the layout with [id]. Throws if it is the active layout.
+  _i2.Future<void> deleteLayout(int id) =>
+      caller.callServerEndpoint<void>(
+        'layout',
+        'deleteLayout',
+        {'id': id},
+      );
+}
+
 /// Serves cached weather data to the Flutter display client.
 ///
 /// Data is populated by [WeatherRefreshCall] on a 10-minute schedule.
@@ -533,6 +576,7 @@ class Client extends _i1.ServerpodClientShared {
        ) {
     agent = EndpointAgent(this);
     apiKey = EndpointApiKey(this);
+    layout = EndpointLayout(this);
     jwtRefresh = EndpointJwtRefresh(this);
     otp = EndpointOtp(this);
     passkeyIdp = EndpointPasskeyIdp(this);
@@ -548,6 +592,8 @@ class Client extends _i1.ServerpodClientShared {
   late final EndpointAgent agent;
 
   late final EndpointApiKey apiKey;
+
+  late final EndpointLayout layout;
 
   late final EndpointJwtRefresh jwtRefresh;
 
@@ -582,6 +628,7 @@ class Client extends _i1.ServerpodClientShared {
     'photo': photo,
     'settings': settings,
     'weather': weather,
+    'layout': layout,
   };
 
   @override
