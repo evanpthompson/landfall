@@ -1,0 +1,22 @@
+{
+  "__className__": "serverpod.DatabaseMigration",
+  "actions": [
+    {
+      "__className__": "serverpod.DatabaseMigrationAction",
+      "type": "addColumn",
+      "addColumn": {
+        "__className__": "serverpod.AddColumnDefinition",
+        "tableName": "cards",
+        "column": {
+          "__className__": "serverpod.ColumnDefinition",
+          "name": "actionsJson",
+          "columnType": 0,
+          "isNullable": true,
+          "dartType": "String?"
+        }
+      }
+    }
+  ],
+  "warnings": [],
+  "migrationApiVersion": 1
+}
