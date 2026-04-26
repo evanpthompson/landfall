@@ -69,8 +69,8 @@ Map<String, dynamic> decodeResponse(String line) =>
 
 void main() {
   group('tool count and names', () {
-    test('5 tools registered', () {
-      expect(landfallTools, hasLength(5));
+    test('6 tools registered', () {
+      expect(landfallTools, hasLength(6));
     });
 
     test('expected tool names present', () {
@@ -148,12 +148,12 @@ void main() {
       );
     });
 
-    test('tools/list returns all 5 tools', () async {
+    test('tools/list returns all 6 tools', () async {
       final responses = await runMessages([encodeRequest(2, 'tools/list')]);
       expect(responses, hasLength(1));
       final tools =
           (responses[0]['result'] as Map)['tools'] as List;
-      expect(tools, hasLength(5));
+      expect(tools, hasLength(6));
     });
 
     test('resources/list returns all 2 resources', () async {
