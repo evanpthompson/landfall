@@ -7,6 +7,9 @@
       "alterTable": {
         "__className__": "serverpod.TableMigration",
         "name": "cards",
+        "dartName": "CardRow",
+        "module": "landfall",
+        "schema": "public",
         "addColumns": [
           {
             "__className__": "serverpod.ColumnDefinition",
@@ -21,7 +24,8 @@
         "addIndexes": [],
         "deleteIndexes": [],
         "addForeignKeys": [],
-        "deleteForeignKeys": []
+        "deleteForeignKeys": [],
+        "warnings": []
       }
     }
   ],
