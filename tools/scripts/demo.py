@@ -437,13 +437,18 @@ SELECT c.id, 'primary',      'Work',     'demo-planning', 'Q3 planning session',
         print(f"\n  {Colours.BOLD}Server URL:{Colours.RESET} {SERVER_URL}")
         print(f"  {Colours.BOLD}API Key:{Colours.RESET}    {self.api_key}\n")
 
-        # Step 9-14: Educational steps (Summary)
-        step("Built-in widgets & Features")
-        info("• Weather widget (OpenWeatherMap)")
-        info("• Calendar widget (Google/Microsoft)")
-        info("• Photo frame (Google Drive)")
-        info("• Settings & Layout editor")
-        info("• First-run wizard")
+        # Educational summary — Sessions 9–16
+        step("Built-in widgets & display features")
+        info("• Weather widget (OpenWeatherMap, 10-min refresh)")
+        info("• Calendar widget (Google + Microsoft, multi-feed)")
+        info("• Photo frame (Google Drive folder, 45s slideshow)")
+        info("• Settings screen — dim schedule, linked accounts, API keys")
+        info("• Layout editor — drag to move, drag corner to resize, tap to hide")
+        info("• First-run setup wizard (Session 14)")
+        info("• Ghost ticker strip — 30s ephemeral agent heartbeats (Session 15)")
+        info("• Interactive card action buttons — dismiss / openUrl / webhook (Session 15)")
+        info("• Layout presets — Weekday / Weekend / Night (Session 16)")
+        info("• Server-side layout sync — layout_configs table (Session 16)")
 
         if not self.weather_live:
             warn("Weather cards will show a placeholder (OWM key not set).")
@@ -454,8 +459,10 @@ SELECT c.id, 'primary',      'Work',     'demo-planning', 'Q3 planning session',
         else:
             warn("Could not seed calendar data.")
 
-        # Step 15: Launch Display
-        pause("Ready to launch. The app will open in a new window. Press Cmd+Q to quit.")
+        # Launch display
+        pause("Ready to launch. The wizard will appear on a fresh install.\n"
+              "Enter: Server URL → http://localhost:8080/  •  Location → any city  •  then 'Launch Landfall'.\n"
+              "The app will open in a new window. Press Cmd+Q to quit.")
         step("Launching Landfall display (macOS)")
 
         try:
