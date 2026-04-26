@@ -560,7 +560,7 @@ echo "  ${BOLD}Layout tab:${RESET}"
 echo "  ${DIM}• Drag cards to move them anywhere in the 12×8 grid${RESET}"
 echo "  ${DIM}• Tap a card to toggle its visibility (hidden cards keep their slot)${RESET}"
 echo "  ${DIM}• Changes persist immediately — layout survives app restarts${RESET}"
-echo "  ${DIM}• Resize support is next (drag corners to change column/row span)${RESET}"
+echo "  ${DIM}• Drag corner handle to resize cards (columnSpan / rowSpan)${RESET}"
 echo ""
 
 # ── Step 13: Deployment ───────────────────────────────────────────────────
