@@ -38,6 +38,14 @@ class FakeLandfallApi implements LandfallApi {
 
   @override
   Future<List<Map<String, dynamic>>> listCards() async => [];
+
+  @override
+  Future<Map<String, dynamic>> pushTicker({
+    required String source,
+    required String message,
+    String? expiresAt,
+  }) async =>
+      {'source': source, 'title': message};
 }
 
 // ── Protocol helpers ──────────────────────────────────────────────────────────

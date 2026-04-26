@@ -37,6 +37,14 @@ class FakeLandfallApi implements LandfallApi {
     if (throwOn != null) throw throwOn!;
     return cards;
   }
+
+  @override
+  Future<Map<String, dynamic>> pushTicker({
+    required String source,
+    required String message,
+    String? expiresAt,
+  }) async =>
+      {'source': source, 'title': message};
 }
 
 ResourceDefinition resourceAt(String uri) =>
