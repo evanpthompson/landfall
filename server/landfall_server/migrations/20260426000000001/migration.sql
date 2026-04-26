@@ -3,7 +3,7 @@ BEGIN;
 --
 -- ACTION ALTER TABLE
 --
-ALTER TABLE "cards" ADD COLUMN "actionsJson" text;
+ALTER TABLE "cards" ADD COLUMN IF NOT EXISTS "actionsJson" text;
 
 
 --
