@@ -563,7 +563,39 @@ echo "  ${DIM}• Changes persist immediately — layout survives app restarts${
 echo "  ${DIM}• Resize support is next (drag corners to change column/row span)${RESET}"
 echo ""
 
-# ── Step 13: Display ────────────────────────────────────────────────────────
+# ── Step 13: Deployment ───────────────────────────────────────────────────
+pause "Session 13 adds the full self-hosting story — Docker Compose, a Raspberry Pi image, and a Fire TV APK. Let's walk through how it all fits together."
+
+step "Self-hosting overview (Session 13)"
+echo ""
+echo "  ${BOLD}Server stack (any Linux machine):${RESET}"
+echo "  ${DIM}• docker compose -f deploy/docker-compose.prod.yml up -d${RESET}"
+echo "  ${DIM}• Runs: Serverpod server, Postgres, Redis, Caddy (auto SSL)${RESET}"
+echo "  ${DIM}• Postgres backups automatically at 2 AM, 7 days retained${RESET}"
+echo "  ${DIM}• First-time setup:  bash deploy/scripts/setup.sh${RESET}"
+echo "  ${DIM}  Generates all secrets, asks for your domain or IP${RESET}"
+echo ""
+echo "  ${BOLD}Display options:${RESET}"
+echo "  ${DIM}• Fire TV / Android:  bash tools/scripts/build_apk.sh${RESET}"
+echo "  ${DIM}  APK sideloaded via adb — no app store needed${RESET}"
+echo "  ${DIM}• Raspberry Pi:       bash tools/scripts/build_linux.sh${RESET}"
+echo "  ${DIM}  Flutter Linux binary, runs fullscreen on HDMI output${RESET}"
+echo ""
+echo "  ${BOLD}Raspberry Pi image (all-in-one):${RESET}"
+echo "  ${DIM}• pi-gen builds a bootable .img.xz — flash, boot, done${RESET}"
+echo "  ${DIM}• Server stack + display app both start automatically on boot${RESET}"
+echo "  ${DIM}• Build:  bash tools/scripts/build_linux.sh --arch arm64${RESET}"
+echo "  ${DIM}          bash deploy/pi-gen/build.sh${RESET}"
+echo "  ${DIM}• Flash with Raspberry Pi Imager, configure .env over SSH${RESET}"
+echo ""
+echo "  ${BOLD}Nothing leaves your network:${RESET}"
+echo "  ${DIM}• OAuth tokens stored encrypted on your own Postgres instance${RESET}"
+echo "  ${DIM}• API keys never transmitted to the display client${RESET}"
+echo "  ${DIM}• No telemetry, no external service dependency${RESET}"
+echo ""
+info "Full guides: docs/self_hosting_guide.md  •  docs/raspberry_pi_guide.md"
+
+# ── Step 14: Display ────────────────────────────────────────────────────────
 pause "Let's launch the display. Clock, weather, calendar, photo, and all agent cards load automatically. Tap anywhere to reveal the gear icon and explore settings."
 
 step "Launching Landfall display (macOS)"

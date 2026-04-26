@@ -1,0 +1,15 @@
+IMG_NAME="landfall"
+RELEASE="bookworm"
+DEPLOY_ZIP=0
+ENABLE_SSH=1
+TARGET_HOSTNAME="landfall"
+FIRST_USER_NAME="landfall"
+FIRST_USER_PASS="landfall"
+LOCALE_DEFAULT="en_US.UTF-8"
+KEYBOARD_KEYMAP="us"
+KEYBOARD_LAYOUT="English (US)"
+TIMEZONE_DEFAULT="America/New_York"
+
+# Build a 64-bit image suitable for Pi 4 and Pi 5
+PI_GEN_REPO="https://github.com/RPi-Distro/pi-gen.git"
+IMG_SUFFIX=""

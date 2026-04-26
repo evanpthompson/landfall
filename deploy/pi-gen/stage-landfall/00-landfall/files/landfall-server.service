@@ -1,0 +1,19 @@
+[Unit]
+Description=Landfall server stack (Docker Compose)
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/landfall/landfall/deploy
+ExecStart=/usr/bin/docker compose -f docker-compose.prod.yml up -d
+ExecStop=/usr/bin/docker compose -f docker-compose.prod.yml down
+TimeoutStartSec=300
+Restart=on-failure
+RestartSec=30
+User=landfall
+
+[Install]
+WantedBy=multi-user.target

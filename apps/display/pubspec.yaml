@@ -1,5 +1,5 @@
 name: display
-description: Landfall display app for Fire TV and Android.
+description: Landfall display app for Fire TV, Android, and Raspberry Pi (Linux).
 publish_to: none
 
 environment:

@@ -1,0 +1,34 @@
+apiServer:
+  port: 8080
+  publicHost: ${LANDFALL_DOMAIN}
+  publicPort: 443
+  publicScheme: https
+
+insightsServer:
+  port: 8081
+  publicHost: ${LANDFALL_DOMAIN}
+  publicPort: 8081
+  publicScheme: http
+
+webServer:
+  port: 8082
+  publicHost: ${LANDFALL_DOMAIN}
+  publicPort: 8082
+  publicScheme: http
+
+database:
+  host: ${DB_HOST}
+  port: 5432
+  name: ${DB_NAME}
+  user: ${DB_USER}
+  requireSsl: false
+
+redis:
+  enabled: true
+  host: ${REDIS_HOST}
+  port: 6379
+
+maxRequestSize: 524288
+
+sessionLogs:
+  consoleEnabled: true

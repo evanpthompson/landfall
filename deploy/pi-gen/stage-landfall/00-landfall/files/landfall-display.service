@@ -1,0 +1,17 @@
+[Unit]
+Description=Landfall display app (Flutter Linux)
+After=graphical.target landfall-server.service
+Wants=landfall-server.service
+
+[Service]
+Type=simple
+User=landfall
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/landfall/.Xauthority
+WorkingDirectory=/home/landfall/landfall/display
+ExecStart=/home/landfall/landfall/display/display
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target

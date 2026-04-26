@@ -1,0 +1,14 @@
+{$LANDFALL_DOMAIN} {
+    # API server (HTTP + WebSocket)
+    reverse_proxy /api/* server:8080
+    reverse_proxy /card/* server:8080
+    reverse_proxy /agent/* server:8080
+    reverse_proxy /calendar/* server:8080
+    reverse_proxy /photos/* server:8080
+
+    # WebSocket endpoint for real-time card push
+    reverse_proxy /websocket server:8080
+
+    # Catch-all: everything else goes to the server too
+    reverse_proxy server:8080
+}
