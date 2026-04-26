@@ -3,17 +3,25 @@
   "actions": [
     {
       "__className__": "serverpod.DatabaseMigrationAction",
-      "type": "addColumn",
-      "addColumn": {
-        "__className__": "serverpod.AddColumnDefinition",
-        "tableName": "cards",
-        "column": {
-          "__className__": "serverpod.ColumnDefinition",
-          "name": "actionsJson",
-          "columnType": 0,
-          "isNullable": true,
-          "dartType": "String?"
-        }
+      "type": "alterTable",
+      "alterTable": {
+        "__className__": "serverpod.TableMigration",
+        "name": "cards",
+        "addColumns": [
+          {
+            "__className__": "serverpod.ColumnDefinition",
+            "name": "actionsJson",
+            "columnType": 0,
+            "isNullable": true,
+            "dartType": "String?"
+          }
+        ],
+        "deleteColumns": [],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": []
       }
     }
   ],
