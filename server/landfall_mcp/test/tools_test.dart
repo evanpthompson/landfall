@@ -78,8 +78,8 @@ void main() {
   setUp(() => api = FakeLandfallApi());
 
   group('tool definitions', () {
-    test('exposes exactly 5 tools', () {
-      expect(landfallTools, hasLength(5));
+    test('exposes exactly 6 tools', () {
+      expect(landfallTools, hasLength(6));
     });
 
     test('all tools have non-empty names and descriptions', () {
