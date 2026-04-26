@@ -9,6 +9,8 @@ class DisplaySettings {
     this.dimEndHour = 7,
     this.dimLevel = 0.85,
     this.locationName = '',
+    this.serverUrl = '',
+    this.wizardComplete = false,
   });
 
   /// Whether the scheduled dim mode is active.
@@ -31,12 +33,26 @@ class DisplaySettings {
   /// Empty string means use the name returned by the weather API.
   final String locationName;
 
+  /// The Serverpod server URL entered during first-run setup.
+  ///
+  /// Empty string means setup has not been completed. The app shows the
+  /// first-run wizard until this is populated and [wizardComplete] is true.
+  final String serverUrl;
+
+  /// Whether the first-run setup wizard has been completed.
+  ///
+  /// Set to true when the user taps "Launch Landfall" at the final wizard step.
+  /// Prevents re-showing the wizard after setup even if [serverUrl] changes.
+  final bool wizardComplete;
+
   DisplaySettings copyWith({
     bool? dimEnabled,
     int? dimStartHour,
     int? dimEndHour,
     double? dimLevel,
     String? locationName,
+    String? serverUrl,
+    bool? wizardComplete,
   }) {
     return DisplaySettings(
       dimEnabled: dimEnabled ?? this.dimEnabled,
@@ -44,6 +60,8 @@ class DisplaySettings {
       dimEndHour: dimEndHour ?? this.dimEndHour,
       dimLevel: dimLevel ?? this.dimLevel,
       locationName: locationName ?? this.locationName,
+      serverUrl: serverUrl ?? this.serverUrl,
+      wizardComplete: wizardComplete ?? this.wizardComplete,
     );
   }
 
@@ -55,9 +73,18 @@ class DisplaySettings {
           dimStartHour == other.dimStartHour &&
           dimEndHour == other.dimEndHour &&
           dimLevel == other.dimLevel &&
-          locationName == other.locationName;
+          locationName == other.locationName &&
+          serverUrl == other.serverUrl &&
+          wizardComplete == other.wizardComplete;
 
   @override
-  int get hashCode =>
-      Object.hash(dimEnabled, dimStartHour, dimEndHour, dimLevel, locationName);
+  int get hashCode => Object.hash(
+        dimEnabled,
+        dimStartHour,
+        dimEndHour,
+        dimLevel,
+        locationName,
+        serverUrl,
+        wizardComplete,
+      );
 }

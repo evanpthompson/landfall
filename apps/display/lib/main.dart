@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:display/src/data/local/app_database.dart';
+import 'package:display/src/data/settings/drift_display_settings_repository.dart';
 import 'package:display/app.dart';
+import 'package:display/setup_wizard_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +19,17 @@ void main() async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   final database = AppDatabase();
-  // Development server URL — change to production URL before deploying.
-  const serverUrl = 'http://localhost:8080/';
-  runApp(LandfallApp(database: database, serverUrl: serverUrl));
+
+  void launchApp(String serverUrl) {
+    runApp(LandfallApp(database: database, serverUrl: serverUrl));
+  }
+
+  final settings =
+      await DriftDisplaySettingsRepository(database).getSettings();
+
+  if (settings.serverUrl.isEmpty || !settings.wizardComplete) {
+    runApp(SetupWizardApp(database: database, onComplete: launchApp));
+  } else {
+    launchApp(settings.serverUrl);
+  }
 }

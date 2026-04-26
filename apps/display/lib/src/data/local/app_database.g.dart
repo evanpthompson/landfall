@@ -1524,6 +1524,33 @@ class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _serverUrlMeta = const VerificationMeta(
+    'serverUrl',
+  );
+  @override
+  late final GeneratedColumn<String> serverUrl = GeneratedColumn<String>(
+    'server_url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _wizardCompleteMeta = const VerificationMeta(
+    'wizardComplete',
+  );
+  @override
+  late final GeneratedColumn<bool> wizardComplete = GeneratedColumn<bool>(
+    'wizard_complete',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("wizard_complete" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -1543,6 +1570,8 @@ class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
     dimEndHour,
     dimLevel,
     locationName,
+    serverUrl,
+    wizardComplete,
     updatedAt,
   ];
   @override
@@ -1599,6 +1628,21 @@ class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
         ),
       );
     }
+    if (data.containsKey('server_url')) {
+      context.handle(
+        _serverUrlMeta,
+        serverUrl.isAcceptableOrUnknown(data['server_url']!, _serverUrlMeta),
+      );
+    }
+    if (data.containsKey('wizard_complete')) {
+      context.handle(
+        _wizardCompleteMeta,
+        wizardComplete.isAcceptableOrUnknown(
+          data['wizard_complete']!,
+          _wizardCompleteMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -1640,6 +1684,14 @@ class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
         DriftSqlType.string,
         data['${effectivePrefix}location_name'],
       )!,
+      serverUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}server_url'],
+      )!,
+      wizardComplete: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}wizard_complete'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -1661,6 +1713,8 @@ class DisplaySettingsEntry extends DataClass
   final int dimEndHour;
   final double dimLevel;
   final String locationName;
+  final String serverUrl;
+  final bool wizardComplete;
   final DateTime updatedAt;
   const DisplaySettingsEntry({
     required this.id,
@@ -1669,6 +1723,8 @@ class DisplaySettingsEntry extends DataClass
     required this.dimEndHour,
     required this.dimLevel,
     required this.locationName,
+    required this.serverUrl,
+    required this.wizardComplete,
     required this.updatedAt,
   });
   @override
@@ -1680,6 +1736,8 @@ class DisplaySettingsEntry extends DataClass
     map['dim_end_hour'] = Variable<int>(dimEndHour);
     map['dim_level'] = Variable<double>(dimLevel);
     map['location_name'] = Variable<String>(locationName);
+    map['server_url'] = Variable<String>(serverUrl);
+    map['wizard_complete'] = Variable<bool>(wizardComplete);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -1692,6 +1750,8 @@ class DisplaySettingsEntry extends DataClass
       dimEndHour: Value(dimEndHour),
       dimLevel: Value(dimLevel),
       locationName: Value(locationName),
+      serverUrl: Value(serverUrl),
+      wizardComplete: Value(wizardComplete),
       updatedAt: Value(updatedAt),
     );
   }
@@ -1708,6 +1768,8 @@ class DisplaySettingsEntry extends DataClass
       dimEndHour: serializer.fromJson<int>(json['dimEndHour']),
       dimLevel: serializer.fromJson<double>(json['dimLevel']),
       locationName: serializer.fromJson<String>(json['locationName']),
+      serverUrl: serializer.fromJson<String>(json['serverUrl']),
+      wizardComplete: serializer.fromJson<bool>(json['wizardComplete']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -1721,6 +1783,8 @@ class DisplaySettingsEntry extends DataClass
       'dimEndHour': serializer.toJson<int>(dimEndHour),
       'dimLevel': serializer.toJson<double>(dimLevel),
       'locationName': serializer.toJson<String>(locationName),
+      'serverUrl': serializer.toJson<String>(serverUrl),
+      'wizardComplete': serializer.toJson<bool>(wizardComplete),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -1732,6 +1796,8 @@ class DisplaySettingsEntry extends DataClass
     int? dimEndHour,
     double? dimLevel,
     String? locationName,
+    String? serverUrl,
+    bool? wizardComplete,
     DateTime? updatedAt,
   }) => DisplaySettingsEntry(
     id: id ?? this.id,
@@ -1740,6 +1806,8 @@ class DisplaySettingsEntry extends DataClass
     dimEndHour: dimEndHour ?? this.dimEndHour,
     dimLevel: dimLevel ?? this.dimLevel,
     locationName: locationName ?? this.locationName,
+    serverUrl: serverUrl ?? this.serverUrl,
+    wizardComplete: wizardComplete ?? this.wizardComplete,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   DisplaySettingsEntry copyWithCompanion(DisplaySettingsEntriesCompanion data) {
@@ -1758,6 +1826,10 @@ class DisplaySettingsEntry extends DataClass
       locationName: data.locationName.present
           ? data.locationName.value
           : this.locationName,
+      serverUrl: data.serverUrl.present ? data.serverUrl.value : this.serverUrl,
+      wizardComplete: data.wizardComplete.present
+          ? data.wizardComplete.value
+          : this.wizardComplete,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -1771,6 +1843,8 @@ class DisplaySettingsEntry extends DataClass
           ..write('dimEndHour: $dimEndHour, ')
           ..write('dimLevel: $dimLevel, ')
           ..write('locationName: $locationName, ')
+          ..write('serverUrl: $serverUrl, ')
+          ..write('wizardComplete: $wizardComplete, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -1784,6 +1858,8 @@ class DisplaySettingsEntry extends DataClass
     dimEndHour,
     dimLevel,
     locationName,
+    serverUrl,
+    wizardComplete,
     updatedAt,
   );
   @override
@@ -1796,6 +1872,8 @@ class DisplaySettingsEntry extends DataClass
           other.dimEndHour == this.dimEndHour &&
           other.dimLevel == this.dimLevel &&
           other.locationName == this.locationName &&
+          other.serverUrl == this.serverUrl &&
+          other.wizardComplete == this.wizardComplete &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -1807,6 +1885,8 @@ class DisplaySettingsEntriesCompanion
   final Value<int> dimEndHour;
   final Value<double> dimLevel;
   final Value<String> locationName;
+  final Value<String> serverUrl;
+  final Value<bool> wizardComplete;
   final Value<DateTime> updatedAt;
   const DisplaySettingsEntriesCompanion({
     this.id = const Value.absent(),
@@ -1815,6 +1895,8 @@ class DisplaySettingsEntriesCompanion
     this.dimEndHour = const Value.absent(),
     this.dimLevel = const Value.absent(),
     this.locationName = const Value.absent(),
+    this.serverUrl = const Value.absent(),
+    this.wizardComplete = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   DisplaySettingsEntriesCompanion.insert({
@@ -1824,6 +1906,8 @@ class DisplaySettingsEntriesCompanion
     this.dimEndHour = const Value.absent(),
     this.dimLevel = const Value.absent(),
     this.locationName = const Value.absent(),
+    this.serverUrl = const Value.absent(),
+    this.wizardComplete = const Value.absent(),
     required DateTime updatedAt,
   }) : updatedAt = Value(updatedAt);
   static Insertable<DisplaySettingsEntry> custom({
@@ -1833,6 +1917,8 @@ class DisplaySettingsEntriesCompanion
     Expression<int>? dimEndHour,
     Expression<double>? dimLevel,
     Expression<String>? locationName,
+    Expression<String>? serverUrl,
+    Expression<bool>? wizardComplete,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
@@ -1842,6 +1928,8 @@ class DisplaySettingsEntriesCompanion
       if (dimEndHour != null) 'dim_end_hour': dimEndHour,
       if (dimLevel != null) 'dim_level': dimLevel,
       if (locationName != null) 'location_name': locationName,
+      if (serverUrl != null) 'server_url': serverUrl,
+      if (wizardComplete != null) 'wizard_complete': wizardComplete,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -1853,6 +1941,8 @@ class DisplaySettingsEntriesCompanion
     Value<int>? dimEndHour,
     Value<double>? dimLevel,
     Value<String>? locationName,
+    Value<String>? serverUrl,
+    Value<bool>? wizardComplete,
     Value<DateTime>? updatedAt,
   }) {
     return DisplaySettingsEntriesCompanion(
@@ -1862,6 +1952,8 @@ class DisplaySettingsEntriesCompanion
       dimEndHour: dimEndHour ?? this.dimEndHour,
       dimLevel: dimLevel ?? this.dimLevel,
       locationName: locationName ?? this.locationName,
+      serverUrl: serverUrl ?? this.serverUrl,
+      wizardComplete: wizardComplete ?? this.wizardComplete,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -1887,6 +1979,12 @@ class DisplaySettingsEntriesCompanion
     if (locationName.present) {
       map['location_name'] = Variable<String>(locationName.value);
     }
+    if (serverUrl.present) {
+      map['server_url'] = Variable<String>(serverUrl.value);
+    }
+    if (wizardComplete.present) {
+      map['wizard_complete'] = Variable<bool>(wizardComplete.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -1902,6 +2000,8 @@ class DisplaySettingsEntriesCompanion
           ..write('dimEndHour: $dimEndHour, ')
           ..write('dimLevel: $dimLevel, ')
           ..write('locationName: $locationName, ')
+          ..write('serverUrl: $serverUrl, ')
+          ..write('wizardComplete: $wizardComplete, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -2703,6 +2803,8 @@ typedef $$DisplaySettingsEntriesTableCreateCompanionBuilder =
       Value<int> dimEndHour,
       Value<double> dimLevel,
       Value<String> locationName,
+      Value<String> serverUrl,
+      Value<bool> wizardComplete,
       required DateTime updatedAt,
     });
 typedef $$DisplaySettingsEntriesTableUpdateCompanionBuilder =
@@ -2713,6 +2815,8 @@ typedef $$DisplaySettingsEntriesTableUpdateCompanionBuilder =
       Value<int> dimEndHour,
       Value<double> dimLevel,
       Value<String> locationName,
+      Value<String> serverUrl,
+      Value<bool> wizardComplete,
       Value<DateTime> updatedAt,
     });
 
@@ -2752,6 +2856,16 @@ class $$DisplaySettingsEntriesTableFilterComposer
 
   ColumnFilters<String> get locationName => $composableBuilder(
     column: $table.locationName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serverUrl => $composableBuilder(
+    column: $table.serverUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get wizardComplete => $composableBuilder(
+    column: $table.wizardComplete,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2800,6 +2914,16 @@ class $$DisplaySettingsEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get serverUrl => $composableBuilder(
+    column: $table.serverUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get wizardComplete => $composableBuilder(
+    column: $table.wizardComplete,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -2838,6 +2962,14 @@ class $$DisplaySettingsEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get locationName => $composableBuilder(
     column: $table.locationName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get serverUrl =>
+      $composableBuilder(column: $table.serverUrl, builder: (column) => column);
+
+  GeneratedColumn<bool> get wizardComplete => $composableBuilder(
+    column: $table.wizardComplete,
     builder: (column) => column,
   );
 
@@ -2897,6 +3029,8 @@ class $$DisplaySettingsEntriesTableTableManager
                 Value<int> dimEndHour = const Value.absent(),
                 Value<double> dimLevel = const Value.absent(),
                 Value<String> locationName = const Value.absent(),
+                Value<String> serverUrl = const Value.absent(),
+                Value<bool> wizardComplete = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => DisplaySettingsEntriesCompanion(
                 id: id,
@@ -2905,6 +3039,8 @@ class $$DisplaySettingsEntriesTableTableManager
                 dimEndHour: dimEndHour,
                 dimLevel: dimLevel,
                 locationName: locationName,
+                serverUrl: serverUrl,
+                wizardComplete: wizardComplete,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
@@ -2915,6 +3051,8 @@ class $$DisplaySettingsEntriesTableTableManager
                 Value<int> dimEndHour = const Value.absent(),
                 Value<double> dimLevel = const Value.absent(),
                 Value<String> locationName = const Value.absent(),
+                Value<String> serverUrl = const Value.absent(),
+                Value<bool> wizardComplete = const Value.absent(),
                 required DateTime updatedAt,
               }) => DisplaySettingsEntriesCompanion.insert(
                 id: id,
@@ -2923,6 +3061,8 @@ class $$DisplaySettingsEntriesTableTableManager
                 dimEndHour: dimEndHour,
                 dimLevel: dimLevel,
                 locationName: locationName,
+                serverUrl: serverUrl,
+                wizardComplete: wizardComplete,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0

@@ -28,6 +28,8 @@ class DriftDisplaySettingsRepository implements DisplaySettingsRepository {
       dimEndHour: entry.dimEndHour,
       dimLevel: entry.dimLevel,
       locationName: entry.locationName,
+      serverUrl: entry.serverUrl,
+      wizardComplete: entry.wizardComplete,
     );
   }
 
@@ -41,6 +43,8 @@ class DriftDisplaySettingsRepository implements DisplaySettingsRepository {
             dimEndHour: Value(settings.dimEndHour),
             dimLevel: Value(settings.dimLevel),
             locationName: Value(settings.locationName),
+            serverUrl: Value(settings.serverUrl),
+            wizardComplete: Value(settings.wizardComplete),
             updatedAt: Value(DateTime.now()),
           ),
         );

@@ -595,8 +595,34 @@ echo "  ${DIM}• No telemetry, no external service dependency${RESET}"
 echo ""
 info "Full guides: docs/self_hosting_guide.md  •  docs/raspberry_pi_guide.md"
 
-# ── Step 14: Display ────────────────────────────────────────────────────────
-pause "Let's launch the display. Clock, weather, calendar, photo, and all agent cards load automatically. Tap anywhere to reveal the gear icon and explore settings."
+# ── Step 14: First-run wizard ─────────────────────────────────────────────
+pause "Session 14 adds the first-run setup wizard — the guided path from 'Docker is up' to 'display is showing my data' without touching a config file."
+
+step "First-run setup wizard (Session 14)"
+echo ""
+echo "  ${BOLD}What it does:${RESET}"
+echo "  ${DIM}• Shown automatically when no server URL is configured (fresh install)${RESET}"
+echo "  ${DIM}• Walks through 4 steps: Server URL, Location, Accounts overview, Done${RESET}"
+echo "  ${DIM}• Server URL step pings the configured URL before accepting it — immediate${RESET}"
+echo "  ${DIM}  feedback if the address is wrong or the server isn't running${RESET}"
+echo "  ${DIM}• Partial completion is persisted — resume at the right step after a restart${RESET}"
+echo "  ${DIM}• After completion, Settings → Setup & Onboarding re-runs the wizard${RESET}"
+echo ""
+echo "  ${BOLD}When the display launches below, the wizard will appear.${RESET}"
+echo "  ${BOLD}Enter the following to continue the demo:${RESET}"
+echo ""
+echo "  ${CYAN}  Server URL:   http://localhost:8080/${RESET}"
+echo "  ${CYAN}  Location:     any city name  (or skip)${RESET}"
+echo "  ${CYAN}  Accounts:     tap 'Got it'   (connect later from Settings)${RESET}"
+echo "  ${CYAN}  Done:         tap 'Launch Landfall'${RESET}"
+echo ""
+info "Tip: if the app was previously configured, the wizard will not appear."
+info "Delete the app's local database to see it fresh:"
+info "  rm ~/Library/Containers/com.example.display/Data/Library/Application\\ Support/landfall.db"
+echo ""
+
+# ── Step 15: Display ────────────────────────────────────────────────────────
+pause "Ready to launch. The wizard will appear on a fresh install — walk through it, then the full display loads with all the demo cards we pushed."
 
 step "Launching Landfall display (macOS)"
 info "The app will open in a new window. Press Cmd+Q to quit when done."
