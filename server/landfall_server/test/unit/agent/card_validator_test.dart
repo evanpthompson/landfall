@@ -46,8 +46,8 @@ void main() {
         expect(errors, isEmpty);
       });
 
-      test('all layout values accepted', () {
-        for (final layout in ['small', 'medium', 'large', 'full']) {
+      test('all layout values accepted including ticker', () {
+        for (final layout in ['small', 'medium', 'large', 'full', 'ticker']) {
           expect(validateCardPushRequest(_valid(layout: layout)), isEmpty,
               reason: 'layout=$layout');
         }
@@ -141,6 +141,20 @@ void main() {
       test('invalid layout is rejected', () {
         final errors = validateCardPushRequest(_valid(layout: 'HUGE'));
         expect(errors.any((e) => e.contains('layout')), isTrue);
+      });
+
+      test('ticker with persistent=true is rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(layout: 'ticker', persistent: true),
+        );
+        expect(errors.any((e) => e.contains('ticker')), isTrue);
+      });
+
+      test('ticker with persistent=false is accepted', () {
+        final errors = validateCardPushRequest(
+          _valid(layout: 'ticker', persistent: false),
+        );
+        expect(errors, isEmpty);
       });
     });
 

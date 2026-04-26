@@ -19,6 +19,31 @@ void main() {
       test('full returns true', () {
         expect(CardLayout.full.isMultiCell, isTrue);
       });
+
+      test('ticker returns false — not a grid card', () {
+        expect(CardLayout.ticker.isMultiCell, isFalse);
+      });
+    });
+
+    group('isTickerLayout', () {
+      test('ticker returns true', () {
+        expect(CardLayout.ticker.isTickerLayout, isTrue);
+      });
+
+      test('all grid layouts return false', () {
+        for (final l in [
+          CardLayout.small,
+          CardLayout.medium,
+          CardLayout.large,
+          CardLayout.full,
+        ]) {
+          expect(l.isTickerLayout, isFalse, reason: '$l should not be ticker');
+        }
+      });
+    });
+
+    test('ticker is a valid enum value', () {
+      expect(CardLayout.values, contains(CardLayout.ticker));
     });
   });
 }

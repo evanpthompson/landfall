@@ -6,26 +6,42 @@ import '../generated/protocol.dart';
 /// Phase 0: No authentication required — open for local development.
 /// Phase 2: API key authentication will be added to [pushCard] and [dismissCard].
 class CardEndpoint extends Endpoint {
-  /// Returns all active cards for the display.
+  /// Returns all active grid cards for the display.
   ///
   /// Active = not dismissed AND (persistent OR not yet expired).
+  /// Ticker-layout cards are excluded — use [getTickerMessages] for those.
   /// Cards are returned newest-first.
   Future<List<CardRow>> getCards(Session session) async {
     final now = DateTime.now().toUtc();
 
-    // Fetch all non-dismissed cards, then filter expiry in Dart.
-    // A nullable ColumnDateTime makes complex OR expressions tricky to compose
-    // in Serverpod's expression API — this is clean and correct for Phase 0.
-    // Phase 2 can push the expiry filter to SQL if query volume warrants it.
     final nonDismissed = await CardRow.db.find(
       session,
-      where: (t) => t.dismissedAt.equals(null),
+      where: (t) => t.dismissedAt.equals(null) & t.layout.notEquals('ticker'),
       orderBy: (t) => t.createdAt,
       orderDescending: true,
     );
 
     return nonDismissed.where((card) {
       if (card.persistent) return true;
+      if (card.expiresAt == null) return true;
+      return card.expiresAt!.isAfter(now);
+    }).toList();
+  }
+
+  /// Returns the current ticker buffer: non-expired ticker-layout cards,
+  /// newest first, capped at 10 entries.
+  Future<List<CardRow>> getTickerMessages(Session session) async {
+    final now = DateTime.now().toUtc();
+
+    final rows = await CardRow.db.find(
+      session,
+      where: (t) => t.layout.equals('ticker') & t.dismissedAt.equals(null),
+      orderBy: (t) => t.createdAt,
+      orderDescending: true,
+      limit: 10,
+    );
+
+    return rows.where((card) {
       if (card.expiresAt == null) return true;
       return card.expiresAt!.isAfter(now);
     }).toList();
@@ -58,6 +74,7 @@ class CardEndpoint extends Endpoint {
         title: request.title,
         body: request.body,
         dataJson: request.dataJson,
+        actionsJson: request.actionsJson,
         layout: request.layout ?? existing.layout,
         priority: request.priority ?? existing.priority,
         expiresAt: request.expiresAt,
@@ -75,6 +92,7 @@ class CardEndpoint extends Endpoint {
       title: request.title,
       body: request.body,
       dataJson: request.dataJson,
+      actionsJson: request.actionsJson,
       layout: request.layout ?? 'medium',
       priority: request.priority ?? 'normal',
       expiresAt: request.expiresAt,

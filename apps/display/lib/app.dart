@@ -23,6 +23,7 @@ import 'package:display/src/features/display/screens/display_screen.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
+import 'package:display/src/features/ticker/cubit/ticker_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:ui_kit/ui_kit.dart';
 
@@ -112,6 +113,9 @@ class LandfallApp extends StatelessWidget {
           BlocProvider(
             create: (ctx) =>
                 DisplaySettingsCubit(ctx.read<DisplaySettingsRepository>()),
+          ),
+          BlocProvider(
+            create: (ctx) => TickerCubit(ctx.read<CardRepository>()),
           ),
         ],
         child: MaterialApp(

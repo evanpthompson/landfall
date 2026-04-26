@@ -15,7 +15,10 @@ fields:
   ### Structured data for rich rendering, serialized as JSON string.
   dataJson: String?
 
-  ### Size hint. Values: small | medium | large | full. Defaults to medium.
+  ### Card actions serialized as a JSON array of CardAction objects.
+  actionsJson: String?
+
+  ### Size hint. Values: small | medium | large | full | ticker. Defaults to medium.
   layout: String?
 
   ### Priority tier. Values: ephemeral | normal | persistent. Defaults to normal.

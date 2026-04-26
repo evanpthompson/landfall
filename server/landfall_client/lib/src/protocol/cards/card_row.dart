@@ -22,6 +22,7 @@ abstract class CardRow implements _i1.SerializableModel {
     required this.title,
     this.body,
     this.dataJson,
+    this.actionsJson,
     String? layout,
     String? priority,
     this.expiresAt,
@@ -39,6 +40,7 @@ abstract class CardRow implements _i1.SerializableModel {
     required String title,
     String? body,
     String? dataJson,
+    String? actionsJson,
     String? layout,
     String? priority,
     DateTime? expiresAt,
@@ -55,6 +57,7 @@ abstract class CardRow implements _i1.SerializableModel {
       title: jsonSerialization['title'] as String,
       body: jsonSerialization['body'] as String?,
       dataJson: jsonSerialization['dataJson'] as String?,
+      actionsJson: jsonSerialization['actionsJson'] as String?,
       layout: jsonSerialization['layout'] as String?,
       priority: jsonSerialization['priority'] as String?,
       expiresAt: jsonSerialization['expiresAt'] == null
@@ -96,8 +99,11 @@ abstract class CardRow implements _i1.SerializableModel {
   /// Structured data for rich rendering, serialized as JSON string.
   String? dataJson;
 
+  /// Card actions serialized as a JSON array of CardAction objects.
+  String? actionsJson;
+
   /// Size hint for the display layout engine.
-  /// Values: small | medium | large | full
+  /// Values: small | medium | large | full | ticker
   String layout;
 
   /// Controls default TTL when expiresAt is null and persistent is false.
@@ -127,6 +133,7 @@ abstract class CardRow implements _i1.SerializableModel {
     String? title,
     String? body,
     String? dataJson,
+    String? actionsJson,
     String? layout,
     String? priority,
     DateTime? expiresAt,
@@ -144,6 +151,7 @@ abstract class CardRow implements _i1.SerializableModel {
       'title': title,
       if (body != null) 'body': body,
       if (dataJson != null) 'dataJson': dataJson,
+      if (actionsJson != null) 'actionsJson': actionsJson,
       'layout': layout,
       'priority': priority,
       if (expiresAt != null) 'expiresAt': expiresAt?.toJson(),
@@ -169,6 +177,7 @@ class _CardRowImpl extends CardRow {
     required String title,
     String? body,
     String? dataJson,
+    String? actionsJson,
     String? layout,
     String? priority,
     DateTime? expiresAt,
@@ -182,6 +191,7 @@ class _CardRowImpl extends CardRow {
          title: title,
          body: body,
          dataJson: dataJson,
+         actionsJson: actionsJson,
          layout: layout,
          priority: priority,
          expiresAt: expiresAt,
@@ -201,6 +211,7 @@ class _CardRowImpl extends CardRow {
     String? title,
     Object? body = _Undefined,
     Object? dataJson = _Undefined,
+    Object? actionsJson = _Undefined,
     String? layout,
     String? priority,
     Object? expiresAt = _Undefined,
@@ -215,6 +226,7 @@ class _CardRowImpl extends CardRow {
       title: title ?? this.title,
       body: body is String? ? body : this.body,
       dataJson: dataJson is String? ? dataJson : this.dataJson,
+      actionsJson: actionsJson is String? ? actionsJson : this.actionsJson,
       layout: layout ?? this.layout,
       priority: priority ?? this.priority,
       expiresAt: expiresAt is DateTime? ? expiresAt : this.expiresAt,

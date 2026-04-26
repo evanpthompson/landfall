@@ -23,6 +23,7 @@ abstract class CardRow
     required this.title,
     this.body,
     this.dataJson,
+    this.actionsJson,
     String? layout,
     String? priority,
     this.expiresAt,
@@ -40,6 +41,7 @@ abstract class CardRow
     required String title,
     String? body,
     String? dataJson,
+    String? actionsJson,
     String? layout,
     String? priority,
     DateTime? expiresAt,
@@ -56,6 +58,7 @@ abstract class CardRow
       title: jsonSerialization['title'] as String,
       body: jsonSerialization['body'] as String?,
       dataJson: jsonSerialization['dataJson'] as String?,
+      actionsJson: jsonSerialization['actionsJson'] as String?,
       layout: jsonSerialization['layout'] as String?,
       priority: jsonSerialization['priority'] as String?,
       expiresAt: jsonSerialization['expiresAt'] == null
@@ -99,8 +102,11 @@ abstract class CardRow
   /// Structured data for rich rendering, serialized as JSON string.
   String? dataJson;
 
+  /// Card actions serialized as a JSON array of CardAction objects.
+  String? actionsJson;
+
   /// Size hint for the display layout engine.
-  /// Values: small | medium | large | full
+  /// Values: small | medium | large | full | ticker
   String layout;
 
   /// Controls default TTL when expiresAt is null and persistent is false.
@@ -133,6 +139,7 @@ abstract class CardRow
     String? title,
     String? body,
     String? dataJson,
+    String? actionsJson,
     String? layout,
     String? priority,
     DateTime? expiresAt,
@@ -150,6 +157,7 @@ abstract class CardRow
       'title': title,
       if (body != null) 'body': body,
       if (dataJson != null) 'dataJson': dataJson,
+      if (actionsJson != null) 'actionsJson': actionsJson,
       'layout': layout,
       'priority': priority,
       if (expiresAt != null) 'expiresAt': expiresAt?.toJson(),
@@ -169,6 +177,7 @@ abstract class CardRow
       'title': title,
       if (body != null) 'body': body,
       if (dataJson != null) 'dataJson': dataJson,
+      if (actionsJson != null) 'actionsJson': actionsJson,
       'layout': layout,
       'priority': priority,
       if (expiresAt != null) 'expiresAt': expiresAt?.toJson(),
@@ -218,6 +227,7 @@ class _CardRowImpl extends CardRow {
     required String title,
     String? body,
     String? dataJson,
+    String? actionsJson,
     String? layout,
     String? priority,
     DateTime? expiresAt,
@@ -231,6 +241,7 @@ class _CardRowImpl extends CardRow {
          title: title,
          body: body,
          dataJson: dataJson,
+         actionsJson: actionsJson,
          layout: layout,
          priority: priority,
          expiresAt: expiresAt,
@@ -250,6 +261,7 @@ class _CardRowImpl extends CardRow {
     String? title,
     Object? body = _Undefined,
     Object? dataJson = _Undefined,
+    Object? actionsJson = _Undefined,
     String? layout,
     String? priority,
     Object? expiresAt = _Undefined,
@@ -264,6 +276,7 @@ class _CardRowImpl extends CardRow {
       title: title ?? this.title,
       body: body is String? ? body : this.body,
       dataJson: dataJson is String? ? dataJson : this.dataJson,
+      actionsJson: actionsJson is String? ? actionsJson : this.actionsJson,
       layout: layout ?? this.layout,
       priority: priority ?? this.priority,
       expiresAt: expiresAt is DateTime? ? expiresAt : this.expiresAt,
@@ -301,6 +314,12 @@ class CardRowUpdateTable extends _i1.UpdateTable<CardRowTable> {
     table.dataJson,
     value,
   );
+
+  _i1.ColumnValue<String, String> actionsJson(String? value) =>
+      _i1.ColumnValue(
+        table.actionsJson,
+        value,
+      );
 
   _i1.ColumnValue<String, String> layout(String value) => _i1.ColumnValue(
     table.layout,
@@ -359,6 +378,10 @@ class CardRowTable extends _i1.Table<int?> {
       'dataJson',
       this,
     );
+    actionsJson = _i1.ColumnString(
+      'actionsJson',
+      this,
+    );
     layout = _i1.ColumnString(
       'layout',
       this,
@@ -407,8 +430,11 @@ class CardRowTable extends _i1.Table<int?> {
   /// Structured data for rich rendering, serialized as JSON string.
   late final _i1.ColumnString dataJson;
 
+  /// Card actions serialized as a JSON array of CardAction objects.
+  late final _i1.ColumnString actionsJson;
+
   /// Size hint for the display layout engine.
-  /// Values: small | medium | large | full
+  /// Values: small | medium | large | full | ticker
   late final _i1.ColumnString layout;
 
   /// Controls default TTL when expiresAt is null and persistent is false.
@@ -436,6 +462,7 @@ class CardRowTable extends _i1.Table<int?> {
     title,
     body,
     dataJson,
+    actionsJson,
     layout,
     priority,
     expiresAt,

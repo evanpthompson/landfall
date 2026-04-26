@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import '../generated/protocol.dart';
 
-const _validLayouts = {'small', 'medium', 'large', 'full'};
+const _validLayouts = {'small', 'medium', 'large', 'full', 'ticker'};
 const _validPriorities = {'ephemeral', 'normal', 'persistent'};
 const _maxTitleLength = 200;
 const _maxBodyLength = 2000;
@@ -47,6 +47,14 @@ List<String> validateCardPushRequest(CardPushRequest request) {
     errors.add(
       'layout must be one of: ${_validLayouts.join(', ')}. '
       'Got: "${request.layout}".',
+    );
+  }
+
+  // ticker cards may not be persistent — their value is ephemerality
+  if (request.layout == 'ticker' && request.persistent == true) {
+    errors.add(
+      'ticker cards may not be persistent. '
+      'Use a normal layout for persistent content.',
     );
   }
 

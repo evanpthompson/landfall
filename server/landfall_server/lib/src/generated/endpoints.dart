@@ -203,6 +203,42 @@ class Endpoints extends _i1.EndpointDispatch {
                 params['externalId'],
               ),
         ),
+        'pushTicker': _i1.MethodConnector(
+          name: 'pushTicker',
+          params: {
+            'apiKey': _i1.ParameterDescription(
+              name: 'apiKey',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'source': _i1.ParameterDescription(
+              name: 'source',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'message': _i1.ParameterDescription(
+              name: 'message',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'expiresAt': _i1.ParameterDescription(
+              name: 'expiresAt',
+              type: _i1.getType<DateTime?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['agent'] as _i2.AgentEndpoint).pushTicker(
+                session,
+                params['apiKey'],
+                params['source'],
+                params['message'],
+                expiresAt: params['expiresAt'],
+              ),
+        ),
       },
     );
     connectors['apiKey'] = _i1.EndpointConnector(
@@ -461,6 +497,16 @@ class Endpoints extends _i1.EndpointDispatch {
                 session,
                 params['externalId'],
               ),
+        ),
+        'getTickerMessages': _i1.MethodConnector(
+          name: 'getTickerMessages',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['card'] as _i8.CardEndpoint)
+                  .getTickerMessages(session),
         ),
       },
     );

@@ -21,6 +21,8 @@ import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/photo/widgets/photo_frame_card.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
 import 'package:display/src/features/settings/screens/settings_screen.dart';
+import 'package:display/src/features/ticker/cubit/ticker_cubit.dart';
+import 'package:display/src/features/ticker/widgets/ticker_strip_widget.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_state.dart';
 import 'package:display/src/features/weather/widgets/current_weather_card.dart';
@@ -61,6 +63,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
   Timer? _calendarRefreshTimer;
   Timer? _photoSlideshowTimer;
   Timer? _photoRefreshTimer;
+  Timer? _tickerRefreshTimer;
   Timer? _gearHideTimer;
 
   bool _gearVisible = false;
@@ -99,6 +102,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
     context.read<CalendarCubit>().loadEvents();
     context.read<PhotoCubit>().loadPhotos();
     context.read<DisplaySettingsCubit>().loadSettings();
+    context.read<TickerCubit>().loadTicker();
 
     _cardRefreshTimer = Timer.periodic(
       const Duration(seconds: 30),
@@ -134,6 +138,13 @@ class _DisplayScreenState extends State<DisplayScreen> {
         if (mounted) context.read<PhotoCubit>().loadPhotos();
       },
     );
+
+    _tickerRefreshTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) {
+        if (mounted) context.read<TickerCubit>().loadTicker();
+      },
+    );
   }
 
   @override
@@ -143,6 +154,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
     _calendarRefreshTimer?.cancel();
     _photoSlideshowTimer?.cancel();
     _photoRefreshTimer?.cancel();
+    _tickerRefreshTimer?.cancel();
     _gearHideTimer?.cancel();
     super.dispose();
   }
@@ -169,10 +181,17 @@ class _DisplayScreenState extends State<DisplayScreen> {
             ),
             // Ambient dim overlay — sits above content, ignores pointer events
             const AmbientDimOverlay(),
+            // Ghost ticker strip — fixed at the bottom, zero height when empty
+            const Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: TickerStripWidget(),
+            ),
             // Gear icon — appears on tap, fades after 5 seconds
             Positioned(
               right: 16,
-              bottom: 16,
+              bottom: 32,
               child: AnimatedOpacity(
                 opacity: _gearVisible ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 300),

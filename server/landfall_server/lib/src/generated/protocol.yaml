@@ -3,6 +3,7 @@ agent:
   - pushCard:
   - updateCard:
   - dismissCard:
+  - pushTicker:
 apiKey:
   - generateKey:
   - listKeys:
@@ -23,6 +24,7 @@ card:
   - getCards:
   - pushCard:
   - dismissCard:
+  - getTickerMessages:
 greeting:
   - hello:
 photo:

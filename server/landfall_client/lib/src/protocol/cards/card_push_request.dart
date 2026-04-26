@@ -20,6 +20,7 @@ abstract class CardPushRequest implements _i1.SerializableModel {
     required this.title,
     this.body,
     this.dataJson,
+    this.actionsJson,
     this.layout,
     this.priority,
     this.expiresAt,
@@ -32,6 +33,7 @@ abstract class CardPushRequest implements _i1.SerializableModel {
     required String title,
     String? body,
     String? dataJson,
+    String? actionsJson,
     String? layout,
     String? priority,
     DateTime? expiresAt,
@@ -45,6 +47,7 @@ abstract class CardPushRequest implements _i1.SerializableModel {
       title: jsonSerialization['title'] as String,
       body: jsonSerialization['body'] as String?,
       dataJson: jsonSerialization['dataJson'] as String?,
+      actionsJson: jsonSerialization['actionsJson'] as String?,
       layout: jsonSerialization['layout'] as String?,
       priority: jsonSerialization['priority'] as String?,
       expiresAt: jsonSerialization['expiresAt'] == null
@@ -69,7 +72,10 @@ abstract class CardPushRequest implements _i1.SerializableModel {
   /// Structured data for rich rendering, serialized as JSON string.
   String? dataJson;
 
-  /// Size hint. Values: small | medium | large | full. Defaults to medium.
+  /// Card actions serialized as a JSON array of CardAction objects.
+  String? actionsJson;
+
+  /// Size hint. Values: small | medium | large | full | ticker. Defaults to medium.
   String? layout;
 
   /// Priority tier. Values: ephemeral | normal | persistent. Defaults to normal.
@@ -93,6 +99,7 @@ abstract class CardPushRequest implements _i1.SerializableModel {
     String? title,
     String? body,
     String? dataJson,
+    String? actionsJson,
     String? layout,
     String? priority,
     DateTime? expiresAt,
@@ -107,6 +114,7 @@ abstract class CardPushRequest implements _i1.SerializableModel {
       'title': title,
       if (body != null) 'body': body,
       if (dataJson != null) 'dataJson': dataJson,
+      if (actionsJson != null) 'actionsJson': actionsJson,
       if (layout != null) 'layout': layout,
       if (priority != null) 'priority': priority,
       if (expiresAt != null) 'expiresAt': expiresAt?.toJson(),
@@ -129,6 +137,7 @@ class _CardPushRequestImpl extends CardPushRequest {
     required String title,
     String? body,
     String? dataJson,
+    String? actionsJson,
     String? layout,
     String? priority,
     DateTime? expiresAt,
@@ -139,6 +148,7 @@ class _CardPushRequestImpl extends CardPushRequest {
          title: title,
          body: body,
          dataJson: dataJson,
+         actionsJson: actionsJson,
          layout: layout,
          priority: priority,
          expiresAt: expiresAt,
@@ -155,6 +165,7 @@ class _CardPushRequestImpl extends CardPushRequest {
     String? title,
     Object? body = _Undefined,
     Object? dataJson = _Undefined,
+    Object? actionsJson = _Undefined,
     Object? layout = _Undefined,
     Object? priority = _Undefined,
     Object? expiresAt = _Undefined,
@@ -166,6 +177,7 @@ class _CardPushRequestImpl extends CardPushRequest {
       title: title ?? this.title,
       body: body is String? ? body : this.body,
       dataJson: dataJson is String? ? dataJson : this.dataJson,
+      actionsJson: actionsJson is String? ? actionsJson : this.actionsJson,
       layout: layout is String? ? layout : this.layout,
       priority: priority is String? ? priority : this.priority,
       expiresAt: expiresAt is DateTime? ? expiresAt : this.expiresAt,

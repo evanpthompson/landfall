@@ -31,6 +31,15 @@ abstract interface class LandfallApi {
   Future<bool> dismissCard(String externalId);
 
   Future<List<Map<String, dynamic>>> listCards();
+
+  /// Pushes a heartbeat message to the ghost ticker strip.
+  ///
+  /// Equivalent to [pushCard] with layout=ticker and a 30-second TTL.
+  Future<Map<String, dynamic>> pushTicker({
+    required String source,
+    required String message,
+    String? expiresAt,
+  });
 }
 
 class LandfallClient implements LandfallApi {
@@ -115,6 +124,21 @@ class LandfallClient implements LandfallApi {
       return result.cast<Map<String, dynamic>>();
     }
     return [];
+  }
+
+  @override
+  Future<Map<String, dynamic>> pushTicker({
+    required String source,
+    required String message,
+    String? expiresAt,
+  }) async {
+    final result = await _post('/agent/pushTicker', {
+      'apiKey': apiKey,
+      'source': source,
+      'message': message,
+      'expiresAt': ?expiresAt,
+    });
+    return result as Map<String, dynamic>;
   }
 
   Future<dynamic> _post(String path, Map<String, dynamic> body) async {

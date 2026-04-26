@@ -145,6 +145,37 @@ final List<ToolDefinition> landfallTools = [
     handler: _getCards,
   ),
   const ToolDefinition(
+    name: 'push_ticker',
+    description:
+        'Push a short heartbeat message to the ghost ticker strip at the bottom '
+        'of the display. Ticker messages are ephemeral (default TTL 30 seconds) '
+        'and scroll across a narrow strip rather than occupying a card slot. '
+        'Use this for ambient presence signals: "researching X", "workflow running", '
+        '"package delivered". For important content use push_card instead.',
+    inputSchema: {
+      'type': 'object',
+      'properties': {
+        'source': {
+          'type': 'string',
+          'description':
+              'Origin identifier in <namespace>.<name> format. '
+              'Use "agent.<yourname>" for custom integrations.',
+        },
+        'message': {
+          'type': 'string',
+          'description': 'The heartbeat text. Keep it short (under 100 chars).',
+        },
+        'expiresAt': {
+          'type': 'string',
+          'description':
+              'Explicit ISO 8601 UTC expiry. Omit to use the default 30-second TTL.',
+        },
+      },
+      'required': ['source', 'message'],
+    },
+    handler: _pushTicker,
+  ),
+  const ToolDefinition(
     name:'get_display_status',
     description:
         'Return a summary of the display: server connectivity, active card '
@@ -238,6 +269,22 @@ Future<ToolResult> _getCards(
       return '• [$source] "$title" (layout: $layout, priority: $priority, id: $id)';
     });
     return ToolResult(text: '${cards.length} active card(s):\n${lines.join('\n')}');
+  } on LandfallApiException catch (e) {
+    return ToolResult(text: e.message, isError: true);
+  }
+}
+
+Future<ToolResult> _pushTicker(
+  Map<String, dynamic> args,
+  LandfallApi api,
+) async {
+  try {
+    await api.pushTicker(
+      source: args['source'] as String,
+      message: args['message'] as String,
+      expiresAt: args['expiresAt'] as String?,
+    );
+    return const ToolResult(text: 'Ticker message pushed.');
   } on LandfallApiException catch (e) {
     return ToolResult(text: e.message, isError: true);
   }

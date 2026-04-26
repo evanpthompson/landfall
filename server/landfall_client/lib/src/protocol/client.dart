@@ -111,6 +111,27 @@ class EndpointAgent extends _i1.EndpointRef {
       'externalId': externalId,
     },
   );
+
+  /// Pushes a ticker heartbeat message to the ghost ticker strip.
+  ///
+  /// Convenience wrapper for [pushCard] with [layout: ticker] and a short
+  /// default TTL (30 seconds). [message] maps to the card title.
+  /// [expiresAt] overrides the default TTL.
+  _i2.Future<_i3.CardRow> pushTicker(
+    String apiKey,
+    String source,
+    String message, {
+    DateTime? expiresAt,
+  }) => caller.callServerEndpoint<_i3.CardRow>(
+    'agent',
+    'pushTicker',
+    {
+      'apiKey': apiKey,
+      'source': source,
+      'message': message,
+      if (expiresAt != null) 'expiresAt': expiresAt,
+    },
+  );
 }
 
 /// API key management endpoint.
@@ -356,6 +377,15 @@ class EndpointCard extends _i1.EndpointRef {
         'card',
         'dismissCard',
         {'externalId': externalId},
+      );
+
+  /// Returns the current ticker buffer: recent non-expired ticker-layout
+  /// cards, newest first, capped at 10 entries.
+  _i2.Future<List<_i3.CardRow>> getTickerMessages() =>
+      caller.callServerEndpoint<List<_i3.CardRow>>(
+        'card',
+        'getTickerMessages',
+        {},
       );
 }
 

@@ -24,10 +24,24 @@ class ServerpodCardRepository implements CardRepository {
     return _client.card.dismissCard(cardId);
   }
 
+  @override
+  Future<List<Card>> getTickerMessages() async {
+    final rows = await _client.card.getTickerMessages();
+    return rows.map(_rowToCard).toList();
+  }
+
   static Card _rowToCard(CardRow row) {
     Map<String, dynamic>? data;
     if (row.dataJson != null) {
       data = jsonDecode(row.dataJson!) as Map<String, dynamic>;
+    }
+
+    List<CardAction>? actions;
+    if (row.actionsJson != null) {
+      final decoded = jsonDecode(row.actionsJson!) as List<dynamic>;
+      actions = decoded
+          .map((e) => CardAction.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
 
     return Card(
@@ -36,6 +50,7 @@ class ServerpodCardRepository implements CardRepository {
       title: row.title,
       body: row.body,
       data: data,
+      actions: actions,
       layout: CardLayout.values.byName(row.layout),
       priority: CardPriority.values.byName(row.priority),
       expiresAt: row.expiresAt,

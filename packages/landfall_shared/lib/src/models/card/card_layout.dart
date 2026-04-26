@@ -14,8 +14,20 @@ enum CardLayout {
 
   /// Occupies the full display width. Reserved for high-priority alerts
   /// or immersive content.
-  full;
+  full,
 
-  /// Whether this layout spans more than a single cell.
-  bool get isMultiCell => this != CardLayout.small;
+  /// Renders in the ghost ticker strip at the bottom of the display.
+  ///
+  /// Ticker cards are NOT placed in the card grid. They route to a separate
+  /// FIFO buffer (cap: 10) and scroll across a fixed strip overlay. Default
+  /// TTL is 30 seconds. The [persistent] flag is invalid for ticker cards
+  /// and is rejected server-side.
+  ticker;
+
+  /// Whether this layout spans more than a single grid cell.
+  bool get isMultiCell =>
+      this != CardLayout.small && this != CardLayout.ticker;
+
+  /// Whether this layout renders in the ticker strip rather than the grid.
+  bool get isTickerLayout => this == CardLayout.ticker;
 }

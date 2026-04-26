@@ -9,6 +9,7 @@ class CardAction {
     required this.label,
     required this.type,
     this.payload,
+    this.requireConfirm = false,
   });
 
   /// Unique identifier for this action within the card.
@@ -23,11 +24,17 @@ class CardAction {
   /// Optional data the action handler needs (e.g. a URL, a card ID).
   final String? payload;
 
+  /// When true the display shows a confirmation dialog before executing.
+  ///
+  /// Use for destructive or irreversible actions (e.g. "Confirm Purchase").
+  final bool requireConfirm;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'label': label,
         'type': type.name,
         if (payload != null) 'payload': payload,
+        if (requireConfirm) 'requireConfirm': requireConfirm,
       };
 
   factory CardAction.fromJson(Map<String, dynamic> json) => CardAction(
@@ -35,6 +42,7 @@ class CardAction {
         label: json['label'] as String,
         type: CardActionType.values.byName(json['type'] as String),
         payload: json['payload'] as String?,
+        requireConfirm: json['requireConfirm'] as bool? ?? false,
       );
 
   @override
@@ -44,10 +52,11 @@ class CardAction {
           id == other.id &&
           label == other.label &&
           type == other.type &&
-          payload == other.payload;
+          payload == other.payload &&
+          requireConfirm == other.requireConfirm;
 
   @override
-  int get hashCode => Object.hash(id, label, type, payload);
+  int get hashCode => Object.hash(id, label, type, payload, requireConfirm);
 
   @override
   String toString() => 'CardAction(id: $id, label: $label, type: $type)';

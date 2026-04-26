@@ -69,6 +69,7 @@ class AgentEndpoint extends Endpoint {
         title: request.title,
         body: request.body,
         dataJson: request.dataJson,
+        actionsJson: request.actionsJson,
         layout: request.layout ?? existing.layout,
         priority: request.priority ?? existing.priority,
         expiresAt: request.expiresAt,
@@ -85,6 +86,7 @@ class AgentEndpoint extends Endpoint {
       title: request.title,
       body: request.body,
       dataJson: request.dataJson,
+      actionsJson: request.actionsJson,
       layout: request.layout ?? 'medium',
       priority: request.priority ?? 'normal',
       expiresAt: request.expiresAt,
@@ -132,6 +134,7 @@ class AgentEndpoint extends Endpoint {
       title: request.title,
       body: request.body,
       dataJson: request.dataJson,
+      actionsJson: request.actionsJson,
       layout: request.layout ?? existing.layout,
       priority: request.priority ?? existing.priority,
       expiresAt: request.expiresAt,
@@ -139,6 +142,39 @@ class AgentEndpoint extends Endpoint {
     );
 
     return CardRow.db.updateRow(session, updated);
+  }
+
+  /// Pushes a ticker heartbeat message to the ghost ticker strip.
+  ///
+  /// Convenience wrapper for [pushCard] with [layout: 'ticker'] and a
+  /// default TTL of 30 seconds. [message] maps to the card title.
+  /// [expiresAt] overrides the default TTL.
+  Future<CardRow> pushTicker(
+    Session session,
+    String apiKey,
+    String source,
+    String message, {
+    DateTime? expiresAt,
+  }) async {
+    final key = await _keyService.authenticate(session, apiKey);
+    await _keyService.checkAndIncrementRateLimit(session, key);
+
+    final now = DateTime.now().toUtc();
+    final ttlExpiry = expiresAt ?? now.add(const Duration(seconds: 30));
+
+    final card = CardRow(
+      externalId: Uuid().v4(),
+      source: source,
+      title: message,
+      layout: 'ticker',
+      priority: 'ephemeral',
+      expiresAt: ttlExpiry,
+      persistent: false,
+      dismissedAt: null,
+      createdAt: now,
+    );
+
+    return CardRow.db.insertRow(session, card);
   }
 
   /// Dismisses a card by its [externalId].

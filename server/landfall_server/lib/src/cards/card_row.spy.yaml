@@ -26,8 +26,12 @@ fields:
   ### Structured data for rich rendering, serialized as JSON string.
   dataJson: String?
 
+  ### Card actions serialized as a JSON array of CardAction objects.
+  ### Null means no actions. Set by the agent when pushing the card.
+  actionsJson: String?
+
   ### Size hint for the display layout engine.
-  ### Values: small | medium | large | full
+  ### Values: small | medium | large | full | ticker
   layout: String, default='medium'
 
   ### Controls default TTL when expiresAt is null and persistent is false.
