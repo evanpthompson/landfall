@@ -1,4 +1,4 @@
-import 'license_tier.dart';
+import 'package:landfall_shared/src/models/license/license_tier.dart';
 
 /// Current license state for a Landfall installation.
 class LicenseStatus {

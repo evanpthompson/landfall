@@ -1,4 +1,4 @@
-import '../models/license/integration_pack_info.dart';
+import 'package:landfall_shared/src/models/license/integration_pack_info.dart';
 
 abstract class PackRepository {
   Future<List<IntegrationPackInfo>> listPacks();
