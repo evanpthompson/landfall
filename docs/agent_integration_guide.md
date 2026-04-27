@@ -440,8 +440,63 @@ Built something useful? Submit it to the [integration registry](integrations.md)
 
 ---
 
+---
+
+## Dart / Flutter Integration — `landfall_agent_sdk`
+
+For Dart and Flutter projects, the official SDK gives you a typed client with
+IDE autocomplete and no raw JSON.
+
+```bash
+dart pub add landfall_agent_sdk
+```
+
+```dart
+import 'package:landfall_agent_sdk/landfall_agent_sdk.dart';
+
+final client = LandfallClient(
+  serverUrl: 'http://localhost:8080',
+  apiKey: Platform.environment['LANDFALL_API_KEY']!,
+);
+
+await client.push(
+  CardDraft.build()
+    .title('Flight DEN→LAX dropped to \$287')
+    .body('Round trip, June 14. Price valid ~4 hours.')
+    .source('agent.myapp')
+    .priority(CardPriority.ephemeral)
+    .expires(const Duration(hours: 4))
+    .cardId('myapp.flight-alert')(),
+);
+
+client.close();
+```
+
+See the [SDK README](../packages/agent_sdk/README.md) for the full API reference.
+
+---
+
+## Choosing an Integration Path
+
+| | REST API | MCP Server | Agent SDK |
+|---|---|---|---|
+| **Best for** | Any language, any agent, automation platforms | MCP-compatible AI agents (Claude Desktop, Cursor) | Dart/Flutter agents and automation scripts |
+| **Setup** | `curl` or any HTTP client | MCP client configuration | `dart pub add landfall_agent_sdk` |
+| **Type safety** | None — raw JSON | Tool schema validation | Compile-time, IDE autocomplete |
+| **Retries / errors** | Manual | Client-handled | Built-in with typed exceptions |
+| **Quickstart** | 5 min (this guide) | [MCP Setup Guide](mcp_setup_guide.md) | [SDK README](../packages/agent_sdk/README.md) |
+
+**Rule of thumb:**
+- Shell scripts, n8n, Make, Home Assistant → **REST API**
+- Claude Desktop, Cursor, any MCP-compatible agent → **MCP server**
+- Dart/Flutter apps and scripts → **Agent SDK**
+
+---
+
 ## See Also
 
 - [Card Schema Spec](card-schema.md) — all fields, validation rules, TTL behavior
 - [Self-Hosting Guide](self_hosting_guide.md) — run your own Landfall server
+- [SDK README](../packages/agent_sdk/README.md) — `landfall_agent_sdk` full reference
 - [examples/](examples/) — runnable code for all reference integrations
+- [Integration Registry](integrations.md) — community-built integrations

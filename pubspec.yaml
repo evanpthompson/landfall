@@ -11,6 +11,7 @@ workspace:
   - server/landfall_mcp
   - packages/landfall_shared
   - packages/ui_kit
+  - packages/agent_sdk
 
 dev_dependencies:
   melos: ^7.0.0
