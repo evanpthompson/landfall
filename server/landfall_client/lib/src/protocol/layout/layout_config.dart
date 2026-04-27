@@ -13,6 +13,8 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
 /// A saved display layout configuration.
+/// One row per named layout (weekday, weekend, night, custom).
+/// isActive marks which layout is currently shown on the display.
 abstract class LayoutConfig implements _i1.SerializableModel {
   LayoutConfig._({
     this.id,
@@ -23,10 +25,10 @@ abstract class LayoutConfig implements _i1.SerializableModel {
     required this.cardsJson,
     bool? isActive,
     required this.updatedAt,
-  })  : presetType = presetType ?? 'custom',
-        columnsCount = columnsCount ?? 12,
-        rowsCount = rowsCount ?? 8,
-        isActive = isActive ?? false;
+  }) : presetType = presetType ?? 'custom',
+       columnsCount = columnsCount ?? 12,
+       rowsCount = rowsCount ?? 8,
+       isActive = isActive ?? false;
 
   factory LayoutConfig({
     int? id,
@@ -56,15 +58,34 @@ abstract class LayoutConfig implements _i1.SerializableModel {
     );
   }
 
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
   int? id;
+
+  /// User-facing name (e.g. "Weekday", "Night", "My Custom").
   String name;
+
+  /// Preset category: weekday | weekend | night | custom
   String presetType;
+
+  /// Number of columns in the grid.
   int columnsCount;
+
+  /// Number of rows in the grid.
   int rowsCount;
+
+  /// JSON-encoded List<CardConfig>.
   String cardsJson;
+
+  /// True when this is the layout currently shown on the display.
   bool isActive;
+
+  /// Last modified timestamp.
   DateTime updatedAt;
 
+  /// Returns a shallow copy of this [LayoutConfig]
+  /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   LayoutConfig copyWith({
     int? id,
@@ -76,7 +97,6 @@ abstract class LayoutConfig implements _i1.SerializableModel {
     bool? isActive,
     DateTime? updatedAt,
   });
-
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -111,16 +131,18 @@ class _LayoutConfigImpl extends LayoutConfig {
     bool? isActive,
     required DateTime updatedAt,
   }) : super._(
-          id: id,
-          name: name,
-          presetType: presetType,
-          columnsCount: columnsCount,
-          rowsCount: rowsCount,
-          cardsJson: cardsJson,
-          isActive: isActive,
-          updatedAt: updatedAt,
-        );
+         id: id,
+         name: name,
+         presetType: presetType,
+         columnsCount: columnsCount,
+         rowsCount: rowsCount,
+         cardsJson: cardsJson,
+         isActive: isActive,
+         updatedAt: updatedAt,
+       );
 
+  /// Returns a shallow copy of this [LayoutConfig]
+  /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   @override
   LayoutConfig copyWith({

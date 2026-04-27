@@ -1,0 +1,24 @@
+### A pack owned by a Serverpod auth user.
+### Created on Stripe webhook completion or via Founding Member auto-grant.
+class: OwnedPack
+table: owned_packs
+
+fields:
+  ### Serverpod auth user identifier (UUID string).
+  userId: String
+
+  ### References IntegrationPack.packId.
+  packId: String
+
+  ### When this pack was granted.
+  grantedAt: DateTime
+
+  ### Stripe checkout session ID. Null for Founding Member auto-grants.
+  stripeSessionId: String?
+
+indexes:
+  owned_packs_user_pack_idx:
+    fields: userId, packId
+    unique: true
+  owned_packs_user_idx:
+    fields: userId

@@ -26,16 +26,19 @@ import 'dart:typed_data' as _i9;
 import 'package:landfall_client/src/protocol/calendar/calendar_event.dart'
     as _i10;
 import 'package:landfall_client/src/protocol/greetings/greeting.dart' as _i11;
-import 'package:landfall_client/src/protocol/photo/photo.dart' as _i12;
-import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
+import 'package:landfall_client/src/protocol/layout/layout_config.dart' as _i12;
+import 'package:landfall_client/src/protocol/license/license_status_response.dart'
     as _i13;
-import 'package:landfall_client/src/protocol/weather/weather_current.dart'
+import 'package:landfall_client/src/protocol/license/pack_info_response.dart'
     as _i14;
-import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
-    as _i15;
-import 'protocol.dart' as _i16;
-import 'package:landfall_client/src/protocol/layout/layout_config.dart'
+import 'package:landfall_client/src/protocol/photo/photo.dart' as _i15;
+import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
+    as _i16;
+import 'package:landfall_client/src/protocol/weather/weather_current.dart'
     as _i17;
+import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+    as _i18;
+import 'protocol.dart' as _i19;
 
 /// The authenticated agent push API.
 ///
@@ -97,6 +100,27 @@ class EndpointAgent extends _i1.EndpointRef {
     },
   );
 
+  /// Pushes a ticker heartbeat message to the ghost ticker strip.
+  ///
+  /// Convenience wrapper for [pushCard] with [layout: 'ticker'] and a
+  /// default TTL of 30 seconds. [message] maps to the card title.
+  /// [expiresAt] overrides the default TTL.
+  _i2.Future<_i3.CardRow> pushTicker(
+    String apiKey,
+    String source,
+    String message, {
+    DateTime? expiresAt,
+  }) => caller.callServerEndpoint<_i3.CardRow>(
+    'agent',
+    'pushTicker',
+    {
+      'apiKey': apiKey,
+      'source': source,
+      'message': message,
+      'expiresAt': expiresAt,
+    },
+  );
+
   /// Dismisses a card by its [externalId].
   ///
   /// Sets [CardRow.dismissedAt] to now. The card is retained in the database
@@ -111,27 +135,6 @@ class EndpointAgent extends _i1.EndpointRef {
     {
       'apiKey': apiKey,
       'externalId': externalId,
-    },
-  );
-
-  /// Pushes a ticker heartbeat message to the ghost ticker strip.
-  ///
-  /// Convenience wrapper for [pushCard] with [layout: ticker] and a short
-  /// default TTL (30 seconds). [message] maps to the card title.
-  /// [expiresAt] overrides the default TTL.
-  _i2.Future<_i3.CardRow> pushTicker(
-    String apiKey,
-    String source,
-    String message, {
-    DateTime? expiresAt,
-  }) => caller.callServerEndpoint<_i3.CardRow>(
-    'agent',
-    'pushTicker',
-    {
-      'apiKey': apiKey,
-      'source': source,
-      'message': message,
-      if (expiresAt != null) 'expiresAt': expiresAt,
     },
   );
 }
@@ -344,14 +347,24 @@ class EndpointCard extends _i1.EndpointRef {
   @override
   String get name => 'card';
 
-  /// Returns all active cards for the display.
+  /// Returns all active grid cards for the display.
   ///
   /// Active = not dismissed AND (persistent OR not yet expired).
+  /// Ticker-layout cards are excluded — use [getTickerMessages] for those.
   /// Cards are returned newest-first.
   _i2.Future<List<_i3.CardRow>> getCards() =>
       caller.callServerEndpoint<List<_i3.CardRow>>(
         'card',
         'getCards',
+        {},
+      );
+
+  /// Returns the current ticker buffer: non-expired ticker-layout cards,
+  /// newest first, capped at 10 entries.
+  _i2.Future<List<_i3.CardRow>> getTickerMessages() =>
+      caller.callServerEndpoint<List<_i3.CardRow>>(
+        'card',
+        'getTickerMessages',
         {},
       );
 
@@ -380,15 +393,6 @@ class EndpointCard extends _i1.EndpointRef {
         'dismissCard',
         {'externalId': externalId},
       );
-
-  /// Returns the current ticker buffer: recent non-expired ticker-layout
-  /// cards, newest first, capped at 10 entries.
-  _i2.Future<List<_i3.CardRow>> getTickerMessages() =>
-      caller.callServerEndpoint<List<_i3.CardRow>>(
-        'card',
-        'getTickerMessages',
-        {},
-      );
 }
 
 /// This is an example endpoint that returns a greeting message through
@@ -409,6 +413,121 @@ class EndpointGreeting extends _i1.EndpointRef {
       );
 }
 
+/// Manages saved display layout configurations.
+///
+/// Layouts are stored in [layout_configs]. Each row is a named layout with a
+/// preset category (weekday | weekend | night | custom). One row has
+/// [LayoutConfig.isActive] = true — that is the layout currently shown on the
+/// display.
+/// {@category Endpoint}
+class EndpointLayout extends _i1.EndpointRef {
+  EndpointLayout(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'layout';
+
+  /// Returns all saved layouts, ordered by preset type then name.
+  ///
+  /// Returns an empty list if no layouts have been saved yet.
+  _i2.Future<List<_i12.LayoutConfig>> getLayouts() =>
+      caller.callServerEndpoint<List<_i12.LayoutConfig>>(
+        'layout',
+        'getLayouts',
+        {},
+      );
+
+  /// Saves [layout], inserting a new row or updating an existing one by id.
+  ///
+  /// If [layout.id] is null a new row is created. Returns the saved row.
+  _i2.Future<_i12.LayoutConfig> saveLayout(_i12.LayoutConfig layout) =>
+      caller.callServerEndpoint<_i12.LayoutConfig>(
+        'layout',
+        'saveLayout',
+        {'layout': layout},
+      );
+
+  /// Marks [layoutId] as active and clears the active flag on all others.
+  ///
+  /// Returns the newly activated [LayoutConfig].
+  _i2.Future<_i12.LayoutConfig> setActiveLayout(int layoutId) =>
+      caller.callServerEndpoint<_i12.LayoutConfig>(
+        'layout',
+        'setActiveLayout',
+        {'layoutId': layoutId},
+      );
+
+  /// Deletes the layout with the given [id].
+  ///
+  /// The active layout cannot be deleted — an exception is thrown instead.
+  _i2.Future<void> deleteLayout(int id) => caller.callServerEndpoint<void>(
+    'layout',
+    'deleteLayout',
+    {'id': id},
+  );
+}
+
+/// Manages license key activation and status queries.
+///
+/// One license key can be activated per Serverpod auth user. The key is tied
+/// to the account permanently — it survives app reinstalls because auth is
+/// server-side.
+/// {@category Endpoint}
+class EndpointLicense extends _i1.EndpointRef {
+  EndpointLicense(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'license';
+
+  /// Returns the current license status for the authenticated user.
+  ///
+  /// Returns free tier when the user has no activated license or is not signed in.
+  _i2.Future<_i13.LicenseStatusResponse> getLicenseStatus() =>
+      caller.callServerEndpoint<_i13.LicenseStatusResponse>(
+        'license',
+        'getLicenseStatus',
+        {},
+      );
+
+  /// Activates [key] for the authenticated user.
+  ///
+  /// Throws [LicenseException] if the key is not found or already activated
+  /// by a different user.
+  _i2.Future<_i13.LicenseStatusResponse> activateLicense(String key) =>
+      caller.callServerEndpoint<_i13.LicenseStatusResponse>(
+        'license',
+        'activateLicense',
+        {'key': key},
+      );
+}
+
+/// Manages the integration pack marketplace catalog and per-user ownership.
+/// {@category Endpoint}
+class EndpointPack extends _i1.EndpointRef {
+  EndpointPack(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'pack';
+
+  /// Returns all active packs in the catalog, with ownership flags for the
+  /// authenticated user. Anonymous sessions see all packs as unowned.
+  _i2.Future<List<_i14.PackInfoResponse>> listPacks() =>
+      caller.callServerEndpoint<List<_i14.PackInfoResponse>>(
+        'pack',
+        'listPacks',
+        {},
+      );
+
+  /// Returns packs owned by the authenticated user.
+  ///
+  /// Returns an empty list for anonymous sessions.
+  _i2.Future<List<_i14.PackInfoResponse>> getOwnedPacks() =>
+      caller.callServerEndpoint<List<_i14.PackInfoResponse>>(
+        'pack',
+        'getOwnedPacks',
+        {},
+      );
+}
+
 /// Serves cached photo metadata to the Flutter display client.
 ///
 /// Photo entries are populated by [PhotoRefreshCall] on a 30-minute schedule.
@@ -424,8 +543,8 @@ class EndpointPhoto extends _i1.EndpointRef {
   String get name => 'photo';
 
   /// Returns all available photos ordered by filename.
-  _i2.Future<List<_i12.Photo>> getPhotos() =>
-      caller.callServerEndpoint<List<_i12.Photo>>(
+  _i2.Future<List<_i15.Photo>> getPhotos() =>
+      caller.callServerEndpoint<List<_i15.Photo>>(
         'photo',
         'getPhotos',
         {},
@@ -443,8 +562,8 @@ class EndpointSettings extends _i1.EndpointRef {
   String get name => 'settings';
 
   /// Returns all linked credentials for the current user, token-free.
-  _i2.Future<List<_i13.LinkedCredentialSummary>> getLinkedCredentials() =>
-      caller.callServerEndpoint<List<_i13.LinkedCredentialSummary>>(
+  _i2.Future<List<_i16.LinkedCredentialSummary>> getLinkedCredentials() =>
+      caller.callServerEndpoint<List<_i16.LinkedCredentialSummary>>(
         'settings',
         'getLinkedCredentials',
         {},
@@ -462,47 +581,6 @@ class EndpointSettings extends _i1.EndpointRef {
   );
 }
 
-/// Layout configuration endpoint — manages named preset layouts.
-/// {@category Endpoint}
-class EndpointLayout extends _i1.EndpointRef {
-  EndpointLayout(_i1.EndpointCaller caller) : super(caller);
-
-  @override
-  String get name => 'layout';
-
-  /// Returns all saved layouts, newest-updated first.
-  _i2.Future<List<_i17.LayoutConfig>> getLayouts() =>
-      caller.callServerEndpoint<List<_i17.LayoutConfig>>(
-        'layout',
-        'getLayouts',
-        {},
-      );
-
-  /// Saves [layout] (insert if id is null, update otherwise).
-  _i2.Future<_i17.LayoutConfig> saveLayout(_i17.LayoutConfig layout) =>
-      caller.callServerEndpoint<_i17.LayoutConfig>(
-        'layout',
-        'saveLayout',
-        {'layout': layout},
-      );
-
-  /// Marks [layoutId] as the active layout; clears all other active flags.
-  _i2.Future<_i17.LayoutConfig> setActiveLayout(int layoutId) =>
-      caller.callServerEndpoint<_i17.LayoutConfig>(
-        'layout',
-        'setActiveLayout',
-        {'layoutId': layoutId},
-      );
-
-  /// Deletes the layout with [id]. Throws if it is the active layout.
-  _i2.Future<void> deleteLayout(int id) =>
-      caller.callServerEndpoint<void>(
-        'layout',
-        'deleteLayout',
-        {'id': id},
-      );
-}
-
 /// Serves cached weather data to the Flutter display client.
 ///
 /// Data is populated by [WeatherRefreshCall] on a 10-minute schedule.
@@ -516,8 +594,8 @@ class EndpointWeather extends _i1.EndpointRef {
   String get name => 'weather';
 
   /// Returns the most recently cached current conditions, or null if none.
-  _i2.Future<_i14.WeatherCurrent?> getCurrentWeather() =>
-      caller.callServerEndpoint<_i14.WeatherCurrent?>(
+  _i2.Future<_i17.WeatherCurrent?> getCurrentWeather() =>
+      caller.callServerEndpoint<_i17.WeatherCurrent?>(
         'weather',
         'getCurrentWeather',
         {},
@@ -526,8 +604,8 @@ class EndpointWeather extends _i1.EndpointRef {
   /// Returns the cached 5-day forecast, oldest day first.
   ///
   /// Returns an empty list if no forecast data has been cached yet.
-  _i2.Future<List<_i15.WeatherForecast>> getForecast() =>
-      caller.callServerEndpoint<List<_i15.WeatherForecast>>(
+  _i2.Future<List<_i18.WeatherForecast>> getForecast() =>
+      caller.callServerEndpoint<List<_i18.WeatherForecast>>(
         'weather',
         'getForecast',
         {},
@@ -565,7 +643,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i16.Protocol(),
+         _i19.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -576,13 +654,15 @@ class Client extends _i1.ServerpodClientShared {
        ) {
     agent = EndpointAgent(this);
     apiKey = EndpointApiKey(this);
-    layout = EndpointLayout(this);
     jwtRefresh = EndpointJwtRefresh(this);
     otp = EndpointOtp(this);
     passkeyIdp = EndpointPasskeyIdp(this);
     calendar = EndpointCalendar(this);
     card = EndpointCard(this);
     greeting = EndpointGreeting(this);
+    layout = EndpointLayout(this);
+    license = EndpointLicense(this);
+    pack = EndpointPack(this);
     photo = EndpointPhoto(this);
     settings = EndpointSettings(this);
     weather = EndpointWeather(this);
@@ -592,8 +672,6 @@ class Client extends _i1.ServerpodClientShared {
   late final EndpointAgent agent;
 
   late final EndpointApiKey apiKey;
-
-  late final EndpointLayout layout;
 
   late final EndpointJwtRefresh jwtRefresh;
 
@@ -606,6 +684,12 @@ class Client extends _i1.ServerpodClientShared {
   late final EndpointCard card;
 
   late final EndpointGreeting greeting;
+
+  late final EndpointLayout layout;
+
+  late final EndpointLicense license;
+
+  late final EndpointPack pack;
 
   late final EndpointPhoto photo;
 
@@ -625,10 +709,12 @@ class Client extends _i1.ServerpodClientShared {
     'calendar': calendar,
     'card': card,
     'greeting': greeting,
+    'layout': layout,
+    'license': license,
+    'pack': pack,
     'photo': photo,
     'settings': settings,
     'weather': weather,
-    'layout': layout,
   };
 
   @override

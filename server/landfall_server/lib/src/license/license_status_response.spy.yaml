@@ -1,0 +1,12 @@
+### Response from LicenseEndpoint.getLicenseStatus and activateLicense.
+### Carries tier and display metadata; never exposes the raw key hash.
+class: LicenseStatusResponse
+fields:
+  ### License tier: 'free' | 'pro' | 'founding_member'
+  tier: String
+
+  ### When the license was activated. Null for free tier.
+  activatedAt: DateTime?
+
+  ### Partially masked license key for UI display (e.g. "LF-PRO-****-1234").
+  maskedKey: String?

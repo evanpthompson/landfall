@@ -20,24 +20,33 @@ import 'calendar/calendar_event.dart' as _i7;
 import 'cards/card_push_request.dart' as _i8;
 import 'cards/card_row.dart' as _i9;
 import 'greetings/greeting.dart' as _i10;
-import 'photo/photo.dart' as _i11;
-import 'settings/linked_credential_summary.dart' as _i12;
-import 'weather/weather_current.dart' as _i13;
-import 'weather/weather_forecast.dart' as _i14;
-import 'package:landfall_client/src/protocol/cards/card_row.dart' as _i15;
-import 'package:landfall_client/src/protocol/agent/api_key.dart' as _i16;
-import 'dart:typed_data' as _i17;
+import 'layout/layout_config.dart' as _i11;
+import 'license/integration_pack.dart' as _i12;
+import 'license/license_key.dart' as _i13;
+import 'license/license_status_response.dart' as _i14;
+import 'license/owned_pack.dart' as _i15;
+import 'license/pack_info_response.dart' as _i16;
+import 'photo/photo.dart' as _i17;
+import 'settings/linked_credential_summary.dart' as _i18;
+import 'weather/weather_current.dart' as _i19;
+import 'weather/weather_forecast.dart' as _i20;
+import 'package:landfall_client/src/protocol/cards/card_row.dart' as _i21;
+import 'package:landfall_client/src/protocol/agent/api_key.dart' as _i22;
+import 'dart:typed_data' as _i23;
 import 'package:landfall_client/src/protocol/calendar/calendar_event.dart'
-    as _i18;
-import 'package:landfall_client/src/protocol/photo/photo.dart' as _i19;
+    as _i24;
+import 'package:landfall_client/src/protocol/layout/layout_config.dart' as _i25;
+import 'package:landfall_client/src/protocol/license/pack_info_response.dart'
+    as _i26;
+import 'package:landfall_client/src/protocol/photo/photo.dart' as _i27;
 import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
-    as _i20;
+    as _i28;
 import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
-    as _i21;
+    as _i29;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
-    as _i22;
+    as _i30;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
-    as _i23;
+    as _i31;
 export 'agent/api_key.dart';
 export 'agent/api_key_create_response.dart';
 export 'agent/landfall_exception.dart';
@@ -46,8 +55,13 @@ export 'auth/otp_request.dart';
 export 'calendar/calendar_event.dart';
 export 'cards/card_push_request.dart';
 export 'cards/card_row.dart';
-export 'layout/layout_config.dart';
 export 'greetings/greeting.dart';
+export 'layout/layout_config.dart';
+export 'license/integration_pack.dart';
+export 'license/license_key.dart';
+export 'license/license_status_response.dart';
+export 'license/owned_pack.dart';
+export 'license/pack_info_response.dart';
 export 'photo/photo.dart';
 export 'settings/linked_credential_summary.dart';
 export 'weather/weather_current.dart';
@@ -115,17 +129,35 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i10.Greeting) {
       return _i10.Greeting.fromJson(data) as T;
     }
-    if (t == _i11.Photo) {
-      return _i11.Photo.fromJson(data) as T;
+    if (t == _i11.LayoutConfig) {
+      return _i11.LayoutConfig.fromJson(data) as T;
     }
-    if (t == _i12.LinkedCredentialSummary) {
-      return _i12.LinkedCredentialSummary.fromJson(data) as T;
+    if (t == _i12.IntegrationPack) {
+      return _i12.IntegrationPack.fromJson(data) as T;
     }
-    if (t == _i13.WeatherCurrent) {
-      return _i13.WeatherCurrent.fromJson(data) as T;
+    if (t == _i13.LicenseKey) {
+      return _i13.LicenseKey.fromJson(data) as T;
     }
-    if (t == _i14.WeatherForecast) {
-      return _i14.WeatherForecast.fromJson(data) as T;
+    if (t == _i14.LicenseStatusResponse) {
+      return _i14.LicenseStatusResponse.fromJson(data) as T;
+    }
+    if (t == _i15.OwnedPack) {
+      return _i15.OwnedPack.fromJson(data) as T;
+    }
+    if (t == _i16.PackInfoResponse) {
+      return _i16.PackInfoResponse.fromJson(data) as T;
+    }
+    if (t == _i17.Photo) {
+      return _i17.Photo.fromJson(data) as T;
+    }
+    if (t == _i18.LinkedCredentialSummary) {
+      return _i18.LinkedCredentialSummary.fromJson(data) as T;
+    }
+    if (t == _i19.WeatherCurrent) {
+      return _i19.WeatherCurrent.fromJson(data) as T;
+    }
+    if (t == _i20.WeatherForecast) {
+      return _i20.WeatherForecast.fromJson(data) as T;
     }
     if (t == _i1.getType<_i2.ApiKey?>()) {
       return (data != null ? _i2.ApiKey.fromJson(data) : null) as T;
@@ -155,63 +187,94 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i1.getType<_i10.Greeting?>()) {
       return (data != null ? _i10.Greeting.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i11.Photo?>()) {
-      return (data != null ? _i11.Photo.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i11.LayoutConfig?>()) {
+      return (data != null ? _i11.LayoutConfig.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i12.LinkedCredentialSummary?>()) {
-      return (data != null ? _i12.LinkedCredentialSummary.fromJson(data) : null)
+    if (t == _i1.getType<_i12.IntegrationPack?>()) {
+      return (data != null ? _i12.IntegrationPack.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i13.LicenseKey?>()) {
+      return (data != null ? _i13.LicenseKey.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i14.LicenseStatusResponse?>()) {
+      return (data != null ? _i14.LicenseStatusResponse.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i13.WeatherCurrent?>()) {
-      return (data != null ? _i13.WeatherCurrent.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i15.OwnedPack?>()) {
+      return (data != null ? _i15.OwnedPack.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i14.WeatherForecast?>()) {
-      return (data != null ? _i14.WeatherForecast.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i16.PackInfoResponse?>()) {
+      return (data != null ? _i16.PackInfoResponse.fromJson(data) : null) as T;
     }
-    if (t == List<_i15.CardRow>) {
-      return (data as List).map((e) => deserialize<_i15.CardRow>(e)).toList()
+    if (t == _i1.getType<_i17.Photo?>()) {
+      return (data != null ? _i17.Photo.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i18.LinkedCredentialSummary?>()) {
+      return (data != null ? _i18.LinkedCredentialSummary.fromJson(data) : null)
           as T;
     }
-    if (t == List<_i16.ApiKey>) {
-      return (data as List).map((e) => deserialize<_i16.ApiKey>(e)).toList()
+    if (t == _i1.getType<_i19.WeatherCurrent?>()) {
+      return (data != null ? _i19.WeatherCurrent.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i20.WeatherForecast?>()) {
+      return (data != null ? _i20.WeatherForecast.fromJson(data) : null) as T;
+    }
+    if (t == List<_i21.CardRow>) {
+      return (data as List).map((e) => deserialize<_i21.CardRow>(e)).toList()
           as T;
     }
-    if (t == _i1.getType<({_i17.ByteData challenge, _i1.UuidValue id})>()) {
+    if (t == List<_i22.ApiKey>) {
+      return (data as List).map((e) => deserialize<_i22.ApiKey>(e)).toList()
+          as T;
+    }
+    if (t == _i1.getType<({_i23.ByteData challenge, _i1.UuidValue id})>()) {
       return (
-            challenge: deserialize<_i17.ByteData>(
+            challenge: deserialize<_i23.ByteData>(
               ((data as Map)['n'] as Map)['challenge'],
             ),
             id: deserialize<_i1.UuidValue>(data['n']['id']),
           )
           as T;
     }
-    if (t == List<_i18.CalendarEvent>) {
+    if (t == List<_i24.CalendarEvent>) {
       return (data as List)
-              .map((e) => deserialize<_i18.CalendarEvent>(e))
+              .map((e) => deserialize<_i24.CalendarEvent>(e))
               .toList()
           as T;
     }
-    if (t == List<_i19.Photo>) {
-      return (data as List).map((e) => deserialize<_i19.Photo>(e)).toList()
-          as T;
-    }
-    if (t == List<_i20.LinkedCredentialSummary>) {
+    if (t == List<_i25.LayoutConfig>) {
       return (data as List)
-              .map((e) => deserialize<_i20.LinkedCredentialSummary>(e))
+              .map((e) => deserialize<_i25.LayoutConfig>(e))
               .toList()
           as T;
     }
-    if (t == List<_i21.WeatherForecast>) {
+    if (t == List<_i26.PackInfoResponse>) {
       return (data as List)
-              .map((e) => deserialize<_i21.WeatherForecast>(e))
+              .map((e) => deserialize<_i26.PackInfoResponse>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i27.Photo>) {
+      return (data as List).map((e) => deserialize<_i27.Photo>(e)).toList()
+          as T;
+    }
+    if (t == List<_i28.LinkedCredentialSummary>) {
+      return (data as List)
+              .map((e) => deserialize<_i28.LinkedCredentialSummary>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i29.WeatherForecast>) {
+      return (data as List)
+              .map((e) => deserialize<_i29.WeatherForecast>(e))
               .toList()
           as T;
     }
     try {
-      return _i22.Protocol().deserialize<T>(data, t);
+      return _i30.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     try {
-      return _i23.Protocol().deserialize<T>(data, t);
+      return _i31.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     return super.deserialize<T>(data, t);
   }
@@ -227,10 +290,16 @@ class Protocol extends _i1.SerializationManager {
       _i8.CardPushRequest => 'CardPushRequest',
       _i9.CardRow => 'CardRow',
       _i10.Greeting => 'Greeting',
-      _i11.Photo => 'Photo',
-      _i12.LinkedCredentialSummary => 'LinkedCredentialSummary',
-      _i13.WeatherCurrent => 'WeatherCurrent',
-      _i14.WeatherForecast => 'WeatherForecast',
+      _i11.LayoutConfig => 'LayoutConfig',
+      _i12.IntegrationPack => 'IntegrationPack',
+      _i13.LicenseKey => 'LicenseKey',
+      _i14.LicenseStatusResponse => 'LicenseStatusResponse',
+      _i15.OwnedPack => 'OwnedPack',
+      _i16.PackInfoResponse => 'PackInfoResponse',
+      _i17.Photo => 'Photo',
+      _i18.LinkedCredentialSummary => 'LinkedCredentialSummary',
+      _i19.WeatherCurrent => 'WeatherCurrent',
+      _i20.WeatherForecast => 'WeatherForecast',
       _ => null,
     };
   }
@@ -263,20 +332,32 @@ class Protocol extends _i1.SerializationManager {
         return 'CardRow';
       case _i10.Greeting():
         return 'Greeting';
-      case _i11.Photo():
+      case _i11.LayoutConfig():
+        return 'LayoutConfig';
+      case _i12.IntegrationPack():
+        return 'IntegrationPack';
+      case _i13.LicenseKey():
+        return 'LicenseKey';
+      case _i14.LicenseStatusResponse():
+        return 'LicenseStatusResponse';
+      case _i15.OwnedPack():
+        return 'OwnedPack';
+      case _i16.PackInfoResponse():
+        return 'PackInfoResponse';
+      case _i17.Photo():
         return 'Photo';
-      case _i12.LinkedCredentialSummary():
+      case _i18.LinkedCredentialSummary():
         return 'LinkedCredentialSummary';
-      case _i13.WeatherCurrent():
+      case _i19.WeatherCurrent():
         return 'WeatherCurrent';
-      case _i14.WeatherForecast():
+      case _i20.WeatherForecast():
         return 'WeatherForecast';
     }
-    className = _i22.Protocol().getClassNameForObject(data);
+    className = _i30.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_idp.$className';
     }
-    className = _i23.Protocol().getClassNameForObject(data);
+    className = _i31.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_core.$className';
     }
@@ -316,25 +397,43 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName == 'Greeting') {
       return deserialize<_i10.Greeting>(data['data']);
     }
+    if (dataClassName == 'LayoutConfig') {
+      return deserialize<_i11.LayoutConfig>(data['data']);
+    }
+    if (dataClassName == 'IntegrationPack') {
+      return deserialize<_i12.IntegrationPack>(data['data']);
+    }
+    if (dataClassName == 'LicenseKey') {
+      return deserialize<_i13.LicenseKey>(data['data']);
+    }
+    if (dataClassName == 'LicenseStatusResponse') {
+      return deserialize<_i14.LicenseStatusResponse>(data['data']);
+    }
+    if (dataClassName == 'OwnedPack') {
+      return deserialize<_i15.OwnedPack>(data['data']);
+    }
+    if (dataClassName == 'PackInfoResponse') {
+      return deserialize<_i16.PackInfoResponse>(data['data']);
+    }
     if (dataClassName == 'Photo') {
-      return deserialize<_i11.Photo>(data['data']);
+      return deserialize<_i17.Photo>(data['data']);
     }
     if (dataClassName == 'LinkedCredentialSummary') {
-      return deserialize<_i12.LinkedCredentialSummary>(data['data']);
+      return deserialize<_i18.LinkedCredentialSummary>(data['data']);
     }
     if (dataClassName == 'WeatherCurrent') {
-      return deserialize<_i13.WeatherCurrent>(data['data']);
+      return deserialize<_i19.WeatherCurrent>(data['data']);
     }
     if (dataClassName == 'WeatherForecast') {
-      return deserialize<_i14.WeatherForecast>(data['data']);
+      return deserialize<_i20.WeatherForecast>(data['data']);
     }
     if (dataClassName.startsWith('serverpod_auth_idp.')) {
       data['className'] = dataClassName.substring(19);
-      return _i22.Protocol().deserializeByClassName(data);
+      return _i30.Protocol().deserializeByClassName(data);
     }
     if (dataClassName.startsWith('serverpod_auth_core.')) {
       data['className'] = dataClassName.substring(20);
-      return _i23.Protocol().deserializeByClassName(data);
+      return _i31.Protocol().deserializeByClassName(data);
     }
     return super.deserializeByClassName(data);
   }
@@ -348,7 +447,7 @@ class Protocol extends _i1.SerializationManager {
     if (record == null) {
       return null;
     }
-    if (record is ({_i17.ByteData challenge, _i1.UuidValue id})) {
+    if (record is ({_i23.ByteData challenge, _i1.UuidValue id})) {
       return {
         "n": {
           "challenge": record.challenge.toJson(),
@@ -357,10 +456,10 @@ class Protocol extends _i1.SerializationManager {
       };
     }
     try {
-      return _i22.Protocol().mapRecordToJson(record);
+      return _i30.Protocol().mapRecordToJson(record);
     } catch (_) {}
     try {
-      return _i23.Protocol().mapRecordToJson(record);
+      return _i31.Protocol().mapRecordToJson(record);
     } catch (_) {}
     throw Exception('Unsupported record type ${record.runtimeType}');
   }

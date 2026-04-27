@@ -7,6 +7,7 @@ import 'package:serverpod_auth_idp_server/providers/passkey.dart';
 import 'src/calendar/calendar_refresh_call.dart';
 import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
+import 'src/license/stripe_webhook_route.dart';
 import 'src/photo/photo_refresh_call.dart';
 import 'src/web/routes/app_config_route.dart';
 import 'src/web/routes/calendar_oauth_route.dart';
@@ -100,6 +101,10 @@ void run(List<String> args) async {
   // Photo serve route — proxies image bytes from the upstream provider.
   // Uses /photos/** so any path under /photos/ is matched.
   pod.webServer.addRoute(PhotoServeRoute(), '/photos/**');
+
+  // Stripe webhook — receives purchase confirmation events.
+  // Verifies Stripe-Signature using stripeWebhookSecret from passwords.yaml.
+  pod.webServer.addRoute(StripeWebhookRoute(), '/stripe/webhook');
 
   // Start the server.
   await pod.start();

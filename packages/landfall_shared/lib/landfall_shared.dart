@@ -19,3 +19,8 @@ export 'src/models/photo/photo_entity.dart';
 export 'src/repositories/photo_repository.dart';
 export 'src/models/settings/display_settings.dart';
 export 'src/repositories/display_settings_repository.dart';
+export 'src/models/license/license_tier.dart';
+export 'src/models/license/license_status.dart';
+export 'src/models/license/integration_pack_info.dart';
+export 'src/repositories/license_repository.dart';
+export 'src/repositories/pack_repository.dart';

@@ -2,8 +2,8 @@ agent:
   - listCards:
   - pushCard:
   - updateCard:
-  - dismissCard:
   - pushTicker:
+  - dismissCard:
 apiKey:
   - generateKey:
   - listKeys:
@@ -22,16 +22,22 @@ calendar:
   - getUpcomingEvents:
 card:
   - getCards:
+  - getTickerMessages:
   - pushCard:
   - dismissCard:
-  - getTickerMessages:
+greeting:
+  - hello:
 layout:
   - getLayouts:
   - saveLayout:
   - setActiveLayout:
   - deleteLayout:
-greeting:
-  - hello:
+license:
+  - getLicenseStatus:
+  - activateLicense:
+pack:
+  - listPacks:
+  - getOwnedPacks:
 photo:
   - getPhotos:
 settings:

@@ -4,6 +4,7 @@
 .flutter-plugins-dependencies
 .packages
 build/
+logs/
 
 # Serverpod generated files are committed — CI has no serverpod CLI.
 # Drift / build_runner generated files are committed for the same reason.

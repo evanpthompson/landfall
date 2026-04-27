@@ -100,6 +100,7 @@ abstract class CardRow implements _i1.SerializableModel {
   String? dataJson;
 
   /// Card actions serialized as a JSON array of CardAction objects.
+  /// Null means no actions. Set by the agent when pushing the card.
   String? actionsJson;
 
   /// Size hint for the display layout engine.

@@ -103,6 +103,7 @@ abstract class CardRow
   String? dataJson;
 
   /// Card actions serialized as a JSON array of CardAction objects.
+  /// Null means no actions. Set by the agent when pushing the card.
   String? actionsJson;
 
   /// Size hint for the display layout engine.
@@ -315,11 +316,10 @@ class CardRowUpdateTable extends _i1.UpdateTable<CardRowTable> {
     value,
   );
 
-  _i1.ColumnValue<String, String> actionsJson(String? value) =>
-      _i1.ColumnValue(
-        table.actionsJson,
-        value,
-      );
+  _i1.ColumnValue<String, String> actionsJson(String? value) => _i1.ColumnValue(
+    table.actionsJson,
+    value,
+  );
 
   _i1.ColumnValue<String, String> layout(String value) => _i1.ColumnValue(
     table.layout,
@@ -431,6 +431,7 @@ class CardRowTable extends _i1.Table<int?> {
   late final _i1.ColumnString dataJson;
 
   /// Card actions serialized as a JSON array of CardAction objects.
+  /// Null means no actions. Set by the agent when pushing the card.
   late final _i1.ColumnString actionsJson;
 
   /// Size hint for the display layout engine.

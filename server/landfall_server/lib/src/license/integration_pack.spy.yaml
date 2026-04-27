@@ -1,0 +1,37 @@
+### An integration pack in the Landfall marketplace catalog.
+### Seeded at deployment time; updated by re-running the seed migration.
+class: IntegrationPack
+table: integration_packs
+
+fields:
+  ### Stable slug used as the primary identifier (e.g. 'sports_scores').
+  packId: String
+
+  ### User-facing display name.
+  name: String
+
+  ### Short description shown in the pack browser.
+  description: String
+
+  ### Semantic version string.
+  version: String
+
+  ### Price in USD.
+  priceUsd: double
+
+  ### Pack author name.
+  authorName: String
+
+  ### Optional icon URL.
+  iconUrl: String?
+
+  ### Stripe payment link for purchasing this pack. Null = not yet set up.
+  stripePaymentLink: String?
+
+  ### Whether this pack is listed in the marketplace.
+  isActive: bool, default=true
+
+indexes:
+  integration_packs_pack_id_idx:
+    fields: packId
+    unique: true

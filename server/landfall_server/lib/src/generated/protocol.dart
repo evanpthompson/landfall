@@ -26,22 +26,30 @@ import 'calendar/linked_credential.dart' as _i11;
 import 'cards/card_push_request.dart' as _i12;
 import 'cards/card_row.dart' as _i13;
 import 'greetings/greeting.dart' as _i14;
-import 'photo/photo.dart' as _i15;
-import 'settings/linked_credential_summary.dart' as _i16;
-import 'weather/weather_current.dart' as _i17;
-import 'weather/weather_forecast.dart' as _i18;
-import 'package:landfall_server/src/generated/cards/card_row.dart' as _i19;
-import 'package:landfall_server/src/generated/agent/api_key.dart' as _i20;
-import 'dart:typed_data' as _i21;
+import 'layout/layout_config.dart' as _i15;
+import 'license/integration_pack.dart' as _i16;
+import 'license/license_key.dart' as _i17;
+import 'license/license_status_response.dart' as _i18;
+import 'license/owned_pack.dart' as _i19;
+import 'license/pack_info_response.dart' as _i20;
+import 'photo/photo.dart' as _i21;
+import 'settings/linked_credential_summary.dart' as _i22;
+import 'weather/weather_current.dart' as _i23;
+import 'weather/weather_forecast.dart' as _i24;
+import 'package:landfall_server/src/generated/cards/card_row.dart' as _i25;
+import 'package:landfall_server/src/generated/agent/api_key.dart' as _i26;
+import 'dart:typed_data' as _i27;
 import 'package:landfall_server/src/generated/calendar/calendar_event.dart'
-    as _i22;
-import 'package:landfall_server/src/generated/photo/photo.dart' as _i23;
-import 'package:landfall_server/src/generated/settings/linked_credential_summary.dart'
-    as _i24;
-import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
-    as _i25;
+    as _i28;
 import 'package:landfall_server/src/generated/layout/layout_config.dart'
-    as _i26;
+    as _i29;
+import 'package:landfall_server/src/generated/license/pack_info_response.dart'
+    as _i30;
+import 'package:landfall_server/src/generated/photo/photo.dart' as _i31;
+import 'package:landfall_server/src/generated/settings/linked_credential_summary.dart'
+    as _i32;
+import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
+    as _i33;
 export 'agent/api_key.dart';
 export 'agent/api_key_create_response.dart';
 export 'agent/landfall_exception.dart';
@@ -51,8 +59,13 @@ export 'calendar/calendar_event.dart';
 export 'calendar/linked_credential.dart';
 export 'cards/card_push_request.dart';
 export 'cards/card_row.dart';
-export 'layout/layout_config.dart';
 export 'greetings/greeting.dart';
+export 'layout/layout_config.dart';
+export 'license/integration_pack.dart';
+export 'license/license_key.dart';
+export 'license/license_status_response.dart';
+export 'license/owned_pack.dart';
+export 'license/pack_info_response.dart';
 export 'photo/photo.dart';
 export 'settings/linked_credential_summary.dart';
 export 'weather/weather_current.dart';
@@ -619,6 +632,106 @@ class Protocol extends _i1.SerializationManagerServer {
       managed: true,
     ),
     _i2.TableDefinition(
+      name: 'integration_packs',
+      dartName: 'IntegrationPack',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'integration_packs_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'packId',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'name',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'description',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'version',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'priceUsd',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: false,
+          dartType: 'double',
+        ),
+        _i2.ColumnDefinition(
+          name: 'authorName',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'iconUrl',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'stripePaymentLink',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'isActive',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'true',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'integration_packs_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'integration_packs_pack_id_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'packId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
       name: 'landfall_otp_accounts',
       dartName: 'OtpAccount',
       schema: 'public',
@@ -767,6 +880,296 @@ class Protocol extends _i1.SerializationManagerServer {
             _i2.IndexElementDefinition(
               type: _i2.IndexElementDefinitionType.column,
               definition: 'expiresAt',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'layout_configs',
+      dartName: 'LayoutConfig',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'layout_configs_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'name',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'presetType',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'custom\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'columnsCount',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '12',
+        ),
+        _i2.ColumnDefinition(
+          name: 'rowsCount',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '8',
+        ),
+        _i2.ColumnDefinition(
+          name: 'cardsJson',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'isActive',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'updatedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'layout_configs_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'layout_configs_preset_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'presetType',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'layout_configs_active_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'isActive',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'license_keys',
+      dartName: 'LicenseKey',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'license_keys_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'key',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'tier',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'activatedByUserId',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'activatedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'purchasedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'stripeSessionId',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'buyerEmail',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'license_keys_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'license_keys_key_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'key',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'license_keys_user_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'activatedByUserId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'owned_packs',
+      dartName: 'OwnedPack',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'owned_packs_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'userId',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'packId',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'grantedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'stripeSessionId',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'owned_packs_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'owned_packs_user_pack_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'userId',
+            ),
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'packId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'owned_packs_user_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'userId',
             ),
           ],
           type: 'btree',
@@ -1031,110 +1434,6 @@ class Protocol extends _i1.SerializationManagerServer {
       ],
       managed: true,
     ),
-    _i2.TableDefinition(
-      name: 'layout_configs',
-      dartName: 'LayoutConfig',
-      schema: 'public',
-      module: 'landfall',
-      columns: [
-        _i2.ColumnDefinition(
-          name: 'id',
-          columnType: _i2.ColumnType.bigint,
-          isNullable: false,
-          dartType: 'int?',
-          columnDefault: 'nextval(\'layout_configs_id_seq\'::regclass)',
-        ),
-        _i2.ColumnDefinition(
-          name: 'name',
-          columnType: _i2.ColumnType.text,
-          isNullable: false,
-          dartType: 'String',
-        ),
-        _i2.ColumnDefinition(
-          name: 'presetType',
-          columnType: _i2.ColumnType.text,
-          isNullable: false,
-          dartType: 'String',
-          columnDefault: '\'custom\'::text',
-        ),
-        _i2.ColumnDefinition(
-          name: 'columnsCount',
-          columnType: _i2.ColumnType.integer,
-          isNullable: false,
-          dartType: 'int',
-          columnDefault: '12',
-        ),
-        _i2.ColumnDefinition(
-          name: 'rowsCount',
-          columnType: _i2.ColumnType.integer,
-          isNullable: false,
-          dartType: 'int',
-          columnDefault: '8',
-        ),
-        _i2.ColumnDefinition(
-          name: 'cardsJson',
-          columnType: _i2.ColumnType.text,
-          isNullable: false,
-          dartType: 'String',
-        ),
-        _i2.ColumnDefinition(
-          name: 'isActive',
-          columnType: _i2.ColumnType.boolean,
-          isNullable: false,
-          dartType: 'bool',
-          columnDefault: 'false',
-        ),
-        _i2.ColumnDefinition(
-          name: 'updatedAt',
-          columnType: _i2.ColumnType.timestampWithoutTimeZone,
-          isNullable: false,
-          dartType: 'DateTime',
-        ),
-      ],
-      foreignKeys: [],
-      indexes: [
-        _i2.IndexDefinition(
-          indexName: 'layout_configs_pkey',
-          tableSpace: null,
-          elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
-              definition: 'id',
-            ),
-          ],
-          type: 'btree',
-          isUnique: true,
-          isPrimary: true,
-        ),
-        _i2.IndexDefinition(
-          indexName: 'layout_configs_preset_idx',
-          tableSpace: null,
-          elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
-              definition: 'presetType',
-            ),
-          ],
-          type: 'btree',
-          isUnique: false,
-          isPrimary: false,
-        ),
-        _i2.IndexDefinition(
-          indexName: 'layout_configs_active_idx',
-          tableSpace: null,
-          elements: [
-            _i2.IndexElementDefinition(
-              type: _i2.IndexElementDefinitionType.column,
-              definition: 'isActive',
-            ),
-          ],
-          type: 'btree',
-          isUnique: false,
-          isPrimary: false,
-        ),
-      ],
-      managed: true,
-    ),
     ..._i3.Protocol.targetTableDefinitions,
     ..._i4.Protocol.targetTableDefinitions,
     ..._i2.Protocol.targetTableDefinitions,
@@ -1191,26 +1490,41 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i12.CardPushRequest) {
       return _i12.CardPushRequest.fromJson(data) as T;
     }
-    if (t == _i26.LayoutConfig) {
-      return _i26.LayoutConfig.fromJson(data) as T;
-    }
     if (t == _i13.CardRow) {
       return _i13.CardRow.fromJson(data) as T;
     }
     if (t == _i14.Greeting) {
       return _i14.Greeting.fromJson(data) as T;
     }
-    if (t == _i15.Photo) {
-      return _i15.Photo.fromJson(data) as T;
+    if (t == _i15.LayoutConfig) {
+      return _i15.LayoutConfig.fromJson(data) as T;
     }
-    if (t == _i16.LinkedCredentialSummary) {
-      return _i16.LinkedCredentialSummary.fromJson(data) as T;
+    if (t == _i16.IntegrationPack) {
+      return _i16.IntegrationPack.fromJson(data) as T;
     }
-    if (t == _i17.WeatherCurrent) {
-      return _i17.WeatherCurrent.fromJson(data) as T;
+    if (t == _i17.LicenseKey) {
+      return _i17.LicenseKey.fromJson(data) as T;
     }
-    if (t == _i18.WeatherForecast) {
-      return _i18.WeatherForecast.fromJson(data) as T;
+    if (t == _i18.LicenseStatusResponse) {
+      return _i18.LicenseStatusResponse.fromJson(data) as T;
+    }
+    if (t == _i19.OwnedPack) {
+      return _i19.OwnedPack.fromJson(data) as T;
+    }
+    if (t == _i20.PackInfoResponse) {
+      return _i20.PackInfoResponse.fromJson(data) as T;
+    }
+    if (t == _i21.Photo) {
+      return _i21.Photo.fromJson(data) as T;
+    }
+    if (t == _i22.LinkedCredentialSummary) {
+      return _i22.LinkedCredentialSummary.fromJson(data) as T;
+    }
+    if (t == _i23.WeatherCurrent) {
+      return _i23.WeatherCurrent.fromJson(data) as T;
+    }
+    if (t == _i24.WeatherForecast) {
+      return _i24.WeatherForecast.fromJson(data) as T;
     }
     if (t == _i1.getType<_i5.ApiKey?>()) {
       return (data != null ? _i5.ApiKey.fromJson(data) : null) as T;
@@ -1237,69 +1551,92 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i12.CardPushRequest?>()) {
       return (data != null ? _i12.CardPushRequest.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i26.LayoutConfig?>()) {
-      return (data != null ? _i26.LayoutConfig.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<List<_i26.LayoutConfig>>()) {
-      return (data as List)
-              .map((e) => deserialize<_i26.LayoutConfig>(e))
-              .toList() as dynamic;
-    }
     if (t == _i1.getType<_i13.CardRow?>()) {
       return (data != null ? _i13.CardRow.fromJson(data) : null) as T;
     }
     if (t == _i1.getType<_i14.Greeting?>()) {
       return (data != null ? _i14.Greeting.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i15.Photo?>()) {
-      return (data != null ? _i15.Photo.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i15.LayoutConfig?>()) {
+      return (data != null ? _i15.LayoutConfig.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i16.LinkedCredentialSummary?>()) {
-      return (data != null ? _i16.LinkedCredentialSummary.fromJson(data) : null)
+    if (t == _i1.getType<_i16.IntegrationPack?>()) {
+      return (data != null ? _i16.IntegrationPack.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i17.LicenseKey?>()) {
+      return (data != null ? _i17.LicenseKey.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i18.LicenseStatusResponse?>()) {
+      return (data != null ? _i18.LicenseStatusResponse.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i17.WeatherCurrent?>()) {
-      return (data != null ? _i17.WeatherCurrent.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i19.OwnedPack?>()) {
+      return (data != null ? _i19.OwnedPack.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i18.WeatherForecast?>()) {
-      return (data != null ? _i18.WeatherForecast.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i20.PackInfoResponse?>()) {
+      return (data != null ? _i20.PackInfoResponse.fromJson(data) : null) as T;
     }
-    if (t == List<_i19.CardRow>) {
-      return (data as List).map((e) => deserialize<_i19.CardRow>(e)).toList()
+    if (t == _i1.getType<_i21.Photo?>()) {
+      return (data != null ? _i21.Photo.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i22.LinkedCredentialSummary?>()) {
+      return (data != null ? _i22.LinkedCredentialSummary.fromJson(data) : null)
           as T;
     }
-    if (t == List<_i20.ApiKey>) {
-      return (data as List).map((e) => deserialize<_i20.ApiKey>(e)).toList()
+    if (t == _i1.getType<_i23.WeatherCurrent?>()) {
+      return (data != null ? _i23.WeatherCurrent.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i24.WeatherForecast?>()) {
+      return (data != null ? _i24.WeatherForecast.fromJson(data) : null) as T;
+    }
+    if (t == List<_i25.CardRow>) {
+      return (data as List).map((e) => deserialize<_i25.CardRow>(e)).toList()
           as T;
     }
-    if (t == _i1.getType<({_i21.ByteData challenge, _i1.UuidValue id})>()) {
+    if (t == List<_i26.ApiKey>) {
+      return (data as List).map((e) => deserialize<_i26.ApiKey>(e)).toList()
+          as T;
+    }
+    if (t == _i1.getType<({_i27.ByteData challenge, _i1.UuidValue id})>()) {
       return (
-            challenge: deserialize<_i21.ByteData>(
+            challenge: deserialize<_i27.ByteData>(
               ((data as Map)['n'] as Map)['challenge'],
             ),
             id: deserialize<_i1.UuidValue>(data['n']['id']),
           )
           as T;
     }
-    if (t == List<_i22.CalendarEvent>) {
+    if (t == List<_i28.CalendarEvent>) {
       return (data as List)
-              .map((e) => deserialize<_i22.CalendarEvent>(e))
+              .map((e) => deserialize<_i28.CalendarEvent>(e))
               .toList()
           as T;
     }
-    if (t == List<_i23.Photo>) {
-      return (data as List).map((e) => deserialize<_i23.Photo>(e)).toList()
-          as T;
-    }
-    if (t == List<_i24.LinkedCredentialSummary>) {
+    if (t == List<_i29.LayoutConfig>) {
       return (data as List)
-              .map((e) => deserialize<_i24.LinkedCredentialSummary>(e))
+              .map((e) => deserialize<_i29.LayoutConfig>(e))
               .toList()
           as T;
     }
-    if (t == List<_i25.WeatherForecast>) {
+    if (t == List<_i30.PackInfoResponse>) {
       return (data as List)
-              .map((e) => deserialize<_i25.WeatherForecast>(e))
+              .map((e) => deserialize<_i30.PackInfoResponse>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i31.Photo>) {
+      return (data as List).map((e) => deserialize<_i31.Photo>(e)).toList()
+          as T;
+    }
+    if (t == List<_i32.LinkedCredentialSummary>) {
+      return (data as List)
+              .map((e) => deserialize<_i32.LinkedCredentialSummary>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i33.WeatherForecast>) {
+      return (data as List)
+              .map((e) => deserialize<_i33.WeatherForecast>(e))
               .toList()
           as T;
     }
@@ -1327,11 +1664,16 @@ class Protocol extends _i1.SerializationManagerServer {
       _i12.CardPushRequest => 'CardPushRequest',
       _i13.CardRow => 'CardRow',
       _i14.Greeting => 'Greeting',
-      _i15.Photo => 'Photo',
-      _i16.LinkedCredentialSummary => 'LinkedCredentialSummary',
-      _i17.WeatherCurrent => 'WeatherCurrent',
-      _i18.WeatherForecast => 'WeatherForecast',
-      _i26.LayoutConfig => 'LayoutConfig',
+      _i15.LayoutConfig => 'LayoutConfig',
+      _i16.IntegrationPack => 'IntegrationPack',
+      _i17.LicenseKey => 'LicenseKey',
+      _i18.LicenseStatusResponse => 'LicenseStatusResponse',
+      _i19.OwnedPack => 'OwnedPack',
+      _i20.PackInfoResponse => 'PackInfoResponse',
+      _i21.Photo => 'Photo',
+      _i22.LinkedCredentialSummary => 'LinkedCredentialSummary',
+      _i23.WeatherCurrent => 'WeatherCurrent',
+      _i24.WeatherForecast => 'WeatherForecast',
       _ => null,
     };
   }
@@ -1366,16 +1708,26 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'CardRow';
       case _i14.Greeting():
         return 'Greeting';
-      case _i15.Photo():
-        return 'Photo';
-      case _i16.LinkedCredentialSummary():
-        return 'LinkedCredentialSummary';
-      case _i17.WeatherCurrent():
-        return 'WeatherCurrent';
-      case _i18.WeatherForecast():
-        return 'WeatherForecast';
-      case _i26.LayoutConfig():
+      case _i15.LayoutConfig():
         return 'LayoutConfig';
+      case _i16.IntegrationPack():
+        return 'IntegrationPack';
+      case _i17.LicenseKey():
+        return 'LicenseKey';
+      case _i18.LicenseStatusResponse():
+        return 'LicenseStatusResponse';
+      case _i19.OwnedPack():
+        return 'OwnedPack';
+      case _i20.PackInfoResponse():
+        return 'PackInfoResponse';
+      case _i21.Photo():
+        return 'Photo';
+      case _i22.LinkedCredentialSummary():
+        return 'LinkedCredentialSummary';
+      case _i23.WeatherCurrent():
+        return 'WeatherCurrent';
+      case _i24.WeatherForecast():
+        return 'WeatherForecast';
     }
     className = _i2.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -1428,20 +1780,35 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'Greeting') {
       return deserialize<_i14.Greeting>(data['data']);
     }
+    if (dataClassName == 'LayoutConfig') {
+      return deserialize<_i15.LayoutConfig>(data['data']);
+    }
+    if (dataClassName == 'IntegrationPack') {
+      return deserialize<_i16.IntegrationPack>(data['data']);
+    }
+    if (dataClassName == 'LicenseKey') {
+      return deserialize<_i17.LicenseKey>(data['data']);
+    }
+    if (dataClassName == 'LicenseStatusResponse') {
+      return deserialize<_i18.LicenseStatusResponse>(data['data']);
+    }
+    if (dataClassName == 'OwnedPack') {
+      return deserialize<_i19.OwnedPack>(data['data']);
+    }
+    if (dataClassName == 'PackInfoResponse') {
+      return deserialize<_i20.PackInfoResponse>(data['data']);
+    }
     if (dataClassName == 'Photo') {
-      return deserialize<_i15.Photo>(data['data']);
+      return deserialize<_i21.Photo>(data['data']);
     }
     if (dataClassName == 'LinkedCredentialSummary') {
-      return deserialize<_i16.LinkedCredentialSummary>(data['data']);
+      return deserialize<_i22.LinkedCredentialSummary>(data['data']);
     }
     if (dataClassName == 'WeatherCurrent') {
-      return deserialize<_i17.WeatherCurrent>(data['data']);
+      return deserialize<_i23.WeatherCurrent>(data['data']);
     }
     if (dataClassName == 'WeatherForecast') {
-      return deserialize<_i18.WeatherForecast>(data['data']);
-    }
-    if (dataClassName == 'LayoutConfig') {
-      return deserialize<_i26.LayoutConfig>(data['data']);
+      return deserialize<_i24.WeatherForecast>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -1491,14 +1858,20 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i11.LinkedCredential.t;
       case _i13.CardRow:
         return _i13.CardRow.t;
-      case _i15.Photo:
-        return _i15.Photo.t;
-      case _i17.WeatherCurrent:
-        return _i17.WeatherCurrent.t;
-      case _i18.WeatherForecast:
-        return _i18.WeatherForecast.t;
-      case _i26.LayoutConfig:
-        return _i26.LayoutConfig.t;
+      case _i15.LayoutConfig:
+        return _i15.LayoutConfig.t;
+      case _i16.IntegrationPack:
+        return _i16.IntegrationPack.t;
+      case _i17.LicenseKey:
+        return _i17.LicenseKey.t;
+      case _i19.OwnedPack:
+        return _i19.OwnedPack.t;
+      case _i21.Photo:
+        return _i21.Photo.t;
+      case _i23.WeatherCurrent:
+        return _i23.WeatherCurrent.t;
+      case _i24.WeatherForecast:
+        return _i24.WeatherForecast.t;
     }
     return null;
   }
@@ -1519,7 +1892,7 @@ class Protocol extends _i1.SerializationManagerServer {
     if (record == null) {
       return null;
     }
-    if (record is ({_i21.ByteData challenge, _i1.UuidValue id})) {
+    if (record is ({_i27.ByteData challenge, _i1.UuidValue id})) {
       return {
         "n": {
           "challenge": record.challenge.toJson(),

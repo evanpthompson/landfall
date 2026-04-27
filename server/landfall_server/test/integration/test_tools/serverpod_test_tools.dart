@@ -29,14 +29,20 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
 import 'package:landfall_server/src/generated/calendar/calendar_event.dart'
     as _i12;
 import 'package:landfall_server/src/generated/greetings/greeting.dart' as _i13;
-import 'package:landfall_server/src/generated/photo/photo.dart' as _i14;
-import 'package:landfall_server/src/generated/settings/linked_credential_summary.dart'
+import 'package:landfall_server/src/generated/layout/layout_config.dart'
+    as _i14;
+import 'package:landfall_server/src/generated/license/license_status_response.dart'
     as _i15;
-import 'package:landfall_server/src/generated/weather/weather_current.dart'
+import 'package:landfall_server/src/generated/license/pack_info_response.dart'
     as _i16;
+import 'package:landfall_server/src/generated/photo/photo.dart' as _i17;
+import 'package:landfall_server/src/generated/settings/linked_credential_summary.dart'
+    as _i18;
+import 'package:landfall_server/src/generated/weather/weather_current.dart'
+    as _i19;
 import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
-    as _i17;
-import 'package:landfall_server/src/generated/future_calls.dart' as _i18;
+    as _i20;
+import 'package:landfall_server/src/generated/future_calls.dart' as _i21;
 import 'package:landfall_server/src/generated/protocol.dart';
 import 'package:landfall_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -168,6 +174,12 @@ class TestEndpoints {
 
   late final _GreetingEndpoint greeting;
 
+  late final _LayoutEndpoint layout;
+
+  late final _LicenseEndpoint license;
+
+  late final _PackEndpoint pack;
+
   late final _PhotoEndpoint photo;
 
   late final _SettingsEndpoint settings;
@@ -211,6 +223,18 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     greeting = _GreetingEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    layout = _LayoutEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    license = _LicenseEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    pack = _PackEndpoint(
       endpoints,
       serializationManager,
     );
@@ -332,6 +356,45 @@ class _AgentEndpoint {
             'apiKey': apiKey,
             'externalId': externalId,
             'request': request,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i4.CardRow>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i4.CardRow> pushTicker(
+    _i1.TestSessionBuilder sessionBuilder,
+    String apiKey,
+    String source,
+    String message, {
+    DateTime? expiresAt,
+  }) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'agent',
+            method: 'pushTicker',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'agent',
+          methodName: 'pushTicker',
+          parameters: _i1.testObjectToJson({
+            'apiKey': apiKey,
+            'source': source,
+            'message': message,
+            'expiresAt': expiresAt,
           }),
           serializationManager: _serializationManager,
         );
@@ -825,6 +888,36 @@ class _CardEndpoint {
     });
   }
 
+  _i3.Future<List<_i4.CardRow>> getTickerMessages(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'card',
+            method: 'getTickerMessages',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'card',
+          methodName: 'getTickerMessages',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i4.CardRow>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _i3.Future<_i4.CardRow> pushCard(
     _i1.TestSessionBuilder sessionBuilder,
     _i5.CardPushRequest request,
@@ -930,6 +1023,283 @@ class _GreetingEndpoint {
   }
 }
 
+class _LayoutEndpoint {
+  _LayoutEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<List<_i14.LayoutConfig>> getLayouts(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'layout',
+            method: 'getLayouts',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'layout',
+          methodName: 'getLayouts',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i14.LayoutConfig>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i14.LayoutConfig> saveLayout(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i14.LayoutConfig layout,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'layout',
+            method: 'saveLayout',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'layout',
+          methodName: 'saveLayout',
+          parameters: _i1.testObjectToJson({'layout': layout}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i14.LayoutConfig>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i14.LayoutConfig> setActiveLayout(
+    _i1.TestSessionBuilder sessionBuilder,
+    int layoutId,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'layout',
+            method: 'setActiveLayout',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'layout',
+          methodName: 'setActiveLayout',
+          parameters: _i1.testObjectToJson({'layoutId': layoutId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i14.LayoutConfig>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<void> deleteLayout(
+    _i1.TestSessionBuilder sessionBuilder,
+    int id,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'layout',
+            method: 'deleteLayout',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'layout',
+          methodName: 'deleteLayout',
+          parameters: _i1.testObjectToJson({'id': id}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _LicenseEndpoint {
+  _LicenseEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<_i15.LicenseStatusResponse> getLicenseStatus(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'license',
+            method: 'getLicenseStatus',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'license',
+          methodName: 'getLicenseStatus',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i15.LicenseStatusResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i15.LicenseStatusResponse> activateLicense(
+    _i1.TestSessionBuilder sessionBuilder,
+    String key,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'license',
+            method: 'activateLicense',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'license',
+          methodName: 'activateLicense',
+          parameters: _i1.testObjectToJson({'key': key}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i15.LicenseStatusResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _PackEndpoint {
+  _PackEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<List<_i16.PackInfoResponse>> listPacks(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'pack',
+            method: 'listPacks',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'pack',
+          methodName: 'listPacks',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i16.PackInfoResponse>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<List<_i16.PackInfoResponse>> getOwnedPacks(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'pack',
+            method: 'getOwnedPacks',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'pack',
+          methodName: 'getOwnedPacks',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i16.PackInfoResponse>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
 class _PhotoEndpoint {
   _PhotoEndpoint(
     this._endpointDispatch,
@@ -940,7 +1310,7 @@ class _PhotoEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<List<_i14.Photo>> getPhotos(
+  _i3.Future<List<_i17.Photo>> getPhotos(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -962,7 +1332,7 @@ class _PhotoEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i14.Photo>>);
+                as _i3.Future<List<_i17.Photo>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -981,7 +1351,7 @@ class _SettingsEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<List<_i15.LinkedCredentialSummary>> getLinkedCredentials(
+  _i3.Future<List<_i18.LinkedCredentialSummary>> getLinkedCredentials(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1003,7 +1373,7 @@ class _SettingsEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i15.LinkedCredentialSummary>>);
+                as _i3.Future<List<_i18.LinkedCredentialSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1052,7 +1422,7 @@ class _WeatherEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i16.WeatherCurrent?> getCurrentWeather(
+  _i3.Future<_i19.WeatherCurrent?> getCurrentWeather(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1074,7 +1444,7 @@ class _WeatherEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i16.WeatherCurrent?>);
+                as _i3.Future<_i19.WeatherCurrent?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1082,7 +1452,7 @@ class _WeatherEndpoint {
     });
   }
 
-  _i3.Future<List<_i17.WeatherForecast>> getForecast(
+  _i3.Future<List<_i20.WeatherForecast>> getForecast(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1104,7 +1474,7 @@ class _WeatherEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i17.WeatherForecast>>);
+                as _i3.Future<List<_i20.WeatherForecast>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1121,7 +1491,7 @@ class _CalendarRefreshCallFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i18.CalendarRefreshCallInvokeFutureCall().invoke(
+      await _i21.CalendarRefreshCallInvokeFutureCall().invoke(
         _localUniqueSession,
         object,
       );
@@ -1139,7 +1509,7 @@ class _PhotoRefreshCallFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i18.PhotoRefreshCallInvokeFutureCall().invoke(
+      await _i21.PhotoRefreshCallInvokeFutureCall().invoke(
         _localUniqueSession,
         object,
       );

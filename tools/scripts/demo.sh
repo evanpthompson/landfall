@@ -675,10 +675,43 @@ echo "  ${DIM}• All displays sharing a server instance stay in sync automatica
 echo "  ${DIM}• Drift (local SQLite) is kept as an offline fallback${RESET}"
 echo ""
 
-# ── Step 17: Display ────────────────────────────────────────────────────────
+# ── Step 17: Monetization — license system + pack marketplace ─────────────────
+pause "Session 17 adds the one-time license system and integration pack marketplace."
+
+step "Monetization: License System & Pack Marketplace (Session 17)"
+echo ""
+echo "  ${BOLD}License tiers:${RESET}"
+echo "  ${DIM}• Free  — standard rate limits (500 API pushes/day), 7-day card history${RESET}"
+echo "  ${DIM}• Pro   — unlimited API rate limits, 90-day history, multi-display sync${RESET}"
+echo "  ${DIM}• Founding Member — Pro + all packs released in first 18 months${RESET}"
+echo ""
+echo "  ${BOLD}License key flow:${RESET}"
+echo "  ${DIM}• User purchases via Stripe payment link (one-time, no subscription)${RESET}"
+echo "  ${DIM}• Stripe webhook  POST /stripe/webhook  receives confirmation${RESET}"
+echo "  ${DIM}• Server generates  LF-PRO-XXXX-XXXX  key and emails it to buyer${RESET}"
+echo "  ${DIM}• User activates in app: Settings → License → Activate a Key${RESET}"
+echo "  ${DIM}• License is tied to the Serverpod account — survives reinstalls${RESET}"
+echo ""
+echo "  ${BOLD}Server demo — check license status:${RESET}"
+echo "  ${DIM}# LicenseEndpoint.getLicenseStatus() — returns free for new users${RESET}"
+echo "  ${DIM}# LicenseEndpoint.activateLicense(key) — ties key to account, returns tier${RESET}"
+echo ""
+echo "  ${BOLD}Integration pack marketplace:${RESET}"
+echo "  ${DIM}• 6 packs seeded in the database:${RESET}"
+echo "  ${DIM}  — Sports Scores (\$5)     • Home Assistant (\$7)${RESET}"
+echo "  ${DIM}  — Todoist / Tasks (\$5)   • RSS Headlines (\$5)${RESET}"
+echo "  ${DIM}  — Countdown Timers (\$5)  • Stocks & Crypto (\$8)${RESET}"
+echo "  ${DIM}• Stripe webhook grants packs to users on purchase${RESET}"
+echo "  ${DIM}• PackEndpoint: listPacks (with isOwned flag), getOwnedPacks${RESET}"
+echo "  ${DIM}• Settings → License → Browse Integration Packs opens pack browser${RESET}"
+echo ""
+echo "  ${BOLD}Check pack catalog via server:${RESET}"
+echo ""
+
+# ── Step 18: Display ────────────────────────────────────────────────────────
 pause "Ready to launch. The wizard will appear on a fresh install — walk through it, then the full display loads with all the demo cards we pushed."
 
-step "Launching Landfall display (macOS)"
+step "Launching Landfall display (macOS)"  # Step 18
 info "The app will open in a new window. Press Cmd+Q to quit when done."
 echo ""
 

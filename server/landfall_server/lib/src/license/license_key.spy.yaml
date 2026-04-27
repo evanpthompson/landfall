@@ -1,0 +1,34 @@
+### A one-time license key for activating a Landfall Pro or Founding Member license.
+### Keys are generated after a Stripe purchase and emailed to the buyer.
+### Activation ties the key to a Serverpod auth user; one activation per key.
+class: LicenseKey
+table: license_keys
+
+fields:
+  ### The license key as shown to the user (e.g. "LF-PRO-XXXX-XXXX").
+  key: String
+
+  ### License tier: 'pro' or 'founding_member'
+  tier: String
+
+  ### Serverpod auth user identifier (UUID string) that activated this key. Null = unactivated.
+  activatedByUserId: String?
+
+  ### When this key was activated.
+  activatedAt: DateTime?
+
+  ### When this key was created / purchased.
+  purchasedAt: DateTime
+
+  ### Stripe checkout session ID for audit trail. Null for manually issued keys.
+  stripeSessionId: String?
+
+  ### Buyer email captured by Stripe. Used for key delivery.
+  buyerEmail: String?
+
+indexes:
+  license_keys_key_idx:
+    fields: key
+    unique: true
+  license_keys_user_idx:
+    fields: activatedByUserId

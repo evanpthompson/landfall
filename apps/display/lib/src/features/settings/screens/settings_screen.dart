@@ -7,6 +7,9 @@ import 'package:ui_kit/ui_kit.dart';
 
 import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
 import 'package:display/src/features/layout/cubit/dashboard_layout_state.dart';
+import 'package:display/src/features/license/cubit/license_cubit.dart';
+import 'package:display/src/features/license/screens/license_screen.dart';
+import 'package:display/src/features/license/screens/pack_browser_screen.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
 import 'package:display/src/features/settings/widgets/layout_editor.dart';
 
@@ -33,7 +36,8 @@ class _SettingsScreenState extends State<SettingsScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(length: 4, vsync: this);
+    context.read<LicenseCubit>().loadStatus();
   }
 
   @override
@@ -60,6 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             Tab(text: 'Display'),
             Tab(text: 'Accounts'),
             Tab(text: 'Layout'),
+            Tab(text: 'License'),
           ],
         ),
       ),
@@ -69,6 +74,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           _DisplayTab(serverUrl: widget.serverUrl),
           _AccountsTab(client: widget.client, serverUrl: widget.serverUrl),
           const _LayoutTab(),
+          _LicenseTab(client: widget.client),
         ],
       ),
     );
@@ -659,6 +665,48 @@ class _PresetChip extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// License tab
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _LicenseTab extends StatelessWidget {
+  const _LicenseTab({required this.client});
+
+  final Client client;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(child: const LicenseTab()),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => PackBrowserScreen(
+                    client: client,
+                    licenseCubit: context.read<LicenseCubit>(),
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.extension_outlined, size: 18),
+              label: const Text('Browse Integration Packs'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: LandfallColors.accent,
+                side: const BorderSide(color: LandfallColors.accent),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

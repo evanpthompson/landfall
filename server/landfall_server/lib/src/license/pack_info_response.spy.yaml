@@ -1,0 +1,13 @@
+### A single pack entry returned from PackEndpoint.listPacks.
+### Merges catalog data with per-user ownership information.
+class: PackInfoResponse
+fields:
+  packId: String
+  name: String
+  description: String
+  version: String
+  priceUsd: double
+  authorName: String
+  iconUrl: String?
+  stripePaymentLink: String?
+  isOwned: bool
