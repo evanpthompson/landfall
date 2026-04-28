@@ -265,19 +265,7 @@ class _LayoutEditorState extends State<LayoutEditor> {
                     _ghostRowSpan = null;
                   });
                 },
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: Icon(
-                    Icons.open_in_full,
-                    size: 10,
-                    color: LandfallColors.background,
-                  ),
-                ),
+                child: _ResizeHandle(color: color),
               ),
             ),
           ],
@@ -359,6 +347,53 @@ class _LayoutEditorState extends State<LayoutEditor> {
       };
 
   static const double _kGap = 8.0;
+}
+
+/// Corner drag handle drawn as three parallel diagonal lines — the standard
+/// resize-corner affordance used across most desktop operating systems.
+class _ResizeHandle extends StatelessWidget {
+  const _ResizeHandle({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 22,
+      height: 22,
+      child: CustomPaint(painter: _ResizeHandlePainter(color: color)),
+    );
+  }
+}
+
+class _ResizeHandlePainter extends CustomPainter {
+  _ResizeHandlePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.75)
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+
+    // Three short diagonal lines in the bottom-right corner,
+    // evenly spaced, running bottom-left to top-right.
+    const spacing = 5.0;
+    const len = 4.0;
+    for (var i = 0; i < 3; i++) {
+      final offset = spacing * i;
+      canvas.drawLine(
+        Offset(size.width - len - offset, size.height - offset),
+        Offset(size.width - offset, size.height - len - offset),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ResizeHandlePainter old) => old.color != color;
 }
 
 class _GridLines extends StatelessWidget {

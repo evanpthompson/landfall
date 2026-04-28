@@ -54,12 +54,36 @@ class _SettingsScreenState extends State<SettingsScreen>
         backgroundColor: LandfallColors.surface,
         foregroundColor: LandfallColors.textPrimary,
         elevation: 0,
-        title: const Text('Settings', style: TextStyle(fontSize: 18)),
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Back to display',
+          color: LandfallColors.textSecondary,
+        ),
+        title: const Text(
+          'Settings',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.1,
+          ),
+        ),
         bottom: TabBar(
           controller: _tabs,
           labelColor: LandfallColors.accent,
           unselectedLabelColor: LandfallColors.textSecondary,
           indicatorColor: LandfallColors.accent,
+          indicatorWeight: 2,
+          labelStyle: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.3,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+          ),
           tabs: const [
             Tab(text: 'Display'),
             Tab(text: 'Accounts'),

@@ -188,23 +188,69 @@ class _DisplayScreenState extends State<DisplayScreen> {
               bottom: 0,
               child: TickerStripWidget(),
             ),
-            // Gear icon — appears on tap, fades after 5 seconds
+            // Settings pill — appears on tap, fades after 5 seconds
             Positioned(
               right: 16,
-              bottom: 32,
+              bottom: 16,
               child: AnimatedOpacity(
                 opacity: _gearVisible ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 300),
                 child: IgnorePointer(
                   ignoring: !_gearVisible,
-                  child: IconButton(
-                    onPressed: _openSettings,
-                    icon: const Icon(Icons.settings),
-                    color: Colors.white.withValues(alpha: 0.7),
-                    iconSize: 28,
-                    tooltip: 'Settings',
-                  ),
+                  child: _SettingsPill(onTap: _openSettings),
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Settings pill button
+// ---------------------------------------------------------------------------
+
+/// A translucent pill that appears on tap and opens [SettingsScreen].
+///
+/// Designed to stay out of the way on an ambient display: low-opacity, dark
+/// background, tight padding. Fades in/out managed by [_DisplayScreenState].
+class _SettingsPill extends StatelessWidget {
+  const _SettingsPill({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0D0D0F).withValues(alpha: 0.82),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.13),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.settings,
+              size: 14,
+              color: Colors.white.withValues(alpha: 0.6),
+            ),
+            const SizedBox(width: 7),
+            Text(
+              'Settings',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 0.2,
               ),
             ),
           ],
