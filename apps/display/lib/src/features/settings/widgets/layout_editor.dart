@@ -118,6 +118,8 @@ class _LayoutEditorState extends State<LayoutEditor> {
       child: GestureDetector(
         onTap: () => _toggleVisible(config),
         onPanStart: (details) {
+          // Resize takes priority — don't start a drag if resize is active.
+          if (_resizingId == config.id) return;
           setState(() {
             _draggingId = config.id;
             _ghostCol = slot.column;
@@ -125,6 +127,8 @@ class _LayoutEditorState extends State<LayoutEditor> {
           });
         },
         onPanUpdate: (details) {
+          // Ignore drag updates while resize is in progress for this tile.
+          if (_resizingId == config.id) return;
           final box = context.findRenderObject() as RenderBox?;
           if (box == null) return;
           final local = box.globalToLocal(details.globalPosition);
@@ -138,6 +142,16 @@ class _LayoutEditorState extends State<LayoutEditor> {
           });
         },
         onPanEnd: (_) {
+          // If resize is active for this tile, just clear drag state without
+          // committing a move — the resize handler will commit its own result.
+          if (_resizingId == config.id) {
+            setState(() {
+              _draggingId = null;
+              _ghostCol = null;
+              _ghostRow = null;
+            });
+            return;
+          }
           if (_draggingId != null &&
               _ghostCol != null &&
               _ghostRow != null &&
@@ -209,6 +223,11 @@ class _LayoutEditorState extends State<LayoutEditor> {
                 behavior: HitTestBehavior.opaque,
                 onPanStart: (_) {
                   setState(() {
+                    // Cancel any drag that may have started on the parent tile
+                    // simultaneously — resize always takes priority.
+                    _draggingId = null;
+                    _ghostCol = null;
+                    _ghostRow = null;
                     _resizingId = config.id;
                     _ghostColSpan = slot.columnSpan;
                     _ghostRowSpan = slot.rowSpan;
@@ -339,7 +358,7 @@ class _LayoutEditorState extends State<LayoutEditor> {
         _ => source,
       };
 
-  static const double _kGap = 4.0;
+  static const double _kGap = 8.0;
 }
 
 class _GridLines extends StatelessWidget {

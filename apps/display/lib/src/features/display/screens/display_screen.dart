@@ -254,20 +254,20 @@ class _DisplayBody extends StatelessWidget {
 
   final DashboardLayout layout;
 
+  // Fixed width reserved for the agent card feed panel.
+  static const double _feedPanelWidth = 416.0;
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return Row(
       children: [
-        // Grid: named widgets + placeholders
-        _GridView(layout: layout),
-
-        // Agent card feed: floats over the right portion of the screen.
-        // Sized to the weather slot area (cols 3–11, rows 0–3).
-        const Positioned(
-          right: 16,
-          top: 16,
-          width: 400,
-          bottom: 16,
+        // Grid takes all remaining space so no card slot is ever obscured by
+        // the feed panel.
+        Expanded(child: _GridView(layout: layout)),
+        // Feed panel: fixed width, always present so the grid width is stable
+        // regardless of whether there are active agent cards.
+        const SizedBox(
+          width: _feedPanelWidth,
           child: _AgentCardFeed(),
         ),
       ],
@@ -359,7 +359,7 @@ class _AgentCardFeed extends StatelessWidget {
         }
 
         return ListView.separated(
-          padding: EdgeInsets.zero,
+          padding: const EdgeInsets.fromLTRB(0, 16, 16, 16),
           itemCount: state.cards.length,
           separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (_, i) => GenericAgentCard(card: state.cards[i]),

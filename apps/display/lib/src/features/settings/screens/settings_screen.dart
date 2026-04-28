@@ -571,7 +571,22 @@ class _LayoutTab extends StatelessWidget {
             children: [
               _SectionHeader('Preset'),
               const SizedBox(height: 12),
-              _PresetSwitcher(active: state.layout),
+              Row(
+                children: [
+                  _PresetSwitcher(active: state.layout),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => context
+                        .read<DashboardLayoutCubit>()
+                        .resetCurrentPreset(),
+                    icon: const Icon(Icons.restart_alt, size: 16),
+                    label: const Text('Reset to defaults'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: LandfallColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 24),
               _SectionHeader(
                   'Drag to move  •  drag corner to resize  •  tap to toggle visibility'),

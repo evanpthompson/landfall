@@ -36,6 +36,15 @@ class DashboardLayoutCubit extends Cubit<DashboardLayoutState> {
     }
   }
 
+  /// Resets the active layout back to its canonical preset defaults,
+  /// discarding any user customisations.
+  Future<void> resetCurrentPreset() async {
+    final current = state;
+    if (current is! DashboardLayoutLoaded) return;
+    final canonical = DashboardLayout.forPreset(current.layout.presetType);
+    await saveLayout(canonical);
+  }
+
   /// Switches to the layout for [preset], loading its saved version or
   /// the built-in default if it has not been customised yet.
   Future<void> switchPreset(LayoutPresetType preset) async {
