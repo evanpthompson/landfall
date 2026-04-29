@@ -12,8 +12,9 @@ import 'card_validator.dart';
 class AgentEndpoint extends Endpoint {
   final _keyService = ApiKeyService.instance;
 
-  /// Returns all active (non-dismissed, non-expired) cards for this display.
+  /// Returns all active (non-dismissed, non-expired) grid cards.
   ///
+  /// Ticker-layout cards are excluded — they are presence signals, not content.
   /// Cards are returned newest-first.
   Future<List<CardRow>> listCards(Session session, String apiKey) async {
     await _keyService.authenticate(session, apiKey);
@@ -21,7 +22,8 @@ class AgentEndpoint extends Endpoint {
 
     final nonDismissed = await CardRow.db.find(
       session,
-      where: (t) => t.dismissedAt.equals(null),
+      where: (t) =>
+          t.dismissedAt.equals(null) & t.layout.notEquals('ticker'),
       orderBy: (t) => t.createdAt,
       orderDescending: true,
     );
