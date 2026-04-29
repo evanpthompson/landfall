@@ -1,12 +1,12 @@
-/// Multi-step workflow tests for the agent integration surface.
-///
-/// These tests exercise cross-endpoint sequences that represent real agent
-/// behavior: the full key lifecycle, rate limit enforcement, cross-endpoint
-/// card visibility, and the interaction between AgentEndpoint and
-/// CardEndpoint from a display's perspective.
-///
-/// Single-method behavior is covered in agent_endpoint_test.dart and
-/// api_key_endpoint_test.dart. This file covers what falls between them.
+// Multi-step workflow tests for the agent integration surface.
+//
+// These tests exercise cross-endpoint sequences that represent real agent
+// behavior: the full key lifecycle, rate limit enforcement, cross-endpoint
+// card visibility, and the interaction between AgentEndpoint and
+// CardEndpoint from a display's perspective.
+//
+// Single-method behavior is covered in agent_endpoint_test.dart and
+// api_key_endpoint_test.dart. This file covers what falls between them.
 import 'package:test/test.dart';
 
 import 'package:landfall_server/src/generated/protocol.dart';
