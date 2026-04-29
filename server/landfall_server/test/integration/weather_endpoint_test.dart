@@ -47,6 +47,19 @@ WeatherForecast _forecast({
 
 void main() {
   withServerpod('Given WeatherEndpoint', (sessionBuilder, endpoints) {
+    setUp(() async {
+      final session = sessionBuilder.build();
+      await WeatherCurrent.db.deleteWhere(
+        session,
+        where: (t) => t.id > 0,
+      );
+      await WeatherForecast.db.deleteWhere(
+        session,
+        where: (t) => t.id > 0,
+      );
+      await session.close();
+    });
+
     group('getCurrentWeather', () {
       test('returns null when no data has been cached', () async {
         final result =
