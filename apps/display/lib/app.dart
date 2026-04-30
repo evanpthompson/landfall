@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:landfall_client/landfall_client.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
+import 'package:display/src/app/app_config.dart';
 import 'package:display/src/data/auth/secure_storage_auth_key_provider.dart';
 import 'package:display/src/data/calendar/serverpod_calendar_repository.dart';
 import 'package:display/src/data/cards/serverpod_card_repository.dart';
@@ -147,6 +148,10 @@ class _AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Integration tests inject a server URL and bypass auth entirely.
+    if (kIntegrationTestServerUrl.isNotEmpty) {
+      return DisplayScreen(client: client, serverUrl: serverUrl);
+    }
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
         if (state is AuthAuthenticated) {

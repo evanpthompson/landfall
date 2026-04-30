@@ -92,11 +92,11 @@ class _MetaRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(feelsLike, style: LandfallTypography.caption),
+        Flexible(child: Text(feelsLike, style: LandfallTypography.caption, overflow: TextOverflow.ellipsis)),
         _dot,
-        Text(humidity, style: LandfallTypography.caption),
+        Flexible(child: Text(humidity, style: LandfallTypography.caption, overflow: TextOverflow.ellipsis)),
         _dot,
-        Text(wind, style: LandfallTypography.caption),
+        Flexible(child: Text(wind, style: LandfallTypography.caption, overflow: TextOverflow.ellipsis)),
       ],
     );
   }
