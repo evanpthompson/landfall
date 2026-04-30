@@ -7,9 +7,45 @@ Landfall is an open-source, self-hosted platform that makes your AI-assisted lif
 ## What it does
 
 - Displays a live family dashboard: clock, weather, calendar, photos
-- Exposes an Agent API — any agent, automation, or script can push cards to the display
-- Exposes an MCP server — AI agents with MCP support (Claude Desktop, Cursor) can push cards natively
+- Exposes a **REST API** — any agent, automation, or script can push cards over plain HTTP
+- Exposes an **MCP server** — AI agents with MCP support (Claude Desktop, Cursor) can push cards natively
+- Exposes a **Dart SDK** (`packages/agent_sdk`) for native Dart/Flutter agent integration
 - Self-hosted: your data stays on your server
+
+## REST API
+
+Push cards from any language or tool. Authenticate with `Authorization: Bearer <api_key>`.
+
+```
+GET    /api/v1/cards         List active cards
+POST   /api/v1/cards         Push a card (upserts on matching id)
+PUT    /api/v1/cards/:id     Update an existing card
+DELETE /api/v1/cards/:id     Dismiss a card
+POST   /api/v1/ticker        Push an ephemeral ticker message
+```
+
+**Push a card:**
+```bash
+curl -X POST https://your-server/api/v1/cards \
+  -H "Authorization: Bearer lf_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "agent.claude",
+    "title": "Meeting in 10 minutes",
+    "body": "Sprint planning — Room 4B",
+    "layout": "medium"
+  }'
+```
+
+**Push a ticker message:**
+```bash
+curl -X POST https://your-server/api/v1/ticker \
+  -H "Authorization: Bearer lf_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{"source": "agent.ci", "message": "Deploy succeeded ✓"}'
+```
+
+Generate API keys in Settings → Accounts. Rate limit: 500 pushes/day per key.
 
 ## Monorepo structure
 
