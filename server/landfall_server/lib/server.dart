@@ -11,6 +11,9 @@ import 'src/license/stripe_webhook_route.dart';
 import 'src/photo/photo_refresh_call.dart';
 import 'src/profile/profile_schedule_call.dart';
 import 'src/web/routes/app_config_route.dart';
+import 'src/web/routes/rest/card_detail_route.dart';
+import 'src/web/routes/rest/cards_route.dart';
+import 'src/web/routes/rest/ticker_route.dart';
 import 'src/web/routes/calendar_oauth_route.dart';
 import 'src/web/routes/microsoft_calendar_oauth_route.dart';
 import 'src/web/routes/photo_serve_route.dart';
@@ -107,6 +110,12 @@ void run(List<String> args) async {
   // Stripe webhook — receives purchase confirmation events.
   // Verifies Stripe-Signature using stripeWebhookSecret from passwords.yaml.
   pod.webServer.addRoute(StripeWebhookRoute(), '/stripe/webhook');
+
+  // REST API — agent card push/list/dismiss over plain HTTP.
+  // Authentication: Authorization: Bearer <api_key>
+  pod.webServer.addRoute(CardsRoute(), '/api/v1/cards');
+  pod.webServer.addRoute(CardDetailRoute(), '/api/v1/cards/**');
+  pod.webServer.addRoute(TickerRoute(), '/api/v1/ticker');
 
   // Start the server.
   await pod.start();
