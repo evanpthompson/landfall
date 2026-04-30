@@ -148,8 +148,9 @@ class _AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Integration tests inject a server URL and bypass auth entirely.
-    if (kIntegrationTestServerUrl.isNotEmpty) {
+    // Integration tests bypass auth: either the server URL is injected
+    // directly, or wizard mode is active (wizard completes then lands here).
+    if (kIntegrationTestServerUrl.isNotEmpty || kIntegrationTestWizardMode) {
       return DisplayScreen(client: client, serverUrl: serverUrl);
     }
     return BlocBuilder<AuthCubit, AuthState>(

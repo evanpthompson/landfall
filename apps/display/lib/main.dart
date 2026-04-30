@@ -1,3 +1,4 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -19,16 +20,26 @@ void main() async {
   // Hide system UI chrome for an immersive ambient display.
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-  final database = AppDatabase();
+  // Integration tests inject the server URL at compile time to bypass the
+  // setup wizard and boot directly to DisplayScreen.
+  if (kIntegrationTestServerUrl.isNotEmpty) {
+    final database = AppDatabase();
+    runApp(LandfallApp(database: database, serverUrl: kIntegrationTestServerUrl));
+    return;
+  }
+
+  // Wizard integration tests use an in-memory database so settings are always
+  // empty (fresh-install state) regardless of prior test runs.
+  final database = kIntegrationTestWizardMode
+      ? AppDatabase.forTesting(NativeDatabase.memory())
+      : AppDatabase();
 
   void launchApp(String serverUrl) {
     runApp(LandfallApp(database: database, serverUrl: serverUrl));
   }
 
-  // Integration tests inject the server URL at compile time to bypass the
-  // setup wizard and boot directly to DisplayScreen.
-  if (kIntegrationTestServerUrl.isNotEmpty) {
-    launchApp(kIntegrationTestServerUrl);
+  if (kIntegrationTestWizardMode) {
+    runApp(SetupWizardApp(database: database, onComplete: launchApp));
     return;
   }
 
