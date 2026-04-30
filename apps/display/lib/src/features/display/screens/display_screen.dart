@@ -312,7 +312,7 @@ class _DisplayBody extends StatelessWidget {
       children: [
         // Grid takes all remaining space so no card slot is ever obscured by
         // the feed panel.
-        Expanded(child: _GridView(layout: layout)),
+        Expanded(child: _GridView(key: const Key('dashboard_grid'), layout: layout)),
         // Feed panel: fixed width, always present so the grid width is stable
         // regardless of whether there are active agent cards.
         const SizedBox(
@@ -329,7 +329,7 @@ class _DisplayBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _GridView extends StatelessWidget {
-  const _GridView({required this.layout});
+  const _GridView({super.key, required this.layout});
 
   final DashboardLayout layout;
 

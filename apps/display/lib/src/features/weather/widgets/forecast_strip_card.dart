@@ -42,16 +42,18 @@ class _DayColumn extends StatelessWidget {
     final hi = _toF(day.maxTempC);
     final lo = _toF(day.minTempC);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(_shortDay(day.date), style: LandfallTypography.widgetHeading),
-        const SizedBox(height: 4),
-        Text(_weatherIcon(day.iconCode), style: const TextStyle(fontSize: 24)),
-        const SizedBox(height: 4),
-        Text('$hi°', style: LandfallTypography.cardBody),
-        Text('$lo°', style: LandfallTypography.caption),
-      ],
+    return ClipRect(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(_shortDay(day.date), style: LandfallTypography.widgetHeading),
+          const SizedBox(height: 4),
+          Text(_weatherIcon(day.iconCode), style: const TextStyle(fontSize: 24)),
+          const SizedBox(height: 4),
+          Text('$hi°', style: LandfallTypography.cardBody),
+          Text('$lo°', style: LandfallTypography.caption),
+        ],
+      ),
     );
   }
 

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show BackButton, Key, Size;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:display/src/features/clock/widgets/clock_card.dart';
@@ -28,6 +28,18 @@ class AppDriver {
   // ---------------------------------------------------------------------------
   // Actions
   // ---------------------------------------------------------------------------
+
+  /// Sets the virtual surface to 1920×1080 (the app's canonical TV size),
+  /// calls [appMain] to launch the app, then waits for the first settle.
+  ///
+  /// Call this instead of calling `app.main()` directly so that layout
+  /// constraints match the real device and overflow assertions don't fire
+  /// at the macOS test runner's smaller default window size.
+  Future<void> launch(void Function() appMain) async {
+    await tester.binding.setSurfaceSize(const Size(1920, 1080));
+    appMain();
+    await pumpWithTimeout();
+  }
 
   /// Taps the display screen to reveal the settings pill, then opens settings.
   Future<void> openSettings() async {

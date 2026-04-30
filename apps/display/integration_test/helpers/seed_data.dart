@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:landfall_client/landfall_client.dart';
 
 /// Pushes a single active card to the test server.
@@ -8,6 +10,25 @@ Future<CardRow> seedActiveCard(
 }) async {
   return client.card.pushCard(
     CardPushRequest(source: source, title: title),
+  );
+}
+
+/// Pushes a card with a dismiss action button.
+Future<CardRow> seedCardWithDismissAction(
+  Client client, {
+  String title = 'Dismissable Card',
+  String externalId = 'test-dismiss-card',
+}) async {
+  final actions = jsonEncode([
+    {'id': 'a1', 'label': 'Dismiss', 'type': 'dismiss'},
+  ]);
+  return client.card.pushCard(
+    CardPushRequest(
+      source: 'system.test',
+      title: title,
+      externalId: externalId,
+      actionsJson: actions,
+    ),
   );
 }
 
