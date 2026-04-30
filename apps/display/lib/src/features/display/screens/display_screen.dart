@@ -197,7 +197,10 @@ class _DisplayScreenState extends State<DisplayScreen> {
                 duration: const Duration(milliseconds: 300),
                 child: IgnorePointer(
                   ignoring: !_gearVisible,
-                  child: _SettingsPill(onTap: _openSettings),
+                  child: _SettingsPill(
+                    key: const Key('settings_pill'),
+                    onTap: _openSettings,
+                  ),
                 ),
               ),
             ),
@@ -217,7 +220,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
 /// Designed to stay out of the way on an ambient display: low-opacity, dark
 /// background, tight padding. Fades in/out managed by [_DisplayScreenState].
 class _SettingsPill extends StatelessWidget {
-  const _SettingsPill({required this.onTap});
+  const _SettingsPill({super.key, required this.onTap});
 
   final VoidCallback onTap;
 
