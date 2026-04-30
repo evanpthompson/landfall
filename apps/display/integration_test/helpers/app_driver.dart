@@ -41,12 +41,17 @@ class AppDriver {
     await pumpWithTimeout();
   }
 
-  /// Taps the display screen to reveal the settings pill, then opens settings.
+  /// Reveals the settings pill by tapping the display, then opens settings.
+  ///
+  /// Uses [pump] with a fixed duration rather than [pumpAndSettle] because
+  /// ongoing loading animations (CircularProgressIndicator) produce frames
+  /// indefinitely and prevent [pumpAndSettle] from ever settling. The 400 ms
+  /// is enough to cover the 300 ms AnimatedOpacity transition on the pill.
   Future<void> openSettings() async {
     await tester.tap(find.byType(DisplayScreen));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.byKey(const Key('settings_pill')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
   }
 
   Future<void> navigateBack() async {
