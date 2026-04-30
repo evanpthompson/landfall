@@ -14,6 +14,7 @@ import 'package:serverpod/serverpod.dart' as _i1;
 import 'dart:async' as _i2;
 import '../calendar/calendar_refresh_call.dart' as _i3;
 import '../photo/photo_refresh_call.dart' as _i4;
+import '../profile/profile_schedule_call.dart' as _i5;
 
 /// Invokes a future call.
 typedef _InvokeFutureCall =
@@ -60,6 +61,8 @@ class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
       'CalendarRefreshCallInvokeFutureCall':
           CalendarRefreshCallInvokeFutureCall(),
       'PhotoRefreshCallInvokeFutureCall': PhotoRefreshCallInvokeFutureCall(),
+      'ProfileScheduleCallInvokeFutureCall':
+          ProfileScheduleCallInvokeFutureCall(),
     };
     _futureCallManager = futureCallManager;
     _serverId = serverId;
@@ -122,6 +125,10 @@ class _FutureCallRef {
   late final photoRefreshCall = _PhotoRefreshCallFutureCallDispatcher(
     _invokeFutureCall,
   );
+
+  late final profileScheduleCall = _ProfileScheduleCallFutureCallDispatcher(
+    _invokeFutureCall,
+  );
 }
 
 class _CalendarRefreshCallFutureCallDispatcher {
@@ -150,6 +157,19 @@ class _PhotoRefreshCallFutureCallDispatcher {
   }
 }
 
+class _ProfileScheduleCallFutureCallDispatcher {
+  _ProfileScheduleCallFutureCallDispatcher(this._invokeFutureCall);
+
+  final _InvokeFutureCall _invokeFutureCall;
+
+  Future<void> invoke(_i1.SerializableModel? object) {
+    return _invokeFutureCall(
+      'ProfileScheduleCallInvokeFutureCall',
+      object,
+    );
+  }
+}
+
 class CalendarRefreshCallInvokeFutureCall
     extends _i1.FutureCall<_i1.SerializableModel> {
   @override
@@ -172,6 +192,20 @@ class PhotoRefreshCallInvokeFutureCall
     _i1.SerializableModel? object,
   ) async {
     await _i4.PhotoRefreshCall().invoke(
+      session,
+      object,
+    );
+  }
+}
+
+class ProfileScheduleCallInvokeFutureCall
+    extends _i1.FutureCall<_i1.SerializableModel> {
+  @override
+  _i2.Future<void> invoke(
+    _i1.Session session,
+    _i1.SerializableModel? object,
+  ) async {
+    await _i5.ProfileScheduleCall().invoke(
       session,
       object,
     );

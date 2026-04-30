@@ -33,23 +33,26 @@ import 'license/license_status_response.dart' as _i18;
 import 'license/owned_pack.dart' as _i19;
 import 'license/pack_info_response.dart' as _i20;
 import 'photo/photo.dart' as _i21;
-import 'settings/linked_credential_summary.dart' as _i22;
-import 'weather/weather_current.dart' as _i23;
-import 'weather/weather_forecast.dart' as _i24;
-import 'package:landfall_server/src/generated/cards/card_row.dart' as _i25;
-import 'package:landfall_server/src/generated/agent/api_key.dart' as _i26;
-import 'dart:typed_data' as _i27;
+import 'profile/dashboard_profile.dart' as _i22;
+import 'settings/linked_credential_summary.dart' as _i23;
+import 'weather/weather_current.dart' as _i24;
+import 'weather/weather_forecast.dart' as _i25;
+import 'package:landfall_server/src/generated/cards/card_row.dart' as _i26;
+import 'package:landfall_server/src/generated/agent/api_key.dart' as _i27;
+import 'dart:typed_data' as _i28;
 import 'package:landfall_server/src/generated/calendar/calendar_event.dart'
-    as _i28;
-import 'package:landfall_server/src/generated/layout/layout_config.dart'
     as _i29;
-import 'package:landfall_server/src/generated/license/pack_info_response.dart'
+import 'package:landfall_server/src/generated/layout/layout_config.dart'
     as _i30;
-import 'package:landfall_server/src/generated/photo/photo.dart' as _i31;
-import 'package:landfall_server/src/generated/settings/linked_credential_summary.dart'
-    as _i32;
-import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
+import 'package:landfall_server/src/generated/license/pack_info_response.dart'
+    as _i31;
+import 'package:landfall_server/src/generated/photo/photo.dart' as _i32;
+import 'package:landfall_server/src/generated/profile/dashboard_profile.dart'
     as _i33;
+import 'package:landfall_server/src/generated/settings/linked_credential_summary.dart'
+    as _i34;
+import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
+    as _i35;
 export 'agent/api_key.dart';
 export 'agent/api_key_create_response.dart';
 export 'agent/landfall_exception.dart';
@@ -67,6 +70,7 @@ export 'license/license_status_response.dart';
 export 'license/owned_pack.dart';
 export 'license/pack_info_response.dart';
 export 'photo/photo.dart';
+export 'profile/dashboard_profile.dart';
 export 'settings/linked_credential_summary.dart';
 export 'weather/weather_current.dart';
 export 'weather/weather_forecast.dart';
@@ -622,6 +626,148 @@ class Protocol extends _i1.SerializationManagerServer {
             _i2.IndexElementDefinition(
               type: _i2.IndexElementDefinitionType.column,
               definition: 'createdAt',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'dashboard_profiles',
+      dartName: 'DashboardProfile',
+      schema: 'public',
+      module: 'landfall',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'dashboard_profiles_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'name',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'slug',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'isActive',
+          columnType: _i2.ColumnType.boolean,
+          isNullable: false,
+          dartType: 'bool',
+          columnDefault: 'false',
+        ),
+        _i2.ColumnDefinition(
+          name: 'themeId',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'cardFilterJson',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'{}\'::text',
+        ),
+        _i2.ColumnDefinition(
+          name: 'scheduleJson',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'sortOrder',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '0',
+        ),
+        _i2.ColumnDefinition(
+          name: 'columnsCount',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '12',
+        ),
+        _i2.ColumnDefinition(
+          name: 'rowsCount',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+          columnDefault: '8',
+        ),
+        _i2.ColumnDefinition(
+          name: 'cardsJson',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'dashboard_profiles_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'dashboard_profiles_slug_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'slug',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'dashboard_profiles_active_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'isActive',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'dashboard_profiles_sort_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'sortOrder',
             ),
           ],
           type: 'btree',
@@ -1517,14 +1663,17 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i21.Photo) {
       return _i21.Photo.fromJson(data) as T;
     }
-    if (t == _i22.LinkedCredentialSummary) {
-      return _i22.LinkedCredentialSummary.fromJson(data) as T;
+    if (t == _i22.DashboardProfile) {
+      return _i22.DashboardProfile.fromJson(data) as T;
     }
-    if (t == _i23.WeatherCurrent) {
-      return _i23.WeatherCurrent.fromJson(data) as T;
+    if (t == _i23.LinkedCredentialSummary) {
+      return _i23.LinkedCredentialSummary.fromJson(data) as T;
     }
-    if (t == _i24.WeatherForecast) {
-      return _i24.WeatherForecast.fromJson(data) as T;
+    if (t == _i24.WeatherCurrent) {
+      return _i24.WeatherCurrent.fromJson(data) as T;
+    }
+    if (t == _i25.WeatherForecast) {
+      return _i25.WeatherForecast.fromJson(data) as T;
     }
     if (t == _i1.getType<_i5.ApiKey?>()) {
       return (data != null ? _i5.ApiKey.fromJson(data) : null) as T;
@@ -1579,64 +1728,73 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i21.Photo?>()) {
       return (data != null ? _i21.Photo.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i22.LinkedCredentialSummary?>()) {
-      return (data != null ? _i22.LinkedCredentialSummary.fromJson(data) : null)
+    if (t == _i1.getType<_i22.DashboardProfile?>()) {
+      return (data != null ? _i22.DashboardProfile.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i23.LinkedCredentialSummary?>()) {
+      return (data != null ? _i23.LinkedCredentialSummary.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i23.WeatherCurrent?>()) {
-      return (data != null ? _i23.WeatherCurrent.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i24.WeatherCurrent?>()) {
+      return (data != null ? _i24.WeatherCurrent.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i24.WeatherForecast?>()) {
-      return (data != null ? _i24.WeatherForecast.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i25.WeatherForecast?>()) {
+      return (data != null ? _i25.WeatherForecast.fromJson(data) : null) as T;
     }
-    if (t == List<_i25.CardRow>) {
-      return (data as List).map((e) => deserialize<_i25.CardRow>(e)).toList()
+    if (t == List<_i26.CardRow>) {
+      return (data as List).map((e) => deserialize<_i26.CardRow>(e)).toList()
           as T;
     }
-    if (t == List<_i26.ApiKey>) {
-      return (data as List).map((e) => deserialize<_i26.ApiKey>(e)).toList()
+    if (t == List<_i27.ApiKey>) {
+      return (data as List).map((e) => deserialize<_i27.ApiKey>(e)).toList()
           as T;
     }
-    if (t == _i1.getType<({_i27.ByteData challenge, _i1.UuidValue id})>()) {
+    if (t == _i1.getType<({_i28.ByteData challenge, _i1.UuidValue id})>()) {
       return (
-            challenge: deserialize<_i27.ByteData>(
+            challenge: deserialize<_i28.ByteData>(
               ((data as Map)['n'] as Map)['challenge'],
             ),
             id: deserialize<_i1.UuidValue>(data['n']['id']),
           )
           as T;
     }
-    if (t == List<_i28.CalendarEvent>) {
+    if (t == List<_i29.CalendarEvent>) {
       return (data as List)
-              .map((e) => deserialize<_i28.CalendarEvent>(e))
+              .map((e) => deserialize<_i29.CalendarEvent>(e))
               .toList()
           as T;
     }
-    if (t == List<_i29.LayoutConfig>) {
+    if (t == List<_i30.LayoutConfig>) {
       return (data as List)
-              .map((e) => deserialize<_i29.LayoutConfig>(e))
+              .map((e) => deserialize<_i30.LayoutConfig>(e))
               .toList()
           as T;
     }
-    if (t == List<_i30.PackInfoResponse>) {
+    if (t == List<_i31.PackInfoResponse>) {
       return (data as List)
-              .map((e) => deserialize<_i30.PackInfoResponse>(e))
+              .map((e) => deserialize<_i31.PackInfoResponse>(e))
               .toList()
           as T;
     }
-    if (t == List<_i31.Photo>) {
-      return (data as List).map((e) => deserialize<_i31.Photo>(e)).toList()
+    if (t == List<_i32.Photo>) {
+      return (data as List).map((e) => deserialize<_i32.Photo>(e)).toList()
           as T;
     }
-    if (t == List<_i32.LinkedCredentialSummary>) {
+    if (t == List<_i33.DashboardProfile>) {
       return (data as List)
-              .map((e) => deserialize<_i32.LinkedCredentialSummary>(e))
+              .map((e) => deserialize<_i33.DashboardProfile>(e))
               .toList()
           as T;
     }
-    if (t == List<_i33.WeatherForecast>) {
+    if (t == List<_i34.LinkedCredentialSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i33.WeatherForecast>(e))
+              .map((e) => deserialize<_i34.LinkedCredentialSummary>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i35.WeatherForecast>) {
+      return (data as List)
+              .map((e) => deserialize<_i35.WeatherForecast>(e))
               .toList()
           as T;
     }
@@ -1671,9 +1829,10 @@ class Protocol extends _i1.SerializationManagerServer {
       _i19.OwnedPack => 'OwnedPack',
       _i20.PackInfoResponse => 'PackInfoResponse',
       _i21.Photo => 'Photo',
-      _i22.LinkedCredentialSummary => 'LinkedCredentialSummary',
-      _i23.WeatherCurrent => 'WeatherCurrent',
-      _i24.WeatherForecast => 'WeatherForecast',
+      _i22.DashboardProfile => 'DashboardProfile',
+      _i23.LinkedCredentialSummary => 'LinkedCredentialSummary',
+      _i24.WeatherCurrent => 'WeatherCurrent',
+      _i25.WeatherForecast => 'WeatherForecast',
       _ => null,
     };
   }
@@ -1722,11 +1881,13 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'PackInfoResponse';
       case _i21.Photo():
         return 'Photo';
-      case _i22.LinkedCredentialSummary():
+      case _i22.DashboardProfile():
+        return 'DashboardProfile';
+      case _i23.LinkedCredentialSummary():
         return 'LinkedCredentialSummary';
-      case _i23.WeatherCurrent():
+      case _i24.WeatherCurrent():
         return 'WeatherCurrent';
-      case _i24.WeatherForecast():
+      case _i25.WeatherForecast():
         return 'WeatherForecast';
     }
     className = _i2.Protocol().getClassNameForObject(data);
@@ -1801,14 +1962,17 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'Photo') {
       return deserialize<_i21.Photo>(data['data']);
     }
+    if (dataClassName == 'DashboardProfile') {
+      return deserialize<_i22.DashboardProfile>(data['data']);
+    }
     if (dataClassName == 'LinkedCredentialSummary') {
-      return deserialize<_i22.LinkedCredentialSummary>(data['data']);
+      return deserialize<_i23.LinkedCredentialSummary>(data['data']);
     }
     if (dataClassName == 'WeatherCurrent') {
-      return deserialize<_i23.WeatherCurrent>(data['data']);
+      return deserialize<_i24.WeatherCurrent>(data['data']);
     }
     if (dataClassName == 'WeatherForecast') {
-      return deserialize<_i24.WeatherForecast>(data['data']);
+      return deserialize<_i25.WeatherForecast>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -1868,10 +2032,12 @@ class Protocol extends _i1.SerializationManagerServer {
         return _i19.OwnedPack.t;
       case _i21.Photo:
         return _i21.Photo.t;
-      case _i23.WeatherCurrent:
-        return _i23.WeatherCurrent.t;
-      case _i24.WeatherForecast:
-        return _i24.WeatherForecast.t;
+      case _i22.DashboardProfile:
+        return _i22.DashboardProfile.t;
+      case _i24.WeatherCurrent:
+        return _i24.WeatherCurrent.t;
+      case _i25.WeatherForecast:
+        return _i25.WeatherForecast.t;
     }
     return null;
   }
@@ -1892,7 +2058,7 @@ class Protocol extends _i1.SerializationManagerServer {
     if (record == null) {
       return null;
     }
-    if (record is ({_i27.ByteData challenge, _i1.UuidValue id})) {
+    if (record is ({_i28.ByteData challenge, _i1.UuidValue id})) {
       return {
         "n": {
           "challenge": record.challenge.toJson(),

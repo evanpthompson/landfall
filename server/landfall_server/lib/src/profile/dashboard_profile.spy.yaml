@@ -1,0 +1,48 @@
+### A named dashboard profile — layout, theme, agent card filter, and optional schedule.
+### Replaces the LayoutPresetType enum with a flexible named entity.
+### One row has isActive=true — that is the profile currently shown on the display.
+class: DashboardProfile
+table: dashboard_profiles
+
+fields:
+  ### User-facing name (e.g. "Weekday", "Party Mode", "Night Stand").
+  name: String
+
+  ### URL-safe slug derived from name. Used by agent LayoutSchema API.
+  slug: String
+
+  ### True when this is the profile currently shown on the display.
+  isActive: bool, default=false
+
+  ### Optional theme identifier. Null = default theme.
+  themeId: String?
+
+  ### JSON-encoded ProfileCardFilter. Controls which agent cards are shown.
+  cardFilterJson: String, default='{}'
+
+  ### JSON-encoded ProfileSchedule. Null = no automatic scheduling.
+  scheduleJson: String?
+
+  ### Sort order for the profile list. Lower = first.
+  sortOrder: int, default=0
+
+  ### Number of grid columns.
+  columnsCount: int, default=12
+
+  ### Number of grid rows.
+  rowsCount: int, default=8
+
+  ### JSON-encoded List<CardConfig> — the card layout for this profile.
+  cardsJson: String
+
+  ### When this profile was created.
+  createdAt: DateTime
+
+indexes:
+  dashboard_profiles_slug_idx:
+    fields: slug
+    unique: true
+  dashboard_profiles_active_idx:
+    fields: isActive
+  dashboard_profiles_sort_idx:
+    fields: sortOrder

@@ -9,6 +9,7 @@ import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
 import 'src/license/stripe_webhook_route.dart';
 import 'src/photo/photo_refresh_call.dart';
+import 'src/profile/profile_schedule_call.dart';
 import 'src/web/routes/app_config_route.dart';
 import 'src/web/routes/calendar_oauth_route.dart';
 import 'src/web/routes/microsoft_calendar_oauth_route.dart';
@@ -82,6 +83,7 @@ void run(List<String> args) async {
   pod.registerFutureCall(WeatherRefreshCall(), 'weatherRefresh');
   pod.registerFutureCall(CalendarRefreshCall(), 'calendarRefresh');
   pod.registerFutureCall(PhotoRefreshCall(), 'photoRefresh');
+  pod.registerFutureCall(ProfileScheduleCall(), 'profileSchedule');
 
   // OAuth routes for connecting calendar providers.
   pod.webServer.addRoute(CalendarOAuthStartRoute(), '/calendar/oauth/start');
@@ -121,5 +123,9 @@ void run(List<String> args) async {
   // Photo refresh starts immediately; skips quietly if no folder is configured.
   // ignore: deprecated_member_use
   await pod.futureCallWithDelay('photoRefresh', null, Duration.zero);
+  // ignore: deprecated_member_use
+  // Profile schedule evaluator starts immediately and re-registers itself every minute.
+  // ignore: deprecated_member_use
+  await pod.futureCallWithDelay('profileSchedule', null, Duration.zero);
 }
 

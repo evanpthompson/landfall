@@ -32,13 +32,15 @@ import 'package:landfall_client/src/protocol/license/license_status_response.dar
 import 'package:landfall_client/src/protocol/license/pack_info_response.dart'
     as _i14;
 import 'package:landfall_client/src/protocol/photo/photo.dart' as _i15;
-import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
+import 'package:landfall_client/src/protocol/profile/dashboard_profile.dart'
     as _i16;
-import 'package:landfall_client/src/protocol/weather/weather_current.dart'
+import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
     as _i17;
-import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+import 'package:landfall_client/src/protocol/weather/weather_current.dart'
     as _i18;
-import 'protocol.dart' as _i19;
+import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+    as _i19;
+import 'protocol.dart' as _i20;
 
 /// The authenticated agent push API.
 ///
@@ -52,8 +54,9 @@ class EndpointAgent extends _i1.EndpointRef {
   @override
   String get name => 'agent';
 
-  /// Returns all active (non-dismissed, non-expired) cards for this display.
+  /// Returns all active (non-dismissed, non-expired) grid cards.
   ///
+  /// Ticker-layout cards are excluded — they are presence signals, not content.
   /// Cards are returned newest-first.
   _i2.Future<List<_i3.CardRow>> listCards(String apiKey) =>
       caller.callServerEndpoint<List<_i3.CardRow>>(
@@ -551,6 +554,108 @@ class EndpointPhoto extends _i1.EndpointRef {
       );
 }
 
+/// Manages named dashboard profiles.
+///
+/// Each profile stores a complete layout (cardsJson + grid dimensions), an
+/// agent card filter, an optional theme, and an optional schedule. Exactly one
+/// profile has [DashboardProfile.isActive] = true at any time.
+/// {@category Endpoint}
+class EndpointProfile extends _i1.EndpointRef {
+  EndpointProfile(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'profile';
+
+  /// Returns all profiles ordered by [DashboardProfile.sortOrder] ascending.
+  _i2.Future<List<_i16.DashboardProfile>> listProfiles() =>
+      caller.callServerEndpoint<List<_i16.DashboardProfile>>(
+        'profile',
+        'listProfiles',
+        {},
+      );
+
+  /// Creates a new profile with the given [name].
+  ///
+  /// [cardsJson] sets the initial card layout. When omitted the layout is an
+  /// empty array — callers should pass in the current active layout's cardsJson
+  /// to duplicate it as a starting point.
+  ///
+  /// Returns the created [DashboardProfile] with its assigned id.
+  _i2.Future<_i16.DashboardProfile> createProfile(
+    String name, {
+    String? cardsJson,
+  }) => caller.callServerEndpoint<_i16.DashboardProfile>(
+    'profile',
+    'createProfile',
+    {
+      'name': name,
+      'cardsJson': cardsJson,
+    },
+  );
+
+  /// Updates the mutable fields of an existing profile.
+  ///
+  /// Only non-null arguments are applied — pass null to leave a field unchanged.
+  _i2.Future<_i16.DashboardProfile> updateProfile(
+    int id, {
+    String? name,
+    String? themeId,
+    String? cardFilterJson,
+    String? scheduleJson,
+    int? sortOrder,
+    String? cardsJson,
+  }) => caller.callServerEndpoint<_i16.DashboardProfile>(
+    'profile',
+    'updateProfile',
+    {
+      'id': id,
+      'name': name,
+      'themeId': themeId,
+      'cardFilterJson': cardFilterJson,
+      'scheduleJson': scheduleJson,
+      'sortOrder': sortOrder,
+      'cardsJson': cardsJson,
+    },
+  );
+
+  /// Deletes the profile with the given [id].
+  ///
+  /// Throws [InvalidRequestException] if the profile is currently active or if
+  /// it is the last remaining profile.
+  _i2.Future<void> deleteProfile(int id) => caller.callServerEndpoint<void>(
+    'profile',
+    'deleteProfile',
+    {'id': id},
+  );
+
+  /// Switches the active profile to [id].
+  ///
+  /// Clears [isActive] on all other profiles atomically. Returns the newly
+  /// activated profile.
+  _i2.Future<_i16.DashboardProfile> activateProfile(int id) =>
+      caller.callServerEndpoint<_i16.DashboardProfile>(
+        'profile',
+        'activateProfile',
+        {'id': id},
+      );
+
+  /// Creates a copy of the profile identified by [id] with the given [newName].
+  ///
+  /// The duplicate is inactive and placed at the end of the sort order.
+  /// Returns the newly created profile.
+  _i2.Future<_i16.DashboardProfile> duplicateProfile(
+    int id,
+    String newName,
+  ) => caller.callServerEndpoint<_i16.DashboardProfile>(
+    'profile',
+    'duplicateProfile',
+    {
+      'id': id,
+      'newName': newName,
+    },
+  );
+}
+
 /// Provides settings data to the display client.
 ///
 /// All methods require an authenticated session.
@@ -562,8 +667,8 @@ class EndpointSettings extends _i1.EndpointRef {
   String get name => 'settings';
 
   /// Returns all linked credentials for the current user, token-free.
-  _i2.Future<List<_i16.LinkedCredentialSummary>> getLinkedCredentials() =>
-      caller.callServerEndpoint<List<_i16.LinkedCredentialSummary>>(
+  _i2.Future<List<_i17.LinkedCredentialSummary>> getLinkedCredentials() =>
+      caller.callServerEndpoint<List<_i17.LinkedCredentialSummary>>(
         'settings',
         'getLinkedCredentials',
         {},
@@ -594,8 +699,8 @@ class EndpointWeather extends _i1.EndpointRef {
   String get name => 'weather';
 
   /// Returns the most recently cached current conditions, or null if none.
-  _i2.Future<_i17.WeatherCurrent?> getCurrentWeather() =>
-      caller.callServerEndpoint<_i17.WeatherCurrent?>(
+  _i2.Future<_i18.WeatherCurrent?> getCurrentWeather() =>
+      caller.callServerEndpoint<_i18.WeatherCurrent?>(
         'weather',
         'getCurrentWeather',
         {},
@@ -604,8 +709,8 @@ class EndpointWeather extends _i1.EndpointRef {
   /// Returns the cached 5-day forecast, oldest day first.
   ///
   /// Returns an empty list if no forecast data has been cached yet.
-  _i2.Future<List<_i18.WeatherForecast>> getForecast() =>
-      caller.callServerEndpoint<List<_i18.WeatherForecast>>(
+  _i2.Future<List<_i19.WeatherForecast>> getForecast() =>
+      caller.callServerEndpoint<List<_i19.WeatherForecast>>(
         'weather',
         'getForecast',
         {},
@@ -643,7 +748,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i19.Protocol(),
+         _i20.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -664,6 +769,7 @@ class Client extends _i1.ServerpodClientShared {
     license = EndpointLicense(this);
     pack = EndpointPack(this);
     photo = EndpointPhoto(this);
+    profile = EndpointProfile(this);
     settings = EndpointSettings(this);
     weather = EndpointWeather(this);
     modules = Modules(this);
@@ -693,6 +799,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointPhoto photo;
 
+  late final EndpointProfile profile;
+
   late final EndpointSettings settings;
 
   late final EndpointWeather weather;
@@ -713,6 +821,7 @@ class Client extends _i1.ServerpodClientShared {
     'license': license,
     'pack': pack,
     'photo': photo,
+    'profile': profile,
     'settings': settings,
     'weather': weather,
   };

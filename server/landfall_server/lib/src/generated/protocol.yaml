@@ -40,6 +40,13 @@ pack:
   - getOwnedPacks:
 photo:
   - getPhotos:
+profile:
+  - listProfiles:
+  - createProfile:
+  - updateProfile:
+  - deleteProfile:
+  - activateProfile:
+  - duplicateProfile:
 settings:
   - getLinkedCredentials:
   - getMyAuthUserId:
