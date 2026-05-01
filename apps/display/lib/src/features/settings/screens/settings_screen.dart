@@ -5,11 +5,12 @@ import 'package:landfall_client/landfall_client.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
-import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
-import 'package:display/src/features/layout/cubit/dashboard_layout_state.dart';
 import 'package:display/src/features/license/cubit/license_cubit.dart';
 import 'package:display/src/features/license/screens/license_screen.dart';
 import 'package:display/src/features/license/screens/pack_browser_screen.dart';
+import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
+import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
+import 'package:display/src/features/profile/screens/profile_manager_screen.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
 import 'package:display/src/features/settings/widgets/layout_editor.dart';
 
@@ -583,9 +584,9 @@ class _LayoutTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DashboardLayoutCubit, DashboardLayoutState>(
+    return BlocBuilder<DashboardProfileCubit, DashboardProfileState>(
       builder: (context, state) {
-        if (state is! DashboardLayoutLoaded) {
+        if (state is! DashboardProfileLoaded) {
           return const Center(child: CircularProgressIndicator());
         }
         return Padding(
@@ -593,18 +594,23 @@ class _LayoutTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SectionHeader('Preset'),
+              _SectionHeader('Profile'),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _PresetSwitcher(active: state.layout),
+                  _ProfileSwitcher(
+                    profiles: state.profiles,
+                    activeId: state.active.id,
+                  ),
                   const Spacer(),
                   TextButton.icon(
-                    onPressed: () => context
-                        .read<DashboardLayoutCubit>()
-                        .resetCurrentPreset(),
-                    icon: const Icon(Icons.restart_alt, size: 16),
-                    label: const Text('Reset to defaults'),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const ProfileManagerScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.tune, size: 16),
+                    label: const Text('Manage profiles'),
                     style: TextButton.styleFrom(
                       foregroundColor: LandfallColors.textSecondary,
                     ),
@@ -617,9 +623,9 @@ class _LayoutTab extends StatelessWidget {
               const SizedBox(height: 16),
               Expanded(
                 child: LayoutEditor(
-                  layout: state.layout,
+                  layout: state.active.layout,
                   onLayoutChanged: (updated) =>
-                      context.read<DashboardLayoutCubit>().saveLayout(updated),
+                      context.read<DashboardProfileCubit>().saveActiveLayout(updated),
                 ),
               ),
             ],
@@ -630,47 +636,50 @@ class _LayoutTab extends StatelessWidget {
   }
 }
 
-class _PresetSwitcher extends StatelessWidget {
-  const _PresetSwitcher({required this.active});
+class _ProfileSwitcher extends StatelessWidget {
+  const _ProfileSwitcher({
+    required this.profiles,
+    required this.activeId,
+  });
 
-  final DashboardLayout active;
-
-  static const _presets = [
-    LayoutPresetType.weekday,
-    LayoutPresetType.weekend,
-    LayoutPresetType.night,
-  ];
+  final List<ProfileInfo> profiles;
+  final int activeId;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: _presets.map((preset) {
-        final isActive = active.presetType == preset;
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: _PresetChip(
-            preset: preset,
-            isActive: isActive,
-            onTap: () => context
-                .read<DashboardLayoutCubit>()
-                .switchPreset(preset),
-          ),
-        );
-      }).toList(),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: profiles.map((profile) {
+          final isActive = profile.id == activeId;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: _ProfileChip(
+              name: profile.name,
+              isActive: isActive,
+              onTap: isActive
+                  ? null
+                  : () => context
+                      .read<DashboardProfileCubit>()
+                      .activateProfile(profile.id),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }
 
-class _PresetChip extends StatelessWidget {
-  const _PresetChip({
-    required this.preset,
+class _ProfileChip extends StatelessWidget {
+  const _ProfileChip({
+    required this.name,
     required this.isActive,
     required this.onTap,
   });
 
-  final LayoutPresetType preset;
+  final String name;
   final bool isActive;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -678,8 +687,7 @@ class _PresetChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isActive
               ? LandfallColors.accent.withValues(alpha: 0.15)
@@ -693,14 +701,13 @@ class _PresetChip extends StatelessWidget {
           ),
         ),
         child: Text(
-          preset.label,
+          name,
           style: TextStyle(
             color: isActive
                 ? LandfallColors.accent
                 : LandfallColors.textSecondary,
             fontSize: 13,
-            fontWeight:
-                isActive ? FontWeight.w600 : FontWeight.normal,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
       ),

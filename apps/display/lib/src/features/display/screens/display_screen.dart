@@ -15,8 +15,8 @@ import 'package:display/src/features/clock/cubit/clock_cubit.dart';
 import 'package:display/src/features/clock/cubit/clock_state.dart';
 import 'package:display/src/features/clock/widgets/clock_card.dart';
 import 'package:display/src/features/display/widgets/ambient_dim_overlay.dart';
-import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
-import 'package:display/src/features/layout/cubit/dashboard_layout_state.dart';
+import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
+import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/photo/widgets/photo_frame_card.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
@@ -32,7 +32,7 @@ import 'package:display/src/features/weather/widgets/forecast_strip_card.dart';
 /// shows agent-pushed cards in a live feed panel.
 ///
 /// On [initState]:
-///   - [DashboardLayoutCubit.loadLayout] — loads the grid configuration
+///   - [DashboardProfileCubit.loadProfiles] — loads the active profile and grid
 ///   - [ClockCubit.startTicking] — starts the 1-second clock stream
 ///   - [CardCubit.fetchCards] — fetches the initial agent card set
 ///   - [WeatherCubit.loadWeather] — fetches initial weather data
@@ -95,7 +95,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<DashboardLayoutCubit>().loadLayout();
+    context.read<DashboardProfileCubit>().loadProfiles();
     context.read<ClockCubit>().startTicking();
     context.read<CardCubit>().fetchCards();
     context.read<WeatherCubit>().loadWeather();
@@ -168,13 +168,13 @@ class _DisplayScreenState extends State<DisplayScreen> {
         backgroundColor: const Color(0xFF0D0D0F),
         body: Stack(
           children: [
-            BlocBuilder<DashboardLayoutCubit, DashboardLayoutState>(
-              builder: (context, layoutState) {
-                return switch (layoutState) {
-                  DashboardLayoutLoading() => const _LoadingView(),
-                  DashboardLayoutLoaded(:final layout) =>
-                    _DisplayBody(layout: layout),
-                  DashboardLayoutError(:final message) =>
+            BlocBuilder<DashboardProfileCubit, DashboardProfileState>(
+              builder: (context, profileState) {
+                return switch (profileState) {
+                  DashboardProfileLoading() => const _LoadingView(),
+                  DashboardProfileLoaded(:final active) =>
+                    _DisplayBody(layout: active.layout),
+                  DashboardProfileError(:final message) =>
                     _ErrorView(message: message),
                 };
               },

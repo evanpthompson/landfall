@@ -12,6 +12,8 @@ export 'src/repositories/dashboard_layout_repository.dart';
 export 'src/models/profile/profile_schedule_type.dart';
 export 'src/models/profile/profile_schedule.dart';
 export 'src/models/profile/profile_card_filter.dart';
+export 'src/models/profile/profile_info.dart';
+export 'src/repositories/dashboard_profile_repository.dart';
 export 'src/models/clock/clock_entity.dart';
 export 'src/repositories/clock_repository.dart';
 export 'src/models/weather/weather_entity.dart';
