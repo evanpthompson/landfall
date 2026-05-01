@@ -14,49 +14,39 @@ the harness skips startup and leaves that process alone.
 - Server dependencies installed: `cd ../../../server/landfall_server && dart pub get`
 - Database configured and reachable (Postgres, same as normal dev setup)
 
-## Standard tests
+## Running the tests
 
-These tests boot the app pointed at a real server and exercise full user journeys.
-Run from `apps/display/`:
+**Each test file must be run as a separate `flutter test` invocation.**
+Passing multiple files at once causes macOS to fail launching sequential app
+instances ("Error waiting for a debug connection"), so only one file per run.
+
+### Standard tests (server-connected)
+
+These tests boot the app pointed at a real server. Run from `apps/display/`:
 
 ```bash
-flutter test \
-  integration_test/display_screen_test.dart \
-  integration_test/settings_navigation_test.dart \
-  integration_test/ticker_strip_test.dart \
-  integration_test/layout_editor_test.dart \
-  -d macos \
-  --dart-define=INTEGRATION_TEST_SERVER_URL=http://localhost:8080/
+flutter test integration_test/display_screen_test.dart \
+  -d macos --dart-define=INTEGRATION_TEST_SERVER_URL=http://localhost:8080/
+
+flutter test integration_test/settings_navigation_test.dart \
+  -d macos --dart-define=INTEGRATION_TEST_SERVER_URL=http://localhost:8080/
+
+flutter test integration_test/ticker_strip_test.dart \
+  -d macos --dart-define=INTEGRATION_TEST_SERVER_URL=http://localhost:8080/
+
+flutter test integration_test/layout_editor_test.dart \
+  -d macos --dart-define=INTEGRATION_TEST_SERVER_URL=http://localhost:8080/
 ```
 
-## Setup wizard test
+### Setup wizard test
 
-Uses an **in-memory database** so the app always starts in fresh-install state.
+Uses an **in-memory database** (fresh-install state). Do **not** pass
+`INTEGRATION_TEST_SERVER_URL` — that flag bypasses the wizard entirely.
 The server still needs to be reachable for the step-1 connectivity check.
 
 ```bash
 flutter test integration_test/setup_wizard_test.dart \
-  -d macos \
-  --dart-define=INTEGRATION_TEST_WIZARD_MODE=true
-```
-
-## Running all tests
-
-Standard tests and the wizard test use different `--dart-define` flags and must
-be run as separate invocations:
-
-```bash
-flutter test \
-  integration_test/display_screen_test.dart \
-  integration_test/settings_navigation_test.dart \
-  integration_test/ticker_strip_test.dart \
-  integration_test/layout_editor_test.dart \
-  -d macos \
-  --dart-define=INTEGRATION_TEST_SERVER_URL=http://localhost:8080/
-
-flutter test integration_test/setup_wizard_test.dart \
-  -d macos \
-  --dart-define=INTEGRATION_TEST_WIZARD_MODE=true
+  -d macos --dart-define=INTEGRATION_TEST_WIZARD_MODE=true
 ```
 
 ## How server auto-startup works

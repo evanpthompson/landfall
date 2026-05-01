@@ -54,6 +54,17 @@ Future<void> clearAllCards(Client client, String apiKey) async {
   }
 }
 
+/// Dismisses all active ticker messages, regardless of which API key pushed them.
+///
+/// Ticker-layout cards are excluded from [listCards], so they won't be cleaned
+/// up by [clearAllCards]. Call this before tests that assert an empty ticker strip.
+Future<void> clearAllTickerMessages(Client client) async {
+  final messages = await client.card.getTickerMessages();
+  for (final msg in messages) {
+    await client.card.dismissCard(msg.externalId);
+  }
+}
+
 /// Generates a fresh API key with the given name and returns the plaintext key.
 Future<String> seedApiKey(Client client, {String name = 'test-key'}) async {
   final response = await client.apiKey.generateKey(name);

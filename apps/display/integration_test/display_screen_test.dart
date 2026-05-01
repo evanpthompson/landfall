@@ -11,8 +11,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:display/main.dart' as app;
 import 'package:display/src/features/cards/cubit/card_cubit.dart';
 import 'package:display/src/features/display/screens/display_screen.dart';
-import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
-import 'package:display/src/features/layout/cubit/dashboard_layout_state.dart';
+import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
+import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
 
 import 'helpers/app_driver.dart';
 import 'helpers/integration_test_main.dart';
@@ -53,10 +53,14 @@ void main() {
       final client = createTestClient();
       final apiKey = await seedApiKey(client);
 
+      // Use a unique title so leftover cards from previous test runs (pushed
+      // with different API keys) don't cause findsOneWidget to see extras.
+      final uniqueTitle = 'E2E Test Card ${DateTime.now().millisecondsSinceEpoch}';
+
       final driver = AppDriver(tester);
       await driver.launch(app.main);
 
-      await seedActiveCard(client, title: 'E2E Test Card');
+      await seedActiveCard(client, title: uniqueTitle);
 
       // Manually trigger the card refresh — the display polls every 30 s,
       // which is too long to wait in a test.
@@ -64,7 +68,7 @@ void main() {
       await ctx.read<CardCubit>().fetchCards();
       await driver.pumpWithTimeout();
 
-      expect(find.text('E2E Test Card'), findsOneWidget);
+      expect(find.text(uniqueTitle), findsOneWidget);
 
       await clearAllCards(client, apiKey);
     });
@@ -100,9 +104,9 @@ void main() {
       expect(find.byKey(const Key('dashboard_grid')), findsOneWidget);
 
       final ctx = tester.element(find.byType(DisplayScreen));
-      final layoutState = ctx.read<DashboardLayoutCubit>().state;
-      expect(layoutState, isA<DashboardLayoutLoaded>());
-      final columns = (layoutState as DashboardLayoutLoaded).layout.columns;
+      final profileState = ctx.read<DashboardProfileCubit>().state;
+      expect(profileState, isA<DashboardProfileLoaded>());
+      final columns = (profileState as DashboardProfileLoaded).active.layout.columns;
       expect(columns, 12);
     });
   });

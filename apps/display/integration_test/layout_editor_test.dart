@@ -6,8 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:display/main.dart' as app;
-import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
-import 'package:display/src/features/layout/cubit/dashboard_layout_state.dart';
+import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
+import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
 import 'package:display/src/features/settings/widgets/layout_editor.dart';
 
 import 'helpers/app_driver.dart';
@@ -41,16 +41,20 @@ void main() {
       expect(find.text('Clock'), findsOneWidget);
       expect(find.text('Weather'), findsOneWidget);
 
-      // Total tile count equals the layout's card count.
-      final ctx = tester.element(driver.displayScreen);
-      final state = ctx.read<DashboardLayoutCubit>().state;
-      if (state is DashboardLayoutLoaded) {
+      // Total tile count equals the active profile's layout card count.
+      // Read the cubit from the LayoutEditor context — it's the visible widget
+      // and sits inside the same MultiBlocProvider that provides the cubit.
+      // Using driver.displayScreen here would fail because it's below the
+      // settings route in the navigator and not findable as a unique element.
+      final ctx = tester.element(find.byType(LayoutEditor));
+      final state = ctx.read<DashboardProfileCubit>().state;
+      if (state is DashboardProfileLoaded) {
         expect(
           find.byType(LayoutEditor),
           findsOneWidget,
         );
         // Each card produces one label — count matches layout.
-        for (final card in state.layout.cards) {
+        for (final card in state.active.layout.cards) {
           // Tiles are always present; hidden ones show "hidden" beneath the label.
           expect(
             find.text(_cardLabel(card.source)),

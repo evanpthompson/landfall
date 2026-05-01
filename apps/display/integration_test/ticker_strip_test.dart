@@ -16,6 +16,14 @@ void main() {
   setupIntegrationTest();
 
   group('TickerStrip', () {
+    setUp(() async {
+      // Dismiss any ticker messages left over from previous test runs. Ticker
+      // cards are excluded from listCards/clearAllCards, so they need their own
+      // cleanup path before any test that asserts an empty strip.
+      final client = createTestClient();
+      await clearAllTickerMessages(client);
+    });
+
     testWidgets('ticker strip is not visible when buffer is empty',
         (tester) async {
       final driver = AppDriver(tester);
@@ -51,6 +59,7 @@ void main() {
       );
 
       await clearAllCards(client, apiKey);
+      await clearAllTickerMessages(client);
     });
 
     testWidgets('ticker strip disappears after TTL expires', (tester) async {
@@ -81,6 +90,7 @@ void main() {
       expect(renderBox.paintBounds.isEmpty, isTrue);
 
       await clearAllCards(client, apiKey);
+      await clearAllTickerMessages(client);
     });
   });
 }
