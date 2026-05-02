@@ -36,11 +36,14 @@ import 'package:landfall_client/src/protocol/profile/dashboard_profile.dart'
     as _i16;
 import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
     as _i17;
-import 'package:landfall_client/src/protocol/weather/weather_current.dart'
-    as _i18;
-import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+import 'package:landfall_client/src/protocol/theme/landfall_theme.dart' as _i18;
+import 'package:landfall_client/src/protocol/theme/theme_upload_result.dart'
     as _i19;
-import 'protocol.dart' as _i20;
+import 'package:landfall_client/src/protocol/weather/weather_current.dart'
+    as _i20;
+import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+    as _i21;
+import 'protocol.dart' as _i22;
 
 /// The authenticated agent push API.
 ///
@@ -686,6 +689,90 @@ class EndpointSettings extends _i1.EndpointRef {
   );
 }
 
+/// Manages themes: built-in, user-imported, and marketplace.
+/// {@category Endpoint}
+class EndpointTheme extends _i1.EndpointRef {
+  EndpointTheme(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'theme';
+
+  /// Returns all themes available on this display (built-in + imported).
+  ///
+  /// Built-ins are seeded if the themes table is empty.
+  _i2.Future<List<_i18.LandfallTheme>> listThemes() =>
+      caller.callServerEndpoint<List<_i18.LandfallTheme>>(
+        'theme',
+        'listThemes',
+        {},
+      );
+
+  /// Validates and stores a theme from a raw YAML or JSON [yaml] string.
+  ///
+  /// On success [ThemeUploadResult.theme] is set and [errors] is empty.
+  /// On failure [theme] is null and [errors] lists each validation problem.
+  ///
+  /// If a theme with the same slug already exists it is replaced.
+  _i2.Future<_i19.ThemeUploadResult> uploadTheme(String yaml) =>
+      caller.callServerEndpoint<_i19.ThemeUploadResult>(
+        'theme',
+        'uploadTheme',
+        {'yaml': yaml},
+      );
+
+  /// Fetches a theme YAML/JSON from the given HTTPS [url], validates, and
+  /// stores it.
+  ///
+  /// Returns the same [ThemeUploadResult] shape as [uploadTheme].
+  /// Rejects non-HTTPS URLs and enforces a 10-second fetch timeout.
+  _i2.Future<_i19.ThemeUploadResult> importTheme(String url) =>
+      caller.callServerEndpoint<_i19.ThemeUploadResult>(
+        'theme',
+        'importTheme',
+        {'url': url},
+      );
+
+  /// Deletes the theme with the given [id].
+  ///
+  /// Throws [InvalidRequestException] when attempting to delete a built-in
+  /// theme. Is a no-op when [id] does not exist.
+  _i2.Future<void> deleteTheme(int id) => caller.callServerEndpoint<void>(
+    'theme',
+    'deleteTheme',
+    {'id': id},
+  );
+
+  /// Returns the fully resolved token JSON string for the theme identified by
+  /// [id].
+  ///
+  /// Throws [NotFoundException] when [id] does not exist.
+  _i2.Future<String> previewTheme(int id) => caller.callServerEndpoint<String>(
+    'theme',
+    'previewTheme',
+    {'id': id},
+  );
+
+  /// Links the theme identified by [themeId] to a profile or to the global
+  /// display setting.
+  ///
+  /// When [profileId] is provided, updates [DashboardProfile.themeId] for that
+  /// profile. When null, is a no-op at the profile level (placeholder for a
+  /// future global theme setting).
+  ///
+  /// Throws [NotFoundException] when [themeId] does not exist.
+  _i2.Future<void> applyTheme(
+    int themeId, {
+    int? profileId,
+  }) => caller.callServerEndpoint<void>(
+    'theme',
+    'applyTheme',
+    {
+      'themeId': themeId,
+      'profileId': profileId,
+    },
+  );
+}
+
 /// Serves cached weather data to the Flutter display client.
 ///
 /// Data is populated by [WeatherRefreshCall] on a 10-minute schedule.
@@ -699,8 +786,8 @@ class EndpointWeather extends _i1.EndpointRef {
   String get name => 'weather';
 
   /// Returns the most recently cached current conditions, or null if none.
-  _i2.Future<_i18.WeatherCurrent?> getCurrentWeather() =>
-      caller.callServerEndpoint<_i18.WeatherCurrent?>(
+  _i2.Future<_i20.WeatherCurrent?> getCurrentWeather() =>
+      caller.callServerEndpoint<_i20.WeatherCurrent?>(
         'weather',
         'getCurrentWeather',
         {},
@@ -709,8 +796,8 @@ class EndpointWeather extends _i1.EndpointRef {
   /// Returns the cached 5-day forecast, oldest day first.
   ///
   /// Returns an empty list if no forecast data has been cached yet.
-  _i2.Future<List<_i19.WeatherForecast>> getForecast() =>
-      caller.callServerEndpoint<List<_i19.WeatherForecast>>(
+  _i2.Future<List<_i21.WeatherForecast>> getForecast() =>
+      caller.callServerEndpoint<List<_i21.WeatherForecast>>(
         'weather',
         'getForecast',
         {},
@@ -748,7 +835,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i20.Protocol(),
+         _i22.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -771,6 +858,7 @@ class Client extends _i1.ServerpodClientShared {
     photo = EndpointPhoto(this);
     profile = EndpointProfile(this);
     settings = EndpointSettings(this);
+    theme = EndpointTheme(this);
     weather = EndpointWeather(this);
     modules = Modules(this);
   }
@@ -803,6 +891,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointSettings settings;
 
+  late final EndpointTheme theme;
+
   late final EndpointWeather weather;
 
   late final Modules modules;
@@ -823,6 +913,7 @@ class Client extends _i1.ServerpodClientShared {
     'photo': photo,
     'profile': profile,
     'settings': settings,
+    'theme': theme,
     'weather': weather,
   };
 

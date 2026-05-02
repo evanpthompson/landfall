@@ -29,27 +29,31 @@ import 'license/pack_info_response.dart' as _i16;
 import 'photo/photo.dart' as _i17;
 import 'profile/dashboard_profile.dart' as _i18;
 import 'settings/linked_credential_summary.dart' as _i19;
-import 'weather/weather_current.dart' as _i20;
-import 'weather/weather_forecast.dart' as _i21;
-import 'package:landfall_client/src/protocol/cards/card_row.dart' as _i22;
-import 'package:landfall_client/src/protocol/agent/api_key.dart' as _i23;
-import 'dart:typed_data' as _i24;
+import 'theme/landfall_theme.dart' as _i20;
+import 'theme/theme_upload_result.dart' as _i21;
+import 'theme/theme_validation_error.dart' as _i22;
+import 'weather/weather_current.dart' as _i23;
+import 'weather/weather_forecast.dart' as _i24;
+import 'package:landfall_client/src/protocol/cards/card_row.dart' as _i25;
+import 'package:landfall_client/src/protocol/agent/api_key.dart' as _i26;
+import 'dart:typed_data' as _i27;
 import 'package:landfall_client/src/protocol/calendar/calendar_event.dart'
-    as _i25;
-import 'package:landfall_client/src/protocol/layout/layout_config.dart' as _i26;
+    as _i28;
+import 'package:landfall_client/src/protocol/layout/layout_config.dart' as _i29;
 import 'package:landfall_client/src/protocol/license/pack_info_response.dart'
-    as _i27;
-import 'package:landfall_client/src/protocol/photo/photo.dart' as _i28;
-import 'package:landfall_client/src/protocol/profile/dashboard_profile.dart'
-    as _i29;
-import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
     as _i30;
-import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
-    as _i31;
-import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
+import 'package:landfall_client/src/protocol/photo/photo.dart' as _i31;
+import 'package:landfall_client/src/protocol/profile/dashboard_profile.dart'
     as _i32;
-import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
+import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
     as _i33;
+import 'package:landfall_client/src/protocol/theme/landfall_theme.dart' as _i34;
+import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+    as _i35;
+import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
+    as _i36;
+import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
+    as _i37;
 export 'agent/api_key.dart';
 export 'agent/api_key_create_response.dart';
 export 'agent/landfall_exception.dart';
@@ -68,6 +72,9 @@ export 'license/pack_info_response.dart';
 export 'photo/photo.dart';
 export 'profile/dashboard_profile.dart';
 export 'settings/linked_credential_summary.dart';
+export 'theme/landfall_theme.dart';
+export 'theme/theme_upload_result.dart';
+export 'theme/theme_validation_error.dart';
 export 'weather/weather_current.dart';
 export 'weather/weather_forecast.dart';
 export 'client.dart';
@@ -160,11 +167,20 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i19.LinkedCredentialSummary) {
       return _i19.LinkedCredentialSummary.fromJson(data) as T;
     }
-    if (t == _i20.WeatherCurrent) {
-      return _i20.WeatherCurrent.fromJson(data) as T;
+    if (t == _i20.LandfallTheme) {
+      return _i20.LandfallTheme.fromJson(data) as T;
     }
-    if (t == _i21.WeatherForecast) {
-      return _i21.WeatherForecast.fromJson(data) as T;
+    if (t == _i21.ThemeUploadResult) {
+      return _i21.ThemeUploadResult.fromJson(data) as T;
+    }
+    if (t == _i22.ThemeValidationError) {
+      return _i22.ThemeValidationError.fromJson(data) as T;
+    }
+    if (t == _i23.WeatherCurrent) {
+      return _i23.WeatherCurrent.fromJson(data) as T;
+    }
+    if (t == _i24.WeatherForecast) {
+      return _i24.WeatherForecast.fromJson(data) as T;
     }
     if (t == _i1.getType<_i2.ApiKey?>()) {
       return (data != null ? _i2.ApiKey.fromJson(data) : null) as T;
@@ -223,74 +239,96 @@ class Protocol extends _i1.SerializationManager {
       return (data != null ? _i19.LinkedCredentialSummary.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i20.WeatherCurrent?>()) {
-      return (data != null ? _i20.WeatherCurrent.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i20.LandfallTheme?>()) {
+      return (data != null ? _i20.LandfallTheme.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i21.WeatherForecast?>()) {
-      return (data != null ? _i21.WeatherForecast.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i21.ThemeUploadResult?>()) {
+      return (data != null ? _i21.ThemeUploadResult.fromJson(data) : null) as T;
     }
-    if (t == List<_i22.CardRow>) {
-      return (data as List).map((e) => deserialize<_i22.CardRow>(e)).toList()
+    if (t == _i1.getType<_i22.ThemeValidationError?>()) {
+      return (data != null ? _i22.ThemeValidationError.fromJson(data) : null)
           as T;
     }
-    if (t == List<_i23.ApiKey>) {
-      return (data as List).map((e) => deserialize<_i23.ApiKey>(e)).toList()
+    if (t == _i1.getType<_i23.WeatherCurrent?>()) {
+      return (data != null ? _i23.WeatherCurrent.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i24.WeatherForecast?>()) {
+      return (data != null ? _i24.WeatherForecast.fromJson(data) : null) as T;
+    }
+    if (t == List<_i22.ThemeValidationError>) {
+      return (data as List)
+              .map((e) => deserialize<_i22.ThemeValidationError>(e))
+              .toList()
           as T;
     }
-    if (t == _i1.getType<({_i24.ByteData challenge, _i1.UuidValue id})>()) {
+    if (t == List<_i25.CardRow>) {
+      return (data as List).map((e) => deserialize<_i25.CardRow>(e)).toList()
+          as T;
+    }
+    if (t == List<_i26.ApiKey>) {
+      return (data as List).map((e) => deserialize<_i26.ApiKey>(e)).toList()
+          as T;
+    }
+    if (t == _i1.getType<({_i27.ByteData challenge, _i1.UuidValue id})>()) {
       return (
-            challenge: deserialize<_i24.ByteData>(
+            challenge: deserialize<_i27.ByteData>(
               ((data as Map)['n'] as Map)['challenge'],
             ),
             id: deserialize<_i1.UuidValue>(data['n']['id']),
           )
           as T;
     }
-    if (t == List<_i25.CalendarEvent>) {
+    if (t == List<_i28.CalendarEvent>) {
       return (data as List)
-              .map((e) => deserialize<_i25.CalendarEvent>(e))
+              .map((e) => deserialize<_i28.CalendarEvent>(e))
               .toList()
           as T;
     }
-    if (t == List<_i26.LayoutConfig>) {
+    if (t == List<_i29.LayoutConfig>) {
       return (data as List)
-              .map((e) => deserialize<_i26.LayoutConfig>(e))
+              .map((e) => deserialize<_i29.LayoutConfig>(e))
               .toList()
           as T;
     }
-    if (t == List<_i27.PackInfoResponse>) {
+    if (t == List<_i30.PackInfoResponse>) {
       return (data as List)
-              .map((e) => deserialize<_i27.PackInfoResponse>(e))
+              .map((e) => deserialize<_i30.PackInfoResponse>(e))
               .toList()
           as T;
     }
-    if (t == List<_i28.Photo>) {
-      return (data as List).map((e) => deserialize<_i28.Photo>(e)).toList()
+    if (t == List<_i31.Photo>) {
+      return (data as List).map((e) => deserialize<_i31.Photo>(e)).toList()
           as T;
     }
-    if (t == List<_i29.DashboardProfile>) {
+    if (t == List<_i32.DashboardProfile>) {
       return (data as List)
-              .map((e) => deserialize<_i29.DashboardProfile>(e))
+              .map((e) => deserialize<_i32.DashboardProfile>(e))
               .toList()
           as T;
     }
-    if (t == List<_i30.LinkedCredentialSummary>) {
+    if (t == List<_i33.LinkedCredentialSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i30.LinkedCredentialSummary>(e))
+              .map((e) => deserialize<_i33.LinkedCredentialSummary>(e))
               .toList()
           as T;
     }
-    if (t == List<_i31.WeatherForecast>) {
+    if (t == List<_i34.LandfallTheme>) {
       return (data as List)
-              .map((e) => deserialize<_i31.WeatherForecast>(e))
+              .map((e) => deserialize<_i34.LandfallTheme>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i35.WeatherForecast>) {
+      return (data as List)
+              .map((e) => deserialize<_i35.WeatherForecast>(e))
               .toList()
           as T;
     }
     try {
-      return _i32.Protocol().deserialize<T>(data, t);
+      return _i36.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     try {
-      return _i33.Protocol().deserialize<T>(data, t);
+      return _i37.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     return super.deserialize<T>(data, t);
   }
@@ -315,8 +353,11 @@ class Protocol extends _i1.SerializationManager {
       _i17.Photo => 'Photo',
       _i18.DashboardProfile => 'DashboardProfile',
       _i19.LinkedCredentialSummary => 'LinkedCredentialSummary',
-      _i20.WeatherCurrent => 'WeatherCurrent',
-      _i21.WeatherForecast => 'WeatherForecast',
+      _i20.LandfallTheme => 'LandfallTheme',
+      _i21.ThemeUploadResult => 'ThemeUploadResult',
+      _i22.ThemeValidationError => 'ThemeValidationError',
+      _i23.WeatherCurrent => 'WeatherCurrent',
+      _i24.WeatherForecast => 'WeatherForecast',
       _ => null,
     };
   }
@@ -367,16 +408,22 @@ class Protocol extends _i1.SerializationManager {
         return 'DashboardProfile';
       case _i19.LinkedCredentialSummary():
         return 'LinkedCredentialSummary';
-      case _i20.WeatherCurrent():
+      case _i20.LandfallTheme():
+        return 'LandfallTheme';
+      case _i21.ThemeUploadResult():
+        return 'ThemeUploadResult';
+      case _i22.ThemeValidationError():
+        return 'ThemeValidationError';
+      case _i23.WeatherCurrent():
         return 'WeatherCurrent';
-      case _i21.WeatherForecast():
+      case _i24.WeatherForecast():
         return 'WeatherForecast';
     }
-    className = _i32.Protocol().getClassNameForObject(data);
+    className = _i36.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_idp.$className';
     }
-    className = _i33.Protocol().getClassNameForObject(data);
+    className = _i37.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_core.$className';
     }
@@ -443,19 +490,28 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName == 'LinkedCredentialSummary') {
       return deserialize<_i19.LinkedCredentialSummary>(data['data']);
     }
+    if (dataClassName == 'LandfallTheme') {
+      return deserialize<_i20.LandfallTheme>(data['data']);
+    }
+    if (dataClassName == 'ThemeUploadResult') {
+      return deserialize<_i21.ThemeUploadResult>(data['data']);
+    }
+    if (dataClassName == 'ThemeValidationError') {
+      return deserialize<_i22.ThemeValidationError>(data['data']);
+    }
     if (dataClassName == 'WeatherCurrent') {
-      return deserialize<_i20.WeatherCurrent>(data['data']);
+      return deserialize<_i23.WeatherCurrent>(data['data']);
     }
     if (dataClassName == 'WeatherForecast') {
-      return deserialize<_i21.WeatherForecast>(data['data']);
+      return deserialize<_i24.WeatherForecast>(data['data']);
     }
     if (dataClassName.startsWith('serverpod_auth_idp.')) {
       data['className'] = dataClassName.substring(19);
-      return _i32.Protocol().deserializeByClassName(data);
+      return _i36.Protocol().deserializeByClassName(data);
     }
     if (dataClassName.startsWith('serverpod_auth_core.')) {
       data['className'] = dataClassName.substring(20);
-      return _i33.Protocol().deserializeByClassName(data);
+      return _i37.Protocol().deserializeByClassName(data);
     }
     return super.deserializeByClassName(data);
   }
@@ -469,7 +525,7 @@ class Protocol extends _i1.SerializationManager {
     if (record == null) {
       return null;
     }
-    if (record is ({_i24.ByteData challenge, _i1.UuidValue id})) {
+    if (record is ({_i27.ByteData challenge, _i1.UuidValue id})) {
       return {
         "n": {
           "challenge": record.challenge.toJson(),
@@ -478,10 +534,10 @@ class Protocol extends _i1.SerializationManager {
       };
     }
     try {
-      return _i32.Protocol().mapRecordToJson(record);
+      return _i36.Protocol().mapRecordToJson(record);
     } catch (_) {}
     try {
-      return _i33.Protocol().mapRecordToJson(record);
+      return _i37.Protocol().mapRecordToJson(record);
     } catch (_) {}
     throw Exception('Unsupported record type ${record.runtimeType}');
   }

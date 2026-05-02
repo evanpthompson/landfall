@@ -1,0 +1,45 @@
+### A stored theme — metadata plus the fully-resolved token set as JSON.
+### Built-in themes have isBuiltIn=true and cannot be deleted.
+class: LandfallTheme
+table: themes
+
+fields:
+  ### URL-safe slug, e.g. "default-dark" or "neon-arcade". Unique.
+  slug: String
+
+  ### User-facing display name.
+  name: String
+
+  ### ThemeSchema version the theme was authored against (e.g. "1.0").
+  schemaVersion: String
+
+  ### Optional theme author handle or name.
+  author: String?
+
+  ### One or two sentence description.
+  description: String?
+
+  ### HTTPS URL to a 1920x1080 PNG preview image.
+  previewUrl: String?
+
+  ### JSON-encoded List<String> of marketplace tags.
+  tagsJson: String, default='[]'
+
+  ### The raw theme YAML/JSON as a normalised JSON string (post-parse, pre-resolve).
+  tokensJson: String
+
+  ### The fully resolved flat token map as a JSON string (derived values filled in).
+  resolvedJson: String
+
+  ### True for the 5 built-in themes seeded at startup. Cannot be deleted.
+  isBuiltIn: bool, default=false
+
+  ### When this theme was created.
+  createdAt: DateTime
+
+indexes:
+  themes_slug_idx:
+    fields: slug
+    unique: true
+  themes_builtin_idx:
+    fields: isBuiltIn

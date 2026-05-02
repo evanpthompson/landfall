@@ -1,0 +1,10 @@
+### A single validation error returned when a theme fails to import.
+### tokenPath identifies the offending field (e.g. "color.accent").
+class: ThemeValidationError
+
+fields:
+  ### Dot-separated path to the invalid token (e.g. "color.accent").
+  tokenPath: String
+
+  ### Human-readable error message.
+  message: String

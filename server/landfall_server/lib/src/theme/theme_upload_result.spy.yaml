@@ -1,0 +1,11 @@
+### Result returned by ThemeEndpoint.uploadTheme and importTheme.
+### On success, theme is set and errors is empty.
+### On failure, theme is null and errors lists each problem found.
+class: ThemeUploadResult
+
+fields:
+  ### The stored theme. Null when validation failed.
+  theme: LandfallTheme?
+
+  ### Validation errors. Empty on success.
+  errors: List<ThemeValidationError>

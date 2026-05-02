@@ -28,3 +28,5 @@ export 'src/models/license/license_status.dart';
 export 'src/models/license/integration_pack_info.dart';
 export 'src/repositories/license_repository.dart';
 export 'src/repositories/pack_repository.dart';
+export 'src/models/theme/theme_tokens.dart';
+export 'src/models/theme/theme_info.dart';

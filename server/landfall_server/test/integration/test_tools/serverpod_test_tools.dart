@@ -40,11 +40,15 @@ import 'package:landfall_server/src/generated/profile/dashboard_profile.dart'
     as _i18;
 import 'package:landfall_server/src/generated/settings/linked_credential_summary.dart'
     as _i19;
-import 'package:landfall_server/src/generated/weather/weather_current.dart'
+import 'package:landfall_server/src/generated/theme/landfall_theme.dart'
     as _i20;
-import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
+import 'package:landfall_server/src/generated/theme/theme_upload_result.dart'
     as _i21;
-import 'package:landfall_server/src/generated/future_calls.dart' as _i22;
+import 'package:landfall_server/src/generated/weather/weather_current.dart'
+    as _i22;
+import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
+    as _i23;
+import 'package:landfall_server/src/generated/future_calls.dart' as _i24;
 import 'package:landfall_server/src/generated/protocol.dart';
 import 'package:landfall_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -188,6 +192,8 @@ class TestEndpoints {
 
   late final _SettingsEndpoint settings;
 
+  late final _ThemeEndpoint theme;
+
   late final _WeatherEndpoint weather;
 }
 
@@ -251,6 +257,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     settings = _SettingsEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    theme = _ThemeEndpoint(
       endpoints,
       serializationManager,
     );
@@ -1640,6 +1650,206 @@ class _SettingsEndpoint {
   }
 }
 
+class _ThemeEndpoint {
+  _ThemeEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<List<_i20.LandfallTheme>> listThemes(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'theme',
+            method: 'listThemes',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'theme',
+          methodName: 'listThemes',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i20.LandfallTheme>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i21.ThemeUploadResult> uploadTheme(
+    _i1.TestSessionBuilder sessionBuilder,
+    String yaml,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'theme',
+            method: 'uploadTheme',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'theme',
+          methodName: 'uploadTheme',
+          parameters: _i1.testObjectToJson({'yaml': yaml}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i21.ThemeUploadResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i21.ThemeUploadResult> importTheme(
+    _i1.TestSessionBuilder sessionBuilder,
+    String url,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'theme',
+            method: 'importTheme',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'theme',
+          methodName: 'importTheme',
+          parameters: _i1.testObjectToJson({'url': url}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i21.ThemeUploadResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<void> deleteTheme(
+    _i1.TestSessionBuilder sessionBuilder,
+    int id,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'theme',
+            method: 'deleteTheme',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'theme',
+          methodName: 'deleteTheme',
+          parameters: _i1.testObjectToJson({'id': id}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<String> previewTheme(
+    _i1.TestSessionBuilder sessionBuilder,
+    int id,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'theme',
+            method: 'previewTheme',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'theme',
+          methodName: 'previewTheme',
+          parameters: _i1.testObjectToJson({'id': id}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<void> applyTheme(
+    _i1.TestSessionBuilder sessionBuilder,
+    int themeId, {
+    int? profileId,
+  }) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'theme',
+            method: 'applyTheme',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'theme',
+          methodName: 'applyTheme',
+          parameters: _i1.testObjectToJson({
+            'themeId': themeId,
+            'profileId': profileId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
 class _WeatherEndpoint {
   _WeatherEndpoint(
     this._endpointDispatch,
@@ -1650,7 +1860,7 @@ class _WeatherEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i20.WeatherCurrent?> getCurrentWeather(
+  _i3.Future<_i22.WeatherCurrent?> getCurrentWeather(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1672,7 +1882,7 @@ class _WeatherEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i20.WeatherCurrent?>);
+                as _i3.Future<_i22.WeatherCurrent?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1680,7 +1890,7 @@ class _WeatherEndpoint {
     });
   }
 
-  _i3.Future<List<_i21.WeatherForecast>> getForecast(
+  _i3.Future<List<_i23.WeatherForecast>> getForecast(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1702,7 +1912,7 @@ class _WeatherEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i21.WeatherForecast>>);
+                as _i3.Future<List<_i23.WeatherForecast>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1719,7 +1929,7 @@ class _CalendarRefreshCallFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i22.CalendarRefreshCallInvokeFutureCall().invoke(
+      await _i24.CalendarRefreshCallInvokeFutureCall().invoke(
         _localUniqueSession,
         object,
       );
@@ -1737,7 +1947,7 @@ class _PhotoRefreshCallFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i22.PhotoRefreshCallInvokeFutureCall().invoke(
+      await _i24.PhotoRefreshCallInvokeFutureCall().invoke(
         _localUniqueSession,
         object,
       );
@@ -1755,7 +1965,7 @@ class _ProfileScheduleCallFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i22.ProfileScheduleCallInvokeFutureCall().invoke(
+      await _i24.ProfileScheduleCallInvokeFutureCall().invoke(
         _localUniqueSession,
         object,
       );

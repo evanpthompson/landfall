@@ -8,6 +8,7 @@ import 'src/calendar/calendar_refresh_call.dart';
 import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
 import 'src/license/stripe_webhook_route.dart';
+import 'src/theme/theme_seeder.dart';
 import 'src/photo/photo_refresh_call.dart';
 import 'src/profile/profile_schedule_call.dart';
 import 'src/web/routes/app_config_route.dart';
@@ -119,6 +120,14 @@ void run(List<String> args) async {
 
   // Start the server.
   await pod.start();
+
+  // Seed built-in themes if they haven't been seeded yet.
+  final seedSession = await pod.createSession();
+  try {
+    await ThemeSeeder.seed(seedSession);
+  } finally {
+    await seedSession.close();
+  }
 
   // ignore: deprecated_member_use
   // Schedule the first weather refresh immediately after startup.

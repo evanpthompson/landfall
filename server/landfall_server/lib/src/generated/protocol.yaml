@@ -50,6 +50,13 @@ profile:
 settings:
   - getLinkedCredentials:
   - getMyAuthUserId:
+theme:
+  - listThemes:
+  - uploadTheme:
+  - importTheme:
+  - deleteTheme:
+  - previewTheme:
+  - applyTheme:
 weather:
   - getCurrentWeather:
   - getForecast:
