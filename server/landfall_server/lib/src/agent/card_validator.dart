@@ -67,7 +67,10 @@ List<String> validateCardPushRequest(CardPushRequest request) {
     );
   }
 
-  // actionsJson (optional) — validated array of action objects
+  // actionsJson (optional) — validated to close the injection surface.
+  // Agents can push arbitrary actionsJson, so we enforce a size cap, a type
+  // allowlist, label bounds, and URL scheme restrictions here — before any
+  // client ever receives or renders the data. See OWASP A05:2025.
   if (request.actionsJson != null) {
     const maxActionsJsonBytes = 8192;
     const maxActions = 5;
