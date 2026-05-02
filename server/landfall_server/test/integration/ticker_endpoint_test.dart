@@ -13,7 +13,11 @@ void main() {
 
     setUp(() async {
       final response =
-          await endpoints.apiKey.generateKey(sessionBuilder, 'Ticker Key');
+          await endpoints.apiKey.generateKey(
+            sessionBuilder,
+            'Ticker Key',
+            'test-management-token',
+          );
       apiKey = response.plainTextKey;
     });
 

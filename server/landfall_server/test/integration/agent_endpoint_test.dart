@@ -31,6 +31,7 @@ void main() {
       final response = await endpoints.apiKey.generateKey(
         sessionBuilder,
         'Test Key',
+        'test-management-token',
       );
       validApiKey = response.plainTextKey;
     });
@@ -125,8 +126,13 @@ void main() {
         final response = await endpoints.apiKey.generateKey(
           sessionBuilder,
           'Revocable Key',
+          'test-management-token',
         );
-        await endpoints.apiKey.revokeKey(sessionBuilder, response.key.id!);
+        await endpoints.apiKey.revokeKey(
+          sessionBuilder,
+          response.key.id!,
+          'test-management-token',
+        );
 
         expect(
           () => endpoints.agent.pushCard(
@@ -183,7 +189,10 @@ void main() {
           _request(title: 'Second card'),
         );
 
-        final keys = await endpoints.apiKey.listKeys(sessionBuilder);
+        final keys = await endpoints.apiKey.listKeys(
+          sessionBuilder,
+          'test-management-token',
+        );
         final key = keys.firstWhere((k) => k.usageCount == 2);
         expect(key.usageCount, equals(2));
       });

@@ -480,6 +480,7 @@ class _ApiKeyEndpoint {
   _i3.Future<_i6.ApiKeyCreateResponse> generateKey(
     _i1.TestSessionBuilder sessionBuilder,
     String name,
+    String setupToken,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -492,7 +493,10 @@ class _ApiKeyEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'apiKey',
           methodName: 'generateKey',
-          parameters: _i1.testObjectToJson({'name': name}),
+          parameters: _i1.testObjectToJson({
+            'name': name,
+            'setupToken': setupToken,
+          }),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -510,6 +514,7 @@ class _ApiKeyEndpoint {
 
   _i3.Future<List<_i7.ApiKey>> listKeys(
     _i1.TestSessionBuilder sessionBuilder,
+    String setupToken,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -522,7 +527,7 @@ class _ApiKeyEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'apiKey',
           methodName: 'listKeys',
-          parameters: _i1.testObjectToJson({}),
+          parameters: _i1.testObjectToJson({'setupToken': setupToken}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -541,6 +546,7 @@ class _ApiKeyEndpoint {
   _i3.Future<bool> revokeKey(
     _i1.TestSessionBuilder sessionBuilder,
     int id,
+    String setupToken,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -553,7 +559,10 @@ class _ApiKeyEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'apiKey',
           methodName: 'revokeKey',
-          parameters: _i1.testObjectToJson({'id': id}),
+          parameters: _i1.testObjectToJson({
+            'id': id,
+            'setupToken': setupToken,
+          }),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =

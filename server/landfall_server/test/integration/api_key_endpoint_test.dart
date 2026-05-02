@@ -2,6 +2,9 @@ import 'package:test/test.dart';
 
 import 'test_tools/serverpod_test_tools.dart';
 
+const _validToken = 'test-management-token';
+const _wrongToken = 'wrong-token';
+
 void main() {
   withServerpod('Given ApiKeyEndpoint', (sessionBuilder, endpoints) {
     group('generateKey', () {
@@ -9,6 +12,7 @@ void main() {
         final response = await endpoints.apiKey.generateKey(
           sessionBuilder,
           'Test Key',
+          _validToken,
         );
 
         expect(response.key.id, isNotNull);
@@ -21,6 +25,7 @@ void main() {
         final response = await endpoints.apiKey.generateKey(
           sessionBuilder,
           'Prefix Test',
+          _validToken,
         );
 
         expect(
@@ -33,6 +38,7 @@ void main() {
         final response = await endpoints.apiKey.generateKey(
           sessionBuilder,
           'Hash Test',
+          _validToken,
         );
 
         expect(response.key.keyHash, isNot(equals(response.plainTextKey)));
@@ -43,6 +49,7 @@ void main() {
         final response = await endpoints.apiKey.generateKey(
           sessionBuilder,
           'Defaults Test',
+          _validToken,
         );
 
         expect(response.key.dailyLimit, equals(500));
@@ -53,7 +60,7 @@ void main() {
 
       test('rejects empty name', () async {
         expect(
-          () => endpoints.apiKey.generateKey(sessionBuilder, ''),
+          () => endpoints.apiKey.generateKey(sessionBuilder, '', _validToken),
           throwsA(isA<Exception>()),
         );
       });
@@ -63,7 +70,26 @@ void main() {
           () => endpoints.apiKey.generateKey(
             sessionBuilder,
             'a' * 81,
+            _validToken,
           ),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('rejects wrong setupToken', () async {
+        expect(
+          () => endpoints.apiKey.generateKey(
+            sessionBuilder,
+            'Test Key',
+            _wrongToken,
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('rejects empty setupToken', () async {
+        expect(
+          () => endpoints.apiKey.generateKey(sessionBuilder, 'Test Key', ''),
           throwsA(isA<Exception>()),
         );
       });
@@ -71,15 +97,29 @@ void main() {
 
     group('listKeys', () {
       test('returns empty list when no keys exist', () async {
-        final keys = await endpoints.apiKey.listKeys(sessionBuilder);
+        final keys = await endpoints.apiKey.listKeys(
+          sessionBuilder,
+          _validToken,
+        );
         expect(keys, isEmpty);
       });
 
       test('returns generated keys', () async {
-        await endpoints.apiKey.generateKey(sessionBuilder, 'Key A');
-        await endpoints.apiKey.generateKey(sessionBuilder, 'Key B');
+        await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'Key A',
+          _validToken,
+        );
+        await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'Key B',
+          _validToken,
+        );
 
-        final keys = await endpoints.apiKey.listKeys(sessionBuilder);
+        final keys = await endpoints.apiKey.listKeys(
+          sessionBuilder,
+          _validToken,
+        );
         expect(keys.length, equals(2));
       });
 
@@ -87,13 +127,32 @@ void main() {
         final response = await endpoints.apiKey.generateKey(
           sessionBuilder,
           'To Revoke',
+          _validToken,
         );
-        await endpoints.apiKey.generateKey(sessionBuilder, 'To Keep');
-        await endpoints.apiKey.revokeKey(sessionBuilder, response.key.id!);
+        await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'To Keep',
+          _validToken,
+        );
+        await endpoints.apiKey.revokeKey(
+          sessionBuilder,
+          response.key.id!,
+          _validToken,
+        );
 
-        final keys = await endpoints.apiKey.listKeys(sessionBuilder);
+        final keys = await endpoints.apiKey.listKeys(
+          sessionBuilder,
+          _validToken,
+        );
         expect(keys.length, equals(1));
         expect(keys.first.name, equals('To Keep'));
+      });
+
+      test('rejects wrong setupToken', () async {
+        expect(
+          () => endpoints.apiKey.listKeys(sessionBuilder, _wrongToken),
+          throwsA(isA<Exception>()),
+        );
       });
     });
 
@@ -102,16 +161,22 @@ void main() {
         final response = await endpoints.apiKey.generateKey(
           sessionBuilder,
           'To Revoke',
+          _validToken,
         );
         final result = await endpoints.apiKey.revokeKey(
           sessionBuilder,
           response.key.id!,
+          _validToken,
         );
         expect(result, isTrue);
       });
 
       test('returns false for unknown id', () async {
-        final result = await endpoints.apiKey.revokeKey(sessionBuilder, 99999);
+        final result = await endpoints.apiKey.revokeKey(
+          sessionBuilder,
+          99999,
+          _validToken,
+        );
         expect(result, isFalse);
       });
 
@@ -119,13 +184,35 @@ void main() {
         final response = await endpoints.apiKey.generateKey(
           sessionBuilder,
           'Double Revoke',
+          _validToken,
         );
-        await endpoints.apiKey.revokeKey(sessionBuilder, response.key.id!);
+        await endpoints.apiKey.revokeKey(
+          sessionBuilder,
+          response.key.id!,
+          _validToken,
+        );
         final result = await endpoints.apiKey.revokeKey(
           sessionBuilder,
           response.key.id!,
+          _validToken,
         );
         expect(result, isFalse);
+      });
+
+      test('rejects wrong setupToken', () async {
+        final response = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'Key',
+          _validToken,
+        );
+        expect(
+          () => endpoints.apiKey.revokeKey(
+            sessionBuilder,
+            response.key.id!,
+            _wrongToken,
+          ),
+          throwsA(isA<Exception>()),
+        );
       });
     });
   });

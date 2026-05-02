@@ -27,7 +27,11 @@ void main() {
       test('generate → push → list → update → dismiss → revoke', () async {
         // 1. Generate a key.
         final response =
-            await endpoints.apiKey.generateKey(sessionBuilder, 'Lifecycle Key');
+            await endpoints.apiKey.generateKey(
+              sessionBuilder,
+              'Lifecycle Key',
+              'test-management-token',
+            );
         final key = response.plainTextKey;
 
         // 2. Push a card.
@@ -64,7 +68,11 @@ void main() {
             await endpoints.agent.listCards(sessionBuilder, key), isEmpty);
 
         // 6. Revoke the key.
-        await endpoints.apiKey.revokeKey(sessionBuilder, response.key.id!);
+        await endpoints.apiKey.revokeKey(
+          sessionBuilder,
+          response.key.id!,
+          'test-management-token',
+        );
 
         // 7. Further calls with the revoked key throw.
         expect(
@@ -77,8 +85,11 @@ void main() {
     group('rate limit enforcement', () {
       test('push fails once daily limit is exhausted', () async {
         // Generate a key then lower its limit to 2 for a fast test.
-        final response = await endpoints.apiKey
-            .generateKey(sessionBuilder, 'Rate Limited Key');
+        final response = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'Rate Limited Key',
+          'test-management-token',
+        );
         final keyRecord = await ApiKey.db.findFirstRow(
           sessionBuilder.build(),
           where: (t) => t.id.equals(response.key.id!),
@@ -104,8 +115,11 @@ void main() {
       });
 
       test('existing cards survive after the limit is hit', () async {
-        final response = await endpoints.apiKey
-            .generateKey(sessionBuilder, 'Limit Survival Key');
+        final response = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'Limit Survival Key',
+          'test-management-token',
+        );
         final keyRecord = await ApiKey.db.findFirstRow(
           sessionBuilder.build(),
           where: (t) => t.id.equals(response.key.id!),
@@ -130,10 +144,16 @@ void main() {
       });
 
       test('two independent keys have separate rate limit counters', () async {
-        final r1 = await endpoints.apiKey
-            .generateKey(sessionBuilder, 'Key One');
-        final r2 = await endpoints.apiKey
-            .generateKey(sessionBuilder, 'Key Two');
+        final r1 = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'Key One',
+          'test-management-token',
+        );
+        final r2 = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'Key Two',
+          'test-management-token',
+        );
 
         // Set both keys to a limit of 1.
         for (final r in [r1, r2]) {
@@ -167,8 +187,11 @@ void main() {
     group('cross-endpoint card visibility', () {
       test('card pushed via AgentEndpoint appears in CardEndpoint.getCards',
           () async {
-        final response = await endpoints.apiKey
-            .generateKey(sessionBuilder, 'Cross Key');
+        final response = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'Cross Key',
+          'test-management-token',
+        );
         await endpoints.agent.pushCard(
           sessionBuilder,
           response.plainTextKey,
@@ -182,8 +205,11 @@ void main() {
 
       test('card dismissed via AgentEndpoint is absent from CardEndpoint.getCards',
           () async {
-        final response = await endpoints.apiKey
-            .generateKey(sessionBuilder, 'Cross Dismiss Key');
+        final response = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'Cross Dismiss Key',
+          'test-management-token',
+        );
         final key = response.plainTextKey;
 
         await endpoints.agent.pushCard(
@@ -204,7 +230,11 @@ void main() {
       test('card pushed via CardEndpoint appears in AgentEndpoint.listCards',
           () async {
         final response =
-            await endpoints.apiKey.generateKey(sessionBuilder, 'Key');
+            await endpoints.apiKey.generateKey(
+              sessionBuilder,
+              'Key',
+              'test-management-token',
+            );
         final key = response.plainTextKey;
 
         await endpoints.card.pushCard(
@@ -225,7 +255,11 @@ void main() {
     group('ticker in agent workflow', () {
       test('pushTicker does not count against agent card list', () async {
         final response =
-            await endpoints.apiKey.generateKey(sessionBuilder, 'Ticker Key');
+            await endpoints.apiKey.generateKey(
+              sessionBuilder,
+              'Ticker Key',
+              'test-management-token',
+            );
         final key = response.plainTextKey;
 
         await endpoints.agent.pushCard(
@@ -249,8 +283,11 @@ void main() {
 
     group('key revocation', () {
       test('revoked key cannot push, list, update, or dismiss', () async {
-        final response = await endpoints.apiKey
-            .generateKey(sessionBuilder, 'To Revoke');
+        final response = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'To Revoke',
+          'test-management-token',
+        );
         final key = response.plainTextKey;
 
         // Push one card before revocation.
@@ -260,7 +297,11 @@ void main() {
           _card(externalId: 'pre-revoke'),
         );
 
-        await endpoints.apiKey.revokeKey(sessionBuilder, response.key.id!);
+        await endpoints.apiKey.revokeKey(
+          sessionBuilder,
+          response.key.id!,
+          'test-management-token',
+        );
 
         expect(
           () => endpoints.agent.listCards(sessionBuilder, key),
@@ -279,7 +320,11 @@ void main() {
 
       test('pre-revocation cards remain visible via CardEndpoint', () async {
         final response =
-            await endpoints.apiKey.generateKey(sessionBuilder, 'Keep Cards');
+            await endpoints.apiKey.generateKey(
+              sessionBuilder,
+              'Keep Cards',
+              'test-management-token',
+            );
         final key = response.plainTextKey;
 
         await endpoints.agent.pushCard(
@@ -288,7 +333,11 @@ void main() {
           _card(externalId: 'survives-revoke'),
         );
 
-        await endpoints.apiKey.revokeKey(sessionBuilder, response.key.id!);
+        await endpoints.apiKey.revokeKey(
+          sessionBuilder,
+          response.key.id!,
+          'test-management-token',
+        );
 
         final displayCards = await endpoints.card.getCards(sessionBuilder);
         expect(

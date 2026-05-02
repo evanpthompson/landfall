@@ -5,10 +5,17 @@ import 'api_key_service.dart';
 
 /// API key management endpoint.
 ///
-/// Phase 2: Unauthenticated — open for local dev, matching Phase 0 CardEndpoint.
-/// Phase 5: Will require display-owner authentication before any mutation.
+/// All methods require [setupToken] — the value of `apiKeyManagementToken`
+/// in config/passwords.yaml. Set this before deploying to production.
 class ApiKeyEndpoint extends Endpoint {
   final _keyService = ApiKeyService.instance;
+
+  void _requireSetupToken(Session session, String setupToken) {
+    final expected = session.passwords['apiKeyManagementToken'] ?? '';
+    if (expected.isEmpty || setupToken != expected) {
+      throw LandfallException(message: 'Unauthorized.');
+    }
+  }
 
   /// Generates a new API key with the given [name] label.
   ///
@@ -17,7 +24,10 @@ class ApiKeyEndpoint extends Endpoint {
   Future<ApiKeyCreateResponse> generateKey(
     Session session,
     String name,
+    String setupToken,
   ) async {
+    _requireSetupToken(session, setupToken);
+
     if (name.trim().isEmpty) {
       throw LandfallException(message: 'Key name must not be empty.');
     }
@@ -34,7 +44,9 @@ class ApiKeyEndpoint extends Endpoint {
   /// Returns all non-revoked API keys.
   ///
   /// Only metadata is returned — hashes and plaintext keys are never exposed.
-  Future<List<ApiKey>> listKeys(Session session) async {
+  Future<List<ApiKey>> listKeys(Session session, String setupToken) async {
+    _requireSetupToken(session, setupToken);
+
     return ApiKey.db.find(
       session,
       where: (t) => t.revokedAt.equals(null),
@@ -50,7 +62,9 @@ class ApiKeyEndpoint extends Endpoint {
   ///
   /// Returns true if the key existed and was revoked, false if not found
   /// or already revoked.
-  Future<bool> revokeKey(Session session, int id) async {
+  Future<bool> revokeKey(Session session, int id, String setupToken) async {
+    _requireSetupToken(session, setupToken);
+
     final key = await ApiKey.db.findById(session, id);
     if (key == null || key.revokedAt != null) return false;
 
