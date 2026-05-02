@@ -1,6 +1,5 @@
 import 'package:landfall_shared/src/models/dashboard/card_config.dart';
 import 'package:landfall_shared/src/models/dashboard/dashboard_slot.dart';
-import 'package:landfall_shared/src/models/dashboard/layout_preset_type.dart';
 
 /// A named display configuration — a grid of [CardConfig] items.
 ///
@@ -18,7 +17,6 @@ class DashboardLayout {
     required this.cards,
     this.columns = 12,
     this.rows = 8,
-    this.presetType = LayoutPresetType.custom,
   });
 
   /// Unique identifier for this layout.
@@ -36,12 +34,6 @@ class DashboardLayout {
   /// Number of rows in the display grid. Defaults to 8.
   final int rows;
 
-  /// Which built-in preset this layout belongs to.
-  ///
-  /// Preset layouts start from a fixed default arrangement but can be
-  /// freely customised by the user. A layout created from scratch is [LayoutPresetType.custom].
-  final LayoutPresetType presetType;
-
   /// Cards with [CardConfig.visible] == true, in declaration order.
   List<CardConfig> get visibleCards => cards.where((c) => c.visible).toList();
 
@@ -53,7 +45,6 @@ class DashboardLayout {
     return DashboardLayout(
       id: 'layout-weekday',
       name: 'Weekday',
-      presetType: LayoutPresetType.weekday,
       cards: [
         CardConfig(
           id: 'slot_clock',
@@ -90,7 +81,6 @@ class DashboardLayout {
     return DashboardLayout(
       id: 'layout-weekend',
       name: 'Weekend',
-      presetType: LayoutPresetType.weekend,
       cards: [
         CardConfig(
           id: 'slot_clock',
@@ -121,7 +111,6 @@ class DashboardLayout {
     return DashboardLayout(
       id: 'layout-night',
       name: 'Night',
-      presetType: LayoutPresetType.night,
       cards: [
         CardConfig(
           id: 'slot_clock',
@@ -150,21 +139,11 @@ class DashboardLayout {
     );
   }
 
-  /// Returns the default layout for a given [LayoutPresetType].
-  static DashboardLayout forPreset(LayoutPresetType preset) =>
-      switch (preset) {
-        LayoutPresetType.weekday => weekdayLayout(),
-        LayoutPresetType.weekend => weekendLayout(),
-        LayoutPresetType.night => nightLayout(),
-        LayoutPresetType.custom => weekdayLayout(),
-      };
-
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
         'columns': columns,
         'rows': rows,
-        'presetType': presetType.name,
         'cards': cards.map((c) => c.toJson()).toList(),
       };
 
@@ -174,9 +153,6 @@ class DashboardLayout {
         name: json['name'] as String,
         columns: json['columns'] as int? ?? 12,
         rows: json['rows'] as int? ?? 8,
-        presetType: json['presetType'] != null
-            ? LayoutPresetType.values.byName(json['presetType'] as String)
-            : LayoutPresetType.custom,
         cards: (json['cards'] as List<dynamic>)
             .map((e) => CardConfig.fromJson(e as Map<String, dynamic>))
             .toList(),
@@ -190,14 +166,13 @@ class DashboardLayout {
           name == other.name &&
           columns == other.columns &&
           rows == other.rows &&
-          presetType == other.presetType &&
           cards.length == other.cards.length &&
           List.generate(cards.length, (i) => cards[i] == other.cards[i])
               .every((e) => e);
 
   @override
   int get hashCode =>
-      Object.hash(id, name, columns, rows, presetType, Object.hashAll(cards));
+      Object.hash(id, name, columns, rows, Object.hashAll(cards));
 
   @override
   String toString() =>

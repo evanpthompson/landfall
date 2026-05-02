@@ -7,8 +7,6 @@ export 'src/repositories/card_repository.dart';
 export 'src/models/dashboard/dashboard_slot.dart';
 export 'src/models/dashboard/card_config.dart';
 export 'src/models/dashboard/dashboard_layout.dart';
-export 'src/models/dashboard/layout_preset_type.dart';
-export 'src/repositories/dashboard_layout_repository.dart';
 export 'src/models/profile/profile_schedule_type.dart';
 export 'src/models/profile/profile_schedule.dart';
 export 'src/models/profile/profile_card_filter.dart';

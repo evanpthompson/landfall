@@ -10,8 +10,6 @@ import 'package:display/src/data/calendar/serverpod_calendar_repository.dart';
 import 'package:display/src/data/cards/serverpod_card_repository.dart';
 import 'package:display/src/data/clock/system_clock_repository.dart';
 import 'package:display/src/data/local/app_database.dart';
-import 'package:display/src/data/local/repositories/drift_dashboard_layout_repository.dart';
-import 'package:display/src/data/layout/serverpod_layout_repository.dart';
 import 'package:display/src/data/profile/serverpod_profile_repository.dart';
 import 'package:display/src/data/photo/serverpod_photo_repository.dart';
 import 'package:display/src/data/license/serverpod_license_repository.dart';
@@ -24,7 +22,6 @@ import 'package:display/src/features/calendar/cubit/calendar_cubit.dart';
 import 'package:display/src/features/cards/cubit/card_cubit.dart';
 import 'package:display/src/features/clock/cubit/clock_cubit.dart';
 import 'package:display/src/features/display/screens/display_screen.dart';
-import 'package:display/src/features/layout/cubit/dashboard_layout_cubit.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/license/cubit/license_cubit.dart';
@@ -61,9 +58,6 @@ class LandfallApp extends StatelessWidget {
     final client = Client(serverUrl)
       ..authKeyProvider = keyProvider;
 
-    final driftLayoutRepo = DriftDashboardLayoutRepository(database);
-    final layoutRepository =
-        ServerpodLayoutRepository(client, driftLayoutRepo);
     final profileRepository = ServerpodProfileRepository(client);
     final cardRepository = ServerpodCardRepository(client);
     final weatherRepository = ServerpodWeatherRepository(client, database);
@@ -76,9 +70,6 @@ class LandfallApp extends StatelessWidget {
 
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider<DashboardLayoutRepository>(
-          create: (_) => layoutRepository,
-        ),
         RepositoryProvider<DashboardProfileRepository>(
           create: (_) => profileRepository,
         ),
@@ -102,11 +93,6 @@ class LandfallApp extends StatelessWidget {
         providers: [
           BlocProvider(
             create: (_) => AuthCubit(client: client, keyProvider: keyProvider),
-          ),
-          BlocProvider(
-            create: (ctx) => DashboardLayoutCubit(
-              ctx.read<DashboardLayoutRepository>(),
-            ),
           ),
           BlocProvider(
             create: (ctx) => DashboardProfileCubit(
