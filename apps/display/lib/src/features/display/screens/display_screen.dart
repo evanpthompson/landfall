@@ -17,6 +17,8 @@ import 'package:display/src/features/clock/widgets/clock_card.dart';
 import 'package:display/src/features/display/widgets/ambient_dim_overlay.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
+import 'package:display/src/features/theme/cubit/theme_cubit.dart';
+import 'package:display/src/features/theme/cubit/theme_state.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/photo/widgets/photo_frame_card.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
@@ -402,16 +404,23 @@ class _AgentCardFeed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<CardCubit, CardState>(
-      builder: (_, state) {
+      builder: (context, state) {
         if (state is! CardLoaded || state.cards.isEmpty) {
           return const SizedBox.shrink();
         }
 
+        final themeState = context.watch<ThemeCubit>().state;
+        final tokens =
+            themeState is ThemeLoaded ? themeState.active.tokens : null;
+
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(0, 16, 16, 16),
           itemCount: state.cards.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
-          itemBuilder: (_, i) => GenericAgentCard(card: state.cards[i]),
+          separatorBuilder: (context, idx) => const SizedBox(height: 12),
+          itemBuilder: (_, i) => GenericAgentCard(
+            card: state.cards[i],
+            tokens: tokens,
+          ),
         );
       },
     );

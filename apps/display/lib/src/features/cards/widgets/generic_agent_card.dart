@@ -6,30 +6,40 @@ import 'card_action_button.dart';
 
 /// Renders any [Card] from the agent push API.
 ///
-/// This is the fallback renderer — every card that does not have a dedicated
-/// display template (weather, calendar, etc.) is rendered here. It shows the
-/// source label, title, optional body, and any [CardAction] buttons.
-///
-/// This is a pure presentational widget. Wire it with
-/// [BlocBuilder<CardCubit, CardState>] in the parent screen.
+/// When [tokens] are supplied, card surface and typography colours are driven
+/// by the active theme. When null, falls back to [LandfallColors] defaults so
+/// the widget is safe to use without a [ThemeCubit] in the tree.
 class GenericAgentCard extends StatelessWidget {
-  const GenericAgentCard({super.key, required this.card});
+  const GenericAgentCard({
+    super.key,
+    required this.card,
+    this.tokens,
+  });
 
   final Card card;
 
+  /// Active theme token set. When provided, overrides hardcoded colours.
+  final LandfallThemeTokens? tokens;
+
   @override
   Widget build(BuildContext context) {
-    final hasActions =
-        card.actions != null && card.actions!.isNotEmpty;
+    final hasActions = card.actions != null && card.actions!.isNotEmpty;
+
+    final bgColor = _hex(tokens?.cardFill) ?? LandfallColors.surface;
+    final borderColor =
+        _hex(tokens?.cardBorderColor) ?? LandfallColors.cardBorder;
+    final borderWidth = tokens?.cardBorderWidth ?? 1.5;
+    final radius = tokens?.cardRadius.toDouble() ?? 8.0;
+    final titleColor =
+        _hex(tokens?.colorTextPrimary) ?? LandfallColors.textPrimary;
+    final secondaryColor =
+        _hex(tokens?.colorTextSecondary) ?? LandfallColors.textSecondary;
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: LandfallColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: LandfallColors.cardBorder,
-          width: 1.5,
-        ),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: borderColor, width: borderWidth),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -37,12 +47,22 @@ class GenericAgentCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(card.source, style: LandfallTypography.cardSource),
+            Text(
+              card.source,
+              style: LandfallTypography.cardSource.copyWith(color: secondaryColor),
+            ),
             const SizedBox(height: 8),
-            Text(card.title, style: LandfallTypography.cardTitle),
+            Text(
+              card.title,
+              style: LandfallTypography.cardTitle.copyWith(color: titleColor),
+            ),
             if (card.body != null) ...[
               const SizedBox(height: 6),
-              Text(card.body!, style: LandfallTypography.cardBody),
+              Text(
+                card.body!,
+                style:
+                    LandfallTypography.cardBody.copyWith(color: secondaryColor),
+              ),
             ],
             if (hasActions) ...[
               const SizedBox(height: 12),
@@ -58,5 +78,15 @@ class GenericAgentCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static Color? _hex(String? hex) {
+    if (hex == null) return null;
+    final clean = hex.replaceFirst('#', '');
+    final value = int.tryParse(
+      clean.length == 6 ? 'FF$clean' : clean,
+      radix: 16,
+    );
+    return value == null ? null : Color(value);
   }
 }
