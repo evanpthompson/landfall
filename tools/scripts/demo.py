@@ -217,6 +217,18 @@ class LandfallDemo:
             "externalId": external_id
         })
 
+    def list_themes(self) -> List[Dict[str, Any]]:
+        try:
+            return self.run_api_request("/theme/listThemes", {})
+        except Exception:
+            return []
+
+    def upload_theme(self, yaml: str) -> Dict[str, Any]:
+        try:
+            return self.run_api_request("/theme/uploadTheme", {"yaml": yaml})
+        except Exception as e:
+            return {"errors": [{"message": str(e)}]}
+
     def wait_for_server(self, timeout: int = 40):
         logger.debug(f"Waiting for server at {SERVER_URL} (timeout {timeout}s)")
         start_time = time.time()
@@ -639,6 +651,91 @@ SELECT c.id, 'primary',      'Work',     'demo-planning', 'Q3 planning session',
         info("• Settings → License tab: tier badge, upgrade links, key entry field")
         info("• Pack browser: grid view of all packs with pricing and owned status")
         info("• LicenseCubit manages loading/activating state with full bloc_test coverage")
+
+        # Step 18: Theme Engine
+        pause("Phase 14 adds the theme engine — five built-in themes seeded on startup, "
+              "a validator that checks every token at upload time, and endpoints for "
+              "applying themes per-profile.")
+        step("Theme Engine (Phase 14)")
+        print()
+        print(f"  {Colours.BOLD}Built-in themes (seeded automatically on server start):{Colours.RESET}")
+        info("• Default Dark     — clean dark, the factory default for every new display")
+        info("• Default Light    — bright environment variant")
+        info("• Neon Arcade      — high-contrast neon on deep black, high energy")
+        info("• Deep Blue        — calm navy palette with cyan accent")
+        info("• Warm Editorial   — off-white print/magazine aesthetic")
+        print()
+        print(f"  {Colours.BOLD}Theme token vocabulary (ThemeSchema v1.0):{Colours.RESET}")
+        info("• surface    — background type/value, card fill/border/radius/blur/shadow")
+        info("• typography — font family, scale, heading/body weight, letter spacing")
+        info("• color      — accent, text.primary/secondary/tertiary, success/warning/alert")
+        info("• animation  — transition, speed, cardEntry, tickerScroll")
+        info("• moods      — urgent, muted, celebratory, success overrides per-card")
+        print()
+        print(f"  {Colours.BOLD}Derived tokens (resolved at upload time, never stored raw):{Colours.RESET}")
+        info("• color.accentMuted   — accent at 15% opacity (auto-derived from accent)")
+        info("• color.divider       — text.primary at 10% opacity")
+        info("• color.agent.border  — accent at 30% opacity")
+        print()
+
+        step("Listing built-in themes from the running server")
+        themes = self.list_themes()
+        for t in themes:
+            marker = "★" if t.get("isBuiltIn") else "○"
+            print(f"   {marker} [{t['slug']}]  {t['name']}")
+        ok(f"{len(themes)} theme(s) available")
+
+        pause("Themes are validated at upload time — every token is type-checked, enum values "
+              "are enforced, numeric ranges are bounded. Here's a live custom theme upload.")
+
+        step("Uploading a custom theme")
+        custom_yaml = '''version: "1.0"
+meta:
+  name: "Demo Custom"
+  author: "demo"
+  description: "A minimal demo theme uploaded live."
+  tags: [demo, minimal]
+color:
+  accent: "#FF6B6B"
+  text:
+    primary: "#FFFFFF"
+surface:
+  background:
+    type: solid
+    value: "#1A1A2E"
+  card:
+    fill: "rgba(255,255,255,0.05)"
+    border:
+      color: "rgba(255,107,107,0.3)"
+      width: 1.0
+      style: solid
+    radius: 6
+animation:
+  transition: fade
+  speed: normal
+  cardEntry: fade
+  tickerScroll: normal'''
+
+        result = self.upload_theme(custom_yaml)
+        if result.get("theme"):
+            slug = result["theme"].get("slug", "unknown")
+            ok(f"Custom theme uploaded — slug: {slug}")
+            info("Resolved tokens (accentMuted, divider, agent.border) were derived automatically.")
+        else:
+            errors = result.get("errors", [])
+            msg = errors[0].get("message", "unknown error") if errors else "unknown error"
+            warn(f"Upload skipped — {msg}")
+
+        print()
+        print(f"  {Colours.BOLD}ThemeEndpoint — full surface area:{Colours.RESET}")
+        info("• listThemes()                — all available themes, ordered by name")
+        info("• uploadTheme(yaml)           — validate + store; returns errors on failure")
+        info("• importTheme(url)            — HTTPS fetch + validate + store (10 s timeout)")
+        info("• previewTheme(id)            — returns the resolved token JSON string")
+        info("• applyTheme(themeId,         — links theme to a named profile")
+        info("             profileId)")
+        info("• deleteTheme(id)             — removes imported themes; built-ins are protected")
+        print()
 
         # Launch display
         pause("Ready to launch. The wizard will appear on a fresh install — walk through it, "
