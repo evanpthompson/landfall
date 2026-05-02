@@ -708,10 +708,113 @@ echo ""
 echo "  ${BOLD}Check pack catalog via server:${RESET}"
 echo ""
 
-# ── Step 18: Display ────────────────────────────────────────────────────────
+# ── Step 18: Theme Engine ────────────────────────────────────────────────────
+pause "Phase 14 adds the theme engine — five built-in themes seeded on startup, a validator that checks every token at upload time, and a REST-style endpoint for applying themes per-profile."
+
+step "Theme Engine (Phase 14)"
+echo ""
+echo "  ${BOLD}Built-in themes (seeded automatically on server start):${RESET}"
+echo "  ${DIM}• Default Dark     — clean dark, the factory default for every new display${RESET}"
+echo "  ${DIM}• Default Light    — bright environment variant${RESET}"
+echo "  ${DIM}• Neon Arcade      — high-contrast neon on deep black, high energy${RESET}"
+echo "  ${DIM}• Deep Blue        — calm navy palette with cyan accent${RESET}"
+echo "  ${DIM}• Warm Editorial   — off-white print/magazine aesthetic${RESET}"
+echo ""
+echo "  ${BOLD}Theme token vocabulary (ThemeSchema v1.0):${RESET}"
+echo "  ${DIM}• surface  — background type/value, card fill/border/radius/blur/shadow${RESET}"
+echo "  ${DIM}• typography — font family, scale, heading/body weight, letter spacing${RESET}"
+echo "  ${DIM}• color     — accent, text.primary/secondary/tertiary, success/warning/alert${RESET}"
+echo "  ${DIM}• animation — transition, speed, cardEntry, tickerScroll${RESET}"
+echo "  ${DIM}• moods     — urgent, muted, celebratory, success overrides per-card${RESET}"
+echo ""
+echo "  ${BOLD}Derived tokens (resolved at upload time, never stored raw):${RESET}"
+echo "  ${DIM}• color.accentMuted   — accent at 15% opacity (auto-derived from accent)${RESET}"
+echo "  ${DIM}• color.divider       — text.primary at 10% opacity${RESET}"
+echo "  ${DIM}• color.agent.border  — accent at 30% opacity${RESET}"
+echo ""
+
+step "Listing built-in themes from the running server"
+THEME_RESPONSE=$(curl -sf \
+  -X POST "${SERVER_URL}/theme/listThemes" \
+  -H "Content-Type: application/json" \
+  -d '{}' 2>/dev/null || echo "[]")
+
+THEME_COUNT=$(echo "${THEME_RESPONSE}" | python3 -c \
+  "import sys,json; print(len(json.load(sys.stdin)))" 2>/dev/null || echo "?")
+
+echo "${THEME_RESPONSE}" | python3 -c "
+import sys, json
+themes = json.load(sys.stdin)
+for t in themes:
+    marker = '★' if t.get('isBuiltIn') else '○'
+    print(f'   {marker} [{t[\"slug\"]}]  {t[\"name\"]}')
+" 2>/dev/null || true
+
+ok "${THEME_COUNT} theme(s) available"
+
+pause "Themes are validated at upload time — every token is type-checked, enum values are enforced, numeric ranges are bounded. Here's a live custom theme upload."
+
+step "Uploading a custom theme"
+CUSTOM_THEME_YAML='version: "1.0"
+meta:
+  name: "Demo Custom"
+  author: "demo"
+  description: "A minimal demo theme uploaded live."
+  tags: [demo, minimal]
+color:
+  accent: "#FF6B6B"
+  text:
+    primary: "#FFFFFF"
+surface:
+  background:
+    type: solid
+    value: "#1A1A2E"
+  card:
+    fill: "rgba(255,255,255,0.05)"
+    border:
+      color: "rgba(255,107,107,0.3)"
+      width: 1.0
+      style: solid
+    radius: 6
+animation:
+  transition: fade
+  speed: normal
+  cardEntry: fade
+  tickerScroll: normal'
+
+UPLOAD_RESPONSE=$(curl -sf \
+  -X POST "${SERVER_URL}/theme/uploadTheme" \
+  -H "Content-Type: application/json" \
+  -d "{\"yaml\":$(echo "${CUSTOM_THEME_YAML}" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')}" \
+  2>/dev/null || echo '{"errors":[{"message":"server not ready"}]}')
+
+UPLOAD_OK=$(echo "${UPLOAD_RESPONSE}" | python3 -c \
+  "import sys,json; d=json.load(sys.stdin); print('yes' if d.get('theme') else 'no')" 2>/dev/null || echo "no")
+
+if [[ "${UPLOAD_OK}" == "yes" ]]; then
+  UPLOADED_SLUG=$(echo "${UPLOAD_RESPONSE}" | python3 -c \
+    "import sys,json; print(json.load(sys.stdin)['theme']['slug'])" 2>/dev/null || echo "unknown")
+  ok "Custom theme uploaded — slug: ${UPLOADED_SLUG}"
+  info "Resolved tokens (accentMuted, divider, agent.border) were derived automatically."
+else
+  warn "Upload skipped — server may not be running or endpoint needs auth."
+fi
+
+echo ""
+echo "  ${BOLD}ThemeEndpoint — full surface area:${RESET}"
+echo "  ${DIM}• listThemes()               — all available themes, ordered by name${RESET}"
+echo "  ${DIM}• uploadTheme(yaml)          — validate + store; returns errors on failure${RESET}"
+echo "  ${DIM}• importTheme(url)           — HTTPS fetch + validate + store (10 s timeout)${RESET}"
+echo "  ${DIM}• previewTheme(id)           — returns the resolved token JSON string${RESET}"
+echo "  ${DIM}• applyTheme(themeId,        — links theme to a named profile${RESET}"
+echo "  ${DIM}             profileId)${RESET}"
+echo "  ${DIM}• deleteTheme(id)            — removes imported themes; built-ins are protected${RESET}"
+echo ""
+
+# ── Step 19: Display ────────────────────────────────────────────────────────
 pause "Ready to launch. The wizard will appear on a fresh install — walk through it, then the full display loads with all the demo cards we pushed."
 
-step "Launching Landfall display (macOS)"  # Step 18
+step "Launching Landfall display (macOS)"  # Step 19
 info "The app will open in a new window. Press Cmd+Q to quit when done."
 echo ""
 
