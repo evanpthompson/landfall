@@ -14,6 +14,7 @@ import 'package:display/src/data/profile/serverpod_profile_repository.dart';
 import 'package:display/src/data/photo/serverpod_photo_repository.dart';
 import 'package:display/src/data/license/serverpod_license_repository.dart';
 import 'package:display/src/data/settings/drift_display_settings_repository.dart';
+import 'package:display/src/data/theme/serverpod_theme_repository.dart';
 import 'package:display/src/data/weather/serverpod_weather_repository.dart';
 import 'package:display/src/domain/use_cases/get_current_time_use_case.dart';
 import 'package:display/src/features/auth/cubit/auth_cubit.dart';
@@ -26,6 +27,7 @@ import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart'
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/license/cubit/license_cubit.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
+import 'package:display/src/features/theme/cubit/theme_cubit.dart';
 import 'package:display/src/features/ticker/cubit/ticker_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:ui_kit/ui_kit.dart';
@@ -67,6 +69,7 @@ class LandfallApp extends StatelessWidget {
     final clockRepository = const SystemClockRepository();
     final getCurrentTime = GetCurrentTimeUseCase(clockRepository);
     final licenseRepository = ServerpodLicenseRepository(client);
+    final themeRepository = ServerpodThemeRepository(client);
 
     return MultiRepositoryProvider(
       providers: [
@@ -123,6 +126,9 @@ class LandfallApp extends StatelessWidget {
           ),
           BlocProvider(
             create: (_) => LicenseCubit(licenseRepository),
+          ),
+          BlocProvider(
+            create: (_) => ThemeCubit(themeRepository)..loadThemes(),
           ),
         ],
         child: MaterialApp(

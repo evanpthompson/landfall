@@ -9,6 +9,9 @@ import 'package:display/src/features/license/cubit/license_cubit.dart';
 import 'package:display/src/features/license/screens/license_screen.dart';
 import 'package:display/src/features/license/screens/pack_browser_screen.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
+import 'package:display/src/features/theme/cubit/theme_cubit.dart';
+import 'package:display/src/features/theme/cubit/theme_state.dart';
+import 'package:display/src/features/theme/screens/theme_browser_screen.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
 import 'package:display/src/features/profile/screens/profile_manager_screen.dart';
 import 'package:display/src/features/profile/widgets/profile_switcher.dart';
@@ -38,7 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 4, vsync: this);
+    _tabs = TabController(length: 5, vsync: this);
     context.read<LicenseCubit>().loadStatus();
   }
 
@@ -90,6 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             Tab(text: 'Display'),
             Tab(text: 'Accounts'),
             Tab(text: 'Layout'),
+            Tab(text: 'Themes'),
             Tab(text: 'License'),
           ],
         ),
@@ -100,6 +104,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           _DisplayTab(serverUrl: widget.serverUrl),
           _AccountsTab(client: widget.client, serverUrl: widget.serverUrl),
           const _LayoutTab(),
+          const _ThemesTab(),
           _LicenseTab(client: widget.client),
         ],
       ),
@@ -634,6 +639,139 @@ class _LayoutTab extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Themes tab
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ThemesTab extends StatelessWidget {
+  const _ThemesTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, state) {
+        return ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            _SectionHeader('Active Theme'),
+            const SizedBox(height: 12),
+            _ActiveThemeTile(state: state),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const ThemeBrowserScreen(),
+                  ),
+                ),
+                icon: const Icon(Icons.palette_outlined, size: 18),
+                label: const Text('Browse Themes'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: LandfallColors.accent,
+                  side: const BorderSide(color: LandfallColors.accent),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ActiveThemeTile extends StatelessWidget {
+  const _ActiveThemeTile({required this.state});
+
+  final ThemeState state;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state is! ThemeLoaded) {
+      return const SizedBox(
+        height: 56,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final theme = (state as ThemeLoaded).active;
+    final accent = _parseHex(theme.tokens.colorAccent);
+    final bg = _parseHex(theme.tokens.backgroundValue);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: LandfallColors.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: LandfallColors.cardBorder),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: Stack(
+                  children: [
+                    ColoredBox(color: bg, child: const SizedBox.expand()),
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: 6,
+                      child: ColoredBox(color: accent),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    theme.name,
+                    style: const TextStyle(
+                      color: LandfallColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (theme.author != null)
+                    Text(
+                      theme.author!,
+                      style: const TextStyle(
+                        color: LandfallColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.check_circle,
+              color: LandfallColors.accent,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Color _parseHex(String hex) {
+    final clean = hex.replaceFirst('#', '');
+    final value = int.tryParse(
+      clean.length == 6 ? 'FF$clean' : clean,
+      radix: 16,
+    );
+    return Color(value ?? 0xFF1a1a1a);
   }
 }
 
