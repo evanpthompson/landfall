@@ -279,7 +279,6 @@ class _LayoutEditorState extends State<LayoutEditor> {
         name: widget.layout.name,
         columns: widget.layout.columns,
         rows: widget.layout.rows,
-        presetType: widget.layout.presetType,
         cards: cards,
       );
 
@@ -308,7 +307,6 @@ class _LayoutEditorState extends State<LayoutEditor> {
         name: widget.layout.name,
         columns: widget.layout.columns,
         rows: widget.layout.rows,
-        presetType: widget.layout.presetType,
         cards: updated,
       ),
     );
