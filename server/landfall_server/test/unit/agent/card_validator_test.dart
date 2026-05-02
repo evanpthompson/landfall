@@ -10,6 +10,7 @@ CardPushRequest _valid({
   String? layout,
   String? priority,
   String? dataJson,
+  String? actionsJson,
   DateTime? expiresAt,
   bool? persistent,
   String? externalId,
@@ -21,6 +22,7 @@ CardPushRequest _valid({
     layout: layout,
     priority: priority,
     dataJson: dataJson,
+    actionsJson: actionsJson,
     expiresAt: expiresAt,
     persistent: persistent,
     externalId: externalId,
@@ -222,6 +224,160 @@ void main() {
           layout: 'invalid',
         ));
         expect(errors.length, greaterThanOrEqualTo(3));
+      });
+    });
+
+    group('actionsJson validation', () {
+      test('null actionsJson passes', () {
+        expect(validateCardPushRequest(_valid()), isEmpty);
+      });
+
+      test('valid single dismiss action passes', () {
+        final errors = validateCardPushRequest(_valid(
+          actionsJson: '[{"type":"dismiss","label":"Dismiss"}]',
+        ));
+        expect(errors, isEmpty);
+      });
+
+      test('valid openUrl action with https passes', () {
+        final errors = validateCardPushRequest(_valid(
+          actionsJson:
+              '[{"type":"openUrl","label":"Open","payload":"https://example.com"}]',
+        ));
+        expect(errors, isEmpty);
+      });
+
+      test('valid webhook action with https passes', () {
+        final errors = validateCardPushRequest(_valid(
+          actionsJson:
+              '[{"type":"webhook","label":"Notify","payload":"https://api.example.com/hook"}]',
+        ));
+        expect(errors, isEmpty);
+      });
+
+      test('valid webhook action with http passes', () {
+        final errors = validateCardPushRequest(_valid(
+          actionsJson:
+              '[{"type":"webhook","label":"Notify","payload":"http://api.example.com/hook"}]',
+        ));
+        expect(errors, isEmpty);
+      });
+
+      test('five actions at max passes', () {
+        final actions = List.generate(
+          5,
+          (i) => '{"type":"dismiss","label":"Action ${i + 1}"}',
+        ).join(',');
+        final errors = validateCardPushRequest(
+          _valid(actionsJson: '[$actions]'),
+        );
+        expect(errors, isEmpty);
+      });
+
+      test('actionsJson over 8192 bytes is rejected', () {
+        final bigLabel = 'a' * 8193;
+        final errors = validateCardPushRequest(
+          _valid(actionsJson: '"$bigLabel"'),
+        );
+        expect(errors.any((e) => e.contains('actionsJson')), isTrue);
+      });
+
+      test('actionsJson that is not a JSON array is rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(actionsJson: '{"type":"dismiss","label":"x"}'),
+        );
+        expect(errors.any((e) => e.contains('array')), isTrue);
+      });
+
+      test('actionsJson with invalid JSON is rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(actionsJson: '[not json'),
+        );
+        expect(errors.any((e) => e.toLowerCase().contains('json')), isTrue);
+      });
+
+      test('more than 5 actions is rejected', () {
+        final actions = List.generate(
+          6,
+          (i) => '{"type":"dismiss","label":"Action ${i + 1}"}',
+        ).join(',');
+        final errors = validateCardPushRequest(
+          _valid(actionsJson: '[$actions]'),
+        );
+        expect(errors.any((e) => e.contains('5')), isTrue);
+      });
+
+      test('action without type field is rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(actionsJson: '[{"label":"Go"}]'),
+        );
+        expect(errors.any((e) => e.contains('type')), isTrue);
+      });
+
+      test('action with unknown type is rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(actionsJson: '[{"type":"explode","label":"Boom"}]'),
+        );
+        expect(errors.any((e) => e.contains('type')), isTrue);
+      });
+
+      test('action with null label is rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(actionsJson: '[{"type":"dismiss"}]'),
+        );
+        expect(errors.any((e) => e.contains('label')), isTrue);
+      });
+
+      test('action with empty label is rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(actionsJson: '[{"type":"dismiss","label":"   "}]'),
+        );
+        expect(errors.any((e) => e.contains('label')), isTrue);
+      });
+
+      test('action with label over 80 chars is rejected', () {
+        final longLabel = 'a' * 81;
+        final errors = validateCardPushRequest(
+          _valid(actionsJson: '[{"type":"dismiss","label":"$longLabel"}]'),
+        );
+        expect(errors.any((e) => e.contains('label')), isTrue);
+      });
+
+      test('openUrl action with javascript: scheme is rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(
+            actionsJson:
+                '[{"type":"openUrl","label":"Go","payload":"javascript:alert(1)"}]',
+          ),
+        );
+        expect(errors.any((e) => e.contains('URL') || e.contains('url')), isTrue);
+      });
+
+      test('openUrl action with file:// scheme is rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(
+            actionsJson:
+                '[{"type":"openUrl","label":"Open","payload":"file:///etc/passwd"}]',
+          ),
+        );
+        expect(errors.any((e) => e.contains('URL') || e.contains('url')), isTrue);
+      });
+
+      test('webhook action with javascript: scheme is rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(
+            actionsJson:
+                '[{"type":"webhook","label":"Call","payload":"javascript:void(0)"}]',
+          ),
+        );
+        expect(errors.any((e) => e.contains('URL') || e.contains('url')), isTrue);
+      });
+
+      test('action is a non-object element is rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(actionsJson: '["dismiss"]'),
+        );
+        expect(errors.any((e) => e.contains('object')), isTrue);
       });
     });
   });

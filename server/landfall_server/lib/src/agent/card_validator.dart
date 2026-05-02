@@ -67,6 +67,69 @@ List<String> validateCardPushRequest(CardPushRequest request) {
     );
   }
 
+  // actionsJson (optional) — validated array of action objects
+  if (request.actionsJson != null) {
+    const maxActionsJsonBytes = 8192;
+    const maxActions = 5;
+    const maxLabelLength = 80;
+    const allowedTypes = {'dismiss', 'openUrl', 'webhook', 'openSettings'};
+    const allowedSchemes = {'https', 'http'};
+
+    if (request.actionsJson!.length > maxActionsJsonBytes) {
+      errors.add('actionsJson must be at most $maxActionsJsonBytes bytes.');
+    } else {
+      try {
+        final list = jsonDecode(request.actionsJson!);
+        if (list is! List) {
+          errors.add('actionsJson must be a JSON array.');
+        } else {
+          if (list.length > maxActions) {
+            errors.add(
+              'actionsJson must contain at most $maxActions actions.',
+            );
+          }
+          for (final item in list) {
+            if (item is! Map) {
+              errors.add('Each action must be a JSON object.');
+              break;
+            }
+            final type = item['type'] as String?;
+            if (type == null || !allowedTypes.contains(type)) {
+              errors.add(
+                'action.type must be one of: ${allowedTypes.join(", ")}.',
+              );
+              break;
+            }
+            final label = item['label'] as String?;
+            if (label == null || label.trim().isEmpty) {
+              errors.add('action.label must not be empty.');
+              break;
+            }
+            if (label.length > maxLabelLength) {
+              errors.add(
+                'action.label must be at most $maxLabelLength characters.',
+              );
+              break;
+            }
+            final payload = item['payload'] as String?;
+            if (payload != null &&
+                (type == 'openUrl' || type == 'webhook')) {
+              final uri = Uri.tryParse(payload);
+              if (uri == null || !allowedSchemes.contains(uri.scheme)) {
+                errors.add(
+                  'action.payload must be a valid https:// or http:// URL.',
+                );
+                break;
+              }
+            }
+          }
+        }
+      } on FormatException {
+        errors.add('actionsJson must be valid JSON.');
+      }
+    }
+  }
+
   // dataJson (optional) — must be a valid JSON object if provided
   if (request.dataJson != null) {
     if (request.dataJson!.length > _maxDataJsonLength) {
