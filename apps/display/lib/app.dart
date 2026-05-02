@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:landfall_client/landfall_client.dart';
+import 'package:landfall_client/landfall_client.dart' hide LandfallTheme;
 import 'package:landfall_shared/landfall_shared.dart';
 
 import 'package:display/src/app/app_config.dart';

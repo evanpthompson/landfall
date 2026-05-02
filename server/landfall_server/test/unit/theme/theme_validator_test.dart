@@ -87,7 +87,7 @@ moods:
       });
 
       test('3-digit hex color is valid', () {
-        final yaml = _minimal() + 'color:\n  accent: "#FFF"\n';
+        final yaml = '${_minimal()}color:\n  accent: "#FFF"\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isTrue);
       });
@@ -100,32 +100,27 @@ moods:
       });
 
       test('card.radius at boundary value 0 is valid', () {
-        final yaml = _minimal() +
-            'surface:\n  card:\n    radius: 0\n';
+        final yaml = '${_minimal()}surface:\n  card:\n    radius: 0\n';
         expect(ThemeValidator.validate(yaml).isValid, isTrue);
       });
 
       test('card.radius at boundary value 24 is valid', () {
-        final yaml = _minimal() +
-            'surface:\n  card:\n    radius: 24\n';
+        final yaml = '${_minimal()}surface:\n  card:\n    radius: 24\n';
         expect(ThemeValidator.validate(yaml).isValid, isTrue);
       });
 
       test('card.blur at boundary value 20 is valid', () {
-        final yaml = _minimal() +
-            'surface:\n  card:\n    blur: 20\n';
+        final yaml = '${_minimal()}surface:\n  card:\n    blur: 20\n';
         expect(ThemeValidator.validate(yaml).isValid, isTrue);
       });
 
       test('muted.opacity at boundary value 0.3 is valid', () {
-        final yaml =
-            _minimal() + 'moods:\n  muted:\n    opacity: 0.3\n';
+        final yaml = '${_minimal()}moods:\n  muted:\n    opacity: 0.3\n';
         expect(ThemeValidator.validate(yaml).isValid, isTrue);
       });
 
       test('muted.opacity at boundary value 0.8 is valid', () {
-        final yaml =
-            _minimal() + 'moods:\n  muted:\n    opacity: 0.8\n';
+        final yaml = '${_minimal()}moods:\n  muted:\n    opacity: 0.8\n';
         expect(ThemeValidator.validate(yaml).isValid, isTrue);
       });
     });
@@ -186,7 +181,7 @@ moods:
 
     group('color token validation', () {
       test('invalid hex color is an error', () {
-        final yaml = _minimal() + 'color:\n  accent: "GGGGGG"\n';
+        final yaml = '${_minimal()}color:\n  accent: "GGGGGG"\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
         expect(
@@ -194,20 +189,20 @@ moods:
       });
 
       test('hex without leading # is an error', () {
-        final yaml = _minimal() + 'color:\n  accent: "4A9EFF"\n';
+        final yaml = '${_minimal()}color:\n  accent: "4A9EFF"\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
       });
 
       test('valid rgba is accepted', () {
-        final yaml = _minimal() +
-            'surface:\n  card:\n    fill: "rgba(255, 255, 255, 0.05)"\n';
+        final yaml =
+            '${_minimal()}surface:\n  card:\n    fill: "rgba(255, 255, 255, 0.05)"\n';
         expect(ThemeValidator.validate(yaml).isValid, isTrue);
       });
 
       test('rgba with alpha > 1.0 is an error', () {
-        final yaml = _minimal() +
-            'surface:\n  card:\n    fill: "rgba(255, 255, 255, 1.5)"\n';
+        final yaml =
+            '${_minimal()}surface:\n  card:\n    fill: "rgba(255, 255, 255, 1.5)"\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
         expect(
@@ -216,8 +211,8 @@ moods:
       });
 
       test('rgba with channel > 255 is an error', () {
-        final yaml = _minimal() +
-            'surface:\n  card:\n    fill: "rgba(300, 0, 0, 0.5)"\n';
+        final yaml =
+            '${_minimal()}surface:\n  card:\n    fill: "rgba(300, 0, 0, 0.5)"\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
       });
@@ -225,8 +220,8 @@ moods:
 
     group('enum token validation', () {
       test('invalid background type is an error', () {
-        final yaml = _minimal() +
-            'surface:\n  background:\n    type: sparkle\n    value: "#000"\n';
+        final yaml =
+            '${_minimal()}surface:\n  background:\n    type: sparkle\n    value: "#000"\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
         expect(
@@ -236,7 +231,7 @@ moods:
       });
 
       test('invalid typography scale is an error', () {
-        final yaml = _minimal() + 'typography:\n  scale: huge\n';
+        final yaml = '${_minimal()}typography:\n  scale: huge\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
         expect(
@@ -245,7 +240,7 @@ moods:
       });
 
       test('invalid animation transition is an error', () {
-        final yaml = _minimal() + 'animation:\n  transition: warp\n';
+        final yaml = '${_minimal()}animation:\n  transition: warp\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
         expect(
@@ -255,8 +250,8 @@ moods:
       });
 
       test('invalid card border style is an error', () {
-        final yaml = _minimal() +
-            'surface:\n  card:\n    border:\n      style: dotted\n';
+        final yaml =
+            '${_minimal()}surface:\n  card:\n    border:\n      style: dotted\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
       });
@@ -264,7 +259,7 @@ moods:
 
     group('numeric range validation', () {
       test('card.radius above 24 is an error', () {
-        final yaml = _minimal() + 'surface:\n  card:\n    radius: 25\n';
+        final yaml = '${_minimal()}surface:\n  card:\n    radius: 25\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
         expect(
@@ -274,13 +269,13 @@ moods:
       });
 
       test('card.radius below 0 is an error', () {
-        final yaml = _minimal() + 'surface:\n  card:\n    radius: -1\n';
+        final yaml = '${_minimal()}surface:\n  card:\n    radius: -1\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
       });
 
       test('card.blur above 20 is an error', () {
-        final yaml = _minimal() + 'surface:\n  card:\n    blur: 21\n';
+        final yaml = '${_minimal()}surface:\n  card:\n    blur: 21\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
         expect(
@@ -290,15 +285,15 @@ moods:
       });
 
       test('card.border.width above 3.0 is an error', () {
-        final yaml = _minimal() +
-            'surface:\n  card:\n    border:\n      width: 3.1\n';
+        final yaml =
+            '${_minimal()}surface:\n  card:\n    border:\n      width: 3.1\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
       });
 
       test('heading.weight not a multiple of 100 is an error', () {
         final yaml =
-            _minimal() + 'typography:\n  heading:\n    weight: 550\n';
+            '${_minimal()}typography:\n  heading:\n    weight: 550\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
         expect(
@@ -309,21 +304,21 @@ moods:
 
       test('heading.weight below 300 is an error', () {
         final yaml =
-            _minimal() + 'typography:\n  heading:\n    weight: 200\n';
+            '${_minimal()}typography:\n  heading:\n    weight: 200\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
       });
 
       test('heading.weight above 800 is an error', () {
         final yaml =
-            _minimal() + 'typography:\n  heading:\n    weight: 900\n';
+            '${_minimal()}typography:\n  heading:\n    weight: 900\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
       });
 
       test('muted.opacity below 0.3 is an error', () {
         final yaml =
-            _minimal() + 'moods:\n  muted:\n    opacity: 0.29\n';
+            '${_minimal()}moods:\n  muted:\n    opacity: 0.29\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
         expect(
@@ -334,14 +329,14 @@ moods:
 
       test('muted.opacity above 0.8 is an error', () {
         final yaml =
-            _minimal() + 'moods:\n  muted:\n    opacity: 0.81\n';
+            '${_minimal()}moods:\n  muted:\n    opacity: 0.81\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
       });
 
       test('urgent.scale below 0.95 is an error', () {
         final yaml =
-            _minimal() + 'moods:\n  urgent:\n    scale: 0.94\n';
+            '${_minimal()}moods:\n  urgent:\n    scale: 0.94\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
         expect(
@@ -352,7 +347,7 @@ moods:
 
       test('urgent.scale above 1.10 is an error', () {
         final yaml =
-            _minimal() + 'moods:\n  urgent:\n    scale: 1.11\n';
+            '${_minimal()}moods:\n  urgent:\n    scale: 1.11\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isFalse);
       });
@@ -360,7 +355,7 @@ moods:
 
     group('derived value resolution', () {
       test('resolvedTokens fills accentMuted when not set', () {
-        final yaml = _minimal() + 'color:\n  accent: "#4A9EFF"\n';
+        final yaml = '${_minimal()}color:\n  accent: "#4A9EFF"\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isTrue);
         expect(result.resolvedTokens!['color.accentMuted'], isNotNull);
@@ -368,14 +363,14 @@ moods:
 
       test('resolvedTokens fills divider when not set', () {
         final yaml =
-            _minimal() + 'color:\n  text:\n    primary: "#FFFFFF"\n';
+            '${_minimal()}color:\n  text:\n    primary: "#FFFFFF"\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isTrue);
         expect(result.resolvedTokens!['color.divider'], isNotNull);
       });
 
       test('resolvedTokens fills agent.border when not set', () {
-        final yaml = _minimal() + 'color:\n  accent: "#4A9EFF"\n';
+        final yaml = '${_minimal()}color:\n  accent: "#4A9EFF"\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isTrue);
         expect(result.resolvedTokens!['color.agent.border'], isNotNull);
@@ -383,8 +378,8 @@ moods:
 
       test('explicit accentMuted overrides derived value', () {
         const explicit = 'rgba(100, 100, 100, 0.5)';
-        final yaml = _minimal() +
-            'color:\n  accent: "#4A9EFF"\n  accentMuted: "$explicit"\n';
+        final yaml =
+            '${_minimal()}color:\n  accent: "#4A9EFF"\n  accentMuted: "$explicit"\n';
         final result = ThemeValidator.validate(yaml);
         expect(result.isValid, isTrue);
         expect(result.resolvedTokens!['color.accentMuted'], equals(explicit));
