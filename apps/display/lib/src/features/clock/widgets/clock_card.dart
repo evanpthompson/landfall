@@ -35,14 +35,14 @@ class ClockCard extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 mainAxisSize: MainAxisSize.min,
@@ -52,10 +52,10 @@ class ClockCard extends StatelessWidget {
                   Text(ss, style: LandfallTypography.timeSeconds),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(date, style: LandfallTypography.dateLabel),
-            ],
-          ),
+            ),
+            const SizedBox(height: 4),
+            Text(date, style: LandfallTypography.dateLabel),
+          ],
         ),
       ),
     );
