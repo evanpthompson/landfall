@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import 'package:display/src/features/cards/cubit/card_cubit.dart';
+import 'url_safety.dart';
 
 /// Renders a single [CardAction] as a focusable button.
 ///
@@ -32,7 +33,7 @@ class CardActionButton extends StatelessWidget {
 
       case CardActionType.openUrl:
         final url = action.payload;
-        if (url != null) {
+        if (url != null && isAllowedBrowserUrl(url)) {
           final uri = Uri.tryParse(url);
           if (uri != null) await launchUrl(uri);
         }
@@ -41,7 +42,7 @@ class CardActionButton extends StatelessWidget {
         // Fire-and-forget HTTP POST. Errors are silent — the agent's
         // server-side handler is responsible for retries.
         final url = action.payload;
-        if (url != null) _fireWebhook(url);
+        if (url != null && isAllowedWebhookUrl(url)) _fireWebhook(url);
 
       case CardActionType.openSettings:
         // Opening settings is a navigation concern handled by the parent

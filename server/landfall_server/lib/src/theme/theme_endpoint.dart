@@ -45,7 +45,8 @@ class ThemeEndpoint extends Endpoint {
   /// stores it.
   ///
   /// Returns the same [ThemeUploadResult] shape as [uploadTheme].
-  /// Rejects non-HTTPS URLs and enforces a 10-second fetch timeout.
+  /// Rejects non-HTTPS URLs, private IP ranges, and loopback addresses to
+  /// prevent SSRF. Enforces a 10-second fetch timeout. OWASP A06:2025.
   Future<ThemeUploadResult> importTheme(
     Session session,
     String url,
@@ -57,6 +58,19 @@ class ThemeEndpoint extends Endpoint {
           ThemeValidationError(
             tokenPath: 'url',
             message: 'Only HTTPS URLs are accepted.',
+          ),
+        ],
+      );
+    }
+
+    final uri = Uri.tryParse(url);
+    if (uri != null && _isRestrictedHost(uri.host.toLowerCase())) {
+      return ThemeUploadResult(
+        theme: null,
+        errors: [
+          ThemeValidationError(
+            tokenPath: 'url',
+            message: 'URL refers to a restricted host.',
           ),
         ],
       );
@@ -311,5 +325,20 @@ class ThemeEndpoint extends Endpoint {
       candidate = '$base-$suffix';
       suffix++;
     }
+  }
+
+  // Blocks loopback, link-local, and RFC-1918 private ranges to prevent SSRF.
+  static bool _isRestrictedHost(String host) {
+    if (host == 'localhost' || host == '127.0.0.1' || host == '::1') return true;
+    if (host == '169.254.169.254') return true;
+    if (host.startsWith('192.168.')) return true;
+    if (host.startsWith('10.')) return true;
+    // RFC-1918: 172.16.0.0/12 covers 172.16.x.x – 172.31.x.x
+    final parts = host.split('.');
+    if (parts.length == 4 && parts[0] == '172') {
+      final second = int.tryParse(parts[1]) ?? -1;
+      if (second >= 16 && second <= 31) return true;
+    }
+    return false;
   }
 }

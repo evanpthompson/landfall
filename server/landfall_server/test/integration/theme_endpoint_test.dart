@@ -247,5 +247,79 @@ void main() {
         );
       });
     });
+
+    group('importTheme URL validation (SSRF protection)', () {
+      // Each test asserts the error message explicitly identifies the URL as
+      // restricted. This distinguishes our SSRF check from a generic network
+      // failure — if the check were missing, the server would attempt the
+      // request and the message would be a SocketException, not our sentinel.
+      bool _isSsrfError(ThemeUploadResult result) =>
+          result.theme == null &&
+          result.errors.any((e) => e.message.toLowerCase().contains('restricted'));
+
+      test('rejects non-HTTPS URL', () async {
+        final result = await endpoints.theme.importTheme(
+          sessionBuilder,
+          'http://example.com/theme.yaml',
+        );
+        expect(result.theme, isNull);
+        expect(result.errors, isNotEmpty);
+        // non-HTTPS already rejected by existing check — no sentinel needed here
+      });
+
+      test('rejects localhost URL with SSRF sentinel message', () async {
+        final result = await endpoints.theme.importTheme(
+          sessionBuilder,
+          'https://localhost/theme.yaml',
+        );
+        expect(_isSsrfError(result), isTrue,
+            reason: 'expected SSRF check to fire, got: ${result.errors}');
+      });
+
+      test('rejects 127.0.0.1 with SSRF sentinel message', () async {
+        final result = await endpoints.theme.importTheme(
+          sessionBuilder,
+          'https://127.0.0.1/theme.yaml',
+        );
+        expect(_isSsrfError(result), isTrue,
+            reason: 'expected SSRF check to fire, got: ${result.errors}');
+      });
+
+      test('rejects 169.254.169.254 (cloud metadata) with SSRF sentinel', () async {
+        final result = await endpoints.theme.importTheme(
+          sessionBuilder,
+          'https://169.254.169.254/latest/meta-data/',
+        );
+        expect(_isSsrfError(result), isTrue,
+            reason: 'expected SSRF check to fire, got: ${result.errors}');
+      });
+
+      test('rejects 192.168.x.x with SSRF sentinel message', () async {
+        final result = await endpoints.theme.importTheme(
+          sessionBuilder,
+          'https://192.168.1.100/theme.yaml',
+        );
+        expect(_isSsrfError(result), isTrue,
+            reason: 'expected SSRF check to fire, got: ${result.errors}');
+      });
+
+      test('rejects 10.x.x.x with SSRF sentinel message', () async {
+        final result = await endpoints.theme.importTheme(
+          sessionBuilder,
+          'https://10.0.0.1/theme.yaml',
+        );
+        expect(_isSsrfError(result), isTrue,
+            reason: 'expected SSRF check to fire, got: ${result.errors}');
+      });
+
+      test('rejects 172.16.x.x with SSRF sentinel message', () async {
+        final result = await endpoints.theme.importTheme(
+          sessionBuilder,
+          'https://172.16.0.1/theme.yaml',
+        );
+        expect(_isSsrfError(result), isTrue,
+            reason: 'expected SSRF check to fire, got: ${result.errors}');
+      });
+    });
   });
 }
