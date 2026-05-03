@@ -1154,5 +1154,115 @@ moods:
 
 ---
 
+### Colorful Pop
+
+Y2K maximalism: the visual language of Lisa Frank folders, Lizzie McGuire outfits, TRL countdowns, and the default Delia's catalog color story. Bubblegum pink, electric cyan, neon lime — every color present and accounted for, none of them neutral. Rounded everything. Drop shadows that prove you have depth. The design philosophy of the early 2000s was that more was more, and more was also not quite enough.
+
+References: the Lizzie McGuire color palette (hot pink `#e63466`, cyan `#00d4ff`, deep purple `#6d397b`), Y2K web design's candy brights, and Lisa Frank's neon-on-pastel approach to contrast.
+
+```yaml
+version: "1.0"
+
+meta:
+  name: "Colorful Pop"
+  author: "landfall"
+  description: "Bubblegum pink, electric cyan, neon lime. Y2K maximalism — Lisa Frank, Lizzie McGuire, and TRL in one dashboard."
+  tags: [light, candy, 2000s, y2k, pop, vibrant, maximalist]
+  license: "MIT"
+
+surface:
+  background:
+    type: solid
+    # Pale bubblegum: almost white, but the faintest pink warmth establishes the
+    # palette before a single card is drawn. The Y2K background was never neutral.
+    value: "#FFF0F8"
+  card:
+    # Clean white panels — the saturated borders do the chromatic heavy lifting
+    fill: "rgba(255, 255, 255, 0.88)"
+    border:
+      # Electric cyan: the complementary neon to the hot-pink accent family.
+      # Reference: the `#00d4ff` in the Lizzie McGuire palette, every mid-2000s hyperlink,
+      # the default color of every progress bar that ever loaded a Flash game.
+      color: "rgba(0, 187, 255, 0.72)"
+      # 2dp: thick enough to read as a color statement across a room
+      width: 2
+      style: solid
+    # High border radius: the bubbly, pill-like geometry of Y2K UI design.
+    # Rounded corners were a statement in the era of Win98's sharp rectangles.
+    radius: 16
+    blur: 0
+    # The early 2000s loved drop shadows — they proved you had depth, and depth
+    # was considered a design achievement
+    shadow: medium
+
+typography:
+  # DM Sans: open, friendly, approachable. The closest font in the registry
+  # to the rounded humanist type of early 2000s pop design — the Nickelodeon
+  # logo font energy without the trademark.
+  fontFamily: "DM Sans"
+  scale: comfortable
+  heading:
+    weight: 700
+  body:
+    weight: 400
+  letterSpacing: normal
+  timeDisplay:
+    # Righteous: rounded retro with exactly the playful energy of the era.
+    # Think: the Nickelodeon clock, the TRL countdown, the Disney Channel bug.
+    fontFamily: "Righteous"
+    weight: 400
+
+color:
+  # Hot magenta: the era's most iconic single color. Spice Girls. Destiny's Child
+  # music videos. Every third item in a Delia's catalog. The default hyperlink
+  # before anyone had opinions about hyperlinks.
+  accent: "#FF0099"
+  text:
+    # Deep purple-black rather than pure black: black reads as severe on this
+    # palette. Purple-black keeps the warmth of the overall scheme.
+    primary: "#220033"
+    secondary: "#7B2D8B"    # Mid purple: warm, not corporate
+    tertiary: "#C490D1"     # Soft lavender: timestamps, secondary labels
+  divider: "rgba(255, 0, 153, 0.18)"
+  agent:
+    # Agent cards get the cyan border to distinguish origin while staying in palette
+    border: "rgba(0, 187, 255, 0.78)"
+  success: "#00CC44"    # Bright green: readable on the pale background, clearly positive
+  warning: "#FF6600"    # Burnt orange: every early-web warning bar, every "your trial expires" notice
+  alert: "#FF0044"      # Vivid red that harmonizes with the hot-pink accent family
+
+animation:
+  # Scale transitions: "pop-in" is the correct Y2K animation vocabulary.
+  # Elements appeared. They did not fade — they arrived.
+  transition: scale
+  speed: fast
+  cardEntry: scale
+  tickerScroll: fast
+
+moods:
+  urgent:
+    borderColor: "#FF0044"
+    fillColor: "rgba(255, 0, 68, 0.08)"
+    pulse: true
+    scale: 1.03
+    animation: pulse
+  celebratory:
+    # Confetti is literally what this theme was built for
+    borderColor: "#FF0099"
+    fillColor: "rgba(255, 0, 153, 0.08)"
+    pulse: false
+    scale: 1.02
+    animation: confetti
+  success:
+    # Lime-adjacent green: reads as a bright celebration on this light palette
+    borderColor: "#00CC44"
+    fillColor: "rgba(0, 204, 68, 0.08)"
+    animation: none
+  muted:
+    opacity: 0.45
+```
+
+---
+
 *ThemeSchema v1.0 — April 2026*
 *Maintained by the Landfall project. Submit corrections and additions via GitHub issue or PR.*
