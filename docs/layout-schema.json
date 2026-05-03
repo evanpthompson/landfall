@@ -1,0 +1,383 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "https://landfall.app/schemas/layout-schema-v1.0.json",
+  "title": "Landfall LayoutSchema v1.0",
+  "description": "Machine-readable JSON Schema for Landfall layout YAML/JSON files. Defines card positions, visibility, lock state, and per-card-type displayConfig on a Landfall display.",
+  "type": "object",
+  "required": ["version", "cards"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version. Must be exactly the string \"1.0\"."
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Display name for this layout document. Max 80 characters."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Optional description. Max 300 characters."
+        },
+        "profileSlug": {
+          "type": "string",
+          "description": "If set, the layout is applied to this named profile. Must match an existing profile slug. If omitted, applies to the currently active profile."
+        }
+      }
+    },
+    "grid": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Grid dimensions. If omitted, the display's current dimensions are preserved. Changing dimensions reflows all cards; cards that overflow are clamped to fit.",
+      "properties": {
+        "columns": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 16,
+          "description": "Number of grid columns. Default: 12."
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 6,
+          "maximum": 12,
+          "description": "Number of grid rows. Default: 8."
+        }
+      }
+    },
+    "cards": {
+      "type": "array",
+      "minItems": 1,
+      "description": "List of card configuration entries. At least one entry required. Empty arrays are rejected. Each source may appear at most once.",
+      "items": {
+        "$ref": "#/$defs/cardEntry"
+      }
+    }
+  },
+  "$defs": {
+    "cardEntry": {
+      "type": "object",
+      "required": ["source"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Source identifier for the card. System sources: system.clock, system.weather.current, system.weather.forecast, system.calendar, system.photos. Feed: agent.feed. Agent-pushed cards use agent.<name> form but cannot be repositioned via LayoutSchema."
+        },
+        "slot": {
+          "$ref": "#/$defs/slot"
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "Card visibility. If omitted, current state is preserved."
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "When true, the card cannot be moved or resized in the drag-and-drop editor. If omitted, current state is preserved."
+        },
+        "mood": {
+          "type": "string",
+          "enum": ["normal", "urgent", "success", "celebratory", "muted"],
+          "description": "System card mood override. Only meaningful for system cards — agent-pushed cards carry their mood from the push payload. If omitted, current state is preserved."
+        },
+        "displayConfig": {
+          "type": "object",
+          "description": "Card-type-specific display configuration. Unknown keys produce a warning but are not rejected. See displayConfig definitions per source type.",
+          "additionalProperties": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "source": { "const": "system.clock" } },
+            "required": ["source"]
+          },
+          "then": {
+            "properties": {
+              "displayConfig": { "$ref": "#/$defs/displayConfig.clock" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "source": { "const": "system.weather.current" } },
+            "required": ["source"]
+          },
+          "then": {
+            "properties": {
+              "displayConfig": { "$ref": "#/$defs/displayConfig.weatherCurrent" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "source": { "const": "system.weather.forecast" } },
+            "required": ["source"]
+          },
+          "then": {
+            "properties": {
+              "displayConfig": { "$ref": "#/$defs/displayConfig.weatherForecast" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "source": { "const": "system.calendar" } },
+            "required": ["source"]
+          },
+          "then": {
+            "properties": {
+              "displayConfig": { "$ref": "#/$defs/displayConfig.calendar" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "source": { "const": "system.photos" } },
+            "required": ["source"]
+          },
+          "then": {
+            "properties": {
+              "displayConfig": { "$ref": "#/$defs/displayConfig.photos" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "source": { "const": "agent.feed" } },
+            "required": ["source"]
+          },
+          "then": {
+            "properties": {
+              "displayConfig": { "$ref": "#/$defs/displayConfig.agentFeed" }
+            }
+          }
+        }
+      ]
+    },
+    "slot": {
+      "type": "object",
+      "required": ["column", "row", "columnSpan", "rowSpan"],
+      "additionalProperties": false,
+      "description": "Grid position and span for the card. If omitted, the card's current slot is preserved.",
+      "properties": {
+        "column": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-indexed column position. Must be within grid bounds."
+        },
+        "row": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-indexed row position. Must be within grid bounds."
+        },
+        "columnSpan": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Card width in grid columns. column + columnSpan must not exceed the grid column count."
+        },
+        "rowSpan": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Card height in grid rows. row + rowSpan must not exceed the grid row count."
+        }
+      }
+    },
+    "displayConfig.clock": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "displayConfig for system.clock.",
+      "properties": {
+        "showSeconds": {
+          "type": "boolean",
+          "description": "Whether to display the seconds digit. Default: false."
+        },
+        "showDate": {
+          "type": "boolean",
+          "description": "Whether to display the date line below the time. Default: true."
+        },
+        "showDayOfWeek": {
+          "type": "boolean",
+          "description": "Whether to include the day of week in the date line. Only meaningful if showDate is true. Default: true."
+        },
+        "use24Hour": {
+          "type": "boolean",
+          "description": "24-hour clock format. When false, displays AM/PM suffix. Default: false."
+        },
+        "variant": {
+          "type": "string",
+          "enum": ["large", "compact"],
+          "description": "large = maximum available font size. compact = reduced size, leaving room for additional content. Default: large."
+        }
+      }
+    },
+    "displayConfig.weatherCurrent": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "displayConfig for system.weather.current.",
+      "properties": {
+        "units": {
+          "type": "string",
+          "enum": ["imperial", "metric"],
+          "description": "Temperature and wind speed units. imperial = °F/mph, metric = °C/km/h. Default: imperial."
+        },
+        "showFeelsLike": {
+          "type": "boolean",
+          "description": "Display the feels-like temperature below the actual temperature. Default: true."
+        },
+        "showWind": {
+          "type": "boolean",
+          "description": "Display wind speed and direction. Default: false."
+        },
+        "showHumidity": {
+          "type": "boolean",
+          "description": "Display humidity percentage. Default: false."
+        },
+        "showConditionLabel": {
+          "type": "boolean",
+          "description": "Display the text condition label (e.g. \"Partly Cloudy\"). When false, only the icon is shown. Default: true."
+        },
+        "variant": {
+          "type": "string",
+          "enum": ["standard", "minimal"],
+          "description": "minimal shows only temperature and condition icon. Default: standard."
+        }
+      }
+    },
+    "displayConfig.weatherForecast": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "displayConfig for system.weather.forecast.",
+      "properties": {
+        "units": {
+          "type": "string",
+          "enum": ["imperial", "metric"],
+          "description": "Temperature units. Should match system.weather.current if both are shown. Default: imperial."
+        },
+        "days": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 7,
+          "description": "Number of forecast days to display. Cards narrower than 8 columns should use 3. Default: 5."
+        },
+        "showHighLow": {
+          "type": "boolean",
+          "description": "Show daily high and low temperatures per tile. When false, shows only the high. Default: true."
+        },
+        "showPrecipitation": {
+          "type": "boolean",
+          "description": "Show precipitation probability per tile. Default: false."
+        }
+      }
+    },
+    "displayConfig.calendar": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "displayConfig for system.calendar.",
+      "properties": {
+        "daysAhead": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "description": "How many days of upcoming events to include. Default: 7."
+        },
+        "maxEvents": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Maximum number of events to show, ordered by start time ascending. Default: 8."
+        },
+        "showTime": {
+          "type": "boolean",
+          "description": "Show event start time. All-day events always show \"All day\". Default: true."
+        },
+        "showCalendarColor": {
+          "type": "boolean",
+          "description": "Show the calendar feed's color dot next to each event. Default: true."
+        },
+        "showLocation": {
+          "type": "boolean",
+          "description": "Show event location if present. Recommended only for cards with rowSpan >= 3. Default: false."
+        },
+        "hideAllDay": {
+          "type": "boolean",
+          "description": "When true, all-day events are filtered out of the list. Default: false."
+        },
+        "variant": {
+          "type": "string",
+          "enum": ["list", "compact"],
+          "description": "compact reduces line height and removes the color dot to fit more events. Default: list."
+        }
+      }
+    },
+    "displayConfig.photos": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "displayConfig for system.photos.",
+      "properties": {
+        "intervalSeconds": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 300,
+          "description": "How long each photo is displayed before transitioning. Default: 30."
+        },
+        "transition": {
+          "type": "string",
+          "enum": ["crossfade", "slide", "fade"],
+          "description": "Photo transition animation. Default: crossfade."
+        },
+        "transitionDurationMs": {
+          "type": "integer",
+          "minimum": 200,
+          "maximum": 2000,
+          "description": "Transition animation duration in milliseconds. Default: 800."
+        },
+        "showCaption": {
+          "type": "boolean",
+          "description": "Show photo filename or caption if available. Default: false."
+        },
+        "fit": {
+          "type": "string",
+          "enum": ["cover", "contain"],
+          "description": "cover fills the slot (may crop). contain shows the full image (may letterbox). Default: cover."
+        },
+        "randomOrder": {
+          "type": "boolean",
+          "description": "When true, photos cycle in random order. When false, cycles in source folder order. Default: true."
+        }
+      }
+    },
+    "displayConfig.agentFeed": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "displayConfig for agent.feed.",
+      "properties": {
+        "maxCards": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Maximum number of agent cards in the panel. Null means no cap (profile's maxAgentCards applies). Default: null."
+        },
+        "showSource": {
+          "type": "boolean",
+          "description": "Show the source label below each card's title. Default: true."
+        },
+        "showTimestamp": {
+          "type": "boolean",
+          "description": "Show the card's push timestamp. Default: true."
+        },
+        "cardSpacing": {
+          "type": "string",
+          "enum": ["compact", "normal", "comfortable"],
+          "description": "Vertical spacing between cards in the feed. Default: normal."
+        }
+      }
+    }
+  }
+}

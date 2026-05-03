@@ -1,0 +1,442 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "https://landfall.app/schemas/theme-schema-v1.0.json",
+  "title": "Landfall ThemeSchema v1.0",
+  "description": "Machine-readable JSON Schema for Landfall theme YAML/JSON files. Mirrors the validation rules enforced by ThemeValidator.validate().",
+  "type": "object",
+  "required": ["version", "meta"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version. Must be exactly the string \"1.0\"."
+    },
+    "sha256": {
+      "type": "string",
+      "description": "SHA-256 of the file content with this line stripped. Required when distributing themes via URL (A08 integrity check). Computed as: sha256(file_content_without_sha256_line).",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "meta": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60,
+          "description": "Display name for this theme. Max 60 characters."
+        },
+        "author": {
+          "type": "string",
+          "description": "Author handle or name."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "One or two sentences describing the theme. Max 200 characters."
+        },
+        "previewUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Absolute HTTPS URL to a 1920x1080 PNG preview image."
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "String tags for marketplace filtering."
+        },
+        "license": {
+          "type": "string",
+          "description": "SPDX license identifier (e.g. \"MIT\", \"Apache-2.0\") or the string \"proprietary\"."
+        }
+      }
+    },
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "background": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["solid", "gradient", "image", "blur"],
+              "description": "Background rendering mode. \"image\" requires a Pro license on the display."
+            },
+            "value": {
+              "type": "string",
+              "description": "For solid: 3 or 6-digit hex (e.g. \"#0D0D0F\"). For gradient: JSON-encoded stop array. For image: absolute HTTPS URL. For blur: integer string representing blur radius in px."
+            },
+            "overlay": {
+              "$ref": "#/$defs/rgba",
+              "description": "Optional rgba color drawn on top of image/gradient backgrounds to ensure card legibility."
+            }
+          }
+        },
+        "card": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "fill": {
+              "$ref": "#/$defs/rgba",
+              "description": "Card body background color. Default: rgba(255,255,255,0.05)."
+            },
+            "border": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "color": {
+                  "$ref": "#/$defs/rgba",
+                  "description": "Card border color. Default: rgba(255,255,255,0.1)."
+                },
+                "width": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "maximum": 3.0,
+                  "description": "Border width in dp. Default: 1.0."
+                },
+                "style": {
+                  "type": "string",
+                  "enum": ["solid", "dashed", "none"],
+                  "description": "Border rendering style. Default: solid."
+                }
+              }
+            },
+            "radius": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 24,
+              "description": "Corner radius in dp. 0 = square corners. Default: 8."
+            },
+            "blur": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20,
+              "description": "Backdrop blur in px behind the card fill. Creates frosted glass effect. Default: 0."
+            },
+            "shadow": {
+              "type": "string",
+              "enum": ["none", "subtle", "medium", "strong"],
+              "description": "Drop shadow beneath cards. Default: none."
+            }
+          }
+        }
+      }
+    },
+    "typography": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fontFamily": {
+          "$ref": "#/$defs/fontRegistryName",
+          "description": "Base font family. Must match a name from the Landfall Font Registry. Default: \"System\"."
+        },
+        "scale": {
+          "type": "string",
+          "enum": ["compact", "comfortable", "display"],
+          "description": "Text size multiplier. compact = -15%, comfortable = baseline, display = +20%. Default: comfortable."
+        },
+        "heading": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "weight": {
+              "type": "integer",
+              "minimum": 300,
+              "maximum": 800,
+              "multipleOf": 100,
+              "description": "Font weight for card titles and section headers. Must be a multiple of 100. Default: 600."
+            }
+          }
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "weight": {
+              "type": "integer",
+              "minimum": 300,
+              "maximum": 600,
+              "multipleOf": 100,
+              "description": "Font weight for card body text and secondary content. Must be a multiple of 100. Default: 400."
+            }
+          }
+        },
+        "letterSpacing": {
+          "type": "string",
+          "enum": ["tight", "normal", "wide"],
+          "description": "Letter spacing: tight = -0.5px, normal = 0, wide = +1.0px at base scale. Default: normal."
+        },
+        "timeDisplay": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "fontFamily": {
+              "$ref": "#/$defs/fontRegistryName",
+              "description": "Clock widget font family override. Inherits base fontFamily if not set."
+            },
+            "weight": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 900,
+              "multipleOf": 100,
+              "description": "Clock widget font weight. Must be a multiple of 100. Default: 200."
+            }
+          }
+        }
+      }
+    },
+    "color": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accent": {
+          "$ref": "#/$defs/hex",
+          "description": "Primary interactive and highlight color. Default: #4A9EFF."
+        },
+        "accentMuted": {
+          "$ref": "#/$defs/rgba",
+          "description": "Softer version of accent. Derived from accent at 0.2 alpha if not set."
+        },
+        "text": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "primary": {
+              "$ref": "#/$defs/hex",
+              "description": "Primary text color for titles and most prominent text. Default: #FFFFFF."
+            },
+            "secondary": {
+              "$ref": "#/$defs/rgba",
+              "description": "Supporting text color for subtitles and secondary data. Default: rgba(255,255,255,0.6)."
+            },
+            "tertiary": {
+              "$ref": "#/$defs/rgba",
+              "description": "Caption-level text color for timestamps and least-prominent text. Default: rgba(255,255,255,0.35)."
+            }
+          }
+        },
+        "divider": {
+          "$ref": "#/$defs/rgba",
+          "description": "Separator color for list items and grid lines. Derived from text.primary at 0.1 alpha if not set."
+        },
+        "agent": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "border": {
+              "$ref": "#/$defs/rgba",
+              "description": "Border color for agent-pushed cards. Derived from accent at 0.3 alpha if not set."
+            }
+          }
+        },
+        "success": {
+          "$ref": "#/$defs/hex",
+          "description": "Positive semantic color used in success mood rendering. Default: #34C759."
+        },
+        "warning": {
+          "$ref": "#/$defs/hex",
+          "description": "Warning semantic color used in system status indicators. Default: #FF9F0A."
+        },
+        "alert": {
+          "$ref": "#/$defs/hex",
+          "description": "Error and alert semantic color used in urgent mood rendering. Default: #FF3B30."
+        }
+      }
+    },
+    "animation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "transition": {
+          "type": "string",
+          "enum": ["instant", "fade", "slide", "scale"],
+          "description": "How content within a card transitions on data refresh. Default: fade."
+        },
+        "speed": {
+          "type": "string",
+          "enum": ["fast", "normal", "relaxed"],
+          "description": "Animation duration multiplier: fast = 150ms, normal = 300ms, relaxed = 500ms. Default: normal."
+        },
+        "cardEntry": {
+          "type": "string",
+          "enum": ["fade", "slide", "scale", "none"],
+          "description": "How new cards enter the grid when a layout change occurs. Default: fade."
+        },
+        "tickerScroll": {
+          "type": "string",
+          "enum": ["slow", "normal", "fast"],
+          "description": "Scroll speed for the ghost ticker strip. Default: normal."
+        }
+      }
+    },
+    "moods": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-mood visual treatment tokens. Every token is optional; unset tokens fall back to documented defaults.",
+      "properties": {
+        "urgent": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Applied to cards pushed with mood: \"urgent\". Represents time-sensitive or problem-state content.",
+          "properties": {
+            "borderColor": {
+              "$ref": "#/$defs/rgba",
+              "description": "Default: rgba(255,59,48,0.8)."
+            },
+            "fillColor": {
+              "$ref": "#/$defs/rgba",
+              "description": "Default: rgba(255,59,48,0.1)."
+            },
+            "pulse": {
+              "type": "boolean",
+              "description": "When true, the card border animates with a slow pulse. Default: true."
+            },
+            "scale": {
+              "type": "number",
+              "minimum": 0.95,
+              "maximum": 1.10,
+              "description": "Card scale relative to its slot. Default: 1.01."
+            },
+            "animation": {
+              "type": "string",
+              "enum": ["pulse", "none"],
+              "description": "Mood-specific animation. Default: pulse."
+            }
+          }
+        },
+        "celebratory": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Applied to cards pushed with mood: \"celebratory\". Represents milestones, achievements, high-energy positive events.",
+          "properties": {
+            "borderColor": {
+              "$ref": "#/$defs/rgba",
+              "description": "Default: rgba(52,199,89,0.6)."
+            },
+            "fillColor": {
+              "$ref": "#/$defs/rgba",
+              "description": "Default: rgba(52,199,89,0.08)."
+            },
+            "pulse": {
+              "type": "boolean",
+              "description": "Default: false."
+            },
+            "scale": {
+              "type": "number",
+              "minimum": 0.95,
+              "maximum": 1.10,
+              "description": "Default: 1.0."
+            },
+            "animation": {
+              "type": "string",
+              "enum": ["glow", "confetti", "scale", "none"],
+              "description": "Default: glow."
+            }
+          }
+        },
+        "success": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Applied to cards pushed with mood: \"success\". Represents positive outcomes and completed goals. Lower intensity than celebratory.",
+          "properties": {
+            "borderColor": {
+              "$ref": "#/$defs/rgba",
+              "description": "Default: rgba(52,199,89,0.5)."
+            },
+            "fillColor": {
+              "$ref": "#/$defs/rgba",
+              "description": "Default: rgba(52,199,89,0.06)."
+            },
+            "pulse": {
+              "type": "boolean",
+              "description": "Default: false."
+            },
+            "scale": {
+              "type": "number",
+              "minimum": 0.95,
+              "maximum": 1.10,
+              "description": "Default: 1.0."
+            },
+            "animation": {
+              "type": "string",
+              "enum": ["none"],
+              "description": "Default: none."
+            }
+          }
+        },
+        "muted": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Applied to cards pushed with mood: \"muted\". Represents low-priority or background-awareness content.",
+          "properties": {
+            "borderColor": {
+              "$ref": "#/$defs/rgba",
+              "description": "Default: inherits surface.card.border.color."
+            },
+            "fillColor": {
+              "$ref": "#/$defs/rgba",
+              "description": "Default: inherits surface.card.fill."
+            },
+            "pulse": {
+              "type": "boolean",
+              "description": "Default: false."
+            },
+            "scale": {
+              "type": "number",
+              "minimum": 0.95,
+              "maximum": 1.10,
+              "description": "Default: 1.0."
+            },
+            "animation": {
+              "type": "string",
+              "enum": ["none"],
+              "description": "Default: none."
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0.3,
+              "maximum": 0.8,
+              "description": "Opacity applied to the entire card widget. Do not set below 0.3 — content becomes unreadable at TV viewing distances. Default: 0.5."
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "hex": {
+      "type": "string",
+      "pattern": "^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$",
+      "description": "3 or 6-digit hex color string with leading #. Example: \"#4A9EFF\" or \"#FFF\"."
+    },
+    "rgba": {
+      "type": "string",
+      "pattern": "^rgba\\(\\s*([01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\\s*,\\s*([01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\\s*,\\s*([01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\\s*,\\s*(0(\\.\\d+)?|1(\\.0+)?)\\s*\\)$",
+      "description": "CSS rgba color string. r/g/b are 0-255, alpha is 0.0-1.0. Example: \"rgba(74, 158, 255, 0.3)\"."
+    },
+    "fontRegistryName": {
+      "type": "string",
+      "enum": [
+        "System",
+        "Inter",
+        "DM Sans",
+        "Outfit",
+        "Space Grotesk",
+        "Lexend",
+        "Syne",
+        "Playfair Display",
+        "Lora",
+        "JetBrains Mono",
+        "Space Mono",
+        "Orbitron",
+        "Bebas Neue",
+        "Righteous"
+      ],
+      "description": "A font name from the Landfall Font Registry. Using an unrecognized name produces a validation warning and falls back to \"System\"."
+    }
+  }
+}
