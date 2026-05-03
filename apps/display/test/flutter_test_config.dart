@@ -22,9 +22,9 @@ class _ToleranceGoldenComparator extends GoldenFileComparator {
   Future<bool> compare(Uint8List imageBytes, Uri golden) async {
     try {
       return await _delegate.compare(imageBytes, golden);
-    } on TestFailure catch (e) {
-      final message = e.message ?? '';
-      final match = RegExp(r'(\d+\.\d+)%').firstMatch(message);
+    } catch (e) {
+      final message = e.toString();
+      final match = RegExp(r'(\d+(?:\.\d+)?)%').firstMatch(message);
       if (match != null) {
         final diffPercent = double.parse(match.group(1)!) / 100.0;
         if (diffPercent <= _maxDiffPercent) return true;
