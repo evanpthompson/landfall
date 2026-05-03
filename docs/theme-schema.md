@@ -865,5 +865,294 @@ moods:
 
 ---
 
+## Era Concept Sketches
+
+These sketches validate that the token vocabulary can express radically different aesthetic eras. Each is a complete, valid theme file — copy, modify, and import. The inline notes explain token choices in terms of the era's source material.
+
+---
+
+### Synthwave '84
+
+Dark purple retro-futurism inspired by the neon-drenched artwork of modern synthwave artists and the cover aesthetics of 80s science fiction. Think FM-84, Timecop1983, and The Midnight. Deep violet backgrounds, electric cyan, coral-pink — the neon palette of a sunset highway that never actually existed.
+
+```yaml
+version: "1.0"
+
+meta:
+  name: "Synthwave '84"
+  author: "landfall"
+  description: "Deep purple retro-futurism. Electric cyan and coral neon on midnight violet. The neon highway at 2am."
+  tags: [dark, neon, 80s, retro, synthwave]
+  license: "MIT"
+
+surface:
+  background:
+    type: solid
+    # The deep purple-black of the original Synthwave '84 palette — not pure black,
+    # not navy, but the specific violet-dark that reads as "after midnight."
+    value: "#262335"
+  card:
+    # Nearly invisible fill — the neon borders define the cards, not the fill
+    fill: "rgba(255, 255, 255, 0.03)"
+    border:
+      # Coral-pink neon: the secondary signature color of the synthwave palette
+      color: "rgba(249, 126, 114, 0.4)"
+      width: 1.5
+      style: solid
+    # No border radius — 80s geometry is flat and angular
+    radius: 0
+    blur: 0
+    shadow: none
+
+typography:
+  # Monospace = terminal = the 80s computer. JetBrains Mono is clean enough for TV
+  # distance without losing the technical character.
+  fontFamily: "JetBrains Mono"
+  scale: normal
+  heading:
+    weight: 700
+  body:
+    weight: 400
+  # Wide letter spacing is essential — the neon palette needs breathing room
+  letterSpacing: wide
+  timeDisplay:
+    # Orbitron was designed for exactly this: a geometric, science-fiction clock face
+    fontFamily: "Orbitron"
+    weight: 200
+
+color:
+  # Electric cyan: the defining synthwave color. There is no debate about this.
+  accent: "#03edf9"
+  text:
+    primary: "#ffffff"
+    secondary: "rgba(255, 255, 255, 0.75)"
+    tertiary: "rgba(255, 255, 255, 0.38)"
+  divider: "rgba(3, 237, 249, 0.18)"
+  agent:
+    # Hot pink for agent-pushed content — the other defining neon in the palette
+    border: "rgba(255, 126, 219, 0.55)"
+  success: "#72f1b8"    # Electric green
+  warning: "#fede5d"    # Electric yellow — "road ahead" not "amber alert"
+  alert: "#fe4450"      # Hot neon red
+
+animation:
+  transition: fade
+  speed: normal
+  # Scale-in on card entry: a quick pop that feels energetic
+  cardEntry: scale
+  tickerScroll: fast
+
+moods:
+  urgent:
+    borderColor: "#fe4450"
+    fillColor: "rgba(254, 68, 80, 0.12)"
+    pulse: true
+    scale: 1.02
+    animation: pulse
+  celebratory:
+    # Yellow reads as a spotlight in neon — distinct from the cyan and coral
+    borderColor: "#fede5d"
+    fillColor: "rgba(254, 227, 93, 0.1)"
+    pulse: false
+    scale: 1.0
+    animation: glow
+  success:
+    borderColor: "#72f1b8"
+    fillColor: "rgba(114, 241, 184, 0.1)"
+    animation: none
+  muted:
+    opacity: 0.4
+```
+
+---
+
+### System Grey
+
+The silver chrome of Windows 98 and Windows NT — a love letter to an era when the UI was the product, beveled edges were a design philosophy, and `#C0C0C0` was the default background color of everything. Light theme. Sharp corners. Instant transitions. No animations. This is how millions of people spent their 1990s.
+
+```yaml
+version: "1.0"
+
+meta:
+  name: "System Grey"
+  author: "landfall"
+  description: "The silver chrome of Windows 98. Interface nostalgia at 1920x1080. No rounded corners were harmed in the making of this theme."
+  tags: [light, retro, 90s, windows, interface, minimal]
+  license: "MIT"
+
+surface:
+  background:
+    type: solid
+    # The iconic Windows silver. Not a design choice — a cultural artifact.
+    value: "#C0C0C0"
+  card:
+    # Cards read as raised window panels in the classic UI metaphor
+    fill: "rgba(240, 240, 240, 0.92)"
+    border:
+      # Classic Windows recessed border: the midpoint grey that creates the bevel illusion
+      color: "#808080"
+      # 2dp border: thick enough to read as chrome, not just a line
+      width: 2
+      style: solid
+    # Windows 98 had zero border radius. This is non-negotiable.
+    radius: 0
+    blur: 0
+    shadow: subtle
+
+typography:
+  # Space Grotesk echoes the humanist sans-serif of 90s system fonts: readable,
+  # slightly technical, no personality wasted
+  fontFamily: "Space Grotesk"
+  scale: comfortable
+  heading:
+    weight: 700
+  body:
+    weight: 400
+  letterSpacing: normal
+  timeDisplay:
+    fontFamily: "Space Grotesk"
+    weight: 300
+
+color:
+  # Navy blue: the active title bar. The defining accent of Windows before XP Luna.
+  accent: "#000080"
+  text:
+    primary: "#000000"    # Pure black — system fonts were black on grey
+    secondary: "#444444"
+    tertiary: "#808080"   # The visual language for "disabled" in every 90s dialog box
+  divider: "#808080"
+  agent:
+    border: "#000080"
+  success: "#008000"      # Classic HTML green
+  warning: "#808000"      # Olive — the Windows warning hue before amber became standard
+  alert: "#FF0000"        # No alpha, no softening. It's an error dialog.
+
+animation:
+  # Windows 98 had no transitions. The window was there. Then it wasn't.
+  transition: instant
+  speed: fast
+  cardEntry: none
+  tickerScroll: normal
+
+moods:
+  urgent:
+    borderColor: "#FF0000"
+    fillColor: "rgba(255, 0, 0, 0.08)"
+    pulse: false
+    scale: 1.0
+    # No animations — urgency here is the blunt color, not motion
+    animation: none
+  celebratory:
+    borderColor: "#000080"
+    fillColor: "rgba(0, 0, 128, 0.06)"
+    pulse: false
+    scale: 1.0
+    animation: none
+  success:
+    borderColor: "#008000"
+    fillColor: "rgba(0, 128, 0, 0.06)"
+    animation: none
+  muted:
+    # Greyed out: the Windows visual language for "unavailable"
+    opacity: 0.5
+```
+
+---
+
+### Electroclash
+
+Early 2000s dark electro: the aesthetic of Fischerspooner, Adult., Miss Kittin, and the first wave of DFA Records. Cold black, chrome silver, electric blue. The production was clinical and the art direction was sleek in a way that was very deliberately not warm. Flat, hard, industrial — but glossy. The albums looked like vaguely threatening corporate stationery and sounded like a malfunctioning supercomputer enjoying itself.
+
+```yaml
+version: "1.0"
+
+meta:
+  name: "Electroclash"
+  author: "landfall"
+  description: "Cold black and chrome silver. Early 2000s dark electro. Sleek, flat, and deliberately not warm."
+  tags: [dark, minimal, 2000s, electro, chrome, cold]
+  license: "MIT"
+
+surface:
+  background:
+    type: solid
+    # Near-black with a very slight blue cast — colder than pure black, more clinical
+    value: "#0A0B12"
+  card:
+    fill: "rgba(200, 210, 255, 0.04)"
+    border:
+      # Chrome silver: the material language of 2000s hardware design —
+      # every device had a brushed metal bezel
+      color: "rgba(180, 190, 220, 0.25)"
+      width: 1
+      style: solid
+    # Just slightly rounded — the 2000s weren't as sharp as the 80s, not as soft as the 2010s
+    radius: 2
+    blur: 0
+    # Cards recede slightly rather than floating — cold themes push depth inward
+    shadow: subtle
+
+typography:
+  # Outfit is geometric and clean: 2000s design rejected warm humanist type
+  fontFamily: "Outfit"
+  scale: compact
+  heading:
+    weight: 600
+  body:
+    # Light weight on dark reads as sleek and slightly cold — this is intentional
+    weight: 300
+  letterSpacing: wide
+  timeDisplay:
+    # Orbitron at heavier weight — the 2000s liked a heftier sci-fi clock
+    fontFamily: "Orbitron"
+    weight: 400
+
+color:
+  # Electric blue: the 2000s electro accent. Blue LEDs, progress bars, Winamp skins.
+  accent: "#0088FF"
+  text:
+    primary: "#D8DCF0"              # Off-white with a slight blue cast — not warm
+    secondary: "rgba(200, 210, 240, 0.65)"
+    tertiary: "rgba(180, 190, 220, 0.35)"
+  divider: "rgba(100, 120, 200, 0.15)"
+  agent:
+    # Agent cards get a brighter blue border — the only vivid color in the scheme
+    border: "rgba(0, 136, 255, 0.45)"
+  success: "#00AACC"    # Cyan-tinted success: not warm green but cold blue-green
+  warning: "#8855FF"    # Violet for warning: 2000s design used purple where others used amber
+  alert: "#FF2255"      # Hot pink-red: aggressive but within the cold palette
+
+animation:
+  # Slide transitions: the 2000s media player era — panels that arrived from the side
+  transition: slide
+  speed: fast
+  cardEntry: slide
+  tickerScroll: fast
+
+moods:
+  urgent:
+    borderColor: "#FF2255"
+    fillColor: "rgba(255, 34, 85, 0.1)"
+    pulse: true
+    scale: 1.01
+    animation: pulse
+  celebratory:
+    # Violet: the 2000s celebratory hue — not red, not gold, but electric purple
+    borderColor: "#AA44FF"
+    fillColor: "rgba(170, 68, 255, 0.1)"
+    pulse: false
+    scale: 1.0
+    animation: glow
+  success:
+    borderColor: "#00AACC"
+    fillColor: "rgba(0, 170, 204, 0.08)"
+    animation: none
+  muted:
+    # Deeper fade — cold themes bury muted content more aggressively
+    opacity: 0.38
+```
+
+---
+
 *ThemeSchema v1.0 — April 2026*
 *Maintained by the Landfall project. Submit corrections and additions via GitHub issue or PR.*
