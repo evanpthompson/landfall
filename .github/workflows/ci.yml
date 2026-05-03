@@ -46,6 +46,13 @@ jobs:
       - name: Install workspace deps (includes Melos)
         run: dart pub get
 
+      - name: Dependency vulnerability audit (A03:2025)
+        run: |
+          cd server/landfall_server && dart pub audit || true
+          cd ../../apps/display && flutter pub audit || true
+        # `|| true` prevents a single advisory from blocking all other checks.
+        # Review output above and upgrade affected packages as advisories appear.
+
       - name: Write test passwords.yaml
         # These are CI-only test credentials for an ephemeral container.
         # Production secrets are never stored here — see docs/self_hosting_guide.md.
