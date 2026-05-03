@@ -36,8 +36,8 @@ void main() {
       await tester.pumpWidget(_wrap(
         AgentKeysSection(
           onListKeys: (_) async => [],
-          onGenerateKey: (_, __) async => throw UnimplementedError(),
-          onRevokeKey: (_, __) async => false,
+          onGenerateKey: (_, _) async => throw UnimplementedError(),
+          onRevokeKey: (_, _) async => false,
         ),
       ));
 
@@ -48,8 +48,8 @@ void main() {
       await tester.pumpWidget(_wrap(
         AgentKeysSection(
           onListKeys: (_) async => [],
-          onGenerateKey: (_, __) async => throw UnimplementedError(),
-          onRevokeKey: (_, __) async => false,
+          onGenerateKey: (_, _) async => throw UnimplementedError(),
+          onRevokeKey: (_, _) async => false,
         ),
       ));
 
@@ -60,8 +60,8 @@ void main() {
       await tester.pumpWidget(_wrap(
         AgentKeysSection(
           onListKeys: (_) async => [],
-          onGenerateKey: (_, __) async => throw UnimplementedError(),
-          onRevokeKey: (_, __) async => false,
+          onGenerateKey: (_, _) async => throw UnimplementedError(),
+          onRevokeKey: (_, _) async => false,
         ),
       ));
 
@@ -78,8 +78,8 @@ void main() {
       await tester.pumpWidget(_wrap(
         AgentKeysSection(
           onListKeys: (_) async => [key],
-          onGenerateKey: (_, __) async => throw UnimplementedError(),
-          onRevokeKey: (_, __) async => false,
+          onGenerateKey: (_, _) async => throw UnimplementedError(),
+          onRevokeKey: (_, _) async => false,
         ),
       ));
 
@@ -97,8 +97,8 @@ void main() {
       await tester.pumpWidget(_wrap(
         AgentKeysSection(
           onListKeys: (_) async => [key],
-          onGenerateKey: (_, __) async => throw UnimplementedError(),
-          onRevokeKey: (_, __) async => false,
+          onGenerateKey: (_, _) async => throw UnimplementedError(),
+          onRevokeKey: (_, _) async => false,
         ),
       ));
 
@@ -115,8 +115,8 @@ void main() {
       await tester.pumpWidget(_wrap(
         AgentKeysSection(
           onListKeys: (_) async => [key],
-          onGenerateKey: (_, __) async => throw UnimplementedError(),
-          onRevokeKey: (_, __) async => false,
+          onGenerateKey: (_, _) async => throw UnimplementedError(),
+          onRevokeKey: (_, _) async => false,
         ),
       ));
 
@@ -133,8 +133,8 @@ void main() {
       await tester.pumpWidget(_wrap(
         AgentKeysSection(
           onListKeys: (_) async => [key],
-          onGenerateKey: (_, __) async => throw UnimplementedError(),
-          onRevokeKey: (_, __) async => false,
+          onGenerateKey: (_, _) async => throw UnimplementedError(),
+          onRevokeKey: (_, _) async => false,
         ),
       ));
 
@@ -151,8 +151,8 @@ void main() {
       await tester.pumpWidget(_wrap(
         AgentKeysSection(
           onListKeys: (_) async => [key],
-          onGenerateKey: (_, __) async => throw UnimplementedError(),
-          onRevokeKey: (_, __) async => false,
+          onGenerateKey: (_, _) async => throw UnimplementedError(),
+          onRevokeKey: (_, _) async => false,
         ),
       ));
 
@@ -167,8 +167,8 @@ void main() {
       await tester.pumpWidget(_wrap(
         AgentKeysSection(
           onListKeys: (_) async => [],
-          onGenerateKey: (_, __) async => throw UnimplementedError(),
-          onRevokeKey: (_, __) async => false,
+          onGenerateKey: (_, _) async => throw UnimplementedError(),
+          onRevokeKey: (_, _) async => false,
         ),
       ));
 
