@@ -110,6 +110,7 @@ class LandfallDemo:
     def __init__(self):
         self.server_process: Optional[subprocess.Popen] = None
         self.api_key: Optional[str] = None
+        self.management_token: Optional[str] = None
         self.weather_live = False
         self.google_oauth_ready = False
 
@@ -142,6 +143,42 @@ class LandfallDemo:
         print(f"\n{Colours.CYAN}{Colours.BOLD}Demo complete. Thanks for watching!{Colours.RESET}\n")
         if signum:
             sys.exit(0)
+
+    def _read_yaml_key(self, section: str, key: str) -> Optional[str]:
+        """Return the value of `key` inside `section:` in passwords.yaml, or None."""
+        if not PASSWORDS_YAML.exists():
+            return None
+        lines = PASSWORDS_YAML.read_text().splitlines()
+        in_section = False
+        for line in lines:
+            stripped = line.strip()
+            if stripped == f"{section}:":
+                in_section = True
+                continue
+            # Any non-indented, non-comment, colon-bearing line starts a new section
+            if in_section and stripped and not stripped.startswith('#') \
+                    and line[:1] not in (' ', '\t') and ':' in stripped:
+                in_section = False
+            if in_section and stripped.startswith(f"{key}:"):
+                val = stripped[len(f"{key}:"):].strip().strip("'\"")
+                return val if val else None
+        return None
+
+    def read_management_token(self) -> str:
+        """Read apiKeyManagementToken from the development section of passwords.yaml."""
+        token = self._read_yaml_key("development", "apiKeyManagementToken")
+        if not token:
+            die(
+                "apiKeyManagementToken not found in passwords.yaml development section.\n"
+                "   Copy config/passwords.yaml.example, set a value, and re-run."
+            )
+        placeholders = {"change-me-dev", "replace_with_strong_secret", "replace_me"}
+        if token in placeholders:
+            die(
+                "apiKeyManagementToken is still set to the placeholder value.\n"
+                "   Set it to a real secret in passwords.yaml development section."
+            )
+        return token
 
     def run_api_request(self, endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{SERVER_URL}{endpoint}"
@@ -313,6 +350,22 @@ SELECT c.id, 'primary',      'Work',     'demo-planning', 'Q3 planning session',
                 die(f"{p} is not installed or not in PATH")
         ok("All prerequisites found")
 
+        step("Checking API key management token")
+        if not PASSWORDS_YAML.exists():
+            die(f"{PASSWORDS_YAML} not found. Copy config/passwords.yaml.example to get started.")
+        self.management_token = self.read_management_token()
+        ok(f"apiKeyManagementToken configured")
+
+        step("Checking API key HMAC secret")
+        hmac_secret = self._read_yaml_key("development", "apiKeyHmacSecret")
+        placeholders = {"change-me-dev-hmac", "replace_with_strong_secret", "replace_me"}
+        if not hmac_secret or hmac_secret in placeholders:
+            die(
+                "apiKeyHmacSecret is not set in passwords.yaml development section.\n"
+                "   Add it (generate with: openssl rand -base64 32) and re-run."
+            )
+        ok("apiKeyHmacSecret configured")
+
         step("Checking weather configuration")
         if PASSWORDS_YAML.exists():
             content = PASSWORDS_YAML.read_text()
@@ -388,9 +441,13 @@ SELECT c.id, 'primary',      'Work',     'demo-planning', 'Q3 planning session',
 
         step("Generating demo API key")
         try:
-            resp = self.run_api_request("/apiKey/generateKey", {"name": "demo"})
+            resp = self.run_api_request("/apiKey/generateKey", {
+                "name": "demo",
+                "setupToken": self.management_token,
+            })
             self.api_key = resp["plainTextKey"]
             ok(f"API key generated: {Colours.BOLD}{self.api_key}{Colours.RESET}")
+            info("Key hash stored as HMAC-SHA-256 (A04) — not recoverable from the DB.")
             info("In production, agents store this key securely.")
         except Exception as e:
             die(f"Failed to generate API key: {e}")
@@ -409,8 +466,8 @@ SELECT c.id, 'primary',      'Work',     'demo-planning', 'Q3 planning session',
             self.push_card_agent(*card)
             ok(f"Card {i} — {card[0]} (agent API)")
 
-        self.push_card("agent.research", "New paper: LLM reasoning benchmarks", "Three Stanford papers dropped overnight.")
-        ok("Card 4 — agent.research (open endpoint)")
+        self.push_card_agent("agent.research", "New paper: LLM reasoning benchmarks", "Three Stanford papers dropped overnight.")
+        ok("Card 4 — agent.research (agent API)")
 
         # Step 5: Live card update
         pause("Demonstrating live card update (stable externalId).")
@@ -535,6 +592,8 @@ SELECT c.id, 'primary',      'Work',     'demo-planning', 'Q3 planning session',
         print(f"  {Colours.BOLD}Accounts tab:{Colours.RESET}")
         info("• Lists all connected credentials (Google Calendar, Microsoft Calendar)")
         info("• Shows copyable OAuth connect URLs — visit from any device on the same network")
+        info("• Agent Keys section — enter management token to view all API keys with their")
+        info("  lastUsedAt and lastUsedIp so you can spot anomalous access at a glance (A07)")
         print()
         print(f"  {Colours.BOLD}Layout tab:{Colours.RESET}")
         info("• Drag cards to move anywhere in the 12×8 grid")
@@ -736,6 +795,41 @@ animation:
         info("             profileId)")
         info("• deleteTheme(id)             — removes imported themes; built-ins are protected")
         print()
+
+        # Security hardening overview
+        pause("Before we launch: Landfall went through a full OWASP Top 10:2025 audit. "
+              "Here's what was hardened.")
+        step("Security hardening (OWASP Top 10:2025)")
+        print()
+        print(f"  {Colours.BOLD}A01 — Broken Access Control:{Colours.RESET}")
+        info("• ApiKeyEndpoint (generateKey / listKeys / revokeKey) is auth-gated behind")
+        info("  apiKeyManagementToken from passwords.yaml — no unauthenticated key creation")
+        print()
+        print(f"  {Colours.BOLD}A04 — Cryptographic Failures:{Colours.RESET}")
+        info("• API key hashes stored as HMAC-SHA-256 keyed with apiKeyHmacSecret")
+        info("• Offline brute force is impossible even if the database is fully compromised")
+        info("• Empty secret fails loudly at startup — no silent SHA-256 fallback")
+        print()
+        print(f"  {Colours.BOLD}A05 — Injection:{Colours.RESET}")
+        info("• actionsJson validated server-side: size cap (8 KB), max 5 actions,")
+        info("  type allowlist, label length limit, URL scheme whitelist (https/http only)")
+        print()
+        print(f"  {Colours.BOLD}A06 — Insecure Design:{Colours.RESET}")
+        info("• Card action URLs validated client-side: no javascript:, file://, data: schemes")
+        info("• Webhook targets blocked on private IPs / loopback / cloud metadata endpoints")
+        info("• importTheme() blocks private IP ranges server-side (SSRF prevention)")
+        print()
+        print(f"  {Colours.BOLD}A07 — Authentication Failures:{Colours.RESET}")
+        info("• lastUsedIp recorded on every authenticated request")
+        info("• Settings → Accounts → Agent Keys surfaces prefix, lastUsedAt, lastUsedIp")
+        info("  for all keys — anomalous access is visible at a glance")
+        print()
+        print(f"  {Colours.BOLD}A09 — Security Logging:{Colours.RESET}")
+        info("• Auth failures log api_key.auth_failed (warning) with key prefix + caller IP")
+        info("• Management token rejections log api_key.setup_token_rejected")
+        info("• generateKey and revokeKey log api_key.generated / api_key.revoked (info)")
+        print()
+        ok("Full audit documented in docs/security_hardening_phase.md")
 
         # Launch display
         pause("Ready to launch. The wizard will appear on a fresh install — walk through it, "
