@@ -57,6 +57,8 @@ jobs:
             emailSecretHashPepper: 'ci-email-pepper-for-testing-only'
             jwtHmacSha512PrivateKey: 'ci-jwt-key-for-testing-only'
             jwtRefreshTokenHashPepper: 'ci-jwt-refresh-pepper-for-testing-only'
+            apiKeyManagementToken: 'test-management-token'
+            apiKeyHmacSecret: 'test-hmac-secret'
           YAML
 
       - name: Analyze
