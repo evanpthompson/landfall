@@ -16,6 +16,7 @@ import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart'
 import 'package:display/src/features/profile/screens/profile_manager_screen.dart';
 import 'package:display/src/features/profile/widgets/profile_switcher.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
+import 'package:display/src/features/settings/widgets/agent_keys_section.dart';
 import 'package:display/src/features/settings/widgets/layout_editor.dart';
 
 /// Full-screen settings panel pushed over [DisplayScreen].
@@ -381,6 +382,7 @@ class _AccountsTabState extends State<_AccountsTab> {
           userId: userId,
           serverUrl: widget.serverUrl,
           onRefresh: () => setState(() => _future = _load()),
+          client: widget.client,
         );
       },
     );
@@ -393,12 +395,14 @@ class _AccountsList extends StatelessWidget {
     required this.userId,
     required this.serverUrl,
     required this.onRefresh,
+    required this.client,
   });
 
   final List<LinkedCredentialSummary> credentials;
   final String userId;
   final String serverUrl;
   final VoidCallback onRefresh;
+  final Client client;
 
   @override
   Widget build(BuildContext context) {
@@ -451,6 +455,14 @@ class _AccountsList extends StatelessWidget {
             foregroundColor: LandfallColors.textSecondary,
           ),
         ),
+        const SizedBox(height: 32),
+        AgentKeysSection(
+          onListKeys: (token) => client.apiKey.listKeys(token),
+          onGenerateKey: (name, token) =>
+              client.apiKey.generateKey(name, token),
+          onRevokeKey: (id, token) => client.apiKey.revokeKey(id, token),
+        ),
+        const SizedBox(height: 24),
       ],
     );
   }

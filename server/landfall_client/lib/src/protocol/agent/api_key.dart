@@ -22,6 +22,7 @@ abstract class ApiKey implements _i1.SerializableModel {
     required this.prefix,
     required this.createdAt,
     this.lastUsedAt,
+    this.lastUsedIp,
     this.revokedAt,
     int? dailyLimit,
     int? usageCount,
@@ -36,6 +37,7 @@ abstract class ApiKey implements _i1.SerializableModel {
     required String prefix,
     required DateTime createdAt,
     DateTime? lastUsedAt,
+    String? lastUsedIp,
     DateTime? revokedAt,
     int? dailyLimit,
     int? usageCount,
@@ -54,6 +56,7 @@ abstract class ApiKey implements _i1.SerializableModel {
       lastUsedAt: jsonSerialization['lastUsedAt'] == null
           ? null
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['lastUsedAt']),
+      lastUsedIp: jsonSerialization['lastUsedIp'] as String?,
       revokedAt: jsonSerialization['revokedAt'] == null
           ? null
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['revokedAt']),
@@ -85,6 +88,9 @@ abstract class ApiKey implements _i1.SerializableModel {
   /// When this key was last used to authenticate a request.
   DateTime? lastUsedAt;
 
+  /// IP address of the most recent authenticated request. A07:2025.
+  String? lastUsedIp;
+
   /// When this key was revoked. Non-null = key is inactive.
   DateTime? revokedAt;
 
@@ -107,6 +113,7 @@ abstract class ApiKey implements _i1.SerializableModel {
     String? prefix,
     DateTime? createdAt,
     DateTime? lastUsedAt,
+    String? lastUsedIp,
     DateTime? revokedAt,
     int? dailyLimit,
     int? usageCount,
@@ -122,6 +129,7 @@ abstract class ApiKey implements _i1.SerializableModel {
       'prefix': prefix,
       'createdAt': createdAt.toJson(),
       if (lastUsedAt != null) 'lastUsedAt': lastUsedAt?.toJson(),
+      if (lastUsedIp != null) 'lastUsedIp': lastUsedIp,
       if (revokedAt != null) 'revokedAt': revokedAt?.toJson(),
       'dailyLimit': dailyLimit,
       'usageCount': usageCount,
@@ -145,6 +153,7 @@ class _ApiKeyImpl extends ApiKey {
     required String prefix,
     required DateTime createdAt,
     DateTime? lastUsedAt,
+    String? lastUsedIp,
     DateTime? revokedAt,
     int? dailyLimit,
     int? usageCount,
@@ -156,6 +165,7 @@ class _ApiKeyImpl extends ApiKey {
          prefix: prefix,
          createdAt: createdAt,
          lastUsedAt: lastUsedAt,
+         lastUsedIp: lastUsedIp,
          revokedAt: revokedAt,
          dailyLimit: dailyLimit,
          usageCount: usageCount,
@@ -173,6 +183,7 @@ class _ApiKeyImpl extends ApiKey {
     String? prefix,
     DateTime? createdAt,
     Object? lastUsedAt = _Undefined,
+    Object? lastUsedIp = _Undefined,
     Object? revokedAt = _Undefined,
     int? dailyLimit,
     int? usageCount,
@@ -185,6 +196,7 @@ class _ApiKeyImpl extends ApiKey {
       prefix: prefix ?? this.prefix,
       createdAt: createdAt ?? this.createdAt,
       lastUsedAt: lastUsedAt is DateTime? ? lastUsedAt : this.lastUsedAt,
+      lastUsedIp: lastUsedIp is String? ? lastUsedIp : this.lastUsedIp,
       revokedAt: revokedAt is DateTime? ? revokedAt : this.revokedAt,
       dailyLimit: dailyLimit ?? this.dailyLimit,
       usageCount: usageCount ?? this.usageCount,

@@ -1,5 +1,7 @@
 import 'package:test/test.dart';
 
+import 'package:landfall_server/src/generated/protocol.dart';
+
 import 'test_tools/serverpod_test_tools.dart';
 
 const _validToken = 'test-management-token';
@@ -213,6 +215,49 @@ void main() {
           ),
           throwsA(isA<Exception>()),
         );
+      });
+    });
+
+    // A07:2025 — lastUsedIp is recorded when a key authenticates a request.
+    group('A07 lastUsedIp tracking', () {
+      test('lastUsedIp is null before first use', () async {
+        final response = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'IP Track Key',
+          _validToken,
+        );
+        expect(response.key.lastUsedIp, isNull);
+      });
+
+      test('listKeys returns lastUsedIp field on each key', () async {
+        await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'IP List Key',
+          _validToken,
+        );
+        final keys = await endpoints.apiKey.listKeys(sessionBuilder, _validToken);
+        expect(keys, isNotEmpty);
+        // lastUsedIp is nullable — just confirm the field is accessible.
+        for (final k in keys) {
+          expect(k.lastUsedIp, anyOf(isNull, isA<String>()));
+        }
+      });
+
+      test('lastUsedIp is set after pushCard authenticates', () async {
+        final gen = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'IP After Push',
+          _validToken,
+        );
+        await endpoints.agent.pushCard(
+          sessionBuilder,
+          gen.plainTextKey,
+          CardPushRequest(source: 'test.ip', title: 'IP test'),
+        );
+        final keys = await endpoints.apiKey.listKeys(sessionBuilder, _validToken);
+        final key = keys.firstWhere((k) => k.id == gen.key.id);
+        expect(key.lastUsedIp, isNotNull);
+        expect(key.lastUsedIp, isA<String>());
       });
     });
 

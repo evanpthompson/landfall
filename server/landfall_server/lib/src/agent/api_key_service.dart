@@ -137,12 +137,14 @@ class ApiKeyService {
       );
     }
 
+    final ip = session.request?.remoteInfo ?? 'unknown';
     await ApiKey.db.updateRow(
       session,
       key.copyWith(
         usageCount: count,
         usageResetAt: resetAt,
         lastUsedAt: now,
+        lastUsedIp: ip,
       ),
     );
   }

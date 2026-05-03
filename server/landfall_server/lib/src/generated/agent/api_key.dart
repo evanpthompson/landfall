@@ -22,6 +22,7 @@ abstract class ApiKey implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     required this.prefix,
     required this.createdAt,
     this.lastUsedAt,
+    this.lastUsedIp,
     this.revokedAt,
     int? dailyLimit,
     int? usageCount,
@@ -36,6 +37,7 @@ abstract class ApiKey implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     required String prefix,
     required DateTime createdAt,
     DateTime? lastUsedAt,
+    String? lastUsedIp,
     DateTime? revokedAt,
     int? dailyLimit,
     int? usageCount,
@@ -54,6 +56,7 @@ abstract class ApiKey implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       lastUsedAt: jsonSerialization['lastUsedAt'] == null
           ? null
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['lastUsedAt']),
+      lastUsedIp: jsonSerialization['lastUsedIp'] as String?,
       revokedAt: jsonSerialization['revokedAt'] == null
           ? null
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['revokedAt']),
@@ -87,6 +90,9 @@ abstract class ApiKey implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   /// When this key was last used to authenticate a request.
   DateTime? lastUsedAt;
 
+  /// IP address of the most recent authenticated request. A07:2025.
+  String? lastUsedIp;
+
   /// When this key was revoked. Non-null = key is inactive.
   DateTime? revokedAt;
 
@@ -112,6 +118,7 @@ abstract class ApiKey implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     String? prefix,
     DateTime? createdAt,
     DateTime? lastUsedAt,
+    String? lastUsedIp,
     DateTime? revokedAt,
     int? dailyLimit,
     int? usageCount,
@@ -127,6 +134,7 @@ abstract class ApiKey implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       'prefix': prefix,
       'createdAt': createdAt.toJson(),
       if (lastUsedAt != null) 'lastUsedAt': lastUsedAt?.toJson(),
+      if (lastUsedIp != null) 'lastUsedIp': lastUsedIp,
       if (revokedAt != null) 'revokedAt': revokedAt?.toJson(),
       'dailyLimit': dailyLimit,
       'usageCount': usageCount,
@@ -144,6 +152,7 @@ abstract class ApiKey implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       'prefix': prefix,
       'createdAt': createdAt.toJson(),
       if (lastUsedAt != null) 'lastUsedAt': lastUsedAt?.toJson(),
+      if (lastUsedIp != null) 'lastUsedIp': lastUsedIp,
       if (revokedAt != null) 'revokedAt': revokedAt?.toJson(),
       'dailyLimit': dailyLimit,
       'usageCount': usageCount,
@@ -191,6 +200,7 @@ class _ApiKeyImpl extends ApiKey {
     required String prefix,
     required DateTime createdAt,
     DateTime? lastUsedAt,
+    String? lastUsedIp,
     DateTime? revokedAt,
     int? dailyLimit,
     int? usageCount,
@@ -202,6 +212,7 @@ class _ApiKeyImpl extends ApiKey {
          prefix: prefix,
          createdAt: createdAt,
          lastUsedAt: lastUsedAt,
+         lastUsedIp: lastUsedIp,
          revokedAt: revokedAt,
          dailyLimit: dailyLimit,
          usageCount: usageCount,
@@ -219,6 +230,7 @@ class _ApiKeyImpl extends ApiKey {
     String? prefix,
     DateTime? createdAt,
     Object? lastUsedAt = _Undefined,
+    Object? lastUsedIp = _Undefined,
     Object? revokedAt = _Undefined,
     int? dailyLimit,
     int? usageCount,
@@ -231,6 +243,7 @@ class _ApiKeyImpl extends ApiKey {
       prefix: prefix ?? this.prefix,
       createdAt: createdAt ?? this.createdAt,
       lastUsedAt: lastUsedAt is DateTime? ? lastUsedAt : this.lastUsedAt,
+      lastUsedIp: lastUsedIp is String? ? lastUsedIp : this.lastUsedIp,
       revokedAt: revokedAt is DateTime? ? revokedAt : this.revokedAt,
       dailyLimit: dailyLimit ?? this.dailyLimit,
       usageCount: usageCount ?? this.usageCount,
@@ -268,6 +281,11 @@ class ApiKeyUpdateTable extends _i1.UpdateTable<ApiKeyTable> {
         table.lastUsedAt,
         value,
       );
+
+  _i1.ColumnValue<String, String> lastUsedIp(String? value) => _i1.ColumnValue(
+    table.lastUsedIp,
+    value,
+  );
 
   _i1.ColumnValue<DateTime, DateTime> revokedAt(DateTime? value) =>
       _i1.ColumnValue(
@@ -315,6 +333,10 @@ class ApiKeyTable extends _i1.Table<int?> {
       'lastUsedAt',
       this,
     );
+    lastUsedIp = _i1.ColumnString(
+      'lastUsedIp',
+      this,
+    );
     revokedAt = _i1.ColumnDateTime(
       'revokedAt',
       this,
@@ -352,6 +374,9 @@ class ApiKeyTable extends _i1.Table<int?> {
   /// When this key was last used to authenticate a request.
   late final _i1.ColumnDateTime lastUsedAt;
 
+  /// IP address of the most recent authenticated request. A07:2025.
+  late final _i1.ColumnString lastUsedIp;
+
   /// When this key was revoked. Non-null = key is inactive.
   late final _i1.ColumnDateTime revokedAt;
 
@@ -372,6 +397,7 @@ class ApiKeyTable extends _i1.Table<int?> {
     prefix,
     createdAt,
     lastUsedAt,
+    lastUsedIp,
     revokedAt,
     dailyLimit,
     usageCount,

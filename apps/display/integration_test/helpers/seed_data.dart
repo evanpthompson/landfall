@@ -67,6 +67,6 @@ Future<void> clearAllTickerMessages(Client client) async {
 
 /// Generates a fresh API key with the given name and returns the plaintext key.
 Future<String> seedApiKey(Client client, {String name = 'test-key'}) async {
-  final response = await client.apiKey.generateKey(name);
+  final response = await client.apiKey.generateKey(name, 'test-management-token');
   return response.plainTextKey;
 }
