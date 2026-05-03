@@ -10,9 +10,16 @@ import 'api_key_service.dart';
 class ApiKeyEndpoint extends Endpoint {
   final _keyService = ApiKeyService.instance;
 
+  // Logs rejection before throwing so every failed management attempt leaves
+  // a trace even if the ApiKey row never exists. A09:2025.
   void _requireSetupToken(Session session, String setupToken) {
     final expected = session.passwords['apiKeyManagementToken'] ?? '';
     if (expected.isEmpty || setupToken != expected) {
+      final ip = session.request?.remoteInfo ?? 'unknown';
+      session.log(
+        'api_key.setup_token_rejected ip=$ip',
+        level: LogLevel.warning,
+      );
       throw LandfallException(message: 'Unauthorized.');
     }
   }
@@ -38,6 +45,11 @@ class ApiKeyEndpoint extends Endpoint {
     }
 
     final (:key, :plainTextKey) = await _keyService.createKey(session, name);
+    final ip = session.request?.remoteInfo ?? 'unknown';
+    session.log(
+      'api_key.generated prefix=${key.prefix} ip=$ip',
+      level: LogLevel.info,
+    );
     return ApiKeyCreateResponse(key: key, plainTextKey: plainTextKey);
   }
 
@@ -71,6 +83,11 @@ class ApiKeyEndpoint extends Endpoint {
     await ApiKey.db.updateRow(
       session,
       key.copyWith(revokedAt: DateTime.now().toUtc()),
+    );
+    final ip = session.request?.remoteInfo ?? 'unknown';
+    session.log(
+      'api_key.revoked prefix=${key.prefix} ip=$ip',
+      level: LogLevel.info,
     );
     return true;
   }

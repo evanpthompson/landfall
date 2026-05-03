@@ -61,8 +61,14 @@ class ApiKeyService {
   ///
   /// [plainTextKey] is the full key as provided by the agent caller.
   /// Throws [LandfallException] if the key is invalid or revoked.
+  /// Logs every failure at warning level for A09:2025 audit trail.
   Future<ApiKey> authenticate(Session session, String plainTextKey) async {
     if (plainTextKey.isEmpty) {
+      final ip = session.request?.remoteInfo ?? 'unknown';
+      session.log(
+        'api_key.auth_failed prefix=(empty) ip=$ip',
+        level: LogLevel.warning,
+      );
       throw LandfallException(
         message: 'API key must not be empty.',
       );
@@ -75,6 +81,14 @@ class ApiKeyService {
     );
 
     if (row == null || row.revokedAt != null) {
+      final displayPrefix = plainTextKey.length >= _displayPrefixLength
+          ? plainTextKey.substring(0, _displayPrefixLength)
+          : plainTextKey;
+      final ip = session.request?.remoteInfo ?? 'unknown';
+      session.log(
+        'api_key.auth_failed prefix=$displayPrefix ip=$ip',
+        level: LogLevel.warning,
+      );
       throw LandfallException(message: 'Invalid or revoked API key.');
     }
 

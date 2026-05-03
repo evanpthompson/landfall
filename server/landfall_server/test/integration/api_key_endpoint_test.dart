@@ -215,5 +215,68 @@ void main() {
         );
       });
     });
+
+    // A09:2025 — Security Logging. These tests verify that audit logging calls
+    // do not suppress exceptions or alter the visible return values of key
+    // management operations.
+    group('A09 audit logging — exception paths still throw', () {
+      test('wrong setupToken on generateKey still throws after logging', () async {
+        expect(
+          () => endpoints.apiKey.generateKey(
+            sessionBuilder,
+            'Audit Test',
+            _wrongToken,
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('wrong setupToken on listKeys still throws after logging', () async {
+        expect(
+          () => endpoints.apiKey.listKeys(sessionBuilder, _wrongToken),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('wrong setupToken on revokeKey still throws after logging', () async {
+        final response = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'Audit Revoke',
+          _validToken,
+        );
+        expect(
+          () => endpoints.apiKey.revokeKey(
+            sessionBuilder,
+            response.key.id!,
+            _wrongToken,
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('generateKey succeeds and returns key after logging', () async {
+        final response = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'Audit Success',
+          _validToken,
+        );
+        expect(response.key.id, isNotNull);
+        expect(response.key.prefix, startsWith('lf_'));
+      });
+
+      test('revokeKey succeeds and returns true after logging', () async {
+        final response = await endpoints.apiKey.generateKey(
+          sessionBuilder,
+          'Audit Revoke Success',
+          _validToken,
+        );
+        final result = await endpoints.apiKey.revokeKey(
+          sessionBuilder,
+          response.key.id!,
+          _validToken,
+        );
+        expect(result, isTrue);
+      });
+    });
   });
 }

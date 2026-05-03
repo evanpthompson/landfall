@@ -373,5 +373,41 @@ void main() {
         );
       });
     });
+
+    // A09:2025 — Security Logging. Verifies that auth failure logging in
+    // ApiKeyService.authenticate() does not suppress exceptions.
+    group('A09 audit logging — auth failures still throw', () {
+      test('pushCard with invalid key still throws after auth failure logging',
+          () async {
+        expect(
+          () => endpoints.agent.pushCard(
+            sessionBuilder,
+            'lf_invalidkey000000000000000000000',
+            _request(),
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('pushCard with empty key still throws after auth failure logging',
+          () async {
+        expect(
+          () => endpoints.agent.pushCard(sessionBuilder, '', _request()),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('dismissCard with invalid key still throws after auth failure logging',
+          () async {
+        expect(
+          () => endpoints.agent.dismissCard(
+            sessionBuilder,
+            'lf_invalidkey000000000000000000000',
+            'some-id',
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
   });
 }
