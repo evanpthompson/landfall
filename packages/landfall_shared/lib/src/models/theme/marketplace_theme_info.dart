@@ -1,4 +1,4 @@
-import 'theme_info.dart';
+import 'package:landfall_shared/src/models/theme/theme_info.dart';
 
 /// Client-side marketplace entry: a [ThemeInfo] plus purchase metadata.
 class MarketplaceThemeInfo {

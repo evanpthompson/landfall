@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:test/test.dart';
 
 import 'package:landfall_server/src/generated/protocol.dart';
@@ -12,7 +10,7 @@ void main() {
     'Given StripePurchaseService — theme purchase',
     (sessionBuilder, endpoints) {
       late LandfallTheme paidTheme;
-      const _buyerUserId = 'stripe-theme-test-user';
+      const buyerUserId = 'stripe-theme-test-user';
 
       setUp(() async {
         final session = sessionBuilder.build();
@@ -33,7 +31,7 @@ void main() {
         );
       });
 
-      Map<String, dynamic> _event(Map<String, dynamic> metadata,
+      Map<String, dynamic> event0(Map<String, dynamic> metadata,
               {String? email, String? sessionId}) =>
           {
             'type': 'checkout.session.completed',
@@ -50,11 +48,11 @@ void main() {
         final session = sessionBuilder.build();
         await StripePurchaseService.handleCheckoutCompleted(
           session,
-          _event(
+          event0(
             {
               'purchase_type': 'theme',
               'theme_id': '${paidTheme.id}',
-              'user_id': _buyerUserId,
+              'user_id': buyerUserId,
             },
             email: 'buyer@example.com',
             sessionId: 'cs_theme_test_001',
@@ -63,7 +61,7 @@ void main() {
 
         final purchases = await ThemePurchase.db.find(
           session,
-          where: (t) => t.userId.equals(_buyerUserId),
+          where: (t) => t.userId.equals(buyerUserId),
         );
         expect(purchases, hasLength(1));
         expect(purchases.first.themeId, equals(paidTheme.id));
@@ -74,11 +72,11 @@ void main() {
           () async {
         final session = sessionBuilder.build();
         const csId = 'cs_theme_idempotent_001';
-        final event = _event(
+        final event = event0(
           {
             'purchase_type': 'theme',
             'theme_id': '${paidTheme.id}',
-            'user_id': _buyerUserId,
+            'user_id': buyerUserId,
           },
           sessionId: csId,
         );
@@ -89,7 +87,7 @@ void main() {
         final purchases = await ThemePurchase.db.find(
           session,
           where: (t) =>
-              t.userId.equals(_buyerUserId) & t.themeId.equals(paidTheme.id!),
+              t.userId.equals(buyerUserId) & t.themeId.equals(paidTheme.id!),
         );
         expect(purchases, hasLength(1));
       });
@@ -98,12 +96,12 @@ void main() {
         final session = sessionBuilder.build();
         await StripePurchaseService.handleCheckoutCompleted(
           session,
-          _event({'purchase_type': 'theme', 'user_id': _buyerUserId}),
+          event0({'purchase_type': 'theme', 'user_id': buyerUserId}),
         );
 
         final purchases = await ThemePurchase.db.find(
           session,
-          where: (t) => t.userId.equals(_buyerUserId),
+          where: (t) => t.userId.equals(buyerUserId),
         );
         expect(purchases, isEmpty);
       });
@@ -112,7 +110,7 @@ void main() {
         final session = sessionBuilder.build();
         await StripePurchaseService.handleCheckoutCompleted(
           session,
-          _event({'purchase_type': 'theme', 'theme_id': '${paidTheme.id}'}),
+          event0({'purchase_type': 'theme', 'theme_id': '${paidTheme.id}'}),
         );
 
         final purchases = await ThemePurchase.db.find(session);
@@ -124,7 +122,7 @@ void main() {
         // Should complete without error.
         await StripePurchaseService.handleCheckoutCompleted(
           session,
-          _event({'purchase_type': 'unknown_type'}),
+          event0({'purchase_type': 'unknown_type'}),
         );
       });
 
@@ -132,7 +130,7 @@ void main() {
         final session = sessionBuilder.build();
         await StripePurchaseService.handleCheckoutCompleted(
           session,
-          _event(
+          event0(
             {'purchase_type': 'license', 'tier': 'pro'},
             email: 'licensee@example.com',
           ),
