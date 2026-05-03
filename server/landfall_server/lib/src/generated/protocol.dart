@@ -135,6 +135,12 @@ class Protocol extends _i1.SerializationManagerServer {
           dartType: 'DateTime?',
         ),
         _i2.ColumnDefinition(
+          name: 'lastUsedIp',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
           name: 'revokedAt',
           columnType: _i2.ColumnType.timestampWithoutTimeZone,
           isNullable: true,

@@ -290,6 +290,11 @@ class Endpoints extends _i1.EndpointDispatch {
               type: _i1.getType<String>(),
               nullable: false,
             ),
+            'setupToken': _i1.ParameterDescription(
+              name: 'setupToken',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
           },
           call:
               (
@@ -299,17 +304,26 @@ class Endpoints extends _i1.EndpointDispatch {
                   (endpoints['apiKey'] as _i3.ApiKeyEndpoint).generateKey(
                     session,
                     params['name'],
+                    params['setupToken'],
                   ),
         ),
         'listKeys': _i1.MethodConnector(
           name: 'listKeys',
-          params: {},
+          params: {
+            'setupToken': _i1.ParameterDescription(
+              name: 'setupToken',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
           call:
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['apiKey'] as _i3.ApiKeyEndpoint).listKeys(session),
+              ) async => (endpoints['apiKey'] as _i3.ApiKeyEndpoint).listKeys(
+                session,
+                params['setupToken'],
+              ),
         ),
         'revokeKey': _i1.MethodConnector(
           name: 'revokeKey',
@@ -317,6 +331,11 @@ class Endpoints extends _i1.EndpointDispatch {
             'id': _i1.ParameterDescription(
               name: 'id',
               type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'setupToken': _i1.ParameterDescription(
+              name: 'setupToken',
+              type: _i1.getType<String>(),
               nullable: false,
             ),
           },
@@ -327,6 +346,7 @@ class Endpoints extends _i1.EndpointDispatch {
               ) async => (endpoints['apiKey'] as _i3.ApiKeyEndpoint).revokeKey(
                 session,
                 params['id'],
+                params['setupToken'],
               ),
         ),
       },

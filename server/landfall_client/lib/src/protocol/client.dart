@@ -147,8 +147,8 @@ class EndpointAgent extends _i1.EndpointRef {
 
 /// API key management endpoint.
 ///
-/// Phase 2: Unauthenticated — open for local dev, matching Phase 0 CardEndpoint.
-/// Phase 5: Will require display-owner authentication before any mutation.
+/// All methods require [setupToken] — the value of `apiKeyManagementToken`
+/// in config/passwords.yaml. Set this before deploying to production.
 /// {@category Endpoint}
 class EndpointApiKey extends _i1.EndpointRef {
   EndpointApiKey(_i1.EndpointCaller caller) : super(caller);
@@ -160,21 +160,26 @@ class EndpointApiKey extends _i1.EndpointRef {
   ///
   /// The returned [ApiKeyCreateResponse.plainTextKey] is shown exactly once
   /// and cannot be recovered. The caller must store it securely.
-  _i2.Future<_i5.ApiKeyCreateResponse> generateKey(String name) =>
-      caller.callServerEndpoint<_i5.ApiKeyCreateResponse>(
-        'apiKey',
-        'generateKey',
-        {'name': name},
-      );
+  _i2.Future<_i5.ApiKeyCreateResponse> generateKey(
+    String name,
+    String setupToken,
+  ) => caller.callServerEndpoint<_i5.ApiKeyCreateResponse>(
+    'apiKey',
+    'generateKey',
+    {
+      'name': name,
+      'setupToken': setupToken,
+    },
+  );
 
   /// Returns all non-revoked API keys.
   ///
   /// Only metadata is returned — hashes and plaintext keys are never exposed.
-  _i2.Future<List<_i6.ApiKey>> listKeys() =>
+  _i2.Future<List<_i6.ApiKey>> listKeys(String setupToken) =>
       caller.callServerEndpoint<List<_i6.ApiKey>>(
         'apiKey',
         'listKeys',
-        {},
+        {'setupToken': setupToken},
       );
 
   /// Revokes an API key by its database [id].
@@ -184,10 +189,16 @@ class EndpointApiKey extends _i1.EndpointRef {
   ///
   /// Returns true if the key existed and was revoked, false if not found
   /// or already revoked.
-  _i2.Future<bool> revokeKey(int id) => caller.callServerEndpoint<bool>(
+  _i2.Future<bool> revokeKey(
+    int id,
+    String setupToken,
+  ) => caller.callServerEndpoint<bool>(
     'apiKey',
     'revokeKey',
-    {'id': id},
+    {
+      'id': id,
+      'setupToken': setupToken,
+    },
   );
 }
 
@@ -724,7 +735,8 @@ class EndpointTheme extends _i1.EndpointRef {
   /// stores it.
   ///
   /// Returns the same [ThemeUploadResult] shape as [uploadTheme].
-  /// Rejects non-HTTPS URLs and enforces a 10-second fetch timeout.
+  /// Rejects non-HTTPS URLs, private IP ranges, and loopback addresses to
+  /// prevent SSRF. Enforces a 10-second fetch timeout. OWASP A06:2025.
   _i2.Future<_i19.ThemeUploadResult> importTheme(String url) =>
       caller.callServerEndpoint<_i19.ThemeUploadResult>(
         'theme',
