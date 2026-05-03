@@ -69,6 +69,10 @@ class ApiKeyService {
     return (key: saved, plainTextKey: plain);
   }
 
+  /// Generic message returned to callers when the daily rate limit is exceeded.
+  /// Internal details (limit count, reset time) are kept server-side. (A10:2025)
+  static const rateLimitExceededMessage = 'Rate limit exceeded.';
+
   /// Looks up and validates an API key.
   ///
   /// [plainTextKey] is the full key as provided by the agent caller.
@@ -130,11 +134,12 @@ class ApiKeyService {
     }
 
     if (count > key.dailyLimit) {
-      throw LandfallException(
-        message:
-            'Rate limit exceeded. Limit: ${key.dailyLimit} pushes/day. '
-            'Resets at ${key.usageResetAt.toIso8601String()}.',
+      session.log(
+        'api_key.rate_limited prefix=${key.prefix} '
+        'limit=${key.dailyLimit} resets=${key.usageResetAt.toIso8601String()}',
+        level: LogLevel.warning,
       );
+      throw LandfallException(message: rateLimitExceededMessage);
     }
 
     final ip = session.request?.remoteInfo ?? 'unknown';

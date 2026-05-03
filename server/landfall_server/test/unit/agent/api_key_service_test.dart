@@ -77,6 +77,28 @@ void main() {
       });
     });
 
+    group('rateLimitExceededMessage', () {
+      test('message is defined', () {
+        expect(ApiKeyService.rateLimitExceededMessage, isNotEmpty);
+      });
+
+      test('message does not include an ISO 8601 timestamp', () {
+        expect(
+          ApiKeyService.rateLimitExceededMessage,
+          isNot(matches(RegExp(r'\d{4}-\d{2}-\d{2}'))),
+          reason: 'reset timestamp must not leak to callers (A10)',
+        );
+      });
+
+      test('message does not include per-key limit details', () {
+        expect(
+          ApiKeyService.rateLimitExceededMessage,
+          isNot(contains('pushes/day')),
+          reason: 'internal rate-limit config must not leak to callers (A10)',
+        );
+      });
+    });
+
     group('prefixOf', () {
       test('returns first 11 characters', () {
         final key = 'lf_abcdefghijklmnopqrstuvwxyz12345';

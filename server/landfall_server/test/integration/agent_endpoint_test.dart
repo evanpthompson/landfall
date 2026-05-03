@@ -315,6 +315,29 @@ void main() {
         );
       });
 
+      test('not-found error message does not echo the supplied externalId',
+          () async {
+        const sentinel = 'sentinel-id-that-must-not-appear-in-response';
+        Exception? caught;
+        try {
+          await endpoints.agent.updateCard(
+            sessionBuilder,
+            validApiKey,
+            sentinel,
+            _request(),
+          );
+        } catch (e) {
+          caught = e as Exception;
+        }
+        expect(caught, isNotNull,
+            reason: 'updateCard with unknown id should throw');
+        expect(
+          caught.toString(),
+          isNot(contains(sentinel)),
+          reason: 'error message must not echo the caller-supplied externalId',
+        );
+      });
+
       test('rejects invalid request on update', () async {
         final card = await endpoints.agent.pushCard(
           sessionBuilder,

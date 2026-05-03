@@ -126,9 +126,7 @@ class AgentEndpoint extends Endpoint {
     );
 
     if (existing == null) {
-      throw LandfallException(
-        message: 'No card found with externalId "$externalId".',
-      );
+      throw LandfallException(message: 'Card not found.');
     }
 
     final updated = existing.copyWith(
