@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 
 import 'package:landfall_server/src/agent/api_key_service.dart';
@@ -30,22 +33,47 @@ void main() {
     });
 
     group('hashKey', () {
-      test('same input produces same hash', () {
+      const secret = 'test-hmac-secret';
+
+      test('same input and secret produces same hash', () {
         const key = 'lf_testkey1234';
-        expect(service.hashKey(key), equals(service.hashKey(key)));
+        expect(
+          service.hashKey(key, secret),
+          equals(service.hashKey(key, secret)),
+        );
       });
 
       test('different inputs produce different hashes', () {
         expect(
-          service.hashKey('lf_key1'),
-          isNot(equals(service.hashKey('lf_key2'))),
+          service.hashKey('lf_key1', secret),
+          isNot(equals(service.hashKey('lf_key2', secret))),
         );
       });
 
-      test('hash is 64-character hex string (SHA-256)', () {
-        final hash = service.hashKey('lf_test');
+      test('same key with different secrets produces different hashes', () {
+        expect(
+          service.hashKey('lf_key', 'secret-a'),
+          isNot(equals(service.hashKey('lf_key', 'secret-b'))),
+        );
+      });
+
+      test('hash is 64-character hex string (HMAC-SHA-256)', () {
+        final hash = service.hashKey('lf_test', secret);
         expect(hash.length, equals(64));
         expect(RegExp(r'^[0-9a-f]+$').hasMatch(hash), isTrue);
+      });
+
+      test('HMAC hash differs from plain SHA-256 of same input', () {
+        // Confirms HMAC is being used, not bare SHA-256.
+        final plainSha256 = sha256.convert(utf8.encode('lf_test')).toString();
+        expect(service.hashKey('lf_test', secret), isNot(equals(plainSha256)));
+      });
+
+      test('throws when secret is empty', () {
+        expect(
+          () => service.hashKey('lf_test', ''),
+          throwsA(isA<Exception>()),
+        );
       });
     });
 

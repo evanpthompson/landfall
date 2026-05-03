@@ -11,6 +11,7 @@ import '../generated/protocol.dart';
 const _keyPrefix = 'lf_';
 const _keyRandomLength = 32;
 const _displayPrefixLength = 11; // "lf_" + first 8 chars of random part
+const _hmacSecretPasswordsKey = 'apiKeyHmacSecret';
 
 class ApiKeyService {
   ApiKeyService._();
@@ -28,10 +29,20 @@ class ApiKeyService {
     return '$_keyPrefix$random';
   }
 
-  /// Returns the SHA-256 hex digest of [plainTextKey].
-  String hashKey(String plainTextKey) {
-    final bytes = utf8.encode(plainTextKey);
-    return sha256.convert(bytes).toString();
+  /// Returns the HMAC-SHA-256 hex digest of [plainTextKey] keyed with [secret].
+  ///
+  /// The secret must be non-empty — pass `session.passwords['apiKeyHmacSecret']`.
+  /// Throws [LandfallException] if [secret] is empty so that misconfigured
+  /// deployments fail loudly rather than silently downgrading to bare SHA-256.
+  /// OWASP A04:2025.
+  String hashKey(String plainTextKey, String secret) {
+    if (secret.isEmpty) {
+      throw LandfallException(
+        message: 'apiKeyHmacSecret is not configured in passwords.yaml.',
+      );
+    }
+    final hmac = Hmac(sha256, utf8.encode(secret));
+    return hmac.convert(utf8.encode(plainTextKey)).toString();
   }
 
   /// Returns the display prefix of [plainTextKey] (e.g. "lf_a3f8b2c1").
@@ -45,10 +56,11 @@ class ApiKeyService {
     String name,
   ) async {
     final plain = generatePlainTextKey();
+    final secret = session.passwords[_hmacSecretPasswordsKey] ?? '';
     final now = DateTime.now().toUtc();
     final row = ApiKey(
       name: name,
-      keyHash: hashKey(plain),
+      keyHash: hashKey(plain, secret),
       prefix: prefixOf(plain),
       createdAt: now,
       usageResetAt: _nextMidnightUtc(now),
@@ -74,7 +86,8 @@ class ApiKeyService {
       );
     }
 
-    final hash = hashKey(plainTextKey);
+    final secret = session.passwords[_hmacSecretPasswordsKey] ?? '';
+    final hash = hashKey(plainTextKey, secret);
     final row = await ApiKey.db.findFirstRow(
       session,
       where: (t) => t.keyHash.equals(hash),
