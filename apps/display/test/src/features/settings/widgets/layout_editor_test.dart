@@ -114,7 +114,7 @@ void main() {
       final children = stackWidget.children;
 
       final tileKeys = children
-          .whereType<Positioned>()
+          .whereType<AnimatedPositioned>()
           .map((p) => p.key)
           .whereType<ValueKey<String>>()
           .where((k) => k.value.startsWith('card_tile_'))
@@ -336,6 +336,344 @@ void main() {
       await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
 
       expect(find.byKey(const ValueKey('lock_badge_card_a')), findsNothing);
+    });
+  });
+
+  // --- Toolbar ---------------------------------------------------------------
+
+  group('toolbar', () {
+    testWidgets('toolbar is present', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+      expect(find.byKey(const ValueKey('editor_toolbar')), findsOneWidget);
+    });
+
+    testWidgets('toolbar contains snap toggle (default on)', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+      expect(find.byKey(const ValueKey('toolbar_snap_toggle')), findsOneWidget);
+    });
+
+    testWidgets('toolbar contains preview toggle', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+      expect(find.byKey(const ValueKey('toolbar_preview_toggle')), findsOneWidget);
+    });
+
+    testWidgets('toolbar contains reset button when onReset provided', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 1200,
+              height: 800,
+              child: LayoutEditor(
+                layout: _twoCardLayout(),
+                onLayoutChanged: (_) {},
+                onReset: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.byKey(const ValueKey('toolbar_reset')), findsOneWidget);
+    });
+
+    testWidgets('toolbar reset button not shown when onReset is null', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+      expect(find.byKey(const ValueKey('toolbar_reset')), findsNothing);
+    });
+  });
+
+  // --- Snap toggle -----------------------------------------------------------
+
+  group('snap toggle', () {
+    testWidgets('snap is enabled by default', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+
+      // The snap toggle should show the "on" icon (grid_on)
+      final toggle = find.byKey(const ValueKey('toolbar_snap_toggle'));
+      expect(toggle, findsOneWidget);
+      // Verify the icon reflects snap-on state
+      expect(find.byIcon(Icons.grid_on), findsOneWidget);
+    });
+
+    testWidgets('tapping snap toggle disables snap', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+
+      await tester.tap(find.byKey(const ValueKey('toolbar_snap_toggle')));
+      await tester.pump();
+
+      // Icon should change to grid_off
+      expect(find.byIcon(Icons.grid_off), findsOneWidget);
+    });
+
+    testWidgets('snap on: drag 60px stays at original column (floor of 0.6 = 0)', (tester) async {
+      // 1200px canvas, 12 columns → cellW = 100px.
+      // Delta-based: rawCol = startCol + 60/100 = 0.6 → floor(0.6) = 0 → no commit.
+      DashboardLayout? updated;
+      final layout = DashboardLayout(
+        id: 'snap_test',
+        name: 'Snap',
+        columns: 12,
+        rows: 8,
+        cards: [
+          CardConfig(
+            id: 'card_snap',
+            source: 'system.clock',
+            slot: DashboardSlot(column: 0, row: 0, columnSpan: 2, rowSpan: 2),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 1200,
+              height: 800,
+              child: LayoutEditor(
+                layout: layout,
+                onLayoutChanged: (l) => updated = l,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final tile = find.byKey(const ValueKey('card_tile_card_snap'));
+      await tester.drag(tile, const Offset(60, 0));
+      await tester.pump();
+
+      // No commit — floor(0.6) = 0 = slot.column
+      expect(updated?.cards.first.slot.column ?? 0, equals(0));
+    });
+
+    testWidgets('snap off: drag 60px advances to next column (round of 0.6 = 1)', (tester) async {
+      // Delta-based: rawCol = startCol + 60/100 = 0.6 → round(0.6) = 1 → commit col 1.
+      DashboardLayout? updated;
+      final layout = DashboardLayout(
+        id: 'snap_test',
+        name: 'Snap',
+        columns: 12,
+        rows: 8,
+        cards: [
+          CardConfig(
+            id: 'card_snap',
+            source: 'system.clock',
+            slot: DashboardSlot(column: 0, row: 0, columnSpan: 2, rowSpan: 2),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 1200,
+              height: 800,
+              child: LayoutEditor(
+                layout: layout,
+                onLayoutChanged: (l) => updated = l,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Disable snap
+      await tester.tap(find.byKey(const ValueKey('toolbar_snap_toggle')));
+      await tester.pump();
+
+      final tile = find.byKey(const ValueKey('card_tile_card_snap'));
+      await tester.drag(tile, const Offset(60, 0));
+      await tester.pump();
+
+      // round(0.6) = 1 → commit to column 1
+      expect(updated?.cards.first.slot.column, equals(1));
+    });
+  });
+
+  // --- Overlap detection -----------------------------------------------------
+
+  group('overlap detection', () {
+    testWidgets('ghost shows amber color when proposed slot overlaps another card',
+        (tester) async {
+      // card_a is at col 0..3, card_b is at col 4..7 (both row 0..1).
+      // If we drag card_a to col 3, it would span cols 3..6, overlapping card_b (col 4..7).
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+
+      final cardA = find.byKey(const ValueKey('card_tile_card_a'));
+
+      // Start drag and move card_a right into card_b's space.
+      // Delta: rawCol = 0 + 350/cellW → floor > 3 → overlaps card_b (col 4..7).
+      final gesture = await tester.startGesture(tester.getCenter(cardA));
+      // Move in two steps so pan start fires before we check the ghost.
+      await gesture.moveBy(const Offset(20, 0)); // exceed slop (18px)
+      await tester.pump();
+      await gesture.moveBy(const Offset(330, 0)); // total 350px — into overlap
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('drag_ghost_overlap')), findsOneWidget);
+
+      await gesture.up();
+      await tester.pump();
+    });
+
+    testWidgets('ghost shows accent color when proposed slot is clear', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+
+      final cardA = find.byKey(const ValueKey('card_tile_card_a'));
+
+      // Move card_a slightly down (row direction, no horizontal overlap).
+      final gesture = await tester.startGesture(tester.getCenter(cardA));
+      await gesture.moveBy(const Offset(0, 20)); // exceed slop
+      await tester.pump();
+      await gesture.moveBy(const Offset(0, 90)); // total ~110px down
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('drag_ghost_clear')), findsOneWidget);
+
+      await gesture.up();
+      await tester.pump();
+    });
+  });
+
+  // --- Preview mode ----------------------------------------------------------
+
+  group('preview mode', () {
+    testWidgets('preview toggle enters preview mode', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+
+      await tester.tap(find.byKey(const ValueKey('toolbar_preview_toggle')));
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('preview_mode_indicator')), findsOneWidget);
+    });
+
+    testWidgets('in preview mode resize handles are not visible', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+
+      // Confirm resize handle is present before preview mode
+      expect(
+          find.byKey(const ValueKey('resize_handle_card_a')), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('toolbar_preview_toggle')));
+      await tester.pump();
+
+      expect(
+          find.byKey(const ValueKey('resize_handle_card_a')), findsNothing);
+    });
+
+    testWidgets('tapping a card in preview mode exits preview', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+
+      await tester.tap(find.byKey(const ValueKey('toolbar_preview_toggle')));
+      await tester.pump();
+
+      // Tap a card — should exit preview mode
+      await tester.tap(find.byKey(const ValueKey('card_tile_card_a')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('preview_mode_indicator')), findsNothing);
+    });
+
+    testWidgets('in preview mode drag does nothing', (tester) async {
+      var callCount = 0;
+      await tester.pumpWidget(
+        _wrapLayout(_twoCardLayout(), onChanged: (_) => callCount++),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('toolbar_preview_toggle')));
+      await tester.pump();
+
+      final cardA = find.byKey(const ValueKey('card_tile_card_a'));
+      await tester.drag(cardA, const Offset(200, 100));
+      await tester.pump();
+
+      expect(callCount, 0);
+    });
+  });
+
+  // --- Animated transitions --------------------------------------------------
+
+  group('animated transitions', () {
+    testWidgets('card tiles use AnimatedPositioned', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+
+      // AnimatedPositioned widgets should exist for card tiles
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('card_stack')),
+          matching: find.byType(AnimatedPositioned),
+        ),
+        findsWidgets,
+      );
+    });
+  });
+
+  // --- Golden tests ----------------------------------------------------------
+
+  group('golden tests', () {
+    testWidgets('selected card state', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+      await tester.tap(find.byKey(const ValueKey('card_tile_card_a')));
+      await tester.pumpAndSettle();
+      // Close the HUD to keep the golden clean — selection highlight persists
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      await expectLater(
+        find.byType(LayoutEditor),
+        matchesGoldenFile('goldens/layout_editor_selected.png'),
+      );
+    });
+
+    testWidgets('locked card state', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final lockedLayout = DashboardLayout(
+        id: 'golden',
+        name: 'Golden',
+        columns: 12,
+        rows: 8,
+        cards: [
+          CardConfig(
+            id: 'card_locked',
+            source: 'system.clock',
+            slot: DashboardSlot(column: 0, row: 0, columnSpan: 4, rowSpan: 2),
+            locked: true,
+          ),
+          CardConfig(
+            id: 'card_unlocked',
+            source: 'system.weather',
+            slot: DashboardSlot(column: 4, row: 0, columnSpan: 4, rowSpan: 2),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(_wrapLayout(lockedLayout));
+      await tester.pump();
+
+      await expectLater(
+        find.byType(LayoutEditor),
+        matchesGoldenFile('goldens/layout_editor_locked.png'),
+      );
+    });
+
+    testWidgets('preview mode state', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+      await tester.tap(find.byKey(const ValueKey('toolbar_preview_toggle')));
+      await tester.pump();
+
+      await expectLater(
+        find.byType(LayoutEditor),
+        matchesGoldenFile('goldens/layout_editor_preview.png'),
+      );
     });
   });
 }

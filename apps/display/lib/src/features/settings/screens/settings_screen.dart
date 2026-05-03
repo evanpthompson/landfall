@@ -637,7 +637,7 @@ class _LayoutTab extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               _SectionHeader(
-                  'Drag to move  •  drag corner to resize  •  tap to toggle visibility'),
+                  'Tap to select  •  drag to move  •  drag corner to resize'),
               const SizedBox(height: 16),
               Expanded(
                 child: LayoutEditor(

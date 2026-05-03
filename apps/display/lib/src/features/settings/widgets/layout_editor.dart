@@ -2,22 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
-/// Interactive drag-to-move grid layout editor.
+/// Interactive drag-to-move grid layout editor with toolbar.
 ///
-/// Tapping a card *selects* it and opens the card HUD. Dragging moves the
-/// card; the resize handle in the bottom-right corner resizes it. Locked cards
-/// ignore drag and resize gestures and hide the resize handle.
-///
-/// Calls [onLayoutChanged] on every move, resize, or per-card config change.
+/// The toolbar (snap toggle, preview toggle, optional reset) sits above the
+/// canvas. Tapping a card selects it and opens the card HUD. Locked cards
+/// ignore drag and resize gestures.
 class LayoutEditor extends StatefulWidget {
   const LayoutEditor({
     super.key,
     required this.layout,
     required this.onLayoutChanged,
+    this.onReset,
   });
 
   final DashboardLayout layout;
   final ValueChanged<DashboardLayout> onLayoutChanged;
+
+  /// If provided, a reset button appears in the toolbar that calls this.
+  final VoidCallback? onReset;
 
   @override
   State<LayoutEditor> createState() => _LayoutEditorState();
@@ -29,22 +31,64 @@ class _LayoutEditorState extends State<LayoutEditor> {
   int? _ghostCol;
   int? _ghostRow;
 
+  // Delta-based drag tracking — avoids needing a RenderBox lookup.
+  Offset? _dragStartGlobal;
+  int? _dragStartCol;
+  int? _dragStartRow;
+  double? _dragCellW;
+  double? _dragCellH;
+
   String? _resizingId;
   int? _ghostColSpan;
   int? _ghostRowSpan;
+  Offset? _resizeStartGlobal;
+  int? _resizeStartColSpan;
+  int? _resizeStartRowSpan;
+
+  bool _snapEnabled = true;
+  bool _previewMode = false;
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _EditorToolbar(
+          snapEnabled: _snapEnabled,
+          previewMode: _previewMode,
+          onSnapToggle: () => setState(() => _snapEnabled = !_snapEnabled),
+          onPreviewToggle: () => setState(() {
+            _previewMode = !_previewMode;
+            if (_previewMode) _selectedId = null;
+          }),
+          onReset: widget.onReset,
+        ),
+        Expanded(child: _buildCanvas()),
+      ],
+    );
+  }
+
+  Widget _buildCanvas() {
     return LayoutBuilder(
       builder: (context, constraints) {
         final cellW = constraints.maxWidth / widget.layout.columns;
         final cellH = constraints.maxHeight / widget.layout.rows;
 
-        // Put the dragging card last so it renders on top (UX-01).
+        // Dragging card goes last so it renders on top (UX-01).
         final ordered = [
           ...widget.layout.cards.where((c) => c.id != _draggingId),
           ...widget.layout.cards.where((c) => c.id == _draggingId),
         ];
+
+        final overlapping = _draggingId != null && _ghostCol != null && _ghostRow != null
+            ? _overlaps(_ghostCol!, _ghostRow!,
+                widget.layout.cards.firstWhere((c) => c.id == _draggingId).slot.columnSpan,
+                widget.layout.cards.firstWhere((c) => c.id == _draggingId).slot.rowSpan,
+                _draggingId!)
+            : false;
 
         return Stack(
           key: const ValueKey('card_stack'),
@@ -54,31 +98,48 @@ class _LayoutEditorState extends State<LayoutEditor> {
               rows: widget.layout.rows,
             ),
             if (_draggingId != null && _ghostCol != null && _ghostRow != null)
-              _buildGhost(cellW, cellH),
-            if (_resizingId != null &&
-                _ghostColSpan != null &&
-                _ghostRowSpan != null)
+              _buildGhost(cellW, cellH, overlapping),
+            if (_resizingId != null && _ghostColSpan != null && _ghostRowSpan != null)
               _buildResizeGhost(cellW, cellH),
             ...ordered.map((c) => _buildCardTile(c, cellW, cellH)),
+            if (_previewMode)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(
+                    key: const ValueKey('preview_mode_indicator'),
+                    color: Colors.transparent,
+                  ),
+                ),
+              ),
           ],
         );
       },
     );
   }
 
-  Widget _buildGhost(double cellW, double cellH) {
+  // ---------------------------------------------------------------------------
+  // Ghost overlays
+  // ---------------------------------------------------------------------------
+
+  Widget _buildGhost(double cellW, double cellH, bool overlapping) {
     final dragging = widget.layout.cards.firstWhere((c) => c.id == _draggingId);
     final slot = dragging.slot;
+    final borderColor = overlapping ? Colors.amber : LandfallColors.accent;
+    final fillColor = overlapping
+        ? Colors.amber.withValues(alpha: 0.15)
+        : LandfallColors.accentMuted;
+
     return Positioned(
+      key: ValueKey(overlapping ? 'drag_ghost_overlap' : 'drag_ghost_clear'),
       left: _ghostCol! * cellW + _kGap,
       top: _ghostRow! * cellH + _kGap,
       width: slot.columnSpan * cellW - _kGap * 2,
       height: slot.rowSpan * cellH - _kGap * 2,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border.all(color: LandfallColors.accent, width: 2),
+          border: Border.all(color: borderColor, width: 2),
           borderRadius: BorderRadius.circular(6),
-          color: LandfallColors.accentMuted,
+          color: fillColor,
         ),
       ),
     );
@@ -105,21 +166,27 @@ class _LayoutEditorState extends State<LayoutEditor> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Card tiles
+  // ---------------------------------------------------------------------------
+
   Widget _buildCardTile(CardConfig config, double cellW, double cellH) {
     final slot = config.slot;
     final isBeingDragged = _draggingId == config.id;
     final isSelected = _selectedId == config.id;
     final color = _cardColor(config.source);
 
-    return Positioned(
+    return AnimatedPositioned(
       key: ValueKey('card_tile_${config.id}'),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutBack,
       left: slot.column * cellW + _kGap,
       top: slot.row * cellH + _kGap,
       width: slot.columnSpan * cellW - _kGap * 2,
       height: slot.rowSpan * cellH - _kGap * 2,
       child: GestureDetector(
-        onTap: () => _selectCard(config),
-        onPanStart: config.locked
+        onTap: _previewMode ? () => _exitPreview(config) : () => _selectCard(config),
+        onPanStart: (_previewMode || config.locked)
             ? null
             : (details) {
                 if (_resizingId == config.id) return;
@@ -127,25 +194,29 @@ class _LayoutEditorState extends State<LayoutEditor> {
                   _draggingId = config.id;
                   _ghostCol = slot.column;
                   _ghostRow = slot.row;
+                  _dragStartGlobal = details.globalPosition;
+                  _dragStartCol = slot.column;
+                  _dragStartRow = slot.row;
+                  _dragCellW = cellW;
+                  _dragCellH = cellH;
                 });
               },
-        onPanUpdate: config.locked
+        onPanUpdate: (_previewMode || config.locked)
             ? null
             : (details) {
                 if (_resizingId == config.id) return;
-                final box = context.findRenderObject() as RenderBox?;
-                if (box == null) return;
-                final local = box.globalToLocal(details.globalPosition);
+                if (_dragStartGlobal == null) return;
+                final delta = details.globalPosition - _dragStartGlobal!;
+                final rawCol = _dragStartCol! + delta.dx / _dragCellW!;
+                final rawRow = _dragStartRow! + delta.dy / _dragCellH!;
                 setState(() {
-                  _ghostCol = (local.dx / cellW)
-                      .floor()
+                  _ghostCol = (_snapEnabled ? rawCol.floor() : rawCol.round())
                       .clamp(0, widget.layout.columns - slot.columnSpan);
-                  _ghostRow = (local.dy / cellH)
-                      .floor()
+                  _ghostRow = (_snapEnabled ? rawRow.floor() : rawRow.round())
                       .clamp(0, widget.layout.rows - slot.rowSpan);
                 });
               },
-        onPanEnd: config.locked
+        onPanEnd: (_previewMode || config.locked)
             ? null
             : (_) {
                 if (_resizingId == config.id) {
@@ -153,6 +224,9 @@ class _LayoutEditorState extends State<LayoutEditor> {
                     _draggingId = null;
                     _ghostCol = null;
                     _ghostRow = null;
+                    _dragStartGlobal = null;
+                    _dragStartCol = null;
+                    _dragStartRow = null;
                   });
                   return;
                 }
@@ -166,6 +240,11 @@ class _LayoutEditorState extends State<LayoutEditor> {
                   _draggingId = null;
                   _ghostCol = null;
                   _ghostRow = null;
+                  _dragStartGlobal = null;
+                  _dragStartCol = null;
+                  _dragStartRow = null;
+                  _dragCellW = null;
+                  _dragCellH = null;
                 });
               },
         child: Stack(
@@ -203,7 +282,7 @@ class _LayoutEditorState extends State<LayoutEditor> {
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        if (!config.visible) ...[
+                        if (!config.visible && !_previewMode) ...[
                           const SizedBox(height: 4),
                           Text(
                             'hidden',
@@ -219,8 +298,8 @@ class _LayoutEditorState extends State<LayoutEditor> {
                 ),
               ),
             ),
-            // Selection highlight
-            if (isSelected)
+            // Selection highlight (not shown in preview mode)
+            if (isSelected && !_previewMode)
               Positioned.fill(
                 child: IgnorePointer(
                   child: DecoratedBox(
@@ -247,15 +326,15 @@ class _LayoutEditorState extends State<LayoutEditor> {
                   color: color.withValues(alpha: 0.8),
                 ),
               ),
-            // Resize handle — hidden for locked cards
-            if (!config.locked)
+            // Resize handle — hidden for locked cards and in preview mode
+            if (!config.locked && !_previewMode)
               Positioned(
                 right: 2,
                 bottom: 2,
                 child: GestureDetector(
                   key: ValueKey('resize_handle_${config.id}'),
                   behavior: HitTestBehavior.opaque,
-                  onPanStart: (_) {
+                  onPanStart: (details) {
                     setState(() {
                       _draggingId = null;
                       _ghostCol = null;
@@ -263,19 +342,21 @@ class _LayoutEditorState extends State<LayoutEditor> {
                       _resizingId = config.id;
                       _ghostColSpan = slot.columnSpan;
                       _ghostRowSpan = slot.rowSpan;
+                      _resizeStartGlobal = details.globalPosition;
+                      _resizeStartColSpan = slot.columnSpan;
+                      _resizeStartRowSpan = slot.rowSpan;
                     });
                   },
                   onPanUpdate: (details) {
-                    final box = context.findRenderObject() as RenderBox?;
-                    if (box == null) return;
-                    final local = box.globalToLocal(details.globalPosition);
+                    if (_resizeStartGlobal == null) return;
+                    final delta = details.globalPosition - _resizeStartGlobal!;
                     setState(() {
                       _ghostColSpan =
-                          ((local.dx / cellW).ceil() - slot.column).clamp(
-                              1, widget.layout.columns - slot.column);
+                          (_resizeStartColSpan! + (delta.dx / cellW).round())
+                              .clamp(1, widget.layout.columns - slot.column);
                       _ghostRowSpan =
-                          ((local.dy / cellH).ceil() - slot.row).clamp(
-                              1, widget.layout.rows - slot.row);
+                          (_resizeStartRowSpan! + (delta.dy / cellH).round())
+                              .clamp(1, widget.layout.rows - slot.row);
                     });
                   },
                   onPanEnd: (_) {
@@ -290,6 +371,9 @@ class _LayoutEditorState extends State<LayoutEditor> {
                       _resizingId = null;
                       _ghostColSpan = null;
                       _ghostRowSpan = null;
+                      _resizeStartGlobal = null;
+                      _resizeStartColSpan = null;
+                      _resizeStartRowSpan = null;
                     });
                   },
                   child: _ResizeHandle(color: color),
@@ -301,8 +385,20 @@ class _LayoutEditorState extends State<LayoutEditor> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Actions
+  // ---------------------------------------------------------------------------
+
   void _selectCard(CardConfig config) {
     setState(() => _selectedId = config.id);
+    _showCardHud(config);
+  }
+
+  void _exitPreview(CardConfig config) {
+    setState(() {
+      _previewMode = false;
+      _selectedId = config.id;
+    });
     _showCardHud(config);
   }
 
@@ -321,6 +417,23 @@ class _LayoutEditorState extends State<LayoutEditor> {
     ).then((_) {
       if (mounted) setState(() => _selectedId = null);
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  /// Returns true if [col, row, colSpan × rowSpan] overlaps any visible card
+  /// other than [excludeId].
+  bool _overlaps(int col, int row, int colSpan, int rowSpan, String excludeId) {
+    for (final card in widget.layout.cards) {
+      if (card.id == excludeId || !card.visible) continue;
+      final s = card.slot;
+      final colOverlap = col < s.column + s.columnSpan && col + colSpan > s.column;
+      final rowOverlap = row < s.row + s.rowSpan && row + rowSpan > s.row;
+      if (colOverlap && rowOverlap) return true;
+    }
+    return false;
   }
 
   DashboardLayout _rebuild(List<CardConfig> cards) => DashboardLayout(
@@ -382,6 +495,110 @@ class _LayoutEditorState extends State<LayoutEditor> {
 }
 
 // ---------------------------------------------------------------------------
+// Toolbar
+// ---------------------------------------------------------------------------
+
+class _EditorToolbar extends StatelessWidget {
+  const _EditorToolbar({
+    required this.snapEnabled,
+    required this.previewMode,
+    required this.onSnapToggle,
+    required this.onPreviewToggle,
+    this.onReset,
+  });
+
+  final bool snapEnabled;
+  final bool previewMode;
+  final VoidCallback onSnapToggle;
+  final VoidCallback onPreviewToggle;
+  final VoidCallback? onReset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('editor_toolbar'),
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: LandfallColors.divider.withValues(alpha: 0.4),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          _ToolbarButton(
+            key: const ValueKey('toolbar_snap_toggle'),
+            icon: snapEnabled ? Icons.grid_on : Icons.grid_off,
+            label: snapEnabled ? 'Snap on' : 'Snap off',
+            active: snapEnabled,
+            onTap: onSnapToggle,
+          ),
+          const SizedBox(width: 4),
+          _ToolbarButton(
+            key: const ValueKey('toolbar_preview_toggle'),
+            icon: previewMode ? Icons.visibility : Icons.visibility_outlined,
+            label: previewMode ? 'Exit preview' : 'Preview',
+            active: previewMode,
+            onTap: onPreviewToggle,
+          ),
+          if (onReset != null) ...[
+            const SizedBox(width: 4),
+            _ToolbarButton(
+              key: const ValueKey('toolbar_reset'),
+              icon: Icons.refresh,
+              label: 'Reset',
+              onTap: onReset!,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ToolbarButton extends StatelessWidget {
+  const _ToolbarButton({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.active = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active
+        ? LandfallColors.accent
+        : LandfallColors.textSecondary;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, color: color),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Card HUD
 // ---------------------------------------------------------------------------
 
@@ -407,7 +624,8 @@ class _CardHud extends StatelessWidget {
       );
 
   void _updateCard(BuildContext context, CardConfig updated) {
-    final cards = layout.cards.map((c) => c.id == config.id ? updated : c).toList();
+    final cards =
+        layout.cards.map((c) => c.id == config.id ? updated : c).toList();
     onLayoutChanged(_rebuild(cards));
   }
 
@@ -426,7 +644,8 @@ class _CardHud extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Remove card?'),
-        content: Text('Remove "${_cardLabel(config.source)}" from this layout?'),
+        content:
+            Text('Remove "${_cardLabel(config.source)}" from this layout?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -436,7 +655,8 @@ class _CardHud extends StatelessWidget {
             key: const ValueKey('hud_delete_confirm'),
             onPressed: () {
               Navigator.pop(ctx);
-              final cards = layout.cards.where((c) => c.id != config.id).toList();
+              final cards =
+                  layout.cards.where((c) => c.id != config.id).toList();
               onLayoutChanged(_rebuild(cards));
               onDismiss();
             },
@@ -456,7 +676,6 @@ class _CardHud extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               Expanded(
@@ -481,15 +700,17 @@ class _CardHud extends StatelessWidget {
             ],
           ),
           const Divider(),
-          // Toggles row
           Row(
             children: [
               Expanded(
                 child: _HudToggle(
                   key: const ValueKey('hud_visibility_toggle'),
-                  icon: config.visible ? Icons.visibility : Icons.visibility_off,
+                  icon: config.visible
+                      ? Icons.visibility
+                      : Icons.visibility_off,
                   label: config.visible ? 'Visible' : 'Hidden',
-                  onTap: () => _updateCard(context, config.copyWith(visible: !config.visible)),
+                  onTap: () => _updateCard(
+                      context, config.copyWith(visible: !config.visible)),
                 ),
               ),
               Expanded(
@@ -497,13 +718,13 @@ class _CardHud extends StatelessWidget {
                   key: const ValueKey('hud_lock_toggle'),
                   icon: config.locked ? Icons.lock : Icons.lock_open,
                   label: config.locked ? 'Locked' : 'Unlocked',
-                  onTap: () => _updateCard(context, config.copyWith(locked: !config.locked)),
+                  onTap: () => _updateCard(
+                      context, config.copyWith(locked: !config.locked)),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          // Z-order and delete row
           Row(
             children: [
               Expanded(
@@ -596,7 +817,8 @@ class _HudAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive ? Theme.of(context).colorScheme.error : null;
+    final color =
+        destructive ? Theme.of(context).colorScheme.error : null;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -609,7 +831,10 @@ class _HudAction extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color),
+              style: Theme.of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.copyWith(color: color),
             ),
           ],
         ),
