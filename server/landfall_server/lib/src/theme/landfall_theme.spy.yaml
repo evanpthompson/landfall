@@ -34,6 +34,15 @@ fields:
   ### True for the 5 built-in themes seeded at startup. Cannot be deleted.
   isBuiltIn: bool, default=false
 
+  ### True when this theme is listed in the Landfall marketplace.
+  isMarketplace: bool, default=false
+
+  ### Price in cents (e.g. 499 = $4.99). Null or 0 means free.
+  priceUsd: int?
+
+  ### Stripe product ID for checkout integration. Null for free themes.
+  stripeProductId: String?
+
   ### When this theme was created.
   createdAt: DateTime
 
@@ -43,3 +52,5 @@ indexes:
     unique: true
   themes_builtin_idx:
     fields: isBuiltIn
+  themes_marketplace_idx:
+    fields: isMarketplace

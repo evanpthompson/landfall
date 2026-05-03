@@ -12,124 +12,98 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-/// A stored theme — metadata plus the fully-resolved token set as JSON.
-/// Built-in themes have isBuiltIn=true and cannot be deleted.
-abstract class LandfallTheme implements _i1.SerializableModel {
-  LandfallTheme._({
-    this.id,
+/// A marketplace theme entry returned from MarketplaceEndpoint.
+/// Merges LandfallTheme data with per-user ownership information.
+abstract class MarketplaceThemeInfo implements _i1.SerializableModel {
+  MarketplaceThemeInfo._({
+    required this.id,
     required this.slug,
     required this.name,
     required this.schemaVersion,
     this.author,
     this.description,
     this.previewUrl,
-    String? tagsJson,
-    required this.tokensJson,
+    required this.tagsJson,
     required this.resolvedJson,
-    bool? isBuiltIn,
-    bool? isMarketplace,
     this.priceUsd,
     this.stripeProductId,
+    required this.isBuiltIn,
     required this.createdAt,
-  }) : tagsJson = tagsJson ?? '[]',
-       isBuiltIn = isBuiltIn ?? false,
-       isMarketplace = isMarketplace ?? false;
+    required this.isOwned,
+  });
 
-  factory LandfallTheme({
-    int? id,
+  factory MarketplaceThemeInfo({
+    required int id,
     required String slug,
     required String name,
     required String schemaVersion,
     String? author,
     String? description,
     String? previewUrl,
-    String? tagsJson,
-    required String tokensJson,
+    required String tagsJson,
     required String resolvedJson,
-    bool? isBuiltIn,
-    bool? isMarketplace,
     int? priceUsd,
     String? stripeProductId,
+    required bool isBuiltIn,
     required DateTime createdAt,
-  }) = _LandfallThemeImpl;
+    required bool isOwned,
+  }) = _MarketplaceThemeInfoImpl;
 
-  factory LandfallTheme.fromJson(Map<String, dynamic> jsonSerialization) {
-    return LandfallTheme(
-      id: jsonSerialization['id'] as int?,
+  factory MarketplaceThemeInfo.fromJson(
+    Map<String, dynamic> jsonSerialization,
+  ) {
+    return MarketplaceThemeInfo(
+      id: jsonSerialization['id'] as int,
       slug: jsonSerialization['slug'] as String,
       name: jsonSerialization['name'] as String,
       schemaVersion: jsonSerialization['schemaVersion'] as String,
       author: jsonSerialization['author'] as String?,
       description: jsonSerialization['description'] as String?,
       previewUrl: jsonSerialization['previewUrl'] as String?,
-      tagsJson: jsonSerialization['tagsJson'] as String?,
-      tokensJson: jsonSerialization['tokensJson'] as String,
+      tagsJson: jsonSerialization['tagsJson'] as String,
       resolvedJson: jsonSerialization['resolvedJson'] as String,
-      isBuiltIn: jsonSerialization['isBuiltIn'] == null
-          ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['isBuiltIn']),
-      isMarketplace: jsonSerialization['isMarketplace'] == null
-          ? null
-          : _i1.BoolJsonExtension.fromJson(jsonSerialization['isMarketplace']),
       priceUsd: jsonSerialization['priceUsd'] as int?,
       stripeProductId: jsonSerialization['stripeProductId'] as String?,
+      isBuiltIn: _i1.BoolJsonExtension.fromJson(jsonSerialization['isBuiltIn']),
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
+      isOwned: _i1.BoolJsonExtension.fromJson(jsonSerialization['isOwned']),
     );
   }
 
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  int? id;
+  int id;
 
-  /// URL-safe slug, e.g. "default-dark" or "neon-arcade". Unique.
   String slug;
 
-  /// User-facing display name.
   String name;
 
-  /// ThemeSchema version the theme was authored against (e.g. "1.0").
   String schemaVersion;
 
-  /// Optional theme author handle or name.
   String? author;
 
-  /// One or two sentence description.
   String? description;
 
-  /// HTTPS URL to a 1920x1080 PNG preview image.
   String? previewUrl;
 
-  /// JSON-encoded List<String> of marketplace tags.
   String tagsJson;
 
-  /// The raw theme YAML/JSON as a normalised JSON string (post-parse, pre-resolve).
-  String tokensJson;
-
-  /// The fully resolved flat token map as a JSON string (derived values filled in).
   String resolvedJson;
 
-  /// True for the 5 built-in themes seeded at startup. Cannot be deleted.
-  bool isBuiltIn;
-
-  /// True when this theme is listed in the Landfall marketplace.
-  bool isMarketplace;
-
-  /// Price in cents (e.g. 499 = $4.99). Null or 0 means free.
   int? priceUsd;
 
-  /// Stripe product ID for checkout integration. Null for free themes.
   String? stripeProductId;
 
-  /// When this theme was created.
+  bool isBuiltIn;
+
   DateTime createdAt;
 
-  /// Returns a shallow copy of this [LandfallTheme]
+  bool isOwned;
+
+  /// Returns a shallow copy of this [MarketplaceThemeInfo]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
-  LandfallTheme copyWith({
+  MarketplaceThemeInfo copyWith({
     int? id,
     String? slug,
     String? name,
@@ -138,19 +112,18 @@ abstract class LandfallTheme implements _i1.SerializableModel {
     String? description,
     String? previewUrl,
     String? tagsJson,
-    String? tokensJson,
     String? resolvedJson,
-    bool? isBuiltIn,
-    bool? isMarketplace,
     int? priceUsd,
     String? stripeProductId,
+    bool? isBuiltIn,
     DateTime? createdAt,
+    bool? isOwned,
   });
   @override
   Map<String, dynamic> toJson() {
     return {
-      '__className__': 'LandfallTheme',
-      if (id != null) 'id': id,
+      '__className__': 'MarketplaceThemeInfo',
+      'id': id,
       'slug': slug,
       'name': name,
       'schemaVersion': schemaVersion,
@@ -158,13 +131,12 @@ abstract class LandfallTheme implements _i1.SerializableModel {
       if (description != null) 'description': description,
       if (previewUrl != null) 'previewUrl': previewUrl,
       'tagsJson': tagsJson,
-      'tokensJson': tokensJson,
       'resolvedJson': resolvedJson,
-      'isBuiltIn': isBuiltIn,
-      'isMarketplace': isMarketplace,
       if (priceUsd != null) 'priceUsd': priceUsd,
       if (stripeProductId != null) 'stripeProductId': stripeProductId,
+      'isBuiltIn': isBuiltIn,
       'createdAt': createdAt.toJson(),
+      'isOwned': isOwned,
     };
   }
 
@@ -176,23 +148,22 @@ abstract class LandfallTheme implements _i1.SerializableModel {
 
 class _Undefined {}
 
-class _LandfallThemeImpl extends LandfallTheme {
-  _LandfallThemeImpl({
-    int? id,
+class _MarketplaceThemeInfoImpl extends MarketplaceThemeInfo {
+  _MarketplaceThemeInfoImpl({
+    required int id,
     required String slug,
     required String name,
     required String schemaVersion,
     String? author,
     String? description,
     String? previewUrl,
-    String? tagsJson,
-    required String tokensJson,
+    required String tagsJson,
     required String resolvedJson,
-    bool? isBuiltIn,
-    bool? isMarketplace,
     int? priceUsd,
     String? stripeProductId,
+    required bool isBuiltIn,
     required DateTime createdAt,
+    required bool isOwned,
   }) : super._(
          id: id,
          slug: slug,
@@ -202,21 +173,20 @@ class _LandfallThemeImpl extends LandfallTheme {
          description: description,
          previewUrl: previewUrl,
          tagsJson: tagsJson,
-         tokensJson: tokensJson,
          resolvedJson: resolvedJson,
-         isBuiltIn: isBuiltIn,
-         isMarketplace: isMarketplace,
          priceUsd: priceUsd,
          stripeProductId: stripeProductId,
+         isBuiltIn: isBuiltIn,
          createdAt: createdAt,
+         isOwned: isOwned,
        );
 
-  /// Returns a shallow copy of this [LandfallTheme]
+  /// Returns a shallow copy of this [MarketplaceThemeInfo]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   @override
-  LandfallTheme copyWith({
-    Object? id = _Undefined,
+  MarketplaceThemeInfo copyWith({
+    int? id,
     String? slug,
     String? name,
     String? schemaVersion,
@@ -224,16 +194,15 @@ class _LandfallThemeImpl extends LandfallTheme {
     Object? description = _Undefined,
     Object? previewUrl = _Undefined,
     String? tagsJson,
-    String? tokensJson,
     String? resolvedJson,
-    bool? isBuiltIn,
-    bool? isMarketplace,
     Object? priceUsd = _Undefined,
     Object? stripeProductId = _Undefined,
+    bool? isBuiltIn,
     DateTime? createdAt,
+    bool? isOwned,
   }) {
-    return LandfallTheme(
-      id: id is int? ? id : this.id,
+    return MarketplaceThemeInfo(
+      id: id ?? this.id,
       slug: slug ?? this.slug,
       name: name ?? this.name,
       schemaVersion: schemaVersion ?? this.schemaVersion,
@@ -241,15 +210,14 @@ class _LandfallThemeImpl extends LandfallTheme {
       description: description is String? ? description : this.description,
       previewUrl: previewUrl is String? ? previewUrl : this.previewUrl,
       tagsJson: tagsJson ?? this.tagsJson,
-      tokensJson: tokensJson ?? this.tokensJson,
       resolvedJson: resolvedJson ?? this.resolvedJson,
-      isBuiltIn: isBuiltIn ?? this.isBuiltIn,
-      isMarketplace: isMarketplace ?? this.isMarketplace,
       priceUsd: priceUsd is int? ? priceUsd : this.priceUsd,
       stripeProductId: stripeProductId is String?
           ? stripeProductId
           : this.stripeProductId,
+      isBuiltIn: isBuiltIn ?? this.isBuiltIn,
       createdAt: createdAt ?? this.createdAt,
+      isOwned: isOwned ?? this.isOwned,
     );
   }
 }

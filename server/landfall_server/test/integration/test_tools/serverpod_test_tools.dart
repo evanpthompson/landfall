@@ -40,15 +40,17 @@ import 'package:landfall_server/src/generated/profile/dashboard_profile.dart'
     as _i18;
 import 'package:landfall_server/src/generated/settings/linked_credential_summary.dart'
     as _i19;
-import 'package:landfall_server/src/generated/theme/landfall_theme.dart'
+import 'package:landfall_server/src/generated/theme/marketplace_theme_info.dart'
     as _i20;
-import 'package:landfall_server/src/generated/theme/theme_upload_result.dart'
+import 'package:landfall_server/src/generated/theme/landfall_theme.dart'
     as _i21;
-import 'package:landfall_server/src/generated/weather/weather_current.dart'
+import 'package:landfall_server/src/generated/theme/theme_upload_result.dart'
     as _i22;
-import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
+import 'package:landfall_server/src/generated/weather/weather_current.dart'
     as _i23;
-import 'package:landfall_server/src/generated/future_calls.dart' as _i24;
+import 'package:landfall_server/src/generated/weather/weather_forecast.dart'
+    as _i24;
+import 'package:landfall_server/src/generated/future_calls.dart' as _i25;
 import 'package:landfall_server/src/generated/protocol.dart';
 import 'package:landfall_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -192,6 +194,8 @@ class TestEndpoints {
 
   late final _SettingsEndpoint settings;
 
+  late final _MarketplaceEndpoint marketplace;
+
   late final _ThemeEndpoint theme;
 
   late final _WeatherEndpoint weather;
@@ -257,6 +261,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     settings = _SettingsEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    marketplace = _MarketplaceEndpoint(
       endpoints,
       serializationManager,
     );
@@ -1659,6 +1667,108 @@ class _SettingsEndpoint {
   }
 }
 
+class _MarketplaceEndpoint {
+  _MarketplaceEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<List<_i20.MarketplaceThemeInfo>> listMarketplaceThemes(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'marketplace',
+            method: 'listMarketplaceThemes',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'marketplace',
+          methodName: 'listMarketplaceThemes',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i20.MarketplaceThemeInfo>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i20.MarketplaceThemeInfo> getMarketplaceTheme(
+    _i1.TestSessionBuilder sessionBuilder,
+    int themeId,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'marketplace',
+            method: 'getMarketplaceTheme',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'marketplace',
+          methodName: 'getMarketplaceTheme',
+          parameters: _i1.testObjectToJson({'themeId': themeId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i20.MarketplaceThemeInfo>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<List<_i20.MarketplaceThemeInfo>> getOwnedThemes(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'marketplace',
+            method: 'getOwnedThemes',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'marketplace',
+          methodName: 'getOwnedThemes',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i20.MarketplaceThemeInfo>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
 class _ThemeEndpoint {
   _ThemeEndpoint(
     this._endpointDispatch,
@@ -1669,7 +1779,7 @@ class _ThemeEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<List<_i20.LandfallTheme>> listThemes(
+  _i3.Future<List<_i21.LandfallTheme>> listThemes(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1691,7 +1801,7 @@ class _ThemeEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i20.LandfallTheme>>);
+                as _i3.Future<List<_i21.LandfallTheme>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1699,7 +1809,7 @@ class _ThemeEndpoint {
     });
   }
 
-  _i3.Future<_i21.ThemeUploadResult> uploadTheme(
+  _i3.Future<_i22.ThemeUploadResult> uploadTheme(
     _i1.TestSessionBuilder sessionBuilder,
     String yaml,
   ) async {
@@ -1722,7 +1832,7 @@ class _ThemeEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i21.ThemeUploadResult>);
+                as _i3.Future<_i22.ThemeUploadResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1730,7 +1840,7 @@ class _ThemeEndpoint {
     });
   }
 
-  _i3.Future<_i21.ThemeUploadResult> importTheme(
+  _i3.Future<_i22.ThemeUploadResult> importTheme(
     _i1.TestSessionBuilder sessionBuilder,
     String url,
   ) async {
@@ -1753,7 +1863,7 @@ class _ThemeEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i21.ThemeUploadResult>);
+                as _i3.Future<_i22.ThemeUploadResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1869,7 +1979,7 @@ class _WeatherEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i22.WeatherCurrent?> getCurrentWeather(
+  _i3.Future<_i23.WeatherCurrent?> getCurrentWeather(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1891,7 +2001,7 @@ class _WeatherEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i22.WeatherCurrent?>);
+                as _i3.Future<_i23.WeatherCurrent?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1899,7 +2009,7 @@ class _WeatherEndpoint {
     });
   }
 
-  _i3.Future<List<_i23.WeatherForecast>> getForecast(
+  _i3.Future<List<_i24.WeatherForecast>> getForecast(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1921,7 +2031,7 @@ class _WeatherEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i23.WeatherForecast>>);
+                as _i3.Future<List<_i24.WeatherForecast>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1938,7 +2048,7 @@ class _CalendarRefreshCallFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i24.CalendarRefreshCallInvokeFutureCall().invoke(
+      await _i25.CalendarRefreshCallInvokeFutureCall().invoke(
         _localUniqueSession,
         object,
       );
@@ -1956,7 +2066,7 @@ class _PhotoRefreshCallFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i24.PhotoRefreshCallInvokeFutureCall().invoke(
+      await _i25.PhotoRefreshCallInvokeFutureCall().invoke(
         _localUniqueSession,
         object,
       );
@@ -1974,7 +2084,7 @@ class _ProfileScheduleCallFutureCall {
     var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
         .internalBuild();
     try {
-      await _i24.ProfileScheduleCallInvokeFutureCall().invoke(
+      await _i25.ProfileScheduleCallInvokeFutureCall().invoke(
         _localUniqueSession,
         object,
       );

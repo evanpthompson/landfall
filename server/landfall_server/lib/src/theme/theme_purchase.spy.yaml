@@ -1,0 +1,26 @@
+### Records a theme purchase by a Serverpod auth user.
+### Created on Stripe checkout.session.completed with purchase_type=theme.
+class: ThemePurchase
+table: theme_purchases
+
+fields:
+  ### Serverpod auth user identifier (UUID string).
+  userId: String
+
+  ### References LandfallTheme.id.
+  themeId: int
+
+  ### When this theme was purchased.
+  purchasedAt: DateTime
+
+  ### Stripe checkout session ID. Used for idempotency on webhook replay.
+  stripePaymentIntentId: String?
+
+indexes:
+  theme_purchases_user_theme_idx:
+    fields: userId, themeId
+    unique: true
+  theme_purchases_user_idx:
+    fields: userId
+  theme_purchases_stripe_idx:
+    fields: stripePaymentIntentId

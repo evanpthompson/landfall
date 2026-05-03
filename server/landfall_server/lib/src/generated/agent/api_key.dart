@@ -13,7 +13,7 @@
 import 'package:serverpod/serverpod.dart' as _i1;
 
 /// An API key for agent clients pushing cards to the display.
-/// The plaintext key is never stored — only the SHA-256 hash.
+/// The plaintext key is never stored — only the HMAC-SHA-256 hash.
 abstract class ApiKey implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   ApiKey._({
     this.id,

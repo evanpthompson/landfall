@@ -50,6 +50,10 @@ profile:
 settings:
   - getLinkedCredentials:
   - getMyAuthUserId:
+marketplace:
+  - listMarketplaceThemes:
+  - getMarketplaceTheme:
+  - getOwnedThemes:
 theme:
   - listThemes:
   - uploadTheme:

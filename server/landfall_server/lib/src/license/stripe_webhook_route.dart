@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:serverpod/serverpod.dart';
 
-import '../generated/protocol.dart';
+import 'stripe_purchase_service.dart';
 
 /// Handles Stripe webhook events at POST `/stripe/webhook`.
 ///
@@ -42,70 +42,10 @@ class StripeWebhookRoute extends Route {
 
     final eventType = event['type'] as String?;
     if (eventType == 'checkout.session.completed') {
-      await _handleCheckoutCompleted(session, event);
+      await StripePurchaseService.handleCheckoutCompleted(session, event);
     }
 
     return Response.ok(body: Body.fromString('ok'));
-  }
-
-  Future<void> _handleCheckoutCompleted(
-    Session session,
-    Map<String, dynamic> event,
-  ) async {
-    final obj = event['data']?['object'] as Map<String, dynamic>? ?? {};
-    final metadata = obj['metadata'] as Map<String, dynamic>? ?? {};
-    final sessionId = obj['id'] as String? ?? '';
-    final customerEmail =
-        (obj['customer_details']?['email'] as String?) ??
-            (obj['customer_email'] as String?);
-
-    final purchaseType = metadata['purchase_type'] as String?;
-
-    if (purchaseType == 'license') {
-      final tier = metadata['tier'] as String? ?? 'pro';
-      final key = _generateLicenseKey(tier);
-      await LicenseKey.db.insertRow(
-        session,
-        LicenseKey(
-          key: key,
-          tier: tier,
-          purchasedAt: DateTime.now().toUtc(),
-          stripeSessionId: sessionId,
-          buyerEmail: customerEmail,
-        ),
-      );
-      session.log(
-        'License key issued: $key for $customerEmail (tier: $tier)',
-        level: LogLevel.info,
-      );
-    } else if (purchaseType == 'pack') {
-      final packId = metadata['pack_id'] as String?;
-      final userId = metadata['user_id'] as String?;
-      if (packId != null && userId != null) {
-        await OwnedPack.db.insertRow(
-          session,
-          OwnedPack(
-            userId: userId,
-            packId: packId,
-            grantedAt: DateTime.now().toUtc(),
-            stripeSessionId: sessionId,
-          ),
-        );
-        session.log(
-          'Pack granted: $packId to user $userId',
-          level: LogLevel.info,
-        );
-      }
-    }
-  }
-
-  String _generateLicenseKey(String tier) {
-    final tierCode = tier == 'founding_member' ? 'FM' : 'PRO';
-    final now = DateTime.now().microsecondsSinceEpoch;
-    final hash = sha256.convert(utf8.encode('$now-$tierCode')).toString();
-    final part1 = hash.substring(0, 4).toUpperCase();
-    final part2 = hash.substring(4, 8).toUpperCase();
-    return 'LF-$tierCode-$part1-$part2';
   }
 
   bool _verifySignature(String body, String signature, String secret) {

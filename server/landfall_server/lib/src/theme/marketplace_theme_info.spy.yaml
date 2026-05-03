@@ -1,0 +1,18 @@
+### A marketplace theme entry returned from MarketplaceEndpoint.
+### Merges LandfallTheme data with per-user ownership information.
+class: MarketplaceThemeInfo
+fields:
+  id: int
+  slug: String
+  name: String
+  schemaVersion: String
+  author: String?
+  description: String?
+  previewUrl: String?
+  tagsJson: String
+  resolvedJson: String
+  priceUsd: int?
+  stripeProductId: String?
+  isBuiltIn: bool
+  createdAt: DateTime
+  isOwned: bool

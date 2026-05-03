@@ -28,9 +28,13 @@ abstract class LandfallTheme
     required this.tokensJson,
     required this.resolvedJson,
     bool? isBuiltIn,
+    bool? isMarketplace,
+    this.priceUsd,
+    this.stripeProductId,
     required this.createdAt,
   }) : tagsJson = tagsJson ?? '[]',
-       isBuiltIn = isBuiltIn ?? false;
+       isBuiltIn = isBuiltIn ?? false,
+       isMarketplace = isMarketplace ?? false;
 
   factory LandfallTheme({
     int? id,
@@ -44,6 +48,9 @@ abstract class LandfallTheme
     required String tokensJson,
     required String resolvedJson,
     bool? isBuiltIn,
+    bool? isMarketplace,
+    int? priceUsd,
+    String? stripeProductId,
     required DateTime createdAt,
   }) = _LandfallThemeImpl;
 
@@ -62,6 +69,11 @@ abstract class LandfallTheme
       isBuiltIn: jsonSerialization['isBuiltIn'] == null
           ? null
           : _i1.BoolJsonExtension.fromJson(jsonSerialization['isBuiltIn']),
+      isMarketplace: jsonSerialization['isMarketplace'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['isMarketplace']),
+      priceUsd: jsonSerialization['priceUsd'] as int?,
+      stripeProductId: jsonSerialization['stripeProductId'] as String?,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -105,6 +117,15 @@ abstract class LandfallTheme
   /// True for the 5 built-in themes seeded at startup. Cannot be deleted.
   bool isBuiltIn;
 
+  /// True when this theme is listed in the Landfall marketplace.
+  bool isMarketplace;
+
+  /// Price in cents (e.g. 499 = $4.99). Null or 0 means free.
+  int? priceUsd;
+
+  /// Stripe product ID for checkout integration. Null for free themes.
+  String? stripeProductId;
+
   /// When this theme was created.
   DateTime createdAt;
 
@@ -126,6 +147,9 @@ abstract class LandfallTheme
     String? tokensJson,
     String? resolvedJson,
     bool? isBuiltIn,
+    bool? isMarketplace,
+    int? priceUsd,
+    String? stripeProductId,
     DateTime? createdAt,
   });
   @override
@@ -143,6 +167,9 @@ abstract class LandfallTheme
       'tokensJson': tokensJson,
       'resolvedJson': resolvedJson,
       'isBuiltIn': isBuiltIn,
+      'isMarketplace': isMarketplace,
+      if (priceUsd != null) 'priceUsd': priceUsd,
+      if (stripeProductId != null) 'stripeProductId': stripeProductId,
       'createdAt': createdAt.toJson(),
     };
   }
@@ -162,6 +189,9 @@ abstract class LandfallTheme
       'tokensJson': tokensJson,
       'resolvedJson': resolvedJson,
       'isBuiltIn': isBuiltIn,
+      'isMarketplace': isMarketplace,
+      if (priceUsd != null) 'priceUsd': priceUsd,
+      if (stripeProductId != null) 'stripeProductId': stripeProductId,
       'createdAt': createdAt.toJson(),
     };
   }
@@ -211,6 +241,9 @@ class _LandfallThemeImpl extends LandfallTheme {
     required String tokensJson,
     required String resolvedJson,
     bool? isBuiltIn,
+    bool? isMarketplace,
+    int? priceUsd,
+    String? stripeProductId,
     required DateTime createdAt,
   }) : super._(
          id: id,
@@ -224,6 +257,9 @@ class _LandfallThemeImpl extends LandfallTheme {
          tokensJson: tokensJson,
          resolvedJson: resolvedJson,
          isBuiltIn: isBuiltIn,
+         isMarketplace: isMarketplace,
+         priceUsd: priceUsd,
+         stripeProductId: stripeProductId,
          createdAt: createdAt,
        );
 
@@ -243,6 +279,9 @@ class _LandfallThemeImpl extends LandfallTheme {
     String? tokensJson,
     String? resolvedJson,
     bool? isBuiltIn,
+    bool? isMarketplace,
+    Object? priceUsd = _Undefined,
+    Object? stripeProductId = _Undefined,
     DateTime? createdAt,
   }) {
     return LandfallTheme(
@@ -257,6 +296,11 @@ class _LandfallThemeImpl extends LandfallTheme {
       tokensJson: tokensJson ?? this.tokensJson,
       resolvedJson: resolvedJson ?? this.resolvedJson,
       isBuiltIn: isBuiltIn ?? this.isBuiltIn,
+      isMarketplace: isMarketplace ?? this.isMarketplace,
+      priceUsd: priceUsd is int? ? priceUsd : this.priceUsd,
+      stripeProductId: stripeProductId is String?
+          ? stripeProductId
+          : this.stripeProductId,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -316,6 +360,22 @@ class LandfallThemeUpdateTable extends _i1.UpdateTable<LandfallThemeTable> {
     value,
   );
 
+  _i1.ColumnValue<bool, bool> isMarketplace(bool value) => _i1.ColumnValue(
+    table.isMarketplace,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> priceUsd(int? value) => _i1.ColumnValue(
+    table.priceUsd,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> stripeProductId(String? value) =>
+      _i1.ColumnValue(
+        table.stripeProductId,
+        value,
+      );
+
   _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
       _i1.ColumnValue(
         table.createdAt,
@@ -368,6 +428,19 @@ class LandfallThemeTable extends _i1.Table<int?> {
       this,
       hasDefault: true,
     );
+    isMarketplace = _i1.ColumnBool(
+      'isMarketplace',
+      this,
+      hasDefault: true,
+    );
+    priceUsd = _i1.ColumnInt(
+      'priceUsd',
+      this,
+    );
+    stripeProductId = _i1.ColumnString(
+      'stripeProductId',
+      this,
+    );
     createdAt = _i1.ColumnDateTime(
       'createdAt',
       this,
@@ -406,6 +479,15 @@ class LandfallThemeTable extends _i1.Table<int?> {
   /// True for the 5 built-in themes seeded at startup. Cannot be deleted.
   late final _i1.ColumnBool isBuiltIn;
 
+  /// True when this theme is listed in the Landfall marketplace.
+  late final _i1.ColumnBool isMarketplace;
+
+  /// Price in cents (e.g. 499 = $4.99). Null or 0 means free.
+  late final _i1.ColumnInt priceUsd;
+
+  /// Stripe product ID for checkout integration. Null for free themes.
+  late final _i1.ColumnString stripeProductId;
+
   /// When this theme was created.
   late final _i1.ColumnDateTime createdAt;
 
@@ -422,6 +504,9 @@ class LandfallThemeTable extends _i1.Table<int?> {
     tokensJson,
     resolvedJson,
     isBuiltIn,
+    isMarketplace,
+    priceUsd,
+    stripeProductId,
     createdAt,
   ];
 }
