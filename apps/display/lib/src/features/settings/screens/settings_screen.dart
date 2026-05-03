@@ -644,6 +644,8 @@ class _LayoutTab extends StatelessWidget {
                   layout: state.active.layout,
                   onLayoutChanged: (updated) =>
                       context.read<DashboardProfileCubit>().saveActiveLayout(updated),
+                  onReset: () =>
+                      context.read<DashboardProfileCubit>().resetActiveLayout(),
                 ),
               ),
             ],

@@ -74,6 +74,29 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
     }
   }
 
+  /// Resets the active profile's layout to its default seed layout.
+  ///
+  /// The default is derived from the profile name: "Night" → nightLayout,
+  /// "Weekend" → weekendLayout, anything else → weekdayLayout.
+  Future<void> resetActiveLayout() async {
+    final current = state;
+    if (current is! DashboardProfileLoaded) return;
+    final defaultLayout = _defaultLayoutFor(current.active.name);
+    try {
+      await _repository.updateProfile(current.active.id, layout: defaultLayout);
+      await _refreshAfterWrite();
+    } catch (e) {
+      emit(DashboardProfileError(e.toString()));
+    }
+  }
+
+  static DashboardLayout _defaultLayoutFor(String profileName) {
+    final lower = profileName.toLowerCase();
+    if (lower.contains('night')) return DashboardLayout.nightLayout();
+    if (lower.contains('weekend')) return DashboardLayout.weekendLayout();
+    return DashboardLayout.weekdayLayout();
+  }
+
   /// Creates a new profile named [name], optionally seeded from [layout].
   Future<void> createProfile(String name, {DashboardLayout? layout}) async {
     try {

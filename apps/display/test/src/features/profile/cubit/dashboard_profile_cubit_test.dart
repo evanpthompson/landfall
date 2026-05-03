@@ -312,4 +312,34 @@ void main() {
       );
     });
   });
+
+  // ── resetActiveLayout ────────────────────────────────────────────────────────
+
+  group('resetActiveLayout', () {
+    blocTest<DashboardProfileCubit, DashboardProfileState>(
+      'saves the active profile default layout then refreshes',
+      build: build,
+      setUp: () {
+        when(() => repo.updateProfile(any(), layout: any(named: 'layout')))
+            .thenAnswer((_) async => _weekday);
+        when(() => repo.listProfiles()).thenAnswer((_) async => _all);
+      },
+      seed: () => DashboardProfileLoaded(_weekday, profiles: _all),
+      act: (c) => c.resetActiveLayout(),
+      verify: (_) {
+        verify(() => repo.updateProfile(
+              _weekday.id,
+              layout: any(named: 'layout'),
+            )).called(1);
+      },
+    );
+
+    blocTest<DashboardProfileCubit, DashboardProfileState>(
+      'does nothing when state is not Loaded',
+      build: build,
+      seed: () => const DashboardProfileLoading(),
+      act: (c) => c.resetActiveLayout(),
+      expect: () => [],
+    );
+  });
 }

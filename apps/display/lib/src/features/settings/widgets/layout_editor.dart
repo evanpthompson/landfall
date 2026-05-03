@@ -64,6 +64,7 @@ class _LayoutEditorState extends State<LayoutEditor> {
             _previewMode = !_previewMode;
             if (_previewMode) _selectedId = null;
           }),
+          onSelectAll: _showSelectAllSheet,
           onReset: widget.onReset,
         ),
         Expanded(child: _buildCanvas()),
@@ -402,6 +403,17 @@ class _LayoutEditorState extends State<LayoutEditor> {
     _showCardHud(config);
   }
 
+  void _showSelectAllSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (_) => _SelectAllSheet(
+        layout: widget.layout,
+        onLayoutChanged: widget.onLayoutChanged,
+        onDismiss: () => Navigator.pop(context),
+      ),
+    );
+  }
+
   void _showCardHud(CardConfig config) {
     showModalBottomSheet<void>(
       context: context,
@@ -504,6 +516,7 @@ class _EditorToolbar extends StatelessWidget {
     required this.previewMode,
     required this.onSnapToggle,
     required this.onPreviewToggle,
+    required this.onSelectAll,
     this.onReset,
   });
 
@@ -511,6 +524,7 @@ class _EditorToolbar extends StatelessWidget {
   final bool previewMode;
   final VoidCallback onSnapToggle;
   final VoidCallback onPreviewToggle;
+  final VoidCallback onSelectAll;
   final VoidCallback? onReset;
 
   @override
@@ -534,6 +548,13 @@ class _EditorToolbar extends StatelessWidget {
             label: snapEnabled ? 'Snap on' : 'Snap off',
             active: snapEnabled,
             onTap: onSnapToggle,
+          ),
+          const SizedBox(width: 4),
+          _ToolbarButton(
+            key: const ValueKey('toolbar_select_all'),
+            icon: Icons.select_all,
+            label: 'Select all',
+            onTap: onSelectAll,
           ),
           const SizedBox(width: 4),
           _ToolbarButton(
@@ -767,6 +788,115 @@ class _CardHud extends StatelessWidget {
         'system.photos' => 'Photos',
         _ => source,
       };
+}
+
+// ---------------------------------------------------------------------------
+// Select-all sheet
+// ---------------------------------------------------------------------------
+
+class _SelectAllSheet extends StatelessWidget {
+  const _SelectAllSheet({
+    required this.layout,
+    required this.onLayoutChanged,
+    required this.onDismiss,
+  });
+
+  final DashboardLayout layout;
+  final ValueChanged<DashboardLayout> onLayoutChanged;
+  final VoidCallback onDismiss;
+
+  DashboardLayout _rebuild(List<CardConfig> cards) => DashboardLayout(
+        id: layout.id,
+        name: layout.name,
+        columns: layout.columns,
+        rows: layout.rows,
+        cards: cards,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('select_all_sheet'),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'All cards',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: onDismiss,
+              ),
+            ],
+          ),
+          const Divider(),
+          Row(
+            children: [
+              Expanded(
+                child: _HudAction(
+                  key: const ValueKey('select_all_lock_all'),
+                  icon: Icons.lock,
+                  label: 'Lock all',
+                  onTap: () {
+                    onLayoutChanged(_rebuild(
+                      layout.cards.map((c) => c.copyWith(locked: true)).toList(),
+                    ));
+                    onDismiss();
+                  },
+                ),
+              ),
+              Expanded(
+                child: _HudAction(
+                  key: const ValueKey('select_all_unlock_all'),
+                  icon: Icons.lock_open,
+                  label: 'Unlock all',
+                  onTap: () {
+                    onLayoutChanged(_rebuild(
+                      layout.cards.map((c) => c.copyWith(locked: false)).toList(),
+                    ));
+                    onDismiss();
+                  },
+                ),
+              ),
+              Expanded(
+                child: _HudAction(
+                  key: const ValueKey('select_all_hide_all'),
+                  icon: Icons.visibility_off,
+                  label: 'Hide all',
+                  onTap: () {
+                    onLayoutChanged(_rebuild(
+                      layout.cards.map((c) => c.copyWith(visible: false)).toList(),
+                    ));
+                    onDismiss();
+                  },
+                ),
+              ),
+              Expanded(
+                child: _HudAction(
+                  key: const ValueKey('select_all_show_all'),
+                  icon: Icons.visibility,
+                  label: 'Show all',
+                  onTap: () {
+                    onLayoutChanged(_rebuild(
+                      layout.cards.map((c) => c.copyWith(visible: true)).toList(),
+                    ));
+                    onDismiss();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _HudToggle extends StatelessWidget {

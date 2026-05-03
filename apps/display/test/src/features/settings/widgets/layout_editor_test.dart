@@ -380,6 +380,128 @@ void main() {
       await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
       expect(find.byKey(const ValueKey('toolbar_reset')), findsNothing);
     });
+
+    testWidgets('toolbar contains select-all button', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+      expect(find.byKey(const ValueKey('toolbar_select_all')), findsOneWidget);
+    });
+  });
+
+  // --- Select all ------------------------------------------------------------
+
+  group('select all', () {
+    testWidgets('select-all sheet appears on tap', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_twoCardLayout()));
+
+      await tester.tap(find.byKey(const ValueKey('toolbar_select_all')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('select_all_sheet')), findsOneWidget);
+    });
+
+    testWidgets('lock all sets all cards locked', (tester) async {
+      DashboardLayout? updated;
+      await tester.pumpWidget(_wrapLayout(
+        _twoCardLayout(),
+        onChanged: (l) => updated = l,
+      ));
+
+      await tester.tap(find.byKey(const ValueKey('toolbar_select_all')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('select_all_lock_all')));
+      await tester.pump();
+
+      expect(updated, isNotNull);
+      expect(updated!.cards.every((c) => c.locked), isTrue);
+    });
+
+    testWidgets('unlock all clears locked on all cards', (tester) async {
+      DashboardLayout? updated;
+      final lockedLayout = DashboardLayout(
+        id: 'test',
+        name: 'Test',
+        columns: 12,
+        rows: 8,
+        cards: [
+          CardConfig(
+            id: 'card_a',
+            source: 'system.clock',
+            slot: DashboardSlot(column: 0, row: 0, columnSpan: 4, rowSpan: 2),
+            locked: true,
+          ),
+          CardConfig(
+            id: 'card_b',
+            source: 'system.weather',
+            slot: DashboardSlot(column: 4, row: 0, columnSpan: 4, rowSpan: 2),
+            locked: true,
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(_wrapLayout(lockedLayout, onChanged: (l) => updated = l));
+
+      await tester.tap(find.byKey(const ValueKey('toolbar_select_all')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('select_all_unlock_all')));
+      await tester.pump();
+
+      expect(updated, isNotNull);
+      expect(updated!.cards.every((c) => !c.locked), isTrue);
+    });
+
+    testWidgets('hide all sets visible=false on all cards', (tester) async {
+      DashboardLayout? updated;
+      await tester.pumpWidget(_wrapLayout(
+        _twoCardLayout(),
+        onChanged: (l) => updated = l,
+      ));
+
+      await tester.tap(find.byKey(const ValueKey('toolbar_select_all')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('select_all_hide_all')));
+      await tester.pump();
+
+      expect(updated, isNotNull);
+      expect(updated!.cards.every((c) => !c.visible), isTrue);
+    });
+
+    testWidgets('show all sets visible=true on all cards', (tester) async {
+      DashboardLayout? updated;
+      final hiddenLayout = DashboardLayout(
+        id: 'test',
+        name: 'Test',
+        columns: 12,
+        rows: 8,
+        cards: [
+          CardConfig(
+            id: 'card_a',
+            source: 'system.clock',
+            slot: DashboardSlot(column: 0, row: 0, columnSpan: 4, rowSpan: 2),
+            visible: false,
+          ),
+          CardConfig(
+            id: 'card_b',
+            source: 'system.weather',
+            slot: DashboardSlot(column: 4, row: 0, columnSpan: 4, rowSpan: 2),
+            visible: false,
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(_wrapLayout(hiddenLayout, onChanged: (l) => updated = l));
+
+      await tester.tap(find.byKey(const ValueKey('toolbar_select_all')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('select_all_show_all')));
+      await tester.pump();
+
+      expect(updated, isNotNull);
+      expect(updated!.cards.every((c) => c.visible), isTrue);
+    });
   });
 
   // --- Snap toggle -----------------------------------------------------------
