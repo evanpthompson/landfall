@@ -25,7 +25,9 @@ class ForecastStripCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: forecast.map((day) => _DayColumn(day: day)).toList(),
+          children: forecast
+              .map((day) => Expanded(child: _DayColumn(day: day)))
+              .toList(),
         ),
       ),
     );
@@ -42,7 +44,8 @@ class _DayColumn extends StatelessWidget {
     final hi = _toF(day.maxTempC);
     final lo = _toF(day.minTempC);
 
-    return ClipRect(
+    return FittedBox(
+      fit: BoxFit.scaleDown,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

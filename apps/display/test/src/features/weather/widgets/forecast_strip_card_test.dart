@@ -62,6 +62,36 @@ void main() {
       expect(find.text('☀️'), findsNWidgets(5));
     });
 
+    // BUG-01: _DayColumn must not overflow its 110px slot height.
+    testWidgets('_DayColumn does not overflow in a 110px height slot',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: LandfallTheme.dark,
+        home: Scaffold(
+          body: SizedBox(
+            height: 110,
+            child: ForecastStripCard(forecast: [days.first]),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
+
+    // BUG-02: Row of 5 day columns must not overflow in a narrow slot.
+    testWidgets('ForecastStripCard does not overflow in a 300px-wide slot',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: LandfallTheme.dark,
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            child: ForecastStripCard(forecast: days),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('renders empty SizedBox when forecast is empty', (tester) async {
       await tester.pumpWidget(_wrap(const ForecastStripCard(forecast: [])));
       expect(find.byType(SizedBox), findsWidgets);
