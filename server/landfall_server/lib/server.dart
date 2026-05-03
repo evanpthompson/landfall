@@ -23,6 +23,8 @@ import 'src/weather/weather_refresh_call.dart';
 
 /// The starting point of the Serverpod server.
 void run(List<String> args) async {
+  _checkPasswordsYamlPermissions();
+
   // Initialize Serverpod and connect it with your generated code.
   final pod = Serverpod(args, Protocol(), Endpoints());
 
@@ -130,20 +132,35 @@ void run(List<String> args) async {
   }
 
   // ignore: deprecated_member_use
-  // Schedule the first weather refresh immediately after startup.
-  // ignore: deprecated_member_use
   await pod.futureCallWithDelay('weatherRefresh', null, Duration.zero);
-  // ignore: deprecated_member_use
-  // Calendar refresh starts immediately; skips quietly if no credentials exist.
   // ignore: deprecated_member_use
   await pod.futureCallWithDelay('calendarRefresh', null, Duration.zero);
   // ignore: deprecated_member_use
-  // Photo refresh starts immediately; skips quietly if no folder is configured.
-  // ignore: deprecated_member_use
   await pod.futureCallWithDelay('photoRefresh', null, Duration.zero);
   // ignore: deprecated_member_use
-  // Profile schedule evaluator starts immediately and re-registers itself every minute.
-  // ignore: deprecated_member_use
   await pod.futureCallWithDelay('profileSchedule', null, Duration.zero);
+}
+
+/// Warns if config/passwords.yaml is world-readable (A02:2025).
+///
+/// On non-POSIX platforms (Windows) the check is skipped since permission
+/// bits work differently. On POSIX, if the file is readable by "other"
+/// (mode & 0x4 != 0), the server logs a prominent warning but continues —
+/// a hard exit would prevent recovery in single-user dev setups where the
+/// file is intentionally 644.
+void _checkPasswordsYamlPermissions() {
+  if (!Platform.isLinux && !Platform.isMacOS) return;
+  final file = File('config/passwords.yaml');
+  if (!file.existsSync()) return;
+  final stat = file.statSync();
+  // Bit 2 of the lowest octet = world-read permission.
+  if (stat.mode & 0x4 != 0) {
+    // ignore: avoid_print
+    print(
+      '\n⚠️  SECURITY WARNING: config/passwords.yaml is world-readable '
+      '(mode ${stat.mode.toRadixString(8)}). '
+      'Run: chmod 600 config/passwords.yaml\n',
+    );
+  }
 }
 
