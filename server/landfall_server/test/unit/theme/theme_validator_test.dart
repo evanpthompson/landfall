@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 
 import 'package:landfall_server/src/theme/theme_validator.dart';
@@ -409,6 +412,47 @@ color:
         expect(result.isValid, isFalse);
         expect(result.errors.length, greaterThanOrEqualTo(3));
       });
+    });
+  });
+
+  group('ThemeValidator.verifySha256', () {
+    // Helper: compute the expected sha256 of content with the sha256 line stripped.
+    String _sha256Of(String content) {
+      final stripped = content
+          .split('\n')
+          .where((l) => !l.trimLeft().startsWith('sha256:'))
+          .join('\n');
+      return sha256.convert(utf8.encode(stripped)).toString();
+    }
+
+    test('returns null when sha256 field is present and matches', () {
+      final base = 'version: "1.0"\nmeta:\n  name: "Test"\n';
+      final hash = _sha256Of('sha256: placeholder\n$base');
+      final content = 'sha256: $hash\n$base';
+      expect(ThemeValidator.verifySha256(content), isNull);
+    });
+
+    test('returns error when sha256 field is absent', () {
+      const content = 'version: "1.0"\nmeta:\n  name: "Test"\n';
+      final result = ThemeValidator.verifySha256(content);
+      expect(result, isNotNull);
+      expect(result, contains('sha256'));
+    });
+
+    test('returns error when sha256 field is present but wrong', () {
+      const content =
+          'sha256: 0000000000000000000000000000000000000000000000000000000000000000\n'
+          'version: "1.0"\nmeta:\n  name: "Test"\n';
+      final result = ThemeValidator.verifySha256(content);
+      expect(result, isNotNull);
+      expect(result!.toLowerCase(), contains('integrity'));
+    });
+
+    test('sha256 field position (top or inline) does not affect result', () {
+      final base = 'version: "1.0"\nmeta:\n  name: "Inline"\n';
+      final hash = _sha256Of('$base\nsha256: placeholder');
+      final contentInline = '$base\nsha256: $hash';
+      expect(ThemeValidator.verifySha256(contentInline), isNull);
     });
   });
 }

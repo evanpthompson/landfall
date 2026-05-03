@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:yaml/yaml.dart';
 
 import '../generated/theme/theme_validation_error.dart';
@@ -781,5 +782,44 @@ class ThemeValidator {
     final g = int.parse(expanded.substring(2, 4), radix: 16);
     final b = int.parse(expanded.substring(4, 6), radix: 16);
     return 'rgba($r,$g,$b,$alpha)';
+  }
+
+  /// Verifies the `sha256:` integrity field embedded in a theme YAML/JSON
+  /// string. The field value must equal the SHA-256 of the raw content with
+  /// the `sha256:` line itself stripped. (A08:2025)
+  ///
+  /// Returns `null` on success, or an error message string on failure.
+  static String? verifySha256(String content) {
+    String? embeddedHash;
+    final stripped = <String>[];
+
+    for (final line in content.split('\n')) {
+      if (line.trimLeft().startsWith('sha256:')) {
+        final afterColon =
+            line.substring(line.indexOf('sha256:') + 'sha256:'.length).trim();
+        embeddedHash = afterColon
+            .replaceAll('"', '')
+            .replaceAll("'", '')
+            .trim();
+      } else {
+        stripped.add(line);
+      }
+    }
+
+    if (embeddedHash == null || embeddedHash.isEmpty) {
+      return 'Theme must include a sha256 integrity field. '
+          'Compute SHA-256 of the file content without the sha256 line, '
+          'then add sha256: <hex> to the file.';
+    }
+
+    final canonical = stripped.join('\n');
+    final actual = sha256.convert(utf8.encode(canonical)).toString();
+
+    if (actual != embeddedHash) {
+      return 'Theme sha256 integrity check failed. '
+          'The embedded sha256 does not match the computed hash of the content.';
+    }
+
+    return null;
   }
 }

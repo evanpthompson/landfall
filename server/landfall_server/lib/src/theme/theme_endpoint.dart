@@ -99,8 +99,20 @@ class ThemeEndpoint extends Endpoint {
         errors: [
           ThemeValidationError(
             tokenPath: 'url',
-            message:
-                'Fetch returned HTTP ${response.statusCode}.',
+            message: 'Fetch returned HTTP ${response.statusCode}.',
+          ),
+        ],
+      );
+    }
+
+    final integrityError = ThemeValidator.verifySha256(response.body);
+    if (integrityError != null) {
+      return ThemeUploadResult(
+        theme: null,
+        errors: [
+          ThemeValidationError(
+            tokenPath: 'sha256',
+            message: integrityError,
           ),
         ],
       );
