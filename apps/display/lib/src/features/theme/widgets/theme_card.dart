@@ -35,7 +35,7 @@ class ThemeCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _Swatch(tokens: theme.tokens),
+            ThemeSwatch(tokens: theme.tokens),
             const SizedBox(height: 10),
             _Header(theme: theme, isActive: isActive),
             if (theme.author != null) ...[
@@ -63,8 +63,8 @@ class ThemeCard extends StatelessWidget {
   }
 }
 
-class _Swatch extends StatelessWidget {
-  const _Swatch({required this.tokens});
+class ThemeSwatch extends StatelessWidget {
+  const ThemeSwatch({super.key, required this.tokens});
 
   final LandfallThemeTokens tokens;
 

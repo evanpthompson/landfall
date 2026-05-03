@@ -30,4 +30,6 @@ export 'src/repositories/license_repository.dart';
 export 'src/repositories/pack_repository.dart';
 export 'src/models/theme/theme_tokens.dart';
 export 'src/models/theme/theme_info.dart';
+export 'src/models/theme/marketplace_theme_info.dart';
 export 'src/repositories/theme_repository.dart';
+export 'src/repositories/marketplace_repository.dart';
