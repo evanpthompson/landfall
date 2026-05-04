@@ -237,13 +237,14 @@ cards:
 
 | Parameter | Type | Default | Notes |
 |---|---|---|---|
-| `daysAhead` | int | `7` | 1–30. How many days of upcoming events to include. |
-| `maxEvents` | int | `8` | 1–20. Maximum number of events to show. Events are ordered by start time ascending. |
-| `showTime` | bool | `true` | Show event start time. All-day events always show "All day" regardless of this setting. |
+| `view` | enum | `daily` | `daily \| weekly \| monthly`. Controls the calendar layout. `daily` renders a chronological upcoming-event list grouped by day. `weekly` renders a 7-column week grid with events as labeled blocks. `monthly` renders a traditional month calendar with event-dot indicators and "+N more" overflow labels. |
+| `daysAhead` | int | `7` | 1–30. How many days of upcoming events to include. Only applies when `view` is `daily`. |
+| `maxEvents` | int | `8` | 1–20. Maximum number of events to show. Only applies when `view` is `daily`. |
+| `showTime` | bool | `true` | Show event start time. All-day events always show "All day" regardless of this setting. Only applies when `view` is `daily`. |
 | `showCalendarColor` | bool | `true` | Show the calendar feed's color dot next to each event. Useful for distinguishing events from multiple calendars. |
-| `showLocation` | bool | `false` | Show event location if present. Only recommended for cards with `rowSpan` ≥ 3. |
-| `hideAllDay` | bool | `false` | When true, all-day events are filtered out of the list. |
-| `variant` | enum | `list` | `list \| compact`. `compact` reduces line height and removes the calendar color dot to fit more events. |
+| `showLocation` | bool | `false` | Show event location if present. Only recommended for cards with `rowSpan` ≥ 3 and `view: daily`. |
+| `hideAllDay` | bool | `false` | When true, all-day events are filtered out of the list. Applies to all views. |
+| `variant` | enum | `list` | `list \| compact`. `compact` reduces line height and removes the calendar color dot to fit more events. Only applies when `view` is `daily`. |
 
 **Example:**
 ```yaml
@@ -282,6 +283,24 @@ cards:
     fit: cover
     randomOrder: true
 ```
+
+#### Photo source types
+
+The `system.photos` card draws from one or more configured **photo sources**. Sources are
+configured in Settings → Photo Sources, not in the layout document itself. The card's
+`displayConfig` controls presentation; the sources control where the images come from.
+
+Multiple sources can be configured with a priority order. If the primary source returns 0
+photos, the next source in the list is used automatically.
+
+| Source type | Description | Key settings |
+|---|---|---|
+| `serverpod` | Photos uploaded to the Landfall server (default). | Server URL (inferred from the app's server config) |
+| `local_directory` | Images read from a directory path on the device running the display. | `path`: absolute path (e.g., `/home/pi/photos`) |
+| `network` | Images fetched from a list of public URLs. | `urls`: list of image URLs |
+| `s3` | Objects listed from an S3-compatible bucket (AWS S3, Cloudflare R2, Wasabi, etc.). | `bucket`, `region`, `prefix` (optional folder filter), `accessKey` + `secretKey` for private buckets |
+
+Supported image formats across all source types: JPEG, PNG, WebP, GIF (static).
 
 ### agent.feed
 
