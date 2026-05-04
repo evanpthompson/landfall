@@ -1,0 +1,70 @@
+name: Theme Submission CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'themes/**/*.yaml'
+      - 'themes/**/*.yml'
+
+jobs:
+  validate_themes:
+    name: Validate Theme Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('server/landfall_server/pubspec.yaml') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Install server dependencies
+        run: dart pub get
+        working-directory: server/landfall_server
+
+      - name: Find changed theme files
+        id: changed_themes
+        run: |
+          # Compare PR head against the merge base.
+          BASE=$(git merge-base origin/${{ github.base_ref }} HEAD)
+          FILES=$(git diff --name-only --diff-filter=ACM "$BASE" HEAD \
+            -- 'themes/**/*.yaml' 'themes/**/*.yml' | tr '\n' ' ')
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+          echo "Changed theme files: $FILES"
+
+      - name: Validate changed themes
+        if: steps.changed_themes.outputs.files != ''
+        working-directory: server/landfall_server
+        run: |
+          FAILED=0
+          for FILE in ${{ steps.changed_themes.outputs.files }}; do
+            ABSPATH="../../$FILE"
+            # Themes under themes/marketplace/ require SHA-256 + safe-zone checks.
+            if echo "$FILE" | grep -q '^themes/marketplace/'; then
+              dart run bin/validate_theme.dart "$ABSPATH" --marketplace || FAILED=1
+            else
+              dart run bin/validate_theme.dart "$ABSPATH" || FAILED=1
+            fi
+          done
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "One or more theme files failed validation. See output above."
+            echo "Run 'dart run bin/validate_theme.dart <file>' locally to debug."
+            exit 1
+          fi
+
+      - name: No theme files changed
+        if: steps.changed_themes.outputs.files == ''
+        run: echo "No theme YAML files changed in this PR."
