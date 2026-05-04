@@ -10,6 +10,9 @@ class SettingsEndpoint extends Endpoint {
   Future<List<LinkedCredentialSummary>> getLinkedCredentials(
     Session session,
   ) async {
+    if (session.authenticated == null) {
+      throw LandfallException(message: 'Authentication required.');
+    }
     final credentials = await LinkedCredential.db.find(
       session,
       where: (t) => t.isActive.equals(true),
@@ -35,7 +38,10 @@ class SettingsEndpoint extends Endpoint {
   /// The ID is derived from the authenticated Serverpod user's identifier and
   /// formatted as a valid UUID so it can be stored in LinkedCredential.authUserId.
   Future<String> getMyAuthUserId(Session session) async {
-    final userIdentifier = session.authenticated?.userIdentifier ?? '0';
+    if (session.authenticated == null) {
+      throw LandfallException(message: 'Authentication required.');
+    }
+    final userIdentifier = session.authenticated!.userIdentifier;
     // Stable UUID format: 00000000-0000-0000-0000-<userId padded to 12 digits>
     final padded = userIdentifier.padLeft(12, '0');
     return '00000000-0000-0000-0000-$padded';

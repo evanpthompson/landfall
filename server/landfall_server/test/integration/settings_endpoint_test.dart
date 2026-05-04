@@ -5,7 +5,7 @@ import 'package:landfall_server/src/generated/protocol.dart';
 
 import 'test_tools/serverpod_test_tools.dart';
 
-const _testUserId = 'user-uuid-1234-5678-abcd';
+const _testUserId = '100000000001';
 
 TestSessionBuilder _authenticatedSession(TestSessionBuilder base) {
   return base.copyWith(
@@ -48,9 +48,16 @@ void main() {
     });
 
     group('getLinkedCredentials', () {
+      test('rejects unauthenticated caller', () async {
+        expect(
+          () => endpoints.settings.getLinkedCredentials(sessionBuilder),
+          throwsA(isA<Exception>()),
+        );
+      });
+
       test('returns empty list when no credentials exist', () async {
         final result =
-            await endpoints.settings.getLinkedCredentials(sessionBuilder);
+            await endpoints.settings.getLinkedCredentials(authed);
         expect(result, isEmpty);
       });
 
@@ -63,7 +70,7 @@ void main() {
         await session.close();
 
         final result =
-            await endpoints.settings.getLinkedCredentials(sessionBuilder);
+            await endpoints.settings.getLinkedCredentials(authed);
 
         expect(result, hasLength(1));
         expect(result.first.provider, equals('google'));
@@ -92,7 +99,7 @@ void main() {
         await session.close();
 
         final result =
-            await endpoints.settings.getLinkedCredentials(sessionBuilder);
+            await endpoints.settings.getLinkedCredentials(authed);
 
         expect(result, hasLength(1));
         expect(result.first.providerEmail, equals('active@example.com'));
@@ -107,7 +114,7 @@ void main() {
         await session.close();
 
         final result =
-            await endpoints.settings.getLinkedCredentials(sessionBuilder);
+            await endpoints.settings.getLinkedCredentials(authed);
 
         expect(result.first, isA<LinkedCredentialSummary>());
         // LinkedCredentialSummary has no token field — structural check via type.
@@ -147,7 +154,7 @@ void main() {
         await session.close();
 
         final result =
-            await endpoints.settings.getLinkedCredentials(sessionBuilder);
+            await endpoints.settings.getLinkedCredentials(authed);
 
         expect(result, hasLength(2));
         expect(result.first.provider, equals('google'));
@@ -163,16 +170,23 @@ void main() {
         await session.close();
 
         final result =
-            await endpoints.settings.getLinkedCredentials(sessionBuilder);
+            await endpoints.settings.getLinkedCredentials(authed);
 
         expect(result.first.id, equals(inserted.id));
       });
     });
 
     group('getMyAuthUserId', () {
-      test('returns a valid UUID-formatted string', () async {
-        final userId =
-            await endpoints.settings.getMyAuthUserId(sessionBuilder);
+      test('rejects unauthenticated caller', () async {
+        expect(
+          () => endpoints.settings.getMyAuthUserId(sessionBuilder),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('returns a valid UUID-formatted string for authenticated caller',
+          () async {
+        final userId = await endpoints.settings.getMyAuthUserId(authed);
 
         final uuidPattern = RegExp(
           r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
@@ -181,16 +195,17 @@ void main() {
             reason: 'Expected a UUID, got: $userId');
       });
 
-      test('returns deterministic ID for the same session', () async {
-        final id1 = await endpoints.settings.getMyAuthUserId(sessionBuilder);
-        final id2 = await endpoints.settings.getMyAuthUserId(sessionBuilder);
+      test('returns deterministic ID for the same authenticated session',
+          () async {
+        final id1 = await endpoints.settings.getMyAuthUserId(authed);
+        final id2 = await endpoints.settings.getMyAuthUserId(authed);
         expect(id1, equals(id2));
       });
 
       test('returns different IDs for different authenticated users', () async {
         final authed2 = sessionBuilder.copyWith(
           authentication: AuthenticationOverride.authenticationInfo(
-            'other-user-uuid-9999',
+            '200000000002',
             {},
           ),
         );
@@ -198,14 +213,6 @@ void main() {
         final id1 = await endpoints.settings.getMyAuthUserId(authed);
         final id2 = await endpoints.settings.getMyAuthUserId(authed2);
         expect(id1, isNot(equals(id2)));
-      });
-
-      test('unauthenticated session returns a stable fallback UUID', () async {
-        final id =
-            await endpoints.settings.getMyAuthUserId(sessionBuilder);
-        expect(id, isNotEmpty);
-        // The fallback (userIdentifier=0) pads to 00000000000000000000000000000000.
-        expect(id, equals('00000000-0000-0000-0000-000000000000'));
       });
     });
   });

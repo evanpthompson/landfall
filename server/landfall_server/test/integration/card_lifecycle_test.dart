@@ -27,16 +27,25 @@ void main() {
     sessionBuilder,
     endpoints,
   ) {
+    late TestSessionBuilder authed;
+
+    setUp(() {
+      authed = sessionBuilder.copyWith(
+        authentication:
+            AuthenticationOverride.authenticationInfo('user-1', {}),
+      );
+    });
+
     group('active card filtering', () {
       test('non-dismissed card with no expiresAt is always active', () async {
-        await endpoints.card.pushCard(sessionBuilder, _card(title: 'Active'));
+        await endpoints.card.pushCard(authed, _card(title: 'Active'));
         final cards = await endpoints.card.getCards(sessionBuilder);
         expect(cards, hasLength(1));
       });
 
       test('card with future expiresAt is active', () async {
         await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _card(
             expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
           ),
@@ -47,7 +56,7 @@ void main() {
 
       test('card with past expiresAt is excluded', () async {
         await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _card(
             title: 'Expired',
             expiresAt:
@@ -59,18 +68,16 @@ void main() {
       });
 
       test('dismissed card is excluded regardless of expiresAt', () async {
-        final card = await endpoints.card.pushCard(
-          sessionBuilder,
-          _card(externalId: 'bye'),
-        );
-        await endpoints.card.dismissCard(sessionBuilder, card.externalId);
+        final card =
+            await endpoints.card.pushCard(authed, _card(externalId: 'bye'));
+        await endpoints.card.dismissCard(authed, card.externalId);
         final cards = await endpoints.card.getCards(sessionBuilder);
         expect(cards, isEmpty);
       });
 
       test('persistent card is active even with a past expiresAt', () async {
         await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _card(
             title: 'Persistent',
             persistent: true,
@@ -85,31 +92,25 @@ void main() {
 
       test('dismissed persistent card is excluded', () async {
         final card = await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _card(externalId: 'dismiss-persistent', persistent: true),
         );
-        await endpoints.card.dismissCard(sessionBuilder, card.externalId);
+        await endpoints.card.dismissCard(authed, card.externalId);
         final cards = await endpoints.card.getCards(sessionBuilder);
         expect(cards, isEmpty);
       });
 
       test('mix of active and expired returns only active', () async {
+        await endpoints.card.pushCard(authed, _card(title: 'Active 1'));
         await endpoints.card.pushCard(
-          sessionBuilder,
-          _card(title: 'Active 1'),
-        );
-        await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _card(
             title: 'Expired',
             expiresAt:
                 DateTime.now().toUtc().subtract(const Duration(minutes: 5)),
           ),
         );
-        await endpoints.card.pushCard(
-          sessionBuilder,
-          _card(title: 'Active 2'),
-        );
+        await endpoints.card.pushCard(authed, _card(title: 'Active 2'));
 
         final cards = await endpoints.card.getCards(sessionBuilder);
         expect(cards, hasLength(2));
@@ -119,9 +120,9 @@ void main() {
 
     group('ticker routing', () {
       test('ticker cards are excluded from getCards', () async {
-        await endpoints.card.pushCard(sessionBuilder, _card(title: 'Grid card'));
+        await endpoints.card.pushCard(authed, _card(title: 'Grid card'));
         await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _card(title: 'Ticker msg', layout: 'ticker'),
         );
 
@@ -132,12 +133,11 @@ void main() {
 
       test('ticker cards appear in getTickerMessages', () async {
         await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _card(
             title: 'Ticker msg',
             layout: 'ticker',
-            expiresAt:
-                DateTime.now().toUtc().add(const Duration(seconds: 30)),
+            expiresAt: DateTime.now().toUtc().add(const Duration(seconds: 30)),
           ),
         );
 
@@ -148,14 +148,14 @@ void main() {
       });
 
       test('grid cards do not appear in getTickerMessages', () async {
-        await endpoints.card.pushCard(sessionBuilder, _card(title: 'Grid'));
+        await endpoints.card.pushCard(authed, _card(title: 'Grid'));
         final ticker = await endpoints.card.getTickerMessages(sessionBuilder);
         expect(ticker, isEmpty);
       });
 
       test('expired ticker is excluded from getTickerMessages', () async {
         await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _card(
             title: 'Old ticker',
             layout: 'ticker',
@@ -170,16 +170,15 @@ void main() {
 
       test('dismissed ticker is excluded from getTickerMessages', () async {
         final card = await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _card(
             externalId: 'dismiss-ticker',
             title: 'Dismissed ticker',
             layout: 'ticker',
-            expiresAt:
-                DateTime.now().toUtc().add(const Duration(seconds: 30)),
+            expiresAt: DateTime.now().toUtc().add(const Duration(seconds: 30)),
           ),
         );
-        await endpoints.card.dismissCard(sessionBuilder, card.externalId);
+        await endpoints.card.dismissCard(authed, card.externalId);
 
         final ticker = await endpoints.card.getTickerMessages(sessionBuilder);
         expect(ticker, isEmpty);
@@ -188,7 +187,7 @@ void main() {
       test('ticker buffer is capped at 10 entries', () async {
         for (var i = 0; i < 11; i++) {
           await endpoints.card.pushCard(
-            sessionBuilder,
+            authed,
             _card(
               title: 'Ticker $i',
               layout: 'ticker',
@@ -206,10 +205,10 @@ void main() {
     group('card history', () {
       test('dismissed cards are retained in the database', () async {
         final card = await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _card(externalId: 'history-dismiss'),
         );
-        await endpoints.card.dismissCard(sessionBuilder, card.externalId);
+        await endpoints.card.dismissCard(authed, card.externalId);
 
         // Directly verify the card still exists in the DB with dismissedAt set.
         final row = await CardRow.db.findFirstRow(
@@ -222,7 +221,7 @@ void main() {
 
       test('expired cards are retained in the database', () async {
         await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _card(
             externalId: 'history-expired',
             expiresAt:
@@ -247,31 +246,27 @@ void main() {
     group('dismissCard', () {
       test('returns true when card found and dismissed', () async {
         final card = await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _card(externalId: 'dismiss-me'),
         );
         final result =
-            await endpoints.card.dismissCard(sessionBuilder, card.externalId);
+            await endpoints.card.dismissCard(authed, card.externalId);
         expect(result, isTrue);
       });
 
       test('returns false for unknown externalId', () async {
         final result =
-            await endpoints.card.dismissCard(sessionBuilder, 'ghost-id');
+            await endpoints.card.dismissCard(authed, 'ghost-id');
         expect(result, isFalse);
       });
 
       test('re-pushing a dismissed card un-dismisses it', () async {
-        final card = await endpoints.card.pushCard(
-          sessionBuilder,
-          _card(externalId: 'bounce'),
-        );
-        await endpoints.card.dismissCard(sessionBuilder, card.externalId);
+        final card =
+            await endpoints.card.pushCard(authed, _card(externalId: 'bounce'));
+        await endpoints.card.dismissCard(authed, card.externalId);
 
-        await endpoints.card.pushCard(
-          sessionBuilder,
-          _card(externalId: 'bounce', title: 'Back'),
-        );
+        await endpoints.card
+            .pushCard(authed, _card(externalId: 'bounce', title: 'Back'));
 
         final active = await endpoints.card.getCards(sessionBuilder);
         expect(active, hasLength(1));

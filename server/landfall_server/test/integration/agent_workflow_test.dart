@@ -23,6 +23,15 @@ CardPushRequest _card({
 
 void main() {
   withServerpod('Given agent workflow', (sessionBuilder, endpoints) {
+    late TestSessionBuilder authed;
+
+    setUp(() {
+      authed = sessionBuilder.copyWith(
+        authentication:
+            AuthenticationOverride.authenticationInfo('user-1', {}),
+      );
+    });
+
     group('full key lifecycle', () {
       test('generate → push → list → update → dismiss → revoke', () async {
         // 1. Generate a key.
@@ -238,7 +247,7 @@ void main() {
         final key = response.plainTextKey;
 
         await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           CardPushRequest(
             source: 'system.test',
             title: 'From CardEndpoint',

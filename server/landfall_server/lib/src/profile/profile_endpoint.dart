@@ -2,6 +2,12 @@ import 'package:serverpod/serverpod.dart';
 
 import '../generated/protocol.dart';
 
+void _requireAuth(Session session) {
+  if (session.authenticated == null) {
+    throw LandfallException(message: 'Authentication required.');
+  }
+}
+
 /// Manages named dashboard profiles.
 ///
 /// Each profile stores a complete layout (cardsJson + grid dimensions), an
@@ -28,6 +34,7 @@ class ProfileEndpoint extends Endpoint {
     String name, {
     String? cardsJson,
   }) async {
+    _requireAuth(session);
     final slug = _slugify(name);
     final row = DashboardProfile(
       name: name,
@@ -54,6 +61,7 @@ class ProfileEndpoint extends Endpoint {
     int? sortOrder,
     String? cardsJson,
   }) async {
+    _requireAuth(session);
     final row = await DashboardProfile.db.findById(session, id);
     if (row == null) {
       throw NotFoundException('DashboardProfile id=$id not found.');
@@ -75,6 +83,7 @@ class ProfileEndpoint extends Endpoint {
   /// Throws [InvalidRequestException] if the profile is currently active or if
   /// it is the last remaining profile.
   Future<void> deleteProfile(Session session, int id) async {
+    _requireAuth(session);
     final row = await DashboardProfile.db.findById(session, id);
     if (row == null) return;
     if (row.isActive) {
@@ -92,6 +101,7 @@ class ProfileEndpoint extends Endpoint {
   /// Clears [isActive] on all other profiles atomically. Returns the newly
   /// activated profile.
   Future<DashboardProfile> activateProfile(Session session, int id) async {
+    _requireAuth(session);
     // Deactivate all.
     final all = await DashboardProfile.db.find(
       session,
@@ -124,6 +134,7 @@ class ProfileEndpoint extends Endpoint {
     int id,
     String newName,
   ) async {
+    _requireAuth(session);
     final source = await DashboardProfile.db.findById(session, id);
     if (source == null) {
       throw NotFoundException('DashboardProfile id=$id not found.');

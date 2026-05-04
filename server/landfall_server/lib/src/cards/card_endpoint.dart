@@ -3,8 +3,9 @@ import '../generated/protocol.dart';
 
 /// Endpoint for card management.
 ///
-/// Phase 0: No authentication required — open for local development.
-/// Phase 2: API key authentication will be added to [pushCard] and [dismissCard].
+/// [getCards] and [getTickerMessages] are read-only and may be called by the
+/// local display without a session. [pushCard] and [dismissCard] mutate state
+/// and require an authenticated session (SEC-01).
 class CardEndpoint extends Endpoint {
   /// Returns all active grid cards for the display.
   ///
@@ -58,6 +59,9 @@ class CardEndpoint extends Endpoint {
     Session session,
     CardPushRequest request,
   ) async {
+    if (session.authenticated == null) {
+      throw LandfallException(message: 'Authentication required.');
+    }
     final now = DateTime.now().toUtc();
     final externalId = request.externalId ?? Uuid().v4();
 
@@ -110,6 +114,9 @@ class CardEndpoint extends Endpoint {
   /// for history queries. Returns true if a card was found and dismissed,
   /// false if no card with that externalId exists.
   Future<bool> dismissCard(Session session, String externalId) async {
+    if (session.authenticated == null) {
+      throw LandfallException(message: 'Authentication required.');
+    }
     final card = await CardRow.db.findFirstRow(
       session,
       where: (t) => t.externalId.equals(externalId),

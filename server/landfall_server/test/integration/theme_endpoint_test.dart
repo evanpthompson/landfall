@@ -50,6 +50,15 @@ animation:
 
 void main() {
   withServerpod('Given ThemeEndpoint', (sessionBuilder, endpoints) {
+    late TestSessionBuilder authed;
+
+    setUp(() {
+      authed = sessionBuilder.copyWith(
+        authentication:
+            AuthenticationOverride.authenticationInfo('user-1', {}),
+      );
+    });
+
     group('listThemes', () {
       test('returns at least the built-in themes', () async {
         final themes = await endpoints.theme.listThemes(sessionBuilder);
@@ -208,7 +217,7 @@ void main() {
 
       setUp(() async {
         profile = await endpoints.profile.createProfile(
-          sessionBuilder,
+          authed,
           'Theme Test Profile',
         );
       });

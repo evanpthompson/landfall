@@ -2,6 +2,12 @@ import 'package:serverpod/serverpod.dart';
 
 import '../generated/protocol.dart';
 
+void _requireAuth(Session session) {
+  if (session.authenticated == null) {
+    throw LandfallException(message: 'Authentication required.');
+  }
+}
+
 /// Manages saved display layout configurations.
 ///
 /// Layouts are stored in [layout_configs]. Each row is a named layout with a
@@ -24,6 +30,7 @@ class LayoutEndpoint extends Endpoint {
   ///
   /// If [layout.id] is null a new row is created. Returns the saved row.
   Future<LayoutConfig> saveLayout(Session session, LayoutConfig layout) async {
+    _requireAuth(session);
     layout.updatedAt = DateTime.now().toUtc();
 
     if (layout.id == null) {
@@ -36,6 +43,7 @@ class LayoutEndpoint extends Endpoint {
   ///
   /// Returns the newly activated [LayoutConfig].
   Future<LayoutConfig> setActiveLayout(Session session, int layoutId) async {
+    _requireAuth(session);
     // Clear all active flags.
     final all = await LayoutConfig.db.find(
       session,
@@ -66,6 +74,7 @@ class LayoutEndpoint extends Endpoint {
   ///
   /// The active layout cannot be deleted — an exception is thrown instead.
   Future<void> deleteLayout(Session session, int id) async {
+    _requireAuth(session);
     final row = await LayoutConfig.db.findFirstRow(
       session,
       where: (t) => t.id.equals(id),

@@ -23,17 +23,20 @@ CardPushRequest _request({
 }
 
 void main() {
-  withServerpod('Given CardEndpoint (unauthenticated local dev)', (
-    sessionBuilder,
-    endpoints,
-  ) {
+  withServerpod('Given CardEndpoint', (sessionBuilder, endpoints) {
+    late TestSessionBuilder authed;
+
+    setUp(() {
+      authed = sessionBuilder.copyWith(
+        authentication:
+            AuthenticationOverride.authenticationInfo('user-1', {}),
+      );
+    });
+
     group('pushCard', () {
       test('creates a card and returns it with a generated externalId',
           () async {
-        final card = await endpoints.card.pushCard(
-          sessionBuilder,
-          _request(),
-        );
+        final card = await endpoints.card.pushCard(authed, _request());
 
         expect(card.id, isNotNull);
         expect(card.externalId, isNotEmpty);
@@ -44,7 +47,7 @@ void main() {
 
       test('uses provided externalId', () async {
         final card = await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _request(externalId: 'stable-id'),
         );
         expect(card.externalId, equals('stable-id'));
@@ -52,11 +55,11 @@ void main() {
 
       test('re-pushing same externalId updates card in-place', () async {
         await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _request(externalId: 'idempotent', title: 'First'),
         );
         final updated = await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _request(externalId: 'idempotent', title: 'Second'),
         );
         expect(updated.title, equals('Second'));
@@ -65,13 +68,13 @@ void main() {
 
       test('re-pushing un-dismisses a dismissed card', () async {
         final card = await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _request(externalId: 'undismiss'),
         );
-        await endpoints.card.dismissCard(sessionBuilder, card.externalId);
+        await endpoints.card.dismissCard(authed, card.externalId);
 
         final repushed = await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _request(externalId: 'undismiss', title: 'Back'),
         );
         expect(repushed.dismissedAt, isNull);
@@ -85,8 +88,8 @@ void main() {
       });
 
       test('returns pushed cards', () async {
-        await endpoints.card.pushCard(sessionBuilder, _request(title: 'One'));
-        await endpoints.card.pushCard(sessionBuilder, _request(title: 'Two'));
+        await endpoints.card.pushCard(authed, _request(title: 'One'));
+        await endpoints.card.pushCard(authed, _request(title: 'Two'));
 
         final cards = await endpoints.card.getCards(sessionBuilder);
         expect(cards.length, equals(2));
@@ -94,14 +97,11 @@ void main() {
 
       test('excludes dismissed cards', () async {
         final card = await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _request(externalId: 'dismiss-me'),
         );
-        await endpoints.card.pushCard(
-          sessionBuilder,
-          _request(title: 'Stays'),
-        );
-        await endpoints.card.dismissCard(sessionBuilder, card.externalId);
+        await endpoints.card.pushCard(authed, _request(title: 'Stays'));
+        await endpoints.card.dismissCard(authed, card.externalId);
 
         final cards = await endpoints.card.getCards(sessionBuilder);
         expect(cards.length, equals(1));
@@ -110,17 +110,15 @@ void main() {
 
       test('excludes expired cards', () async {
         await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           CardPushRequest(
             source: 'system.test',
             title: 'Expired',
-            expiresAt: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
+            expiresAt:
+                DateTime.now().toUtc().subtract(const Duration(hours: 1)),
           ),
         );
-        await endpoints.card.pushCard(
-          sessionBuilder,
-          _request(title: 'Active'),
-        );
+        await endpoints.card.pushCard(authed, _request(title: 'Active'));
 
         final cards = await endpoints.card.getCards(sessionBuilder);
         expect(cards.length, equals(1));
@@ -129,12 +127,13 @@ void main() {
 
       test('persistent cards are never expired', () async {
         await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           CardPushRequest(
             source: 'system.test',
             title: 'Persistent',
             persistent: true,
-            expiresAt: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
+            expiresAt:
+                DateTime.now().toUtc().subtract(const Duration(hours: 1)),
           ),
         );
 
@@ -147,23 +146,49 @@ void main() {
     group('dismissCard', () {
       test('returns true and marks card dismissed', () async {
         final card = await endpoints.card.pushCard(
-          sessionBuilder,
+          authed,
           _request(externalId: 'to-dismiss'),
         );
-        final result = await endpoints.card.dismissCard(
-          sessionBuilder,
-          card.externalId,
-        );
+        final result =
+            await endpoints.card.dismissCard(authed, card.externalId);
         expect(result, isTrue);
       });
 
       test('returns false for unknown externalId', () async {
-        final result = await endpoints.card.dismissCard(
-          sessionBuilder,
-          'ghost-id',
-        );
+        final result =
+            await endpoints.card.dismissCard(authed, 'ghost-id');
         expect(result, isFalse);
       });
+    });
+  });
+
+  // SEC-01: CardEndpoint mutation auth guards.
+  withServerpod('Given CardEndpoint auth guards', (sessionBuilder, endpoints) {
+    final authed = sessionBuilder.copyWith(
+      authentication: AuthenticationOverride.authenticationInfo('user-1', {}),
+    );
+
+    test('pushCard rejects unauthenticated caller', () async {
+      expect(
+        () => endpoints.card.pushCard(sessionBuilder, _request()),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('dismissCard rejects unauthenticated caller', () async {
+      expect(
+        () => endpoints.card.dismissCard(sessionBuilder, 'any-id'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('authenticated caller can push and dismiss (regression)', () async {
+      final card =
+          await endpoints.card.pushCard(authed, _request(title: 'Auth test'));
+      expect(card.id, isNotNull);
+      final dismissed =
+          await endpoints.card.dismissCard(authed, card.externalId);
+      expect(dismissed, isTrue);
     });
   });
 }
