@@ -1,5 +1,4 @@
-import 'package:landfall_client/landfall_client.dart' as client
-    hide LandfallTheme;
+import 'package:landfall_client/landfall_client.dart' as client hide LandfallTheme;
 import 'package:landfall_shared/landfall_shared.dart';
 
 /// Production [MarketplaceRepository] backed by [MarketplaceEndpoint].

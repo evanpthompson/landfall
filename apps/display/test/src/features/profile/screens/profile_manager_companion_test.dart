@@ -5,10 +5,8 @@ import 'package:landfall_shared/landfall_shared.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
-import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
 import 'package:display/src/features/profile/screens/profile_manager_screen.dart';
 import 'package:display/src/features/theme/cubit/theme_cubit.dart';
-import 'package:display/src/features/theme/cubit/theme_state.dart';
 
 class _MockProfileRepo extends Mock implements DashboardProfileRepository {}
 class _MockThemeRepo extends Mock implements ThemeRepository {}
