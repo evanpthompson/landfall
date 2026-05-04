@@ -9,6 +9,7 @@ import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
 import 'src/license/stripe_webhook_route.dart';
 import 'src/theme/theme_seeder.dart';
+import 'src/theme/marketplace_seeder.dart';
 import 'src/photo/photo_refresh_call.dart';
 import 'src/profile/profile_schedule_call.dart';
 import 'src/web/routes/app_config_route.dart';
@@ -123,10 +124,11 @@ void run(List<String> args) async {
   // Start the server.
   await pod.start();
 
-  // Seed built-in themes if they haven't been seeded yet.
+  // Seed built-in themes and marketplace demo data if not already present.
   final seedSession = await pod.createSession();
   try {
     await ThemeSeeder.seed(seedSession);
+    await MarketplaceSeeder.seed(seedSession);
   } finally {
     await seedSession.close();
   }
