@@ -127,6 +127,7 @@ class ServerpodProfileRepository implements DashboardProfileRepository {
       cardFilter: cardFilter,
       schedule: schedule,
       sortOrder: p.sortOrder,
+      companionThemeSlug: p.themeId,
     );
   }
 

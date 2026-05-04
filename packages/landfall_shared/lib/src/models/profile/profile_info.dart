@@ -16,6 +16,7 @@ class ProfileInfo {
     this.cardFilter = ProfileCardFilter.all,
     this.schedule,
     required this.sortOrder,
+    this.companionThemeSlug,
   });
 
   final int id;
@@ -39,6 +40,10 @@ class ProfileInfo {
   /// Sort order in the profile list (ascending).
   final int sortOrder;
 
+  /// Slug of the companion theme for this profile. When set, the profile
+  /// suggests applying this theme when the profile is activated.
+  final String? companionThemeSlug;
+
   ProfileInfo copyWith({
     int? id,
     String? name,
@@ -48,6 +53,7 @@ class ProfileInfo {
     ProfileCardFilter? cardFilter,
     ProfileSchedule? schedule,
     int? sortOrder,
+    Object? companionThemeSlug = _sentinel,
   }) {
     return ProfileInfo(
       id: id ?? this.id,
@@ -58,6 +64,9 @@ class ProfileInfo {
       cardFilter: cardFilter ?? this.cardFilter,
       schedule: schedule ?? this.schedule,
       sortOrder: sortOrder ?? this.sortOrder,
+      companionThemeSlug: companionThemeSlug == _sentinel
+          ? this.companionThemeSlug
+          : companionThemeSlug as String?,
     );
   }
 
@@ -70,12 +79,23 @@ class ProfileInfo {
           isActive == other.isActive &&
           layout == other.layout &&
           cardFilter == other.cardFilter &&
-          sortOrder == other.sortOrder;
+          sortOrder == other.sortOrder &&
+          companionThemeSlug == other.companionThemeSlug;
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, isActive, layout, cardFilter, sortOrder);
+  int get hashCode => Object.hash(
+        id,
+        name,
+        isActive,
+        layout,
+        cardFilter,
+        sortOrder,
+        companionThemeSlug,
+      );
 
   @override
   String toString() => 'ProfileInfo(id: $id, name: $name, active: $isActive)';
 }
+
+// Sentinel used by copyWith to distinguish "not provided" from null.
+const _sentinel = Object();

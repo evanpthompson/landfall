@@ -5,6 +5,8 @@ import 'package:ui_kit/ui_kit.dart';
 
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
+import 'package:display/src/features/theme/cubit/theme_cubit.dart';
+import 'package:display/src/features/theme/cubit/theme_state.dart';
 
 /// Full-screen panel for managing named dashboard profiles.
 ///
@@ -152,6 +154,11 @@ class _ProfileTile extends StatelessWidget {
                       ),
                     ),
                   ],
+                  if (profile.companionThemeSlug != null)
+                    _CompanionThemeChip(
+                      slug: profile.companionThemeSlug!,
+                      profileId: profile.id,
+                    ),
                 ],
               ),
             ),
@@ -180,6 +187,78 @@ class _ProfileTile extends StatelessWidget {
         '${schedule.startHour}:00 – ${schedule.endHour}:00 daily',
       ProfileScheduleType.custom => 'Custom schedule',
     };
+  }
+}
+
+/// Small chip below the profile name that surfaces the companion theme.
+///
+/// Tapping it applies the theme to this profile when the theme is locally
+/// available. When the theme isn't loaded (not owned or not yet fetched), a
+/// snackbar prompts the user to browse the marketplace.
+class _CompanionThemeChip extends StatelessWidget {
+  const _CompanionThemeChip({required this.slug, required this.profileId});
+
+  final String slug;
+  final int profileId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: GestureDetector(
+        onTap: () => _applyOrPrompt(context),
+        child: Container(
+          key: const Key('companion_theme_chip'),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: LandfallColors.accent.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: LandfallColors.accent.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.palette_outlined,
+                  size: 11, color: LandfallColors.accent),
+              const SizedBox(width: 4),
+              Text(
+                slug,
+                style: TextStyle(
+                  color: LandfallColors.accent,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _applyOrPrompt(BuildContext context) {
+    final themeState = context.read<ThemeCubit>().state;
+    if (themeState is ThemeLoaded) {
+      final theme = themeState.themes.where((t) => t.slug == slug).firstOrNull;
+      if (theme != null) {
+        context.read<ThemeCubit>().applyTheme(theme.id, profileId: profileId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Applied "${theme.name}" to this profile'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Browse the theme marketplace to get this look'),
+        duration: Duration(seconds: 3),
+      ),
+    );
   }
 }
 
