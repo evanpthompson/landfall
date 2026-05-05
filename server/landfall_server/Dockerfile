@@ -31,6 +31,10 @@ COPY --from=build /app/lib/src/generated/protocol.yaml /app/lib/src/generated/pr
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh /app/server
 
+# Run as non-root
+RUN adduser -S -H landfall
+USER landfall
+
 # Expose ports
 EXPOSE 8080
 EXPOSE 8081

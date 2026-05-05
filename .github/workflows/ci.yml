@@ -48,10 +48,8 @@ jobs:
 
       - name: Dependency vulnerability audit (A03:2025)
         run: |
-          cd server/landfall_server && dart pub audit || true
-          cd ../../apps/display && flutter pub audit || true
-        # `|| true` prevents a single advisory from blocking all other checks.
-        # Review output above and upgrade affected packages as advisories appear.
+          cd server/landfall_server && dart pub audit
+          cd ../../apps/display && flutter pub audit
 
       - name: Write test passwords.yaml
         # These are CI-only test credentials for an ephemeral container.

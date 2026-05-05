@@ -15,7 +15,6 @@ services:
         condition: service_started
     ports:
       - "8080:8080"
-      - "8081:8081"
 
   postgres:
     image: pgvector/pgvector:pg16

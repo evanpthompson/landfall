@@ -1,4 +1,14 @@
 {$LANDFALL_DOMAIN} {
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Content-Security-Policy "default-src 'self'; connect-src 'self' wss://{$LANDFALL_DOMAIN}; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
     # API server (HTTP + WebSocket)
     reverse_proxy /api/* server:8080
     reverse_proxy /card/* server:8080
