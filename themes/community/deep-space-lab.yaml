@@ -1,0 +1,66 @@
+version: "1.0"
+meta:
+  name: "Deep Space Lab"
+  author: "landfall"
+  description: "A technical night-mode theme for agent activity, build status, and home lab telemetry."
+  tags: [dark, technical, night, homelab]
+  license: "MIT"
+surface:
+  background:
+    type: solid
+    value: "#060913"
+  card:
+    fill: "rgba(12,22,39,0.82)"
+    border:
+      color: "rgba(148,163,184,0.22)"
+      width: 1.0
+      style: solid
+    radius: 4
+    blur: 0
+    shadow: subtle
+typography:
+  fontFamily: "JetBrains Mono"
+  scale: compact
+  heading:
+    weight: 600
+  body:
+    weight: 400
+  letterSpacing: normal
+  timeDisplay:
+    fontFamily: "Orbitron"
+    weight: 300
+color:
+  accent: "#22D3EE"
+  accentMuted: "rgba(34,211,238,0.18)"
+  text:
+    primary: "#E5F6FF"
+    secondary: "rgba(229,246,255,0.66)"
+    tertiary: "rgba(229,246,255,0.38)"
+  divider: "rgba(148,163,184,0.16)"
+  agent:
+    border: "rgba(34,211,238,0.40)"
+  success: "#2DD4BF"
+  warning: "#FACC15"
+  alert: "#F43F5E"
+animation:
+  transition: fade
+  speed: fast
+  cardEntry: scale
+  tickerScroll: fast
+moods:
+  urgent:
+    borderColor: "rgba(244,63,94,0.92)"
+    fillColor: "rgba(244,63,94,0.12)"
+    pulse: true
+    scale: 1.02
+    animation: pulse
+  success:
+    borderColor: "rgba(45,212,191,0.76)"
+    fillColor: "rgba(45,212,191,0.08)"
+    animation: glow
+  celebratory:
+    borderColor: "rgba(34,211,238,0.82)"
+    fillColor: "rgba(34,211,238,0.10)"
+    animation: glow
+  muted:
+    opacity: 0.46
