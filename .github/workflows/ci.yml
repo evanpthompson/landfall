@@ -66,6 +66,8 @@ jobs:
             jwtRefreshTokenHashPepper: 'ci-jwt-refresh-pepper-for-testing-only'
             apiKeyManagementToken: 'test-management-token'
             apiKeyHmacSecret: 'test-hmac-secret'
+            stripeWebhookSecret: 'test-stripe-secret'
+            oauthTokenEncryptionKey: 'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899'
           YAML
 
       - name: Analyze
