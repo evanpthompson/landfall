@@ -136,7 +136,7 @@ void main() {
 
       injectCalendarOAuthStateForTest(
         fakeState,
-        '00000000-0000-0000-0000-100000000001',
+        '00000000-0000-4000-8000-100000000001',
       );
 
       final stub = _StubHttpClient(
@@ -189,7 +189,7 @@ void main() {
 
       injectCalendarOAuthStateForTest(
         fakeState,
-        '00000000-0000-0000-0000-100000000001',
+        '00000000-0000-4000-8000-100000000001',
       );
 
       final stub = _StubHttpClient(
@@ -252,7 +252,7 @@ void main() {
         session,
         LinkedCredential(
           authUserId:
-              UuidValue.fromString('00000000-0000-0000-0000-100000000001'),
+              UuidValue.fromString('00000000-0000-4000-8000-100000000001'),
           provider: 'google',
           providerEmail: 'migrate@example.com',
           accessToken: plaintextAccess,

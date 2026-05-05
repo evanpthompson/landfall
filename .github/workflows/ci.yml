@@ -68,6 +68,9 @@ jobs:
             apiKeyHmacSecret: 'test-hmac-secret'
             stripeWebhookSecret: 'test-stripe-secret'
             oauthTokenEncryptionKey: 'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899'
+            googleClientId: 'ci-google-client-id'
+            googleClientSecret: 'ci-google-client-secret'
+            googleOAuthRedirectUri: 'http://localhost:8080/calendar/oauth/callback'
           YAML
 
       - name: Analyze
