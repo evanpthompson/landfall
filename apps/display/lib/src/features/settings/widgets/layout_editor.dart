@@ -690,12 +690,13 @@ class _CardHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      key: const ValueKey('card_hud'),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return SingleChildScrollView(
+      child: Container(
+        key: const ValueKey('card_hud'),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -775,9 +776,120 @@ class _CardHud extends StatelessWidget {
               ),
             ],
           ),
+          ..._displayConfigSection(context),
         ],
       ),
+    ),
     );
+  }
+
+  List<Widget> _displayConfigSection(BuildContext context) {
+    void update(Map<String, dynamic> patch) {
+      final merged = {...config.displayConfig, ...patch};
+      _updateCard(context, config.copyWith(displayConfig: merged));
+    }
+
+    return switch (config.source) {
+      'system.clock' => [
+          const Divider(),
+          _HudSectionLabel(label: 'Clock display'),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Text('Format:'),
+              const SizedBox(width: 12),
+              _HudChip(
+                key: const ValueKey('hud_clock_hour_format_24'),
+                label: '24h',
+                selected: config.displayConfig['hourFormat'] != '12',
+                onTap: () => update({'hourFormat': '24'}),
+              ),
+              const SizedBox(width: 8),
+              _HudChip(
+                key: const ValueKey('hud_clock_hour_format_12'),
+                label: '12h',
+                selected: config.displayConfig['hourFormat'] == '12',
+                onTap: () => update({'hourFormat': '12'}),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _HudSwitch(
+            switchKey: const ValueKey('hud_clock_show_seconds'),
+            label: 'Show seconds',
+            value: config.displayConfig['showSeconds'] != false,
+            onChanged: (v) => update({'showSeconds': v}),
+          ),
+          _HudSwitch(
+            switchKey: const ValueKey('hud_clock_show_date'),
+            label: 'Show date',
+            value: config.displayConfig['showDate'] != false,
+            onChanged: (v) => update({'showDate': v}),
+          ),
+        ],
+      'system.weather' => [
+          const Divider(),
+          _HudSectionLabel(label: 'Weather display'),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Text('Unit:'),
+              const SizedBox(width: 12),
+              _HudChip(
+                key: const ValueKey('hud_weather_unit_f'),
+                label: '°F',
+                selected: config.displayConfig['unit'] != 'c',
+                onTap: () => update({'unit': 'f'}),
+              ),
+              const SizedBox(width: 8),
+              _HudChip(
+                key: const ValueKey('hud_weather_unit_c'),
+                label: '°C',
+                selected: config.displayConfig['unit'] == 'c',
+                onTap: () => update({'unit': 'c'}),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _HudSwitch(
+            switchKey: const ValueKey('hud_weather_compact'),
+            label: 'Compact (hide details)',
+            value: config.displayConfig['compact'] == true,
+            onChanged: (v) => update({'compact': v}),
+          ),
+        ],
+      'system.weather.forecast' => [
+          const Divider(),
+          _HudSectionLabel(label: 'Forecast days'),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _HudChip(
+                key: const ValueKey('hud_forecast_days_1'),
+                label: '1 day',
+                selected: config.displayConfig['days'] == 1,
+                onTap: () => update({'days': 1}),
+              ),
+              const SizedBox(width: 8),
+              _HudChip(
+                key: const ValueKey('hud_forecast_days_3'),
+                label: '3 days',
+                selected: config.displayConfig['days'] == 3,
+                onTap: () => update({'days': 3}),
+              ),
+              const SizedBox(width: 8),
+              _HudChip(
+                key: const ValueKey('hud_forecast_days_5'),
+                label: '5 days',
+                selected: config.displayConfig['days'] != 1 &&
+                    config.displayConfig['days'] != 3,
+                onTap: () => update({'days': 5}),
+              ),
+            ],
+          ),
+        ],
+      _ => const [],
+    };
   }
 
   static String _cardLabel(String source) => switch (source) {
@@ -788,6 +900,67 @@ class _CardHud extends StatelessWidget {
         'system.photos' => 'Photos',
         _ => source,
       };
+}
+
+// ---------------------------------------------------------------------------
+// HUD display config helpers
+// ---------------------------------------------------------------------------
+
+class _HudSectionLabel extends StatelessWidget {
+  const _HudSectionLabel({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Text(
+        label,
+        style: Theme.of(context)
+            .textTheme
+            .labelMedium
+            ?.copyWith(color: Theme.of(context).colorScheme.primary),
+      );
+}
+
+class _HudChip extends StatelessWidget {
+  const _HudChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => FilterChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => onTap(),
+        visualDensity: VisualDensity.compact,
+      );
+}
+
+class _HudSwitch extends StatelessWidget {
+  const _HudSwitch({
+    this.switchKey,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final Key? switchKey;
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          Expanded(child: Text(label)),
+          Switch(key: switchKey, value: value, onChanged: onChanged),
+        ],
+      );
 }
 
 // ---------------------------------------------------------------------------

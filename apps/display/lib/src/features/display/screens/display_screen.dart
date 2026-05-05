@@ -362,21 +362,28 @@ class _GridView extends StatelessWidget {
     return switch (config.source) {
       'system.clock' => BlocBuilder<ClockCubit, ClockState>(
           builder: (_, state) => switch (state) {
-            ClockTicking(:final entity) => ClockCard(entity: entity),
+            ClockTicking(:final entity) => ClockCard(
+                entity: entity,
+                displayConfig: config.displayConfig,
+              ),
             _ => const _PlaceholderTile(source: 'system.clock'),
           },
         ),
       'system.weather' => BlocBuilder<WeatherCubit, WeatherState>(
           builder: (_, state) => switch (state) {
-            WeatherLoaded(:final current) =>
-              CurrentWeatherCard(entity: current),
+            WeatherLoaded(:final current) => CurrentWeatherCard(
+                entity: current,
+                displayConfig: config.displayConfig,
+              ),
             _ => const _PlaceholderTile(source: 'system.weather'),
           },
         ),
       'system.weather.forecast' => BlocBuilder<WeatherCubit, WeatherState>(
           builder: (_, state) => switch (state) {
-            WeatherLoaded(:final forecast) =>
-              ForecastStripCard(forecast: forecast),
+            WeatherLoaded(:final forecast) => ForecastStripCard(
+                forecast: forecast,
+                displayConfig: config.displayConfig,
+              ),
             _ => const _PlaceholderTile(source: 'system.weather.forecast'),
           },
         ),

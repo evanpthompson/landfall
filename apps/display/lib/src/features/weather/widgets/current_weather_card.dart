@@ -4,17 +4,31 @@ import 'package:ui_kit/ui_kit.dart';
 
 /// Displays current weather conditions from a [WeatherEntity].
 ///
-/// Shows temperature (°F), condition, feels-like, humidity, and wind speed.
-/// Pure presentational — wrap with [BlocBuilder<WeatherCubit, WeatherState>].
+/// Responds to [displayConfig] keys:
+/// - `unit`: `'f'` (default) or `'c'`
+/// - `compact`: bool (default `false`) — hides feels-like/humidity/wind row
 class CurrentWeatherCard extends StatelessWidget {
-  const CurrentWeatherCard({super.key, required this.entity});
+  const CurrentWeatherCard({
+    super.key,
+    required this.entity,
+    this.displayConfig = const {},
+  });
 
   final WeatherEntity entity;
+  final Map<String, dynamic> displayConfig;
 
   @override
   Widget build(BuildContext context) {
-    final tempF = _toF(entity.tempC);
-    final feelsF = _toF(entity.feelsLikeC);
+    final useCelsius = displayConfig['unit'] == 'c';
+    final compact = displayConfig['compact'] == true;
+
+    final temp = useCelsius
+        ? entity.tempC.round()
+        : _toF(entity.tempC);
+    final feelsLike = useCelsius
+        ? entity.feelsLikeC.round()
+        : _toF(entity.feelsLikeC);
+    final unitLabel = useCelsius ? 'C' : 'F';
     final windMph = (entity.windSpeedMs * 2.237).round();
 
     return DecoratedBox(
@@ -34,7 +48,7 @@ class CurrentWeatherCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('$tempF°', style: LandfallTypography.weatherTemp),
+                Text('$temp°', style: LandfallTypography.weatherTemp),
                 const SizedBox(width: 12),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
@@ -46,12 +60,14 @@ class CurrentWeatherCard extends StatelessWidget {
               ],
             ),
             Text(entity.condition, style: LandfallTypography.weatherCondition),
-            const SizedBox(height: 8),
-            _MetaRow(
-              feelsLike: 'Feels like $feelsF°F',
-              humidity: '${entity.humidity}% humidity',
-              wind: '$windMph mph',
-            ),
+            if (!compact) ...[
+              const SizedBox(height: 8),
+              _MetaRow(
+                feelsLike: 'Feels like $feelsLike°$unitLabel',
+                humidity: '${entity.humidity}% humidity',
+                wind: '$windMph mph',
+              ),
+            ],
           ],
         ),
       ),

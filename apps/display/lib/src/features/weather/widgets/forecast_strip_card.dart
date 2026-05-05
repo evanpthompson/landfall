@@ -2,18 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
-/// A horizontal 5-day forecast strip.
+/// A horizontal forecast strip.
 ///
 /// Each column shows: short day name, weather emoji, high/low in °F.
 /// Pure presentational — wrap with [BlocBuilder<WeatherCubit, WeatherState>].
+///
+/// Responds to [displayConfig] key:
+/// - `days`: `1`, `3`, or `5` (default `5`) — number of day columns to show
 class ForecastStripCard extends StatelessWidget {
-  const ForecastStripCard({super.key, required this.forecast});
+  const ForecastStripCard({
+    super.key,
+    required this.forecast,
+    this.displayConfig = const {},
+  });
 
   final List<ForecastDayEntity> forecast;
+  final Map<String, dynamic> displayConfig;
 
   @override
   Widget build(BuildContext context) {
     if (forecast.isEmpty) return const SizedBox.shrink();
+
+    final days = (displayConfig['days'] as int?) ?? 5;
+    final visible = forecast.take(days).toList();
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -25,7 +36,7 @@ class ForecastStripCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: forecast
+          children: visible
               .map((day) => Expanded(child: _DayColumn(day: day)))
               .toList(),
         ),

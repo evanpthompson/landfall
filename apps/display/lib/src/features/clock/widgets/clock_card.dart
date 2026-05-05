@@ -4,23 +4,38 @@ import 'package:ui_kit/ui_kit.dart';
 
 /// Displays the current time from a [ClockEntity].
 ///
-/// Shows hours:minutes large, seconds smaller to the right (baseline-aligned),
-/// and the full date on the line below. This is a pure presentational widget —
-/// it does not read from any BLoC. Wire it with [BlocBuilder<ClockCubit, ClockState>]
-/// in the parent screen.
-///
-/// Sized to fill whatever space it is given. Designed for a 3-column × 2-row
-/// grid slot (~480×270 px at 1920×1080).
+/// Responds to [displayConfig] keys:
+/// - `hourFormat`: `'12'` or `'24'` (default `'24'`)
+/// - `showSeconds`: bool (default `true`)
+/// - `showDate`: bool (default `true`)
 class ClockCard extends StatelessWidget {
-  const ClockCard({super.key, required this.entity});
+  const ClockCard({
+    super.key,
+    required this.entity,
+    this.displayConfig = const {},
+  });
 
   final ClockEntity entity;
+  final Map<String, dynamic> displayConfig;
 
   @override
   Widget build(BuildContext context) {
     final t = entity.now;
-    final hhmm = '${t.hour.toString().padLeft(2, '0')}:'
-        '${t.minute.toString().padLeft(2, '0')}';
+    final use12h = displayConfig['hourFormat'] == '12';
+    final showSeconds = displayConfig['showSeconds'] != false;
+    final showDate = displayConfig['showDate'] != false;
+
+    final String hhmm;
+    final String? amPm;
+    if (use12h) {
+      final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+      hhmm = '$h:${t.minute.toString().padLeft(2, '0')}';
+      amPm = t.hour < 12 ? 'AM' : 'PM';
+    } else {
+      hhmm = '${t.hour.toString().padLeft(2, '0')}:'
+          '${t.minute.toString().padLeft(2, '0')}';
+      amPm = null;
+    }
     final ss = ':${t.second.toString().padLeft(2, '0')}';
     final date = _formatDate(t);
 
@@ -48,13 +63,21 @@ class ClockCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(hhmm, style: LandfallTypography.timeDisplay),
-                  const SizedBox(width: 6),
-                  Text(ss, style: LandfallTypography.timeSeconds),
+                  if (showSeconds) ...[
+                    const SizedBox(width: 6),
+                    Text(ss, style: LandfallTypography.timeSeconds),
+                  ],
+                  if (amPm != null) ...[
+                    const SizedBox(width: 8),
+                    Text(amPm, style: LandfallTypography.timeSeconds),
+                  ],
                 ],
               ),
             ),
-            const SizedBox(height: 4),
-            Text(date, style: LandfallTypography.dateLabel),
+            if (showDate) ...[
+              const SizedBox(height: 4),
+              Text(date, style: LandfallTypography.dateLabel),
+            ],
           ],
         ),
       ),
