@@ -4,23 +4,24 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
+import 'oauth_token_encryptor.dart';
 
 /// OAuth 2.0 routes for connecting a Google Calendar account.
 ///
 /// Flow:
-///   1. GET /calendar/oauth/start?authUserId=UUID  — redirects to Google.
+///   1. GET /calendar/oauth/start  — requires an authenticated session;
+///      derives authUserId from session.authenticated, then redirects to Google.
 ///   2. GET /calendar/oauth/callback?code=...&state=... — exchanges code for
-///      tokens, stores a [LinkedCredential], returns a confirmation page.
+///      tokens, encrypts them at rest, stores a [LinkedCredential], returns a
+///      confirmation page.
 ///
 /// Configuration required in passwords.yaml:
-///   googleClientId         — OAuth client ID
-///   googleClientSecret     — OAuth client secret
-///   googleOAuthRedirectUri — Full callback URL, e.g.
-///                            https://yourdomain.com/calendar/oauth/callback
+///   googleClientId            — OAuth client ID
+///   googleClientSecret        — OAuth client secret
+///   googleOAuthRedirectUri    — Full callback URL
+///   oauthTokenEncryptionKey   — 64-char hex, AES-256 key for token encryption
 ///
-/// The state token is held in a short-lived in-process map. Safe for a
-/// single-instance home server; a distributed deployment would need a
-/// DB-backed state store.
+/// The state token is held in a short-lived in-process map.
 
 final _pendingStates = <String, _OAuthState>{};
 const _stateTokenTtl = Duration(minutes: 10);
@@ -31,7 +32,23 @@ class _OAuthState {
   final DateTime expiresAt;
 }
 
-/// GET /calendar/oauth/start — redirects to Google's consent screen.
+// ignore: invalid_use_of_visible_for_testing_member — test hook only
+void injectCalendarOAuthStateForTest(String state, String authUserId) {
+  _pendingStates[state] = _OAuthState(
+    authUserId,
+    DateTime.now().toUtc().add(_stateTokenTtl),
+  );
+}
+
+/// Converts a Serverpod userIdentifier to a stable UUID-formatted string.
+String _userIdentifierToUuid(String userIdentifier) {
+  final padded = userIdentifier.padLeft(12, '0');
+  // RFC4122 v4 layout: version nibble = 4, variant nibble = 8.
+  return '00000000-0000-4000-8000-$padded';
+}
+
+/// GET /calendar/oauth/start — requires authentication, then redirects to
+/// Google's consent screen.
 class CalendarOAuthStartRoute extends Route {
   static const _authEndpoint =
       'https://accounts.google.com/o/oauth2/v2/auth';
@@ -44,6 +61,14 @@ class CalendarOAuthStartRoute extends Route {
 
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
+    // SEC-06: derive identity from session, not from caller-supplied query param.
+    if (session.authenticated == null) {
+      return Response(
+        401,
+        body: Body.fromString('Authentication required to connect a calendar.'),
+      );
+    }
+
     final clientId = session.passwords['googleClientId'];
     final redirectUri = session.passwords['googleOAuthRedirectUri'];
 
@@ -55,12 +80,8 @@ class CalendarOAuthStartRoute extends Route {
       );
     }
 
-    final authUserId = request.url.queryParameters['authUserId'];
-    if (authUserId == null || authUserId.isEmpty) {
-      return Response.badRequest(
-        body: Body.fromString('Missing authUserId query parameter'),
-      );
-    }
+    final authUserId =
+        _userIdentifierToUuid(session.authenticated!.userIdentifier);
 
     final now = DateTime.now().toUtc();
     _pendingStates.removeWhere((_, v) => v.expiresAt.isBefore(now));
@@ -84,7 +105,8 @@ class CalendarOAuthStartRoute extends Route {
   }
 }
 
-/// GET /calendar/oauth/callback — exchanges code for tokens and stores credential.
+/// GET /calendar/oauth/callback — exchanges code for tokens and stores
+/// an encrypted [LinkedCredential].
 class CalendarOAuthCallbackRoute extends Route {
   static const _tokenEndpoint = 'https://oauth2.googleapis.com/token';
   static const _userInfoEndpoint =
@@ -174,6 +196,13 @@ class CalendarOAuthCallbackRoute extends Route {
         jsonDecode(userInfoResponse.body) as Map<String, dynamic>;
     final providerEmail = userJson['email'] as String;
 
+    // SEC-07: encrypt tokens at rest.
+    final encKey = session.passwords['oauthTokenEncryptionKey'];
+    final storedAccess = OAuthTokenEncryptor.encryptIfKey(accessToken, encKey);
+    final storedRefresh = refreshToken != null
+        ? OAuthTokenEncryptor.encryptIfKey(refreshToken, encKey)
+        : null;
+
     final existing = await LinkedCredential.db.findFirstRow(
       session,
       where: (t) =>
@@ -184,8 +213,8 @@ class CalendarOAuthCallbackRoute extends Route {
       await LinkedCredential.db.updateRow(
         session,
         existing.copyWith(
-          accessToken: accessToken,
-          refreshToken: refreshToken ?? existing.refreshToken,
+          accessToken: storedAccess,
+          refreshToken: storedRefresh ?? existing.refreshToken,
           tokenExpiresAt: expiresAt,
           scopes: scopes,
           isActive: true,
@@ -199,8 +228,8 @@ class CalendarOAuthCallbackRoute extends Route {
           authUserId: UuidValue.fromString(pendingState.authUserId),
           provider: 'google',
           providerEmail: providerEmail,
-          accessToken: accessToken,
-          refreshToken: refreshToken,
+          accessToken: storedAccess,
+          refreshToken: storedRefresh,
           tokenExpiresAt: expiresAt,
           scopes: scopes,
           isActive: true,

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:serverpod/serverpod.dart';
 
 import '../generated/protocol.dart';
+import '../web/routes/oauth_token_encryptor.dart';
 import 'calendar_service.dart';
 
 /// Fetches upcoming events from the Microsoft Graph Calendar API.
@@ -63,18 +64,27 @@ class MicrosoftCalendarService implements CalendarService {
     Session session,
     LinkedCredential credential,
   ) async {
+    final encKey = session.passwords['oauthTokenEncryptionKey'];
+
     final expiresAt = credential.tokenExpiresAt;
     final needsRefresh = expiresAt == null ||
         expiresAt.isBefore(DateTime.now().toUtc().add(_refreshBuffer));
 
-    if (!needsRefresh) return credential.accessToken;
+    if (!needsRefresh) {
+      return OAuthTokenEncryptor.decryptIfEncrypted(
+        credential.accessToken,
+        encKey,
+      );
+    }
 
-    final refreshToken = credential.refreshToken;
-    if (refreshToken == null) {
+    final rawRefresh = credential.refreshToken;
+    if (rawRefresh == null) {
       throw StateError(
         'Microsoft credential for ${credential.providerEmail} has no refresh token.',
       );
     }
+    final refreshToken =
+        OAuthTokenEncryptor.decryptIfEncrypted(rawRefresh, encKey);
 
     final clientId = session.passwords['microsoftClientId'];
     final clientSecret = session.passwords['microsoftClientSecret'];
@@ -112,7 +122,8 @@ class MicrosoftCalendarService implements CalendarService {
     await LinkedCredential.db.updateRow(
       session,
       credential.copyWith(
-        accessToken: newAccessToken,
+        accessToken:
+            OAuthTokenEncryptor.encryptIfKey(newAccessToken, encKey),
         tokenExpiresAt: newExpiresAt,
         updatedAt: DateTime.now().toUtc(),
       ),
