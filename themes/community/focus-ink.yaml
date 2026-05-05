@@ -1,0 +1,66 @@
+version: "1.0"
+meta:
+  name: "Focus Ink"
+  author: "landfall"
+  description: "A quiet high-contrast theme for work sessions, reading, and low-distraction dashboards."
+  tags: [dark, focus, minimal, productivity]
+  license: "MIT"
+surface:
+  background:
+    type: solid
+    value: "#101114"
+  card:
+    fill: "rgba(255,255,255,0.055)"
+    border:
+      color: "rgba(255,255,255,0.14)"
+      width: 1.0
+      style: solid
+    radius: 6
+    blur: 0
+    shadow: none
+typography:
+  fontFamily: "Inter"
+  scale: comfortable
+  heading:
+    weight: 600
+  body:
+    weight: 400
+  letterSpacing: normal
+  timeDisplay:
+    fontFamily: "JetBrains Mono"
+    weight: 300
+color:
+  accent: "#7DD3FC"
+  accentMuted: "rgba(125,211,252,0.20)"
+  text:
+    primary: "#F4F4F5"
+    secondary: "rgba(244,244,245,0.68)"
+    tertiary: "rgba(244,244,245,0.42)"
+  divider: "rgba(244,244,245,0.12)"
+  agent:
+    border: "rgba(125,211,252,0.32)"
+  success: "#34D399"
+  warning: "#FBBF24"
+  alert: "#FB7185"
+animation:
+  transition: fade
+  speed: normal
+  cardEntry: fade
+  tickerScroll: slow
+moods:
+  urgent:
+    borderColor: "rgba(251,113,133,0.92)"
+    fillColor: "rgba(251,113,133,0.10)"
+    pulse: true
+    scale: 1.01
+    animation: pulse
+  success:
+    borderColor: "rgba(52,211,153,0.78)"
+    fillColor: "rgba(52,211,153,0.08)"
+    animation: none
+  celebratory:
+    borderColor: "rgba(125,211,252,0.75)"
+    fillColor: "rgba(125,211,252,0.08)"
+    animation: glow
+  muted:
+    opacity: 0.52

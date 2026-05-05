@@ -1,0 +1,66 @@
+version: "1.0"
+meta:
+  name: "Kitchen Counter"
+  author: "landfall"
+  description: "Warm morning colors for family calendars, weather, reminders, and glanceable kitchen routines."
+  tags: [light, family, morning, warm]
+  license: "MIT"
+surface:
+  background:
+    type: solid
+    value: "#F6F1E8"
+  card:
+    fill: "rgba(255,255,255,0.78)"
+    border:
+      color: "rgba(66,45,31,0.18)"
+      width: 1.0
+      style: solid
+    radius: 10
+    blur: 0
+    shadow: subtle
+typography:
+  fontFamily: "DM Sans"
+  scale: comfortable
+  heading:
+    weight: 700
+  body:
+    weight: 400
+  letterSpacing: normal
+  timeDisplay:
+    fontFamily: "Space Grotesk"
+    weight: 500
+color:
+  accent: "#2563EB"
+  accentMuted: "rgba(37,99,235,0.16)"
+  text:
+    primary: "#1F2933"
+    secondary: "rgba(31,41,51,0.68)"
+    tertiary: "rgba(31,41,51,0.42)"
+  divider: "rgba(31,41,51,0.12)"
+  agent:
+    border: "rgba(37,99,235,0.28)"
+  success: "#15803D"
+  warning: "#B45309"
+  alert: "#DC2626"
+animation:
+  transition: fade
+  speed: normal
+  cardEntry: slide
+  tickerScroll: normal
+moods:
+  urgent:
+    borderColor: "rgba(220,38,38,0.85)"
+    fillColor: "rgba(220,38,38,0.09)"
+    pulse: true
+    scale: 1.01
+    animation: pulse
+  success:
+    borderColor: "rgba(21,128,61,0.68)"
+    fillColor: "rgba(21,128,61,0.08)"
+    animation: none
+  celebratory:
+    borderColor: "rgba(37,99,235,0.70)"
+    fillColor: "rgba(37,99,235,0.08)"
+    animation: glow
+  muted:
+    opacity: 0.58

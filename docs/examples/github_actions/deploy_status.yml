@@ -1,0 +1,49 @@
+name: Landfall deploy status
+
+on:
+  workflow_run:
+    workflows: ["Deploy"]
+    types: [completed]
+
+jobs:
+  notify-landfall:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push deploy result card
+        env:
+          LANDFALL_URL: ${{ secrets.LANDFALL_URL }}
+          LANDFALL_API_KEY: ${{ secrets.LANDFALL_API_KEY }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          WORKFLOW_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          set -euo pipefail
+
+          if [ "$WORKFLOW_CONCLUSION" = "success" ]; then
+            TITLE="Deploy succeeded"
+            PRIORITY="normal"
+          else
+            TITLE="Deploy needs attention"
+            PRIORITY="ephemeral"
+          fi
+
+          curl -sf -X POST "$LANDFALL_URL/api/v1/cards" \
+            -H "Authorization: Bearer $LANDFALL_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d @- <<JSON
+          {
+            "id": "agent.github.deploy-status",
+            "source": "agent.github",
+            "title": "$TITLE",
+            "body": "$WORKFLOW_NAME finished with: $WORKFLOW_CONCLUSION",
+            "layout": "medium",
+            "priority": "$PRIORITY",
+            "actions": [
+              {
+                "type": "openUrl",
+                "label": "Open run",
+                "payload": "$WORKFLOW_URL"
+              }
+            ]
+          }
+          JSON
