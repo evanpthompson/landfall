@@ -24,10 +24,11 @@ class StripeWebhookRoute extends Route {
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
     final bodyString = await request.readAsString();
-    final signature = (request.headers['stripe-signature'] as String?) ?? '';
+    final signature =
+        request.headers['stripe-signature']?.firstOrNull ?? '';
     final secret = session.passwords['stripeWebhookSecret'] ?? '';
 
-    if (secret.isNotEmpty && !_verifySignature(bodyString, signature, secret)) {
+    if (secret.isEmpty || !_verifySignature(bodyString, signature, secret)) {
       return Response.badRequest(
         body: Body.fromString('Invalid Stripe signature'),
       );
