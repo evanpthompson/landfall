@@ -32,7 +32,12 @@ CalendarEvent _event({
 
 void main() {
   withServerpod('Given CalendarEndpoint', (sessionBuilder, endpoints) {
+    late TestSessionBuilder authed;
+
     setUp(() async {
+      authed = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo('user-1', {}),
+      );
       final session = sessionBuilder.build();
       await CalendarEvent.db.deleteWhere(
         session,
@@ -43,8 +48,7 @@ void main() {
 
     group('getUpcomingEvents', () {
       test('returns empty list when no events exist', () async {
-        final result =
-            await endpoints.calendar.getUpcomingEvents(sessionBuilder);
+        final result = await endpoints.calendar.getUpcomingEvents(authed);
         expect(result, isEmpty);
       });
 
@@ -58,7 +62,7 @@ void main() {
         await session.close();
 
         final result =
-            await endpoints.calendar.getUpcomingEvents(sessionBuilder);
+            await endpoints.calendar.getUpcomingEvents(authed);
 
         expect(result, hasLength(1));
         expect(result.first.title, equals('Future Event'));
@@ -75,7 +79,7 @@ void main() {
         await session.close();
 
         final result =
-            await endpoints.calendar.getUpcomingEvents(sessionBuilder);
+            await endpoints.calendar.getUpcomingEvents(authed);
 
         expect(result, isEmpty);
       });
@@ -92,7 +96,7 @@ void main() {
         await session.close();
 
         final result =
-            await endpoints.calendar.getUpcomingEvents(sessionBuilder);
+            await endpoints.calendar.getUpcomingEvents(authed);
 
         expect(result.length, equals(3));
         expect(result[0].title, equals('First'));
@@ -116,7 +120,7 @@ void main() {
         await session.close();
 
         final result =
-            await endpoints.calendar.getUpcomingEvents(sessionBuilder);
+            await endpoints.calendar.getUpcomingEvents(authed);
 
         expect(result, hasLength(20));
       });
@@ -137,7 +141,7 @@ void main() {
         await session.close();
 
         final result =
-            await endpoints.calendar.getUpcomingEvents(sessionBuilder);
+            await endpoints.calendar.getUpcomingEvents(authed);
 
         expect(result.first.title, equals('Event 0'));
         expect(result.last.title, equals('Event 19'));
@@ -160,7 +164,7 @@ void main() {
         await session.close();
 
         final result =
-            await endpoints.calendar.getUpcomingEvents(sessionBuilder);
+            await endpoints.calendar.getUpcomingEvents(authed);
 
         expect(result.first.title, equals('Board Meeting'));
         expect(result.first.calendarName, equals('Work'));
@@ -191,7 +195,7 @@ void main() {
         await session.close();
 
         final result =
-            await endpoints.calendar.getUpcomingEvents(sessionBuilder);
+            await endpoints.calendar.getUpcomingEvents(authed);
 
         expect(result, hasLength(2));
         expect(
@@ -201,4 +205,26 @@ void main() {
       });
     });
   });
+
+  // SEC-04: CalendarEndpoint auth guards.
+  withServerpod(
+    'Given CalendarEndpoint auth guards (SEC-04)',
+    (sessionBuilder, endpoints) {
+      test('getUpcomingEvents rejects unauthenticated caller', () async {
+        expect(
+          () => endpoints.calendar.getUpcomingEvents(sessionBuilder),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('authenticated caller can fetch events', () async {
+        final authed = sessionBuilder.copyWith(
+          authentication:
+              AuthenticationOverride.authenticationInfo('user-1', {}),
+        );
+        final result = await endpoints.calendar.getUpcomingEvents(authed);
+        expect(result, isA<List>());
+      });
+    },
+  );
 }

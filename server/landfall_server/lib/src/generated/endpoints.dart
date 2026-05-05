@@ -747,6 +747,25 @@ class Endpoints extends _i1.EndpointDispatch {
               ) async =>
                   (endpoints['photo'] as _i13.PhotoEndpoint).getPhotos(session),
         ),
+        'getSignedPhotoUrl': _i1.MethodConnector(
+          name: 'getSignedPhotoUrl',
+          params: {
+            'photoId': _i1.ParameterDescription(
+              name: 'photoId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['photo'] as _i13.PhotoEndpoint).getSignedPhotoUrl(
+                    session,
+                    params['photoId'],
+                  ),
+        ),
       },
     );
     connectors['profile'] = _i1.EndpointConnector(

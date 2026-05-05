@@ -334,10 +334,6 @@ class EndpointPasskeyIdp extends _i8.EndpointPasskeyIdpBase {
   );
 }
 
-/// Serves cached calendar events to the Flutter display client.
-///
-/// Events are populated by [CalendarRefreshCall] on a 15-minute schedule.
-/// Returns an empty list gracefully if no credentials have been connected yet.
 /// {@category Endpoint}
 class EndpointCalendar extends _i1.EndpointRef {
   EndpointCalendar(_i1.EndpointCaller caller) : super(caller);
@@ -345,8 +341,6 @@ class EndpointCalendar extends _i1.EndpointRef {
   @override
   String get name => 'calendar';
 
-  /// Returns the next 20 upcoming events across all active calendar feeds,
-  /// sorted by start time.
   _i2.Future<List<_i10.CalendarEvent>> getUpcomingEvents() =>
       caller.callServerEndpoint<List<_i10.CalendarEvent>>(
         'calendar',
@@ -357,8 +351,9 @@ class EndpointCalendar extends _i1.EndpointRef {
 
 /// Endpoint for card management.
 ///
-/// Phase 0: No authentication required — open for local development.
-/// Phase 2: API key authentication will be added to [pushCard] and [dismissCard].
+/// [getCards] and [getTickerMessages] are read-only and may be called by the
+/// local display without a session. [pushCard] and [dismissCard] mutate state
+/// and require an authenticated session (SEC-01).
 /// {@category Endpoint}
 class EndpointCard extends _i1.EndpointRef {
   EndpointCard(_i1.EndpointCaller caller) : super(caller);
@@ -547,13 +542,6 @@ class EndpointPack extends _i1.EndpointRef {
       );
 }
 
-/// Serves cached photo metadata to the Flutter display client.
-///
-/// Photo entries are populated by [PhotoRefreshCall] on a 30-minute schedule.
-/// Returns an empty list gracefully if no photos have been synced yet.
-///
-/// Image bytes are NOT served through this endpoint. The display client
-/// fetches images via the [PhotoServeRoute] web route at /photos/{id}.
 /// {@category Endpoint}
 class EndpointPhoto extends _i1.EndpointRef {
   EndpointPhoto(_i1.EndpointCaller caller) : super(caller);
@@ -561,12 +549,23 @@ class EndpointPhoto extends _i1.EndpointRef {
   @override
   String get name => 'photo';
 
-  /// Returns all available photos ordered by filename.
   _i2.Future<List<_i15.Photo>> getPhotos() =>
       caller.callServerEndpoint<List<_i15.Photo>>(
         'photo',
         'getPhotos',
         {},
+      );
+
+  /// Returns a short-lived signed URL for [photoId].
+  ///
+  /// The URL can be used by the display client to fetch photo bytes from
+  /// [PhotoServeRoute] without embedding a session token in the HTTP request.
+  /// Tokens expire after [PhotoSigningService.tokenLifetime].
+  _i2.Future<String> getSignedPhotoUrl(int photoId) =>
+      caller.callServerEndpoint<String>(
+        'photo',
+        'getSignedPhotoUrl',
+        {'photoId': photoId},
       );
 }
 

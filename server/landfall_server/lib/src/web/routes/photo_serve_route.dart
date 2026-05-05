@@ -5,20 +5,8 @@ import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
 import '../../photo/google_drive_photo_service.dart';
 import '../../photo/photo_service.dart';
+import 'photo_signing_service.dart';
 
-/// Serves photo image bytes, proxied on demand from the upstream provider.
-///
-/// Route: GET /photos/**
-///
-/// The URL uses Landfall's internal photo ID (the DB primary key), not any
-/// provider-specific identifier. The serve route looks up the Photo row,
-/// loads the associated LinkedCredential, selects the right [PhotoService]
-/// implementation, and streams back the image bytes with the correct
-/// Content-Type.
-///
-/// This abstraction keeps all provider concepts server-side. The display
-/// client constructs URLs as http://{host}/photos/{photo.id} and has no
-/// knowledge of Drive file IDs or any other provider detail.
 class PhotoServeRoute extends Route {
   PhotoServeRoute() : super(methods: {Method.get});
 
@@ -34,6 +22,10 @@ class PhotoServeRoute extends Route {
         body: Body.fromString('Invalid or missing photo ID in path'),
       );
     }
+
+    // Require either an authenticated session or a valid signed URL token.
+    final authResult = _checkAuth(session, request, photoId);
+    if (authResult != null) return authResult;
 
     final photo = await Photo.db.findById(session, photoId);
     if (photo == null) {
@@ -87,5 +79,34 @@ class PhotoServeRoute extends Route {
           'Photo provider "${credential.provider}" is not yet supported.',
         ),
     };
+  }
+
+  /// Returns a non-null [Response] error if the caller is not authorised.
+  /// Returns null when the request should proceed.
+  Result? _checkAuth(Session session, Request request, int photoId) {
+    if (session.authenticated != null) return null;
+
+    final params = request.url.queryParameters;
+    final tokenStr = params['token'];
+    final expStr = params['exp'];
+    final exp = int.tryParse(expStr ?? '');
+
+    if (tokenStr == null || exp == null) {
+      return Response(
+        401,
+        body: Body.fromString('Authentication required'),
+      );
+    }
+
+    final secret = session.passwords['photoSigningSecret']?.toString() ?? '';
+    if (secret.isEmpty) {
+      return Response(401, body: Body.fromString('Authentication required'));
+    }
+
+    if (!PhotoSigningService(secret).verify(photoId, tokenStr, exp)) {
+      return Response(403, body: Body.fromString('Invalid or expired token'));
+    }
+
+    return null;
   }
 }

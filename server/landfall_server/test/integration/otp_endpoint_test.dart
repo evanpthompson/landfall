@@ -3,6 +3,7 @@ import 'package:crypto/crypto.dart';
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart';
 import 'package:test/test.dart';
 
+import 'package:landfall_server/src/auth/otp_service.dart';
 import 'package:landfall_server/src/generated/protocol.dart';
 import 'test_tools/serverpod_test_tools.dart';
 
@@ -189,6 +190,115 @@ void main() {
           ),
           throwsA(isA<Exception>()),
         );
+      });
+    });
+  });
+
+  // SEC-08: OTP hardening — log sanitization and rate limiting.
+  withServerpod(
+    'Given OtpService SEC-08 hardening',
+    (sessionBuilder, endpoints) {
+      setUp(() {
+        OtpService.resetRateLimits();
+      });
+
+    group('log sanitization', () {
+      test('sendCode log message does not contain the OTP code', () {
+        // The sanitized log message must never expose a 6-digit code.
+        // We test the message builder directly — if it contains no code,
+        // and sendCode uses it, the log is clean.
+        final message = OtpService.buildSanitizedLogMessage(
+          'test@example.com',
+          const Duration(minutes: 10),
+        );
+        expect(message, isNot(matches(r'\b\d{6}\b')));
+        expect(message, contains('test@example.com'));
+      });
+    });
+
+    group('per-email verify attempt cap', () {
+      test('5 failed attempts are allowed', () async {
+        const email = 'cap5@example.com';
+        await _insertRequest(sessionBuilder, email: email, code: '999999');
+
+        for (var i = 0; i < 5; i++) {
+          try {
+            await endpoints.otp.verifyCode(sessionBuilder, email, 'wrong$i');
+          } catch (_) {
+            // Expected — wrong code
+          }
+        }
+
+        // After 5 failures a 6th attempt must be rejected with rate-limit error
+        expect(
+          () => endpoints.otp.verifyCode(sessionBuilder, email, 'wrong5'),
+          throwsA(isA<Exception>()),
+          reason: '6th failed verify attempt must be rate-limited',
+        );
+      });
+
+      test('successful verify resets the failure counter', () async {
+        const email = 'resetcap@example.com';
+        await _insertRequest(sessionBuilder, email: email, code: 'aaaaaa');
+        await _insertRequest(sessionBuilder, email: email, code: '111111');
+
+        // Accumulate 4 failures
+        for (var i = 0; i < 4; i++) {
+          try {
+            await endpoints.otp.verifyCode(sessionBuilder, email, 'bad$i');
+          } catch (_) {}
+        }
+
+        // Correct code clears the counter
+        await endpoints.otp.verifyCode(sessionBuilder, email, '111111');
+
+        // Counter is reset — next failure batch should be allowed again
+        await _insertRequest(sessionBuilder, email: email, code: '222222');
+        for (var i = 0; i < 5; i++) {
+          try {
+            await endpoints.otp.verifyCode(sessionBuilder, email, 'post$i');
+          } catch (_) {}
+        }
+        expect(
+          () => endpoints.otp.verifyCode(sessionBuilder, email, 'post5'),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
+
+    group('per-IP generation throttle', () {
+      test('exceeding the send limit for an IP is rejected', () async {
+        const ip = '10.0.0.42';
+        const email = 'ipthrottle@example.com';
+
+        // Send up to the limit
+        for (var i = 0; i < OtpService.maxSendRequestsPerIp; i++) {
+          final session = sessionBuilder.build();
+          await OtpService().sendCode(session, email, clientIp: ip);
+          await session.close();
+        }
+
+        // One more must be throttled
+        final session = sessionBuilder.build();
+        expect(
+          () => OtpService().sendCode(session, email, clientIp: ip),
+          throwsA(isA<Exception>()),
+          reason: 'Requests beyond the per-IP limit must be rejected',
+        );
+        await session.close();
+      });
+
+      test('requests without an IP are not throttled', () async {
+        // If IP is null (e.g. internal calls, test mode) the throttle is skipped.
+        for (var i = 0; i <= OtpService.maxSendRequestsPerIp + 2; i++) {
+          await expectLater(
+            endpoints.otp.sendCode(
+              sessionBuilder,
+              'noip_$i@example.com',
+            ),
+            completes,
+          );
+        }
       });
     });
   });

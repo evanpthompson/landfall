@@ -21,7 +21,12 @@ Photo _photo({
 
 void main() {
   withServerpod('Given PhotoEndpoint', (sessionBuilder, endpoints) {
+    late TestSessionBuilder authed;
+
     setUp(() async {
+      authed = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo('user-1', {}),
+      );
       final session = sessionBuilder.build();
       await Photo.db.deleteWhere(
         session,
@@ -32,7 +37,7 @@ void main() {
 
     group('getPhotos', () {
       test('returns empty list when no photos are cached', () async {
-        final result = await endpoints.photo.getPhotos(sessionBuilder);
+        final result = await endpoints.photo.getPhotos(authed);
         expect(result, isEmpty);
       });
 
@@ -44,7 +49,7 @@ void main() {
         );
         await session.close();
 
-        final result = await endpoints.photo.getPhotos(sessionBuilder);
+        final result = await endpoints.photo.getPhotos(authed);
 
         expect(result, hasLength(1));
         expect(result.first.filename, equals('sunset.jpg'));
@@ -60,7 +65,7 @@ void main() {
         ]);
         await session.close();
 
-        final result = await endpoints.photo.getPhotos(sessionBuilder);
+        final result = await endpoints.photo.getPhotos(authed);
 
         expect(result.length, equals(3));
         expect(result[0].filename, equals('apple.jpg'));
@@ -79,7 +84,7 @@ void main() {
         ]);
         await session.close();
 
-        final result = await endpoints.photo.getPhotos(sessionBuilder);
+        final result = await endpoints.photo.getPhotos(authed);
         expect(result, hasLength(5));
       });
 
@@ -91,7 +96,7 @@ void main() {
         ]);
         await session.close();
 
-        final result = await endpoints.photo.getPhotos(sessionBuilder);
+        final result = await endpoints.photo.getPhotos(authed);
 
         expect(result, hasLength(2));
         expect(
@@ -124,7 +129,7 @@ void main() {
         ]);
         await session.close();
 
-        final result = await endpoints.photo.getPhotos(sessionBuilder);
+        final result = await endpoints.photo.getPhotos(authed);
 
         expect(result.first.filename, equals('alpha.jpg'));
         expect(result.last.filename, equals('bravo.jpg'));
@@ -135,11 +140,33 @@ void main() {
         await Photo.db.insertRow(session, _photo(filename: 'img.jpg'));
         await session.close();
 
-        final result = await endpoints.photo.getPhotos(sessionBuilder);
+        final result = await endpoints.photo.getPhotos(authed);
 
         expect(result.first.id, isNotNull);
         expect(result.first.id, greaterThan(0));
       });
     });
   });
+
+  // SEC-04: PhotoEndpoint auth guards.
+  withServerpod(
+    'Given PhotoEndpoint auth guards (SEC-04)',
+    (sessionBuilder, endpoints) {
+      test('getPhotos rejects unauthenticated caller', () async {
+        expect(
+          () => endpoints.photo.getPhotos(sessionBuilder),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('authenticated caller can fetch photos', () async {
+        final authed = sessionBuilder.copyWith(
+          authentication:
+              AuthenticationOverride.authenticationInfo('user-1', {}),
+        );
+        final result = await endpoints.photo.getPhotos(authed);
+        expect(result, isA<List>());
+      });
+    },
+  );
 }

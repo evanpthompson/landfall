@@ -20,6 +20,9 @@ class OtpEndpoint extends Endpoint {
   ///
   /// Always returns void — do not reveal whether the email is registered.
   Future<void> sendCode(Session session, String email) async {
+    // IP extraction is not available from Serverpod endpoint sessions;
+    // per-IP throttling is applied when the service is called directly
+    // with an explicit clientIp (e.g. from a web route layer).
     await _service.sendCode(session, email);
   }
 
