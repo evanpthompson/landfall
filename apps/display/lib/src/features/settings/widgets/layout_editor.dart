@@ -888,6 +888,36 @@ class _CardHud extends StatelessWidget {
             ],
           ),
         ],
+      'system.calendar' => [
+          const Divider(),
+          _HudSectionLabel(label: 'Calendar view'),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _HudChip(
+                key: const ValueKey('hud_calendar_view_daily'),
+                label: 'Daily',
+                selected: config.displayConfig['view'] != 'weekly' &&
+                    config.displayConfig['view'] != 'monthly',
+                onTap: () => update({'view': 'daily'}),
+              ),
+              const SizedBox(width: 8),
+              _HudChip(
+                key: const ValueKey('hud_calendar_view_weekly'),
+                label: 'Weekly',
+                selected: config.displayConfig['view'] == 'weekly',
+                onTap: () => update({'view': 'weekly'}),
+              ),
+              const SizedBox(width: 8),
+              _HudChip(
+                key: const ValueKey('hud_calendar_view_monthly'),
+                label: 'Monthly',
+                selected: config.displayConfig['view'] == 'monthly',
+                onTap: () => update({'view': 'monthly'}),
+              ),
+            ],
+          ),
+        ],
       _ => const [],
     };
   }
