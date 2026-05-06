@@ -125,7 +125,10 @@ apt-get update -q
 apt-get install -y cmake ninja-build clang \
   libgtk-3-dev pkg-config \
   libblkid-dev liblzma-dev libsecret-1-dev lld
+rm -f build/linux/arm64/release/CMakeCache.txt
 flutter build linux --release
+BUNDLE_DIR="$(pwd)/build/linux/arm64/release/bundle"
+cmake --install build/linux/arm64/release --prefix "${BUNDLE_DIR}"
 EOF
 
 docker run --rm --platform linux/arm64 \
