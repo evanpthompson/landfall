@@ -196,10 +196,14 @@ rm -rf "${BUNDLE_DEST}"
 cp -r "${LINUX_BUNDLE}/." "${BUNDLE_DEST}/"
 info "Display bundle staged ($(du -sh "${BUNDLE_DEST}" | cut -f1))"
 
-# Skip heavy/unnecessary stages: we only need stage0 (base), stage1, stage2 (lite), stage2-landfall
-touch "${PI_GEN_DIR}/stage3/SKIP"
-touch "${PI_GEN_DIR}/stage4/SKIP"
-touch "${PI_GEN_DIR}/stage5/SKIP"
+# Skip and suppress image export for stages we don't need.
+# SKIP prevents a stage's scripts from running.
+# SKIP_IMAGES prevents a stage from being added to the export queue — without
+# it, pi-gen still tries to export the stage even if it was never built.
+touch "${PI_GEN_DIR}/stage2/SKIP_IMAGES"
+touch "${PI_GEN_DIR}/stage3/SKIP" "${PI_GEN_DIR}/stage3/SKIP_IMAGES"
+touch "${PI_GEN_DIR}/stage4/SKIP" "${PI_GEN_DIR}/stage4/SKIP_IMAGES"
+touch "${PI_GEN_DIR}/stage5/SKIP" "${PI_GEN_DIR}/stage5/SKIP_IMAGES"
 
 # ── Build ─────────────────────────────────────────────────────────────────
 # Remove any stale container from a previous failed run so build-docker.sh
