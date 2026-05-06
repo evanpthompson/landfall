@@ -48,12 +48,8 @@ jobs:
 
       - name: Dependency vulnerability audit (A03:2025)
         run: |
-          dart pub get -C server/landfall_server
-          flutter pub get -C apps/display
           go install github.com/google/osv-scanner/cmd/osv-scanner@latest
-          $(go env GOPATH)/bin/osv-scanner \
-            --lockfile=server/landfall_server/pubspec.lock \
-            --lockfile=apps/display/pubspec.lock
+          $(go env GOPATH)/bin/osv-scanner --lockfile=pubspec.lock
 
       - name: Write test passwords.yaml
         # These are CI-only test credentials for an ephemeral container.
