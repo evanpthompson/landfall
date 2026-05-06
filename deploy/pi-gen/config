@@ -1,6 +1,6 @@
 IMG_NAME="landfall"
-RELEASE="bookworm"
-DEPLOY_ZIP=0
+RELEASE="trixie"
+DEPLOY_COMPRESSION=none
 ENABLE_SSH=1
 TARGET_HOSTNAME="landfall"
 FIRST_USER_NAME="landfall"
