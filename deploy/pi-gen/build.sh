@@ -79,6 +79,13 @@ if [[ ! -d "${LINUX_BUNDLE}" ]]; then
 fi
 ok "Display binary found: ${LINUX_BUNDLE}"
 
+# ── Fix permissions from previous Docker run ─────────────────────────────
+# Docker containers run as root, leaving root-owned files in the work dir.
+# Fix them before doing anything so subsequent cp/rsync steps don't fail.
+if [[ -d "${WORK_DIR}" ]]; then
+  sudo chown -R "$(whoami)" "${WORK_DIR}" 2>/dev/null || true
+fi
+
 # ── Clone or update pi-gen ────────────────────────────────────────────────
 PI_GEN_DIR="${WORK_DIR}/pi-gen"
 if [[ -d "${PI_GEN_DIR}" ]]; then
@@ -103,7 +110,13 @@ fi
 # ── Copy Landfall stage into pi-gen ──────────────────────────────────────
 cp "${SCRIPT_DIR}/config"                          "${PI_GEN_DIR}/config"
 cp -r "${SCRIPT_DIR}/stage-landfall"               "${PI_GEN_DIR}/stage-landfall"
-cp -r "${REPO_ROOT}/deploy"                        "${PI_GEN_DIR}/stage-landfall/00-landfall/files/deploy"
+
+# Copy only the runtime deploy files — not deploy/pi-gen/ (build tooling).
+# Using rsync --exclude avoids the recursive-copy-into-itself problem that
+# occurs because PI_GEN_DIR lives inside the deploy/ tree.
+DEPLOY_DEST="${PI_GEN_DIR}/stage-landfall/00-landfall/files/deploy"
+mkdir -p "${DEPLOY_DEST}"
+rsync -a --exclude='pi-gen/' "${REPO_ROOT}/deploy/" "${DEPLOY_DEST}/"
 
 # Skip heavy/unnecessary stages: we only need stage0 (base), stage1, stage2 (lite), stage-landfall
 touch "${PI_GEN_DIR}/stage3/SKIP"
