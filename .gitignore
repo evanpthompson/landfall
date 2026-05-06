@@ -42,3 +42,6 @@ infra/.terraform.lock.hcl
 # Coverage
 coverage/
 lcov.info
+
+# Golden test failure diffs (auto-generated, machine-specific)
+**/test/**/failures/
