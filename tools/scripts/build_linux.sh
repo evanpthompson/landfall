@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # Build the Landfall Linux display binary.
-# On a Mac/x86 host, pass --arch arm64 to cross-compile for Raspberry Pi.
+# Must be run on a Linux host. Flutter does not support cross-compilation.
 #
 # Usage:
-#   bash tools/scripts/build_linux.sh              # native (host arch)
-#   bash tools/scripts/build_linux.sh --arch arm64 # cross-compile for Pi
+#   bash tools/scripts/build_linux.sh              # builds for the host arch
+#   bash tools/scripts/build_linux.sh --arch arm64 # warns if not on arm64 Linux
+#
+# To build an arm64 binary for Raspberry Pi from a non-Linux machine, see:
+#   docs/raspberry_pi_guide.md — Option 1b (Docker + QEMU)
 
 set -euo pipefail
 
@@ -34,7 +37,35 @@ echo ""
 echo "${CYAN}${BOLD}Landfall — Linux display build${RESET}"
 echo ""
 
-command -v flutter > /dev/null || { echo "flutter not found"; exit 1; }
+if ! command -v flutter > /dev/null; then
+  echo "flutter not found. Install it from https://docs.flutter.dev/get-started/install/linux"
+  exit 1
+fi
+
+HOST_OS="$(uname -s)"
+if [[ "${HOST_OS}" != "Linux" ]]; then
+  echo ""
+  echo "${YELLOW}✗  flutter build linux is only supported on Linux hosts.${RESET}"
+  echo ""
+  echo "   You are on ${HOST_OS}. To build the Linux display binary you have three options:"
+  echo ""
+  echo "   Option 1 — Build directly on the Pi (recommended for one-off deploys):"
+  echo "     Install Flutter on the Pi, clone the repo, then run:"
+  echo "       bash tools/scripts/build_linux.sh"
+  echo "     Flutter install: https://docs.flutter.dev/get-started/install/linux"
+  echo ""
+  echo "   Option 2 — Docker + QEMU (for arm64 from any OS with Docker):"
+  echo "     docker run --rm --platform linux/arm64 \\"
+  echo "       -v \"\$(pwd)\":/app -w /app/apps/display \\"
+  echo "       ghcr.io/cirruslabs/flutter:stable \\"
+  echo "       flutter build linux --release"
+  echo "     Output: apps/display/build/linux/aarch64/release/bundle/"
+  echo ""
+  echo "   Option 3 — GitHub Actions (CI build, no local Linux needed):"
+  echo "     Push your branch and let the build workflow produce the artifact."
+  echo ""
+  exit 1
+fi
 
 cd "${DISPLAY_DIR}"
 
@@ -48,15 +79,11 @@ fi
 if [[ "${TARGET_ARCH}" == "arm64" ]]; then
   HOST_ARCH="$(uname -m)"
   if [[ "${HOST_ARCH}" != "aarch64" && "${HOST_ARCH}" != "arm64" ]]; then
-    warn "Cross-compiling arm64 on ${HOST_ARCH}."
-    warn "Flutter does not support cross-compilation natively."
-    warn "For a Pi 4 binary, build directly on a Pi 4 or use a Pi 4 as a build machine."
+    warn "Requested arm64 but running on ${HOST_ARCH}."
+    warn "Flutter does not support cross-compilation — building for host arch instead."
+    warn "The resulting binary will NOT run on a Raspberry Pi."
+    warn "To get an arm64 binary, build on an arm64 Linux machine or use Docker + QEMU."
     warn ""
-    warn "To build on a Pi 4:"
-    warn "  1. Install Flutter on the Pi:  flutter.dev/docs/get-started/install/linux"
-    warn "  2. Clone the repo and run:     bash tools/scripts/build_linux.sh"
-    warn ""
-    warn "Falling back to native build (host arch: ${HOST_ARCH})..."
   fi
 fi
 

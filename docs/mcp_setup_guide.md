@@ -35,9 +35,12 @@ Two readable resources are also available:
 
 ## Step 1 — Generate an API Key
 
+Replace `your-server` with the hostname or IP of your Landfall server (e.g. `192.168.1.42` or `landfall.local`). The `API_KEY_MANAGEMENT_TOKEN` value is in your `deploy/.env` file.
+
 ```bash
 curl -s -X POST http://your-server:8080/apiKey/generateKey \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <API_KEY_MANAGEMENT_TOKEN>" \
   -d '{"name": "claude-desktop"}' \
   | python3 -m json.tool
 ```
@@ -55,6 +58,8 @@ dart compile exe server/landfall_mcp/bin/landfall_mcp.dart \
   -o server/landfall_mcp/bin/landfall_mcp
 ```
 
+This produces a self-contained binary. If `dart` is not found, install the Dart SDK from [dart.dev/get-dart](https://dart.dev/get-dart) (version 3.8+; check with `dart --version`).
+
 Or run directly with `dart run` if you prefer not to compile:
 
 ```bash
@@ -67,6 +72,8 @@ dart run server/landfall_mcp/bin/landfall_mcp.dart
 
 Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or
 `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+The `command` field must be an **absolute path** — Claude Desktop does not resolve relative paths or `~`. To get the correct path, run `pwd` in the repo root and append `/server/landfall_mcp/bin/landfall_mcp`.
 
 ```json
 {
@@ -105,7 +112,7 @@ Restart Claude Desktop after editing the config.
 
 ## Step 4 — Configure Cursor
 
-Add to your Cursor MCP settings (`.cursor/mcp.json` in your project, or the global config):
+Add to your Cursor MCP settings (`.cursor/mcp.json` in your project, or the global Cursor config at `~/.cursor/mcp.json`). The `command` field must be an absolute path, same as Step 3.
 
 ```json
 {

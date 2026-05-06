@@ -10,21 +10,47 @@ This guide covers running Landfall on a Raspberry Pi — either using the pre-bu
 
 The Landfall Pi image boots straight to the display. The server stack starts automatically. No manual setup required beyond flashing and filling in your `.env`.
 
-### 1. Build the image
+### 1. Build the Flutter Linux arm64 binary
 
-On a machine with Docker installed:
+Flutter cannot cross-compile to Linux arm64. The binary **must** be built on a Linux arm64 machine. You have three options:
+
+**Option 1a — Build on the Pi itself** (simplest, no extra hardware):
+```bash
+# On the Pi — install Flutter first if not already installed:
+# https://docs.flutter.dev/get-started/install/linux
+git clone https://github.com/your-org/landfall.git
+cd landfall
+bash tools/scripts/build_linux.sh
+# Takes ~15 minutes on a Pi 4
+```
+
+**Option 1b — Docker + QEMU** (build from any machine with Docker):
+```bash
+# From your development machine (macOS, Linux x86_64, etc.)
+docker run --rm --platform linux/arm64 \
+  -v "$(pwd)":/app -w /app/apps/display \
+  ghcr.io/cirruslabs/flutter:stable \
+  flutter build linux --release
+# Output: apps/display/build/linux/aarch64/release/bundle/
+# Takes ~45 minutes under QEMU emulation
+```
+
+**Option 1c — GitHub Actions** (if you have the repo on GitHub):
+Push your branch and let the CI workflow produce the arm64 artifact — no local Linux required.
+
+### 2. Build the Pi image
+
+On a machine with Docker installed (can be macOS or Linux):
 
 ```bash
-# Build the Flutter Linux arm64 binary first
-bash tools/scripts/build_linux.sh --arch arm64
-
-# Build the Pi image (~30–40 minutes)
 bash deploy/pi-gen/build.sh
 ```
 
-Output: `deploy/pi-gen/work/landfall-<date>-lite.img.xz`
+This takes 20–40 minutes. Output: `deploy/pi-gen/work/landfall-<date>-lite.img.xz`
 
-### 2. Flash the image
+> **Note:** `deploy/pi-gen/build.sh` checks that the arm64 binary exists before starting. Build it first (Step 1) or the script will exit with a clear error.
+
+### 3. Flash the image
 
 Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/):
 1. Click **Choose OS** → **Use custom** → select the `.img.xz` file
@@ -38,11 +64,14 @@ xz -d deploy/pi-gen/work/landfall-*.img.xz
 sudo dd if=deploy/pi-gen/work/landfall-*.img of=/dev/sdX bs=4M status=progress
 ```
 
-### 3. Configure secrets
+Replace `/dev/sdX` with your SD card device (e.g. `/dev/sdb` on Linux, `/dev/disk2` on macOS — use `diskutil list` to find it).
 
-On first boot, SSH into the Pi (default user: `landfall`, password: `landfall`) and run:
+### 4. Configure secrets
+
+On first boot, SSH into the Pi. The default user is `landfall` and the default password is `landfall`. Find the Pi's IP address from your router, or connect a keyboard and run `hostname -I`.
 
 ```bash
+ssh landfall@<PI_IP>
 cd /home/landfall/landfall/deploy
 bash scripts/setup.sh
 ```
@@ -52,7 +81,7 @@ Then restart the server:
 sudo systemctl restart landfall-server
 ```
 
-### 4. Connect a display
+### 5. Connect a display
 
 Connect an HDMI monitor or TV to the Pi. The display app starts automatically after the server is ready (~30 seconds after boot).
 
@@ -74,12 +103,12 @@ curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 ```
 
-Log out and back in.
+Log out and back in, then verify: `docker run hello-world`
 
 ### 2. Clone and configure
 
 ```bash
-git clone https://github.com/yourusername/landfall.git
+git clone https://github.com/your-org/landfall.git
 cd landfall
 bash deploy/scripts/setup.sh
 ```
@@ -95,20 +124,26 @@ First build takes 15–20 minutes on a Pi 4. Grab a coffee.
 
 ### 4. Install the display app
 
-The display runs as a Flutter Linux app directly on the Pi.
+The display runs as a Flutter Linux app directly on the Pi (arm64 binary required).
 
-**On a faster build machine** (recommended):
+**Directly on the Pi** (the simplest approach):
 ```bash
-bash tools/scripts/build_linux.sh --arch arm64
+# Install Flutter on the Pi first:
+# https://docs.flutter.dev/get-started/install/linux
+cd ~/landfall
+bash tools/scripts/build_linux.sh
+# Takes ~15 minutes; output at apps/display/build/linux/aarch64/release/bundle/
+```
+
+**From a Linux arm64 build machine** (if you have one):
+```bash
+# On the build machine:
+bash tools/scripts/build_linux.sh
 rsync -av apps/display/build/linux/aarch64/release/bundle/ \
   landfall@<PI_IP>:/home/landfall/landfall-display/
 ```
 
-**Directly on the Pi** (slower, ~15 min):
-```bash
-# Install Flutter on the Pi first: flutter.dev/docs/get-started/install/linux
-bash tools/scripts/build_linux.sh
-```
+Replace `<PI_IP>` with the Pi's IP address (find it with `hostname -I` on the Pi, or check your router).
 
 ### 5. Run the display
 
@@ -153,9 +188,9 @@ sudo systemctl enable --now landfall-display
 ## Updating
 
 ```bash
-cd landfall
+# On the build machine (or Pi itself):
 git pull
-bash tools/scripts/build_linux.sh --arch arm64
+bash tools/scripts/build_linux.sh
 rsync -av apps/display/build/linux/aarch64/release/bundle/ \
   landfall@<PI_IP>:/home/landfall/landfall-display/
 ssh landfall@<PI_IP> 'cd landfall/deploy && docker compose -f docker-compose.prod.yml build && docker compose -f docker-compose.prod.yml up -d && sudo systemctl restart landfall-display'

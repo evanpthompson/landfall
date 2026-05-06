@@ -23,7 +23,10 @@ echo ""
 echo "${CYAN}${BOLD}Landfall — Fire TV APK build${RESET}"
 echo ""
 
-command -v flutter > /dev/null || { echo "flutter not found"; exit 1; }
+if ! command -v flutter > /dev/null; then
+  echo "flutter not found. Install it from https://docs.flutter.dev/get-started/install"
+  exit 1
+fi
 
 cd "${DISPLAY_DIR}"
 
@@ -35,6 +38,11 @@ ok "APK ready: ${APK}"
 
 echo ""
 echo "${BOLD}Sideload to Fire TV:${RESET}"
+info "Prerequisite: adb must be installed on this machine."
+info "  macOS:  brew install android-platform-tools"
+info "  Linux:  sudo apt-get install adb"
+info "  Windows: download from https://developer.android.com/tools/releases/platform-tools"
+info ""
 info "1. Enable ADB debugging on your Fire TV:"
 info "   Settings → My Fire TV → Developer Options → ADB debugging: ON"
 info "   Settings → My Fire TV → Developer Options → Apps from Unknown Sources: ON"

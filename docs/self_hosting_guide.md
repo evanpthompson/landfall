@@ -30,9 +30,11 @@ docker run hello-world
 ## 2. Clone the repo
 
 ```bash
-git clone https://github.com/yourusername/landfall.git
+git clone https://github.com/your-org/landfall.git
 cd landfall
 ```
+
+Replace `your-org` with the GitHub org or username where the repo lives.
 
 ---
 
@@ -58,14 +60,14 @@ Open `deploy/.env` in a text editor. The file has comments explaining each field
 OWM_API_KEY=your_key_here
 ```
 
-**Google Calendar + Drive** — create an OAuth 2.0 client at [console.cloud.google.com](https://console.cloud.google.com), enable the Calendar API and Drive API, and set the redirect URI to `https://<your-domain>/calendar/oauth/callback`:
+**Google Calendar + Drive** — create an OAuth 2.0 client at [console.cloud.google.com](https://console.cloud.google.com). Before creating the client, enable both the **Google Calendar API** and the **Google Drive API** under "APIs & Services → Library" (without this step the OAuth consent will succeed but syncing will return permission errors). Set the redirect URI to `https://<your-domain>/calendar/oauth/callback`:
 ```
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 GOOGLE_REDIRECT_URI=https://landfall.local/calendar/oauth/callback
 ```
 
-**Microsoft Calendar** — register an app at [portal.azure.com](https://portal.azure.com), add `Calendars.Read` permission, and set the redirect URI to `https://<your-domain>/calendar/microsoft/oauth/callback`:
+**Microsoft Calendar** — register an app at [portal.azure.com](https://portal.azure.com), add the `Calendars.Read` delegated permission under "API permissions" and click **Grant admin consent** (without the consent grant the permission is registered but not active). Set the redirect URI to `https://<your-domain>/calendar/microsoft/oauth/callback`:
 ```
 MICROSOFT_CLIENT_ID=...
 MICROSOFT_CLIENT_SECRET=...
@@ -105,14 +107,26 @@ Then follow the printed sideload instructions (`adb connect` → `adb install`).
 
 ### Raspberry Pi (separate display device)
 
-Build the Linux binary:
+The Pi requires a Linux arm64 binary. Flutter cannot cross-compile, so the binary must be built on a Linux arm64 machine. The simplest approach is to build directly on the Pi:
+
 ```bash
+# On the Pi — install Flutter first if not already installed:
+# https://docs.flutter.dev/get-started/install/linux
 bash tools/scripts/build_linux.sh
+# Takes ~15 minutes; output at apps/display/build/linux/aarch64/release/bundle/
 ```
 
-Copy it to the Pi:
+Or use Docker + QEMU to build from any machine with Docker:
 ```bash
-rsync -av apps/display/build/linux/x64/release/bundle/ \
+docker run --rm --platform linux/arm64 \
+  -v "$(pwd)":/app -w /app/apps/display \
+  ghcr.io/cirruslabs/flutter:stable \
+  flutter build linux --release
+```
+
+Then copy the bundle to the Pi (replace `<PI_IP>` with the Pi's IP address — run `hostname -I` on the Pi to find it):
+```bash
+rsync -av apps/display/build/linux/aarch64/release/bundle/ \
   pi@<PI_IP>:/home/pi/landfall-display/
 ```
 
@@ -132,7 +146,7 @@ Install via `adb install` the same APK used for Fire TV.
 ## 7. Open the display app
 
 On first launch, the app will ask for your server address. Enter:
-- `http://<SERVER_IP>:8080` for local network
+- `http://<SERVER_IP>:8080` for local network — replace `<SERVER_IP>` with the server machine's IP address (run `hostname -I` on it to find it)
 - `https://<your-domain>` if you have a domain with SSL via Caddy
 
 ---
