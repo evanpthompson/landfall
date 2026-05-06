@@ -44,7 +44,8 @@ docker run --rm --platform linux/arm64 \
   -w /app/apps/display \
   ghcr.io/cirruslabs/flutter:stable \
   bash /lf-build.sh
-# Output: apps/display/build/linux/aarch64/release/bundle/
+# Output: apps/display/build/linux/arm64/release/bundle/
+# (Docker containers report "arm64"; native Pi builds output to "aarch64" instead)
 # Takes ~45 minutes under QEMU emulation
 ```
 
@@ -150,10 +151,14 @@ bash tools/scripts/build_linux.sh
 
 **From a Linux arm64 build machine** (if you have one):
 ```bash
-# On the build machine:
+# On the build machine (native Linux arm64 — output path is "aarch64"):
 bash tools/scripts/build_linux.sh
 rsync -av apps/display/build/linux/aarch64/release/bundle/ \
   landfall@<PI_IP>:/home/landfall/landfall-display/
+
+# If you used the Docker+QEMU method above, the path is "arm64" instead:
+# rsync -av apps/display/build/linux/arm64/release/bundle/ \
+#   landfall@<PI_IP>:/home/landfall/landfall-display/
 ```
 
 Replace `<PI_IP>` with the Pi's IP address (find it with `hostname -I` on the Pi, or check your router).

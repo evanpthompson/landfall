@@ -33,8 +33,19 @@ echo ""
 # ── Preflight ─────────────────────────────────────────────────────────────
 command -v docker > /dev/null || die "Docker is not installed"
 
-LINUX_BUNDLE="${REPO_ROOT}/apps/display/build/linux/aarch64/release/bundle"
-if [[ ! -d "${LINUX_BUNDLE}" ]]; then
+# Flutter names the output dir after the platform string: "aarch64" on native Linux,
+# "arm64" when built inside a Docker/QEMU arm64 container. Accept either.
+LINUX_BUNDLE=""
+for candidate in \
+    "${REPO_ROOT}/apps/display/build/linux/aarch64/release/bundle" \
+    "${REPO_ROOT}/apps/display/build/linux/arm64/release/bundle"; do
+  if [[ -d "${candidate}" ]]; then
+    LINUX_BUNDLE="${candidate}"
+    break
+  fi
+done
+
+if [[ -z "${LINUX_BUNDLE}" ]]; then
   echo "${YELLOW}⚠  Linux arm64 display binary not found at:${RESET}"
   info "   ${LINUX_BUNDLE}"
   echo ""
