@@ -30,6 +30,7 @@ import 'package:display/src/features/license/cubit/license_cubit.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
 import 'package:display/src/features/theme/cubit/marketplace_cubit.dart';
 import 'package:display/src/features/theme/cubit/theme_cubit.dart';
+import 'package:display/src/features/theme/cubit/theme_state.dart';
 import 'package:display/src/features/ticker/cubit/ticker_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:ui_kit/ui_kit.dart';
@@ -138,11 +139,18 @@ class LandfallApp extends StatelessWidget {
                 MarketplaceCubit(marketplaceRepository)..loadMarketplace(),
           ),
         ],
-        child: MaterialApp(
-          title: 'Landfall',
-          debugShowCheckedModeBanner: false,
-          theme: LandfallTheme.dark,
-          home: _AuthGate(client: client, serverUrl: serverUrl),
+        child: BlocBuilder<ThemeCubit, ThemeState>(
+          builder: (context, themeState) {
+            final themeData = themeState is ThemeLoaded
+                ? themeState.active.tokens.toMaterialThemeData()
+                : LandfallTheme.dark;
+            return MaterialApp(
+              title: 'Landfall',
+              debugShowCheckedModeBanner: false,
+              theme: themeData,
+              home: _AuthGate(client: client, serverUrl: serverUrl),
+            );
+          },
         ),
       ),
     );

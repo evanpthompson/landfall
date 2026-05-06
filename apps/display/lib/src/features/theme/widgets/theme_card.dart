@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:landfall_shared/landfall_shared.dart' hide Card;
 import 'package:ui_kit/ui_kit.dart';
 
+import 'theme_preview_strip.dart';
+
 /// A card in the theme browser representing a single [ThemeInfo].
 ///
 /// Displays a color swatch sampled from the theme's accent and background
@@ -35,7 +37,7 @@ class ThemeCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ThemeSwatch(tokens: theme.tokens),
+            ThemePreviewStrip(tokens: theme.tokens),
             const SizedBox(height: 10),
             _Header(theme: theme, isActive: isActive),
             if (theme.author != null) ...[

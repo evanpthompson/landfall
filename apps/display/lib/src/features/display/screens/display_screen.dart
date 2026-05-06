@@ -175,7 +175,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
             behavior: HitTestBehavior.translucent,
             onTap: _showGear,
             child: Scaffold(
-              backgroundColor: const Color(0xFF0D0D0F),
+              backgroundColor: tokenColor(tokens.backgroundValue),
               body: Stack(
                 children: [
                   BlocBuilder<DashboardProfileCubit, DashboardProfileState>(
