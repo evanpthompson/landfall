@@ -1,14 +1,11 @@
 #!/bin/bash
 # pi-gen stage: install Docker, copy Landfall deploy files, configure systemd.
-# Runs in the pi-gen build context (outside chroot). Use on_chroot for
-# commands that need to run inside the target rootfs.
-#
-# Pi-gen variables available here:
-#   SUB_STAGE_DIR  — source dir of this sub-stage (/pi-gen/stage2-landfall/00-landfall)
-#   STAGE_WORK_DIR — build work dir             (/pi-gen/work/landfall/stage2-landfall)
-#   ROOTFS_DIR     — target rootfs              (/pi-gen/work/landfall/stage2-landfall/rootfs)
+# Executed as a subprocess by pi-gen (not sourced). Only exported variables
+# are available. Key pi-gen exports: STAGE_DIR, STAGE_WORK_DIR, ROOTFS_DIR.
 
 set -euo pipefail
+
+STAGE_FILES="${STAGE_DIR}/00-landfall/files"
 
 on_chroot << 'EOF'
 # ── Docker ────────────────────────────────────────────────────────────────
@@ -52,23 +49,24 @@ LIGHTDM
 EOF
 
 # ── Copy deploy files ─────────────────────────────────────────────────────
-# SUB_STAGE_DIR is the source dir baked into the Docker image by build.sh.
+# STAGE_DIR is /pi-gen/stage2-landfall inside the container. build.sh rsync'd
+# the deploy/ tree into files/deploy/ before docker build.
 install -d "${ROOTFS_DIR}/home/landfall/landfall/deploy"
-cp -r "${SUB_STAGE_DIR}/files/deploy/." \
+cp -r "${STAGE_FILES}/deploy/." \
       "${ROOTFS_DIR}/home/landfall/landfall/deploy/"
 
 # ── Copy display binary ───────────────────────────────────────────────────
-# build.sh copies the arm64 Flutter bundle into files/bundle/ before the
-# Docker build so it's available inside the container here.
+# build.sh copied the arm64 Flutter bundle into files/bundle/ before docker
+# build so it's available here at ${STAGE_FILES}/bundle/.
 install -d "${ROOTFS_DIR}/home/landfall/landfall/display"
-cp -r "${SUB_STAGE_DIR}/files/bundle/." \
+cp -r "${STAGE_FILES}/bundle/." \
       "${ROOTFS_DIR}/home/landfall/landfall/display/"
 
 # ── Systemd services ──────────────────────────────────────────────────────
-install -m 644 "${SUB_STAGE_DIR}/files/landfall-server.service" \
+install -m 644 "${STAGE_FILES}/landfall-server.service" \
                "${ROOTFS_DIR}/etc/systemd/system/landfall-server.service"
 
-install -m 644 "${SUB_STAGE_DIR}/files/landfall-display.service" \
+install -m 644 "${STAGE_FILES}/landfall-display.service" \
                "${ROOTFS_DIR}/etc/systemd/system/landfall-display.service"
 
 on_chroot << 'EOF'
