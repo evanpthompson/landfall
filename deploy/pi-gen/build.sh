@@ -107,6 +107,19 @@ if ! grep -q "qemu-user-static" "${PI_GEN_DIR}/Dockerfile"; then
   info "Patched pi-gen Dockerfile: added qemu-user-static"
 fi
 
+# ── Patch pi-gen build-docker.sh (macOS only) ────────────────────────────
+# pi-gen's build-docker.sh checks for `qemu-arm` on the HOST before starting
+# Docker. On macOS this binary doesn't exist — binfmt is already registered
+# in Docker Desktop's Linux VM by the tonistiigi/binfmt step above. Patch
+# the script to skip the host-side check entirely on non-Linux hosts.
+if [[ "${HOST_OS}" != "Linux" ]]; then
+  if ! grep -q "# Landfall: macOS binfmt skip" "${PI_GEN_DIR}/build-docker.sh"; then
+    sed -i '' '/^binfmt_misc_required=1$/s/=1/=0 # Landfall: macOS binfmt skip/' \
+      "${PI_GEN_DIR}/build-docker.sh"
+    info "Patched build-docker.sh: disabled host binfmt check (handled by Docker Desktop)"
+  fi
+fi
+
 # ── Copy Landfall stage into pi-gen ──────────────────────────────────────
 cp "${SCRIPT_DIR}/config"                          "${PI_GEN_DIR}/config"
 cp -r "${SCRIPT_DIR}/stage-landfall"               "${PI_GEN_DIR}/stage-landfall"
