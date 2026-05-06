@@ -13,7 +13,6 @@ ExecStop=/usr/bin/docker compose -f docker-compose.prod.yml down
 TimeoutStartSec=300
 Restart=on-failure
 RestartSec=30
-User=landfall
 
 [Install]
 WantedBy=multi-user.target
