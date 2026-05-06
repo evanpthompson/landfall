@@ -138,6 +138,10 @@ touch "${PI_GEN_DIR}/stage4/SKIP"
 touch "${PI_GEN_DIR}/stage5/SKIP"
 
 # ── Build ─────────────────────────────────────────────────────────────────
+# Remove any stale container from a previous failed run so build-docker.sh
+# doesn't abort asking the user to set CONTINUE=1.
+docker rm -v pigen_work > /dev/null 2>&1 || true
+
 echo ""
 info "Starting pi-gen Docker build — this takes 20–40 minutes..."
 echo ""
