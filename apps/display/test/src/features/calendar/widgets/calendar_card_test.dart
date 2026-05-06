@@ -248,7 +248,7 @@ void main() {
 
   group('CalendarCard — resize safety', () {
     testWidgets('does not overflow in a 200x200 slot (daily)', (tester) async {
-      final now = DateTime.now().toUtc();
+      final now = DateTime(2024, 3, 11, 9, 0);
       await tester.pumpWidget(MaterialApp(
         theme: LandfallTheme.dark,
         home: Scaffold(
@@ -305,13 +305,17 @@ void main() {
 
   group('CalendarCard — daily golden', () {
     testWidgets('golden — daily view', (tester) async {
-      final now = DateTime.now().toUtc();
+      // Fixed past date: Mon 11 Mar 2024, 09:00 local time.
+      // Using a past date ensures the label is always "Mon, Mar 11" (never
+      // "Today" or "Tomorrow"), making the golden stable regardless of when
+      // or where the test runs.
+      final base = DateTime(2024, 3, 11, 9, 0);
       await tester.pumpWidget(_wrap(CalendarCard(
         events: [
-          _event(id: 1, startTime: now, title: 'Morning Standup'),
+          _event(id: 1, startTime: base, title: 'Morning Standup'),
           _event(
             id: 2,
-            startTime: now.add(const Duration(hours: 2)),
+            startTime: base.add(const Duration(hours: 2)),
             title: 'Design Review',
             calendarName: 'Team',
           ),

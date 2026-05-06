@@ -451,63 +451,60 @@ class _MonthCell extends StatelessWidget {
     final overflow = events.length > _maxDots ? events.length - _maxDots : 0;
     final dotCount = events.length.clamp(0, _maxDots);
 
-    return ClipRect(
-      child: OverflowBox(
-        alignment: Alignment.topCenter,
-        maxHeight: double.infinity,
-        child: Padding(
+    return Padding(
       padding: const EdgeInsets.all(1),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Day number
-          Container(
-            width: 22,
-            height: 22,
-            decoration: isToday
-                ? BoxDecoration(color: accent, shape: BoxShape.circle)
-                : null,
-            child: Center(
-              child: Text(
-                '$day',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight:
-                      isToday ? FontWeight.w700 : FontWeight.w400,
-                  color: isToday ? Colors.white : textPrimary,
-                ),
-              ),
-            ),
-          ),
-          if (dotCount > 0) ...[
-            const SizedBox(height: 2),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                dotCount,
-                (_) => Container(
-                  width: 4,
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(horizontal: 1),
-                  decoration: BoxDecoration(
-                    color: accent,
-                    shape: BoxShape.circle,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Day number
+            Container(
+              width: 22,
+              height: 22,
+              decoration: isToday
+                  ? BoxDecoration(color: accent, shape: BoxShape.circle)
+                  : null,
+              child: Center(
+                child: Text(
+                  '$day',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight:
+                        isToday ? FontWeight.w700 : FontWeight.w400,
+                    color: isToday ? Colors.white : textPrimary,
                   ),
                 ),
               ),
             ),
-          ],
-          if (overflow > 0)
-            Text(
-              '+$overflow',
-              style: TextStyle(
-                fontSize: 9,
-                color: textTertiary,
+            if (dotCount > 0) ...[
+              const SizedBox(height: 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  dotCount,
+                  (_) => Container(
+                    width: 4,
+                    height: 4,
+                    margin: const EdgeInsets.symmetric(horizontal: 1),
+                    decoration: BoxDecoration(
+                      color: accent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
               ),
-            ),
-        ],
-      ),
+            ],
+            if (overflow > 0)
+              Text(
+                '+$overflow',
+                style: TextStyle(
+                  fontSize: 9,
+                  color: textTertiary,
+                ),
+              ),
+          ],
         ),
       ),
     );
