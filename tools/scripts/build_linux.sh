@@ -69,7 +69,7 @@ if [[ "${HOST_OS}" != "Linux" ]]; then
   echo "       -w /app/apps/display \\"
   echo "       ghcr.io/cirruslabs/flutter:stable \\"
   echo "       bash /lf-build.sh"
-  echo "     Output: apps/display/build/linux/aarch64/release/bundle/"
+  echo "     Output: apps/display/build/linux/arm64/release/bundle/"
   echo ""
   echo "   Option 3 — GitHub Actions (CI build, no local Linux needed):"
   echo "     Push your branch and let the build workflow produce the artifact."

@@ -113,8 +113,7 @@ The Pi requires a Linux arm64 binary. Flutter cannot cross-compile, so the binar
 # On the Pi — install Flutter first if not already installed:
 # https://docs.flutter.dev/get-started/install/linux
 bash tools/scripts/build_linux.sh
-# Takes ~15 minutes; output at apps/display/build/linux/aarch64/release/bundle/
-# (native Linux arm64 path — Docker+QEMU builds output to "arm64" instead of "aarch64")
+# Takes ~15 minutes; output at apps/display/build/linux/arm64/release/bundle/
 ```
 
 Or use Docker + QEMU to build from any machine with Docker:
@@ -137,15 +136,10 @@ docker run --rm --platform linux/arm64 \
   bash /lf-build.sh
 ```
 
-Then copy the bundle to the Pi (replace `<PI_IP>` with the Pi's IP address — run `hostname -I` on the Pi to find it). Use `arm64` if you built with Docker+QEMU, `aarch64` if you built on a native Linux arm64 machine:
+Then copy the bundle to the Pi (replace `<PI_IP>` with the Pi's IP address — run `hostname -I` on the Pi to find it):
 ```bash
-# Docker+QEMU build:
 rsync -av apps/display/build/linux/arm64/release/bundle/ \
   pi@<PI_IP>:/home/pi/landfall-display/
-
-# Native Linux arm64 build:
-# rsync -av apps/display/build/linux/aarch64/release/bundle/ \
-#   pi@<PI_IP>:/home/pi/landfall-display/
 ```
 
 Run it (requires a desktop session):

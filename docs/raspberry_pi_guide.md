@@ -45,7 +45,6 @@ docker run --rm --platform linux/arm64 \
   ghcr.io/cirruslabs/flutter:stable \
   bash /lf-build.sh
 # Output: apps/display/build/linux/arm64/release/bundle/
-# (Docker containers report "arm64"; native Pi builds output to "aarch64" instead)
 # Takes ~45 minutes under QEMU emulation
 ```
 
@@ -146,19 +145,14 @@ The display runs as a Flutter Linux app directly on the Pi (arm64 binary require
 # https://docs.flutter.dev/get-started/install/linux
 cd ~/landfall
 bash tools/scripts/build_linux.sh
-# Takes ~15 minutes; output at apps/display/build/linux/aarch64/release/bundle/
+# Takes ~15 minutes; output at apps/display/build/linux/arm64/release/bundle/
 ```
 
 **From a Linux arm64 build machine** (if you have one):
 ```bash
-# On the build machine (native Linux arm64 — output path is "aarch64"):
 bash tools/scripts/build_linux.sh
-rsync -av apps/display/build/linux/aarch64/release/bundle/ \
+rsync -av apps/display/build/linux/arm64/release/bundle/ \
   landfall@<PI_IP>:/home/landfall/landfall-display/
-
-# If you used the Docker+QEMU method above, the path is "arm64" instead:
-# rsync -av apps/display/build/linux/arm64/release/bundle/ \
-#   landfall@<PI_IP>:/home/landfall/landfall-display/
 ```
 
 Replace `<PI_IP>` with the Pi's IP address (find it with `hostname -I` on the Pi, or check your router).
@@ -209,7 +203,7 @@ sudo systemctl enable --now landfall-display
 # On the build machine (or Pi itself):
 git pull
 bash tools/scripts/build_linux.sh
-rsync -av apps/display/build/linux/aarch64/release/bundle/ \
+rsync -av apps/display/build/linux/arm64/release/bundle/ \
   landfall@<PI_IP>:/home/landfall/landfall-display/
 ssh landfall@<PI_IP> 'cd landfall/deploy && docker compose -f docker-compose.prod.yml build && docker compose -f docker-compose.prod.yml up -d && sudo systemctl restart landfall-display'
 ```
