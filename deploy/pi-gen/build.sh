@@ -122,16 +122,17 @@ fi
 
 # ── Copy Landfall stage into pi-gen ──────────────────────────────────────
 cp "${SCRIPT_DIR}/config"                          "${PI_GEN_DIR}/config"
-cp -r "${SCRIPT_DIR}/stage-landfall"               "${PI_GEN_DIR}/stage-landfall"
+rm -rf "${PI_GEN_DIR}/stage2-landfall"
+cp -r "${SCRIPT_DIR}/stage2-landfall"              "${PI_GEN_DIR}/stage2-landfall"
 
 # Copy only the runtime deploy files — not deploy/pi-gen/ (build tooling).
 # Using rsync --exclude avoids the recursive-copy-into-itself problem that
 # occurs because PI_GEN_DIR lives inside the deploy/ tree.
-DEPLOY_DEST="${PI_GEN_DIR}/stage-landfall/00-landfall/files/deploy"
+DEPLOY_DEST="${PI_GEN_DIR}/stage2-landfall/00-landfall/files/deploy"
 mkdir -p "${DEPLOY_DEST}"
 rsync -a --exclude='pi-gen/' "${REPO_ROOT}/deploy/" "${DEPLOY_DEST}/"
 
-# Skip heavy/unnecessary stages: we only need stage0 (base), stage1, stage2 (lite), stage-landfall
+# Skip heavy/unnecessary stages: we only need stage0 (base), stage1, stage2 (lite), stage2-landfall
 touch "${PI_GEN_DIR}/stage3/SKIP"
 touch "${PI_GEN_DIR}/stage4/SKIP"
 touch "${PI_GEN_DIR}/stage5/SKIP"
