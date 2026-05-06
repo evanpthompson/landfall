@@ -49,7 +49,7 @@ if [[ ! -d "${LINUX_BUNDLE}" ]]; then
   info "    docker run --rm --platform linux/arm64 \\"
   info "      -v \"\$(pwd)\":/app -w /app/apps/display \\"
   info "      ghcr.io/cirruslabs/flutter:stable \\"
-  info "      bash -c \"apt-get update -q && apt-get install -y cmake ninja-build clang libgtk-3-dev pkg-config libblkid-dev liblzma-dev && flutter build linux --release\""
+  info "      bash -c \"apt-get update -q && apt-get install -y cmake ninja-build clang libgtk-3-dev pkg-config libblkid-dev liblzma-dev libsecret-1-dev && flutter build linux --release\""
   echo ""
   die "Missing display binary — see instructions above"
 fi

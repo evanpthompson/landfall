@@ -30,7 +30,7 @@ bash tools/scripts/build_linux.sh
 docker run --rm --platform linux/arm64 \
   -v "$(pwd)":/app -w /app/apps/display \
   ghcr.io/cirruslabs/flutter:stable \
-  bash -c "apt-get update -q && apt-get install -y cmake ninja-build clang libgtk-3-dev pkg-config libblkid-dev liblzma-dev && flutter build linux --release"
+  bash -c "apt-get update -q && apt-get install -y cmake ninja-build clang libgtk-3-dev pkg-config libblkid-dev liblzma-dev libsecret-1-dev && flutter build linux --release"
 # Output: apps/display/build/linux/aarch64/release/bundle/
 # Takes ~45 minutes under QEMU emulation
 ```
