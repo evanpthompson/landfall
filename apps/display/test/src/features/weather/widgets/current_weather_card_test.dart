@@ -100,5 +100,20 @@ void main() {
       );
       expect(find.text('32°'), findsOneWidget);
     });
+
+    // BUG-05: card content must scale down at small slot sizes without overflow.
+    testWidgets('does not overflow in a 240x180 slot', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: LandfallTheme.dark,
+        home: Scaffold(
+          body: SizedBox(
+            width: 240,
+            height: 180,
+            child: CurrentWeatherCard(entity: _entity()),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
   });
 }

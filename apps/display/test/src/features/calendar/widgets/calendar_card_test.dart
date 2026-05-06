@@ -244,6 +244,63 @@ void main() {
     });
   });
 
+  // ── Resize safety (BUG-05) ─────────────────────────────────────────────────
+
+  group('CalendarCard — resize safety', () {
+    testWidgets('does not overflow in a 200x200 slot (daily)', (tester) async {
+      final now = DateTime.now().toUtc();
+      await tester.pumpWidget(MaterialApp(
+        theme: LandfallTheme.dark,
+        home: Scaffold(
+          body: SizedBox(
+            width: 200,
+            height: 200,
+            child: CalendarCard(
+              events: [_event(id: 1, startTime: now, title: 'Standup')],
+              displayConfig: const {'view': 'daily'},
+            ),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('does not overflow in a 200x200 slot (weekly)', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: LandfallTheme.dark,
+        home: Scaffold(
+          body: SizedBox(
+            width: 200,
+            height: 200,
+            child: CalendarCard(
+              events: _thisWeekEvents(),
+              displayConfig: const {'view': 'weekly'},
+            ),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('does not overflow in a 200x200 slot (monthly)',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: LandfallTheme.dark,
+        home: Scaffold(
+          body: SizedBox(
+            width: 200,
+            height: 200,
+            child: CalendarCard(
+              events: _thisWeekEvents(),
+              displayConfig: const {'view': 'monthly'},
+            ),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   // ── Daily golden ───────────────────────────────────────────────────────────
 
   group('CalendarCard — daily golden', () {

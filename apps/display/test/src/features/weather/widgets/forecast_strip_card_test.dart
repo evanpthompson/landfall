@@ -98,6 +98,35 @@ void main() {
       expect(find.byType(DecoratedBox), findsNothing);
     });
 
+    // BUG-05: regression tests at the minimum slot sizes from the plan.
+    testWidgets('does not overflow in a 200x110 slot', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: LandfallTheme.dark,
+        home: Scaffold(
+          body: SizedBox(
+            width: 200,
+            height: 110,
+            child: ForecastStripCard(forecast: days),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('does not overflow in a 320x110 slot', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: LandfallTheme.dark,
+        home: Scaffold(
+          body: SizedBox(
+            width: 320,
+            height: 110,
+            child: ForecastStripCard(forecast: days),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('renders mixed icon types correctly', (tester) async {
       final mixed = [
         _day(date: DateTime.utc(2026, 4, 20), iconCode: '01d'), // ☀️

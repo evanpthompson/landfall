@@ -112,5 +112,21 @@ void main() {
       await tester.pumpWidget(_wrap(ClockCard(entity: entity)));
       expect(find.text('Wednesday, April 15'), findsOneWidget);
     });
+
+    // BUG-05: card content must scale down at small slot sizes without overflow.
+    testWidgets('does not overflow in a 300x150 slot', (tester) async {
+      final entity = ClockEntity(DateTime(2026, 4, 17, 9, 30, 45));
+      await tester.pumpWidget(MaterialApp(
+        theme: LandfallTheme.dark,
+        home: Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 150,
+            child: ClockCard(entity: entity),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
   });
 }

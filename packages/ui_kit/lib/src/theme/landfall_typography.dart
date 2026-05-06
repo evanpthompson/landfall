@@ -17,6 +17,7 @@ abstract final class LandfallTypography {
     letterSpacing: -4,
     color: LandfallColors.textPrimary,
     height: 1.0,
+    fontFeatures: [FontFeature.tabularFigures()],
   );
 
   /// Seconds display. Companion to [timeDisplay].
@@ -25,6 +26,7 @@ abstract final class LandfallTypography {
     fontWeight: FontWeight.w300,
     color: LandfallColors.textSecondary,
     height: 1.0,
+    fontFeatures: [FontFeature.tabularFigures()],
   );
 
   // ── Date ────────────────────────────────────────────────────────────────────

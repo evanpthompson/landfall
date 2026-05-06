@@ -39,36 +39,40 @@ class CurrentWeatherCard extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(entity.locationName, style: LandfallTypography.widgetHeading),
-            const SizedBox(height: 4),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('$temp°', style: LandfallTypography.weatherTemp),
-                const SizedBox(width: 12),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Text(
-                    _weatherIcon(entity.iconCode),
-                    style: const TextStyle(fontSize: 36),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.topLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(entity.locationName, style: LandfallTypography.widgetHeading),
+              const SizedBox(height: 4),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('$temp°', style: LandfallTypography.weatherTemp),
+                  const SizedBox(width: 12),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      _weatherIcon(entity.iconCode),
+                      style: const TextStyle(fontSize: 36),
+                    ),
                   ),
+                ],
+              ),
+              Text(entity.condition, style: LandfallTypography.weatherCondition),
+              if (!compact) ...[
+                const SizedBox(height: 8),
+                _MetaRow(
+                  feelsLike: 'Feels like $feelsLike°$unitLabel',
+                  humidity: '${entity.humidity}% humidity',
+                  wind: '$windMph mph',
                 ),
               ],
-            ),
-            Text(entity.condition, style: LandfallTypography.weatherCondition),
-            if (!compact) ...[
-              const SizedBox(height: 8),
-              _MetaRow(
-                feelsLike: 'Feels like $feelsLike°$unitLabel',
-                humidity: '${entity.humidity}% humidity',
-                wind: '$windMph mph',
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -107,12 +111,13 @@ class _MetaRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Flexible(child: Text(feelsLike, style: LandfallTypography.caption, overflow: TextOverflow.ellipsis)),
+        Text(feelsLike, style: LandfallTypography.caption),
         _dot,
-        Flexible(child: Text(humidity, style: LandfallTypography.caption, overflow: TextOverflow.ellipsis)),
+        Text(humidity, style: LandfallTypography.caption),
         _dot,
-        Flexible(child: Text(wind, style: LandfallTypography.caption, overflow: TextOverflow.ellipsis)),
+        Text(wind, style: LandfallTypography.caption),
       ],
     );
   }

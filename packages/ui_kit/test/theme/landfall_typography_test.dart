@@ -56,5 +56,20 @@ void main() {
         equals(FontWeight.w200),
       );
     });
+
+    // BUG-04: tabular figures prevent per-tick size jitter as digit glyphs change width.
+    test('timeDisplay has tabular figures font feature', () {
+      expect(
+        LandfallTypography.timeDisplay.fontFeatures,
+        contains(const FontFeature.tabularFigures()),
+      );
+    });
+
+    test('timeSeconds has tabular figures font feature', () {
+      expect(
+        LandfallTypography.timeSeconds.fontFeatures,
+        contains(const FontFeature.tabularFigures()),
+      );
+    });
   });
 }

@@ -260,11 +260,17 @@ class _WeeklyView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: List.generate(7, (i) {
               return Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: byDay[i]
-                      .map((e) => _WeekEventBlock(event: e))
-                      .toList(),
+                child: ClipRect(
+                  child: OverflowBox(
+                    alignment: Alignment.topLeft,
+                    maxHeight: double.infinity,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: byDay[i]
+                          .map((e) => _WeekEventBlock(event: e))
+                          .toList(),
+                    ),
+                  ),
                 ),
               );
             }),
@@ -411,7 +417,11 @@ class _MonthCell extends StatelessWidget {
     final overflow = events.length > _maxDots ? events.length - _maxDots : 0;
     final dotCount = events.length.clamp(0, _maxDots);
 
-    return Padding(
+    return ClipRect(
+      child: OverflowBox(
+        alignment: Alignment.topCenter,
+        maxHeight: double.infinity,
+        child: Padding(
       padding: const EdgeInsets.all(1),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -468,6 +478,8 @@ class _MonthCell extends StatelessWidget {
               ),
             ),
         ],
+      ),
+        ),
       ),
     );
   }
