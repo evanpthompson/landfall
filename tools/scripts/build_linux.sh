@@ -59,7 +59,7 @@ if [[ "${HOST_OS}" != "Linux" ]]; then
   echo "     #!/bin/bash"
   echo "     set -e"
   echo "     apt-get update -q"
-  echo "     apt-get install -y cmake ninja-build clang libgtk-3-dev pkg-config libblkid-dev liblzma-dev libsecret-1-dev"
+  echo "     apt-get install -y cmake ninja-build clang libgtk-3-dev pkg-config libblkid-dev liblzma-dev libsecret-1-dev lld"
   echo "     flutter build linux --release"
   echo "     EOF"
   echo ""

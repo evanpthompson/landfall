@@ -48,7 +48,7 @@ if [[ ! -d "${LINUX_BUNDLE}" ]]; then
   info "  Option 2 — Docker + QEMU (from any machine with Docker):"
   info "    cat > /tmp/lf-build.sh << 'EOF'"
   info "    apt-get update -q && apt-get install -y cmake ninja-build clang \\"
-  info "      libgtk-3-dev pkg-config libblkid-dev liblzma-dev libsecret-1-dev"
+  info "      libgtk-3-dev pkg-config libblkid-dev liblzma-dev libsecret-1-dev lld"
   info "    flutter build linux --release"
   info "    EOF"
   info "    docker run --rm --platform linux/arm64 \\"
