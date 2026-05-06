@@ -121,7 +121,7 @@ Or use Docker + QEMU to build from any machine with Docker:
 docker run --rm --platform linux/arm64 \
   -v "$(pwd)":/app -w /app/apps/display \
   ghcr.io/cirruslabs/flutter:stable \
-  flutter build linux --release
+  bash -c "apt-get update -q && apt-get install -y cmake ninja-build clang libgtk-3-dev pkg-config libblkid-dev liblzma-dev && flutter build linux --release"
 ```
 
 Then copy the bundle to the Pi (replace `<PI_IP>` with the Pi's IP address — run `hostname -I` on the Pi to find it):

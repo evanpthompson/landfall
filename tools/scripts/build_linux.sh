@@ -58,7 +58,7 @@ if [[ "${HOST_OS}" != "Linux" ]]; then
   echo "     docker run --rm --platform linux/arm64 \\"
   echo "       -v \"\$(pwd)\":/app -w /app/apps/display \\"
   echo "       ghcr.io/cirruslabs/flutter:stable \\"
-  echo "       flutter build linux --release"
+  echo "       bash -c \"apt-get update -q && apt-get install -y cmake ninja-build clang libgtk-3-dev pkg-config libblkid-dev liblzma-dev && flutter build linux --release\""
   echo "     Output: apps/display/build/linux/aarch64/release/bundle/"
   echo ""
   echo "   Option 3 — GitHub Actions (CI build, no local Linux needed):"
