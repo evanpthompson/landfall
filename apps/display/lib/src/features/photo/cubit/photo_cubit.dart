@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
+import 'package:display/src/data/photo/local_directory_photo_repository.dart';
+import 'package:display/src/data/photo/network_photo_repository.dart';
 import 'photo_state.dart';
 
 export 'photo_state.dart';
@@ -11,10 +13,31 @@ export 'photo_state.dart';
 /// photos. Call [advance] on each slideshow tick (every 45 seconds by default)
 /// to move to the next photo. Both calls are driven externally by timers in
 /// [DisplayScreen] to keep the cubit side-effect-free.
+///
+/// Call [setSource] to switch to a different photo source at runtime.
 class PhotoCubit extends Cubit<PhotoState> {
   PhotoCubit(this._repository) : super(const PhotoLoading());
 
-  final PhotoRepository _repository;
+  PhotoRepository _repository;
+
+  /// Switches to a new photo source and reloads.
+  Future<void> setSource(PhotoSource source) async {
+    _repository = _repositoryForSource(source);
+    emit(const PhotoLoading());
+    await loadPhotos();
+  }
+
+  static PhotoRepository _repositoryForSource(PhotoSource source) =>
+      switch (source) {
+        PhotoSourceServerpod() => throw UnimplementedError(
+            'PhotoSourceServerpod requires the original repository — '
+            'pass it at construction time instead',
+          ),
+        PhotoSourceLocalDirectory(:final path) =>
+          LocalDirectoryPhotoRepository(path),
+        PhotoSourceNetwork(:final urls) => NetworkPhotoRepository(urls),
+        PhotoSourceS3() => NetworkPhotoRepository(const []),
+      };
 
   Future<void> loadPhotos() async {
     try {

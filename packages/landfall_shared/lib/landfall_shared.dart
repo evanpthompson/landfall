@@ -20,6 +20,7 @@ export 'src/repositories/weather_repository.dart';
 export 'src/models/calendar/calendar_event_entity.dart';
 export 'src/repositories/calendar_repository.dart';
 export 'src/models/photo/photo_entity.dart';
+export 'src/models/photo/photo_source.dart';
 export 'src/repositories/photo_repository.dart';
 export 'src/models/settings/display_settings.dart';
 export 'src/repositories/display_settings_repository.dart';

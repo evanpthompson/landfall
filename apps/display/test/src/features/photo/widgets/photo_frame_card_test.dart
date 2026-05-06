@@ -64,5 +64,46 @@ void main() {
       );
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('uses Image.file for file:// URLs', (tester) async {
+      final state = PhotoLoaded(
+        photos: [
+          PhotoEntity(
+            id: 1,
+            filename: 'local.jpg',
+            mimeType: 'image/jpeg',
+            fetchedAt: DateTime(2026, 5, 1),
+            imageUrl: 'file:///home/pi/photos/local.jpg',
+          ),
+        ],
+        currentIndex: 0,
+      );
+      await tester.pumpWidget(_wrapWithState(state));
+      // Image.file is used when scheme is file://
+      expect(find.byType(Image), findsWidgets);
+      final images = tester.widgetList<Image>(find.byType(Image)).toList();
+      final hasFileImage = images.any((img) => img.image is FileImage);
+      expect(hasFileImage, isTrue);
+    });
+
+    testWidgets('uses Image.network for http:// URLs', (tester) async {
+      final state = PhotoLoaded(
+        photos: [
+          PhotoEntity(
+            id: 1,
+            filename: 'remote.jpg',
+            mimeType: 'image/jpeg',
+            fetchedAt: DateTime(2026, 5, 1),
+            imageUrl: 'https://example.com/remote.jpg',
+          ),
+        ],
+        currentIndex: 0,
+      );
+      await tester.pumpWidget(_wrapWithState(state));
+      expect(find.byType(Image), findsWidgets);
+      final images = tester.widgetList<Image>(find.byType(Image)).toList();
+      final hasNetworkImage = images.any((img) => img.image is NetworkImage);
+      expect(hasNetworkImage, isTrue);
+    });
   });
 }

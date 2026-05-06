@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import '../cubit/photo_cubit.dart';
@@ -45,19 +47,34 @@ class _PhotoDisplay extends StatelessWidget {
       duration: const Duration(milliseconds: 1200),
       switchInCurve: Curves.easeIn,
       switchOutCurve: Curves.easeOut,
-      child: Image.network(
-        photo.imageUrl,
-        // Key on imageUrl so AnimatedSwitcher detects a new photo.
+      child: _imageFor(photo),
+    );
+  }
+
+  Widget _imageFor(PhotoEntity photo) {
+    final isLocal = photo.imageUrl.startsWith('file://');
+    if (isLocal) {
+      final path = photo.imageUrl.replaceFirst('file://', '');
+      return Image.file(
+        File(path),
         key: ValueKey(photo.imageUrl),
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
         errorBuilder: (_, _, _) => const _Placeholder(label: 'Photo unavailable'),
-        loadingBuilder: (_, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const _Placeholder(label: null);
-        },
-      ),
+      );
+    }
+    return Image.network(
+      photo.imageUrl,
+      key: ValueKey(photo.imageUrl),
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (_, _, _) => const _Placeholder(label: 'Photo unavailable'),
+      loadingBuilder: (_, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return const _Placeholder(label: null);
+      },
     );
   }
 }

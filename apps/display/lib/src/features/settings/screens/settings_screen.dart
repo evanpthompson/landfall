@@ -15,6 +15,8 @@ import 'package:display/src/features/theme/screens/theme_browser_screen.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
 import 'package:display/src/features/profile/screens/profile_manager_screen.dart';
 import 'package:display/src/features/profile/widgets/profile_switcher.dart';
+import 'package:display/src/features/photo/cubit/photo_cubit.dart';
+import 'package:display/src/features/photo/screens/photo_sources_screen.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
 import 'package:display/src/features/settings/widgets/agent_keys_section.dart';
 import 'package:display/src/features/settings/widgets/layout_editor.dart';
@@ -271,6 +273,22 @@ class _DisplayFormState extends State<_DisplayForm> {
           'Overrides the location label in the weather card.',
           style: const TextStyle(
               color: LandfallColors.textTertiary, fontSize: 12),
+        ),
+        const SizedBox(height: 24),
+        _SectionHeader('Photos'),
+        const SizedBox(height: 12),
+        _NavTile(
+          icon: Icons.photo_library_outlined,
+          title: 'Photo Sources',
+          subtitle: 'Manage where slideshow photos are loaded from',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => BlocProvider.value(
+                value: context.read<PhotoCubit>(),
+                child: const PhotoSourcesScreen(),
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -908,6 +926,36 @@ class _LicenseTab extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared helpers
 // ─────────────────────────────────────────────────────────────────────────────
+
+class _NavTile extends StatelessWidget {
+  const _NavTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: LandfallColors.accent, size: 22),
+      title: Text(title,
+          style: const TextStyle(color: LandfallColors.textPrimary)),
+      subtitle: Text(subtitle,
+          style: const TextStyle(
+              color: LandfallColors.textSecondary, fontSize: 12)),
+      trailing: const Icon(Icons.chevron_right,
+          color: LandfallColors.textTertiary, size: 18),
+      onTap: onTap,
+    );
+  }
+}
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader(this.title);
