@@ -253,7 +253,7 @@ class LandfallThemeTokens {
   ///
   /// Used as the fallback when no [LandfallActiveTheme] ancestor is present
   /// in the widget tree, ensuring zero visual change until a theme is applied.
-  static LandfallThemeTokens defaults() => LandfallThemeTokens(
+  static LandfallThemeTokens defaults() => const LandfallThemeTokens(
         backgroundType: 'solid',
         backgroundValue: '#0D0D0F',
         backgroundOverlay: null,

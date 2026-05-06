@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
-import 'landfall_active_theme.dart';
+import 'package:ui_kit/src/theme/landfall_active_theme.dart';
 
 extension LandfallThemeTokensMaterialX on LandfallThemeTokens {
   ThemeData toMaterialThemeData() {
