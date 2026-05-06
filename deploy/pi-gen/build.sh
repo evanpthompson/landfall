@@ -180,12 +180,21 @@ cp "${SCRIPT_DIR}/config"                          "${PI_GEN_DIR}/config"
 rm -rf "${PI_GEN_DIR}/stage2-landfall"
 cp -r "${SCRIPT_DIR}/stage2-landfall"              "${PI_GEN_DIR}/stage2-landfall"
 
-# Copy only the runtime deploy files — not deploy/pi-gen/ (build tooling).
-# Using rsync --exclude avoids the recursive-copy-into-itself problem that
-# occurs because PI_GEN_DIR lives inside the deploy/ tree.
-DEPLOY_DEST="${PI_GEN_DIR}/stage2-landfall/00-landfall/files/deploy"
+# Copy runtime deploy files into the stage so they're baked into the Docker
+# image via COPY . /pi-gen/. Exclude deploy/pi-gen/ (build tooling) to avoid
+# a recursive copy (PI_GEN_DIR lives inside the deploy/ tree).
+STAGE_FILES="${PI_GEN_DIR}/stage2-landfall/00-landfall/files"
+DEPLOY_DEST="${STAGE_FILES}/deploy"
 mkdir -p "${DEPLOY_DEST}"
 rsync -a --exclude='pi-gen/' "${REPO_ROOT}/deploy/" "${DEPLOY_DEST}/"
+
+# Copy the display bundle into the stage files so 00-run.sh can find it at
+# ${SUB_STAGE_DIR}/files/bundle inside the container. The bundle is not in
+# the git repo (it's a build artifact), so we copy it here each run.
+BUNDLE_DEST="${STAGE_FILES}/bundle"
+rm -rf "${BUNDLE_DEST}"
+cp -r "${LINUX_BUNDLE}/." "${BUNDLE_DEST}/"
+info "Display bundle staged ($(du -sh "${BUNDLE_DEST}" | cut -f1))"
 
 # Skip heavy/unnecessary stages: we only need stage0 (base), stage1, stage2 (lite), stage2-landfall
 touch "${PI_GEN_DIR}/stage3/SKIP"
