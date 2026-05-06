@@ -45,3 +45,6 @@ lcov.info
 
 # Golden test failure diffs (auto-generated, machine-specific)
 **/test/**/failures/
+
+# Pi image build artifacts (cloned at runtime by deploy/pi-gen/build.sh)
+deploy/pi-gen/work/

@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # Build the Landfall Raspberry Pi image using pi-gen via Docker.
 #
+# Works on Linux and macOS (Docker Desktop).
+# pi-gen requires QEMU ARM binfmt handlers to be registered. On Linux install
+# qemu-user-binfmt; on macOS this script registers them automatically via
+# tonistiigi/binfmt before starting the build.
+#
 # Prerequisites:
-#   - Docker with buildx and linux/arm64 support
-#   - Linux display binary built first:  tools/scripts/build_linux.sh --arch arm64
+#   - Docker installed
+#   - Linux display binary built first (see docs/raspberry_pi_guide.md)
 #
 # Usage:  bash deploy/pi-gen/build.sh
 #
@@ -32,6 +37,21 @@ echo ""
 
 # ── Preflight ─────────────────────────────────────────────────────────────
 command -v docker > /dev/null || die "Docker is not installed"
+
+# pi-gen needs QEMU ARM binfmt handlers registered so its chroot can execute
+# ARM binaries. On Linux, install qemu-user-binfmt. On macOS Docker Desktop,
+# tonistiigi/binfmt registers the same handlers in the Docker VM.
+HOST_OS="$(uname -s)"
+if [[ "${HOST_OS}" == "Linux" ]]; then
+  if ! command -v qemu-arm > /dev/null 2>&1; then
+    die "qemu-arm not found. Install it with: sudo apt-get install qemu-user-binfmt"
+  fi
+else
+  info "Registering QEMU ARM binfmt handlers in Docker Desktop VM..."
+  docker run --privileged --rm tonistiigi/binfmt --install arm > /dev/null 2>&1 \
+    && ok "QEMU ARM binfmt registered" \
+    || die "Failed to register QEMU binfmt handlers. Is Docker running?"
+fi
 
 LINUX_BUNDLE="${REPO_ROOT}/apps/display/build/linux/arm64/release/bundle"
 if [[ ! -d "${LINUX_BUNDLE}" ]]; then
@@ -70,6 +90,15 @@ else
   git clone --quiet --depth=1 https://github.com/RPi-Distro/pi-gen.git "${PI_GEN_DIR}"
 fi
 ok "pi-gen ready"
+
+# ── Patch pi-gen Dockerfile ───────────────────────────────────────────────
+# pi-gen's base image (i386/debian) doesn't include qemu-user-static.
+# Without it the ARM chroot has no interpreter binary, even if binfmt_misc
+# is registered on the host. Append it to the apt-get install layer.
+if ! grep -q "qemu-user-static" "${PI_GEN_DIR}/Dockerfile"; then
+  echo 'RUN apt-get install -y qemu-user-static' >> "${PI_GEN_DIR}/Dockerfile"
+  info "Patched pi-gen Dockerfile: added qemu-user-static"
+fi
 
 # ── Copy Landfall stage into pi-gen ──────────────────────────────────────
 cp "${SCRIPT_DIR}/config"                          "${PI_GEN_DIR}/config"

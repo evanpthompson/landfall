@@ -64,15 +64,15 @@ Push your branch and let the CI workflow produce the arm64 artifact — no local
 
 ### 2. Build the Pi image
 
-On a machine with Docker installed (can be macOS or Linux):
+On any machine with Docker installed (macOS or Linux):
 
 ```bash
 bash deploy/pi-gen/build.sh
 ```
 
-This takes 20–40 minutes. Output: `deploy/pi-gen/work/landfall-<date>-lite.img.xz`
+On macOS, the script automatically registers the QEMU ARM binfmt handlers in Docker Desktop before starting. On Linux, install them first if not present: `sudo apt-get install qemu-user-binfmt`.
 
-> **Note:** `deploy/pi-gen/build.sh` checks that the arm64 binary exists before starting. Build it first (Step 1) or the script will exit with a clear error.
+This takes 20–40 minutes. Output: `deploy/pi-gen/work/landfall-<date>-lite.img.xz`
 
 ### 3. Flash the image
 
