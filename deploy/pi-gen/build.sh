@@ -86,17 +86,28 @@ if [[ -d "${WORK_DIR}" ]]; then
   sudo chown -R "$(whoami)" "${WORK_DIR}" 2>/dev/null || true
 fi
 
-# ── Clone or update pi-gen ────────────────────────────────────────────────
+# ── Clone or update pi-gen (arm64 branch) ────────────────────────────────
+# The master branch builds 32-bit Raspbian (armhf) from raspbian.raspberrypi.com
+# using SHA1-signed keys — rejected by modern GnuPG. The arm64 branch builds
+# 64-bit Raspberry Pi OS from archive.raspberrypi.com with proper modern keys.
+# We need arm64 for our Flutter arm64 display binary anyway.
 PI_GEN_DIR="${WORK_DIR}/pi-gen"
+if [[ -d "${PI_GEN_DIR}" ]]; then
+  CURRENT_BRANCH="$(git -C "${PI_GEN_DIR}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
+  if [[ "${CURRENT_BRANCH}" != "arm64" ]]; then
+    info "Switching pi-gen to arm64 branch..."
+    rm -rf "${PI_GEN_DIR}"
+  fi
+fi
 if [[ -d "${PI_GEN_DIR}" ]]; then
   info "Updating pi-gen..."
   git -C "${PI_GEN_DIR}" pull --quiet
 else
-  info "Cloning pi-gen..."
+  info "Cloning pi-gen (arm64 branch)..."
   mkdir -p "${WORK_DIR}"
-  git clone --quiet --depth=1 https://github.com/RPi-Distro/pi-gen.git "${PI_GEN_DIR}"
+  git clone --quiet --depth=1 --branch arm64 https://github.com/RPi-Distro/pi-gen.git "${PI_GEN_DIR}"
 fi
-ok "pi-gen ready"
+ok "pi-gen ready (arm64)"
 
 # ── Patch pi-gen Dockerfile ───────────────────────────────────────────────
 # Insert a weekly cache-buster ARG before the apt-get install layer so the
