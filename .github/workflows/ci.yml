@@ -47,10 +47,10 @@ jobs:
         run: dart pub get
 
       - name: Dependency vulnerability audit (A03:2025)
-        uses: google/osv-scanner-action@v1
-        with:
-          scan-args: |-
-            --lockfile=server/landfall_server/pubspec.lock
+        run: |
+          go install github.com/google/osv-scanner/cmd/osv-scanner@latest
+          $(go env GOPATH)/bin/osv-scanner \
+            --lockfile=server/landfall_server/pubspec.lock \
             --lockfile=apps/display/pubspec.lock
 
       - name: Write test passwords.yaml
