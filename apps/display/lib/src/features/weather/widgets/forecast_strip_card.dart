@@ -23,21 +23,25 @@ class ForecastStripCard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (forecast.isEmpty) return const SizedBox.shrink();
 
+    final tokens = LandfallActiveTheme.of(context);
     final days = (displayConfig['days'] as int?) ?? 5;
     final visible = forecast.take(days).toList();
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: LandfallColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: LandfallColors.cardBorder, width: 1.5),
+        color: tokenColor(tokens.cardFill),
+        borderRadius: BorderRadius.circular(tokens.cardRadius.toDouble()),
+        border: Border.all(
+          color: tokenColor(tokens.cardBorderColor),
+          width: tokens.cardBorderWidth,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: visible
-              .map((day) => Expanded(child: _DayColumn(day: day)))
+              .map((day) => Expanded(child: _DayColumn(day: day, tokens: tokens)))
               .toList(),
         ),
       ),
@@ -46,26 +50,34 @@ class ForecastStripCard extends StatelessWidget {
 }
 
 class _DayColumn extends StatelessWidget {
-  const _DayColumn({required this.day});
+  const _DayColumn({required this.day, required this.tokens});
 
   final ForecastDayEntity day;
+  final LandfallThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
     final hi = _toF(day.maxTempC);
     final lo = _toF(day.minTempC);
+    final textTertiary = tokenColor(tokens.colorTextTertiary);
+    final textSecondary = tokenColor(tokens.colorTextSecondary);
+    final textPrimary = tokenColor(tokens.colorTextPrimary);
 
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(_shortDay(day.date), style: LandfallTypography.widgetHeading),
+          Text(_shortDay(day.date),
+              style: LandfallTypography.widgetHeading
+                  .copyWith(color: textTertiary)),
           const SizedBox(height: 4),
           Text(_weatherIcon(day.iconCode), style: const TextStyle(fontSize: 24)),
           const SizedBox(height: 4),
-          Text('$hi°', style: LandfallTypography.cardBody),
-          Text('$lo°', style: LandfallTypography.caption),
+          Text('$hi°',
+              style: LandfallTypography.cardBody.copyWith(color: textPrimary)),
+          Text('$lo°',
+              style: LandfallTypography.caption.copyWith(color: textSecondary)),
         ],
       ),
     );

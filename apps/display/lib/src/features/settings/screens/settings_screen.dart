@@ -673,6 +673,12 @@ class _ThemesTab extends StatelessWidget {
             _SectionHeader('Active Theme'),
             const SizedBox(height: 12),
             _ActiveThemeTile(state: state),
+            if (state is ThemeLoaded) ...[
+              const SizedBox(height: 20),
+              _SectionHeader('Token Colours'),
+              const SizedBox(height: 12),
+              _TokenSwatchPanel(tokens: state.active.tokens),
+            ],
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -786,6 +792,74 @@ class _ActiveThemeTile extends StatelessWidget {
       radix: 16,
     );
     return Color(value ?? 0xFF1a1a1a);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Token swatch panel
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _TokenSwatchPanel extends StatelessWidget {
+  const _TokenSwatchPanel({required this.tokens});
+
+  final LandfallThemeTokens tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    final swatches = [
+      ('Background', tokens.backgroundValue),
+      ('Card Fill', tokens.cardFill),
+      ('Card Border', tokens.cardBorderColor),
+      ('Text Primary', tokens.colorTextPrimary),
+      ('Text Secondary', tokens.colorTextSecondary),
+      ('Text Tertiary', tokens.colorTextTertiary),
+      ('Accent', tokens.colorAccent),
+    ];
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: swatches
+          .map((entry) => _SwatchChip(label: entry.$1, colorStr: entry.$2))
+          .toList(),
+    );
+  }
+}
+
+class _SwatchChip extends StatelessWidget {
+  const _SwatchChip({required this.label, required this.colorStr});
+
+  final String label;
+  final String colorStr;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = tokenColor(colorStr);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 18,
+          height: 18,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.15),
+              width: 1,
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            color: LandfallColors.textSecondary,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
   }
 }
 

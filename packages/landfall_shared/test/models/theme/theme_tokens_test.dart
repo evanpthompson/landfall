@@ -135,6 +135,42 @@ void main() {
     });
   });
 
+  group('LandfallThemeTokens.defaults', () {
+    test('returns a valid token set', () {
+      final d = LandfallThemeTokens.defaults();
+      expect(d.backgroundValue, equals('#0D0D0F'));
+      expect(d.cardFill, equals('#1A1A1F'));
+      expect(d.cardBorderColor, equals('#2C2C35'));
+      expect(d.cardBorderWidth, equals(1.5));
+      expect(d.cardRadius, equals(8));
+      expect(d.colorTextPrimary, equals('#F2F2F7'));
+      expect(d.colorTextSecondary, equals('#8E8E9A'));
+      expect(d.colorTextTertiary, equals('#5A5A6A'));
+      expect(d.colorAccent, equals('#4F8EF7'));
+    });
+
+    test('defaults are stable across calls', () {
+      expect(LandfallThemeTokens.defaults(), equals(LandfallThemeTokens.defaults()));
+    });
+  });
+
+  group('LandfallThemeTokens.copyWith', () {
+    test('copyWith overrides specified fields', () {
+      final d = LandfallThemeTokens.defaults();
+      final copy = d.copyWith(cardBorderColor: '#FF0000', cardRadius: 12);
+      expect(copy.cardBorderColor, equals('#FF0000'));
+      expect(copy.cardRadius, equals(12));
+    });
+
+    test('copyWith preserves unspecified fields', () {
+      final d = LandfallThemeTokens.defaults();
+      final copy = d.copyWith(cardBorderColor: '#FF0000');
+      expect(copy.backgroundValue, equals(d.backgroundValue));
+      expect(copy.colorTextPrimary, equals(d.colorTextPrimary));
+      expect(copy.moodMutedOpacity, equals(d.moodMutedOpacity));
+    });
+  });
+
   group('equality', () {
     test('two tokens with same accent/background are equal', () {
       final a = LandfallThemeTokens.fromMap(_defaultMap());

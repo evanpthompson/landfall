@@ -20,6 +20,7 @@ class ClockCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = LandfallActiveTheme.of(context);
     final t = entity.now;
     final use12h = displayConfig['hourFormat'] == '12';
     final showSeconds = displayConfig['showSeconds'] != false;
@@ -39,13 +40,16 @@ class ClockCard extends StatelessWidget {
     final ss = ':${t.second.toString().padLeft(2, '0')}';
     final date = _formatDate(t);
 
+    final textPrimary = tokenColor(tokens.colorTextPrimary);
+    final textSecondary = tokenColor(tokens.colorTextSecondary);
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: LandfallColors.surface,
-        borderRadius: BorderRadius.circular(8),
+        color: tokenColor(tokens.cardFill),
+        borderRadius: BorderRadius.circular(tokens.cardRadius.toDouble()),
         border: Border.all(
-          color: LandfallColors.cardBorder,
-          width: 1.5,
+          color: tokenColor(tokens.cardBorderColor),
+          width: tokens.cardBorderWidth,
         ),
       ),
       child: Padding(
@@ -62,21 +66,29 @@ class ClockCard extends StatelessWidget {
                 textBaseline: TextBaseline.alphabetic,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(hhmm, style: LandfallTypography.timeDisplay),
+                  Text(hhmm,
+                      style: LandfallTypography.timeDisplay
+                          .copyWith(color: textPrimary)),
                   if (showSeconds) ...[
                     const SizedBox(width: 6),
-                    Text(ss, style: LandfallTypography.timeSeconds),
+                    Text(ss,
+                        style: LandfallTypography.timeSeconds
+                            .copyWith(color: textSecondary)),
                   ],
                   if (amPm != null) ...[
                     const SizedBox(width: 8),
-                    Text(amPm, style: LandfallTypography.timeSeconds),
+                    Text(amPm,
+                        style: LandfallTypography.timeSeconds
+                            .copyWith(color: textSecondary)),
                   ],
                 ],
               ),
             ),
             if (showDate) ...[
               const SizedBox(height: 4),
-              Text(date, style: LandfallTypography.dateLabel),
+              Text(date,
+                  style: LandfallTypography.dateLabel
+                      .copyWith(color: textSecondary)),
             ],
           ],
         ),

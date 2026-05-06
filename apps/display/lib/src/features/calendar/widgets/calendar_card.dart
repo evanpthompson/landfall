@@ -18,11 +18,15 @@ class CalendarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = LandfallActiveTheme.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: LandfallColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: LandfallColors.cardBorder, width: 1.5),
+        color: tokenColor(tokens.cardFill),
+        borderRadius: BorderRadius.circular(tokens.cardRadius.toDouble()),
+        border: Border.all(
+          color: tokenColor(tokens.cardBorderColor),
+          width: tokens.cardBorderWidth,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -113,25 +117,28 @@ class _DayGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTertiary =
+        tokenColor(LandfallActiveTheme.of(context).colorTextTertiary);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(group.label, style: _dayLabelStyle),
+          Text(
+            group.label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.0,
+              color: textTertiary,
+            ),
+          ),
           const SizedBox(height: 6),
           ...group.events.map((e) => _EventRow(event: e)),
         ],
       ),
     );
   }
-
-  static const _dayLabelStyle = TextStyle(
-    fontSize: 13,
-    fontWeight: FontWeight.w600,
-    letterSpacing: 1.0,
-    color: LandfallColors.textTertiary,
-  );
 }
 
 class _EventRow extends StatelessWidget {
@@ -141,6 +148,11 @@ class _EventRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = LandfallActiveTheme.of(context);
+    final textPrimary = tokenColor(tokens.colorTextPrimary);
+    final textSecondary = tokenColor(tokens.colorTextSecondary);
+    final textTertiary = tokenColor(tokens.colorTextTertiary);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -148,7 +160,9 @@ class _EventRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 72,
-            child: Text(_timeLabel, style: LandfallTypography.eventTime),
+            child: Text(_timeLabel,
+                style: LandfallTypography.eventTime
+                    .copyWith(color: textSecondary)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -157,12 +171,20 @@ class _EventRow extends StatelessWidget {
               children: [
                 Text(
                   event.title,
-                  style: LandfallTypography.eventTitle,
+                  style: LandfallTypography.eventTitle
+                      .copyWith(color: textPrimary),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(event.calendarName, style: _calendarLabelStyle),
+                Text(
+                  event.calendarName,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: textTertiary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -181,12 +203,6 @@ class _EventRow extends StatelessWidget {
     final minuteStr = minute.toString().padLeft(2, '0');
     return '$displayHour:$minuteStr $period';
   }
-
-  static const _calendarLabelStyle = TextStyle(
-    fontSize: 13,
-    fontWeight: FontWeight.w400,
-    color: LandfallColors.textTertiary,
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -218,10 +234,16 @@ class _WeeklyView extends StatelessWidget {
       }
     }
 
+    final tokens = LandfallActiveTheme.of(context);
+    final textTertiary = tokenColor(tokens.colorTextTertiary);
+    final textSecondary = tokenColor(tokens.colorTextSecondary);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('THIS WEEK', style: LandfallTypography.widgetHeading),
+        Text('THIS WEEK',
+            style: LandfallTypography.widgetHeading
+                .copyWith(color: textTertiary)),
         const SizedBox(height: 12),
         // Day headers
         Row(
@@ -232,18 +254,18 @@ class _WeeklyView extends StatelessWidget {
                 children: [
                   Text(
                     _dayAbbr[i],
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.8,
-                      color: LandfallColors.textTertiary,
+                      color: textTertiary,
                     ),
                   ),
                   Text(
                     '${day.day}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: LandfallColors.textSecondary,
+                      color: textSecondary,
                     ),
                   ),
                 ],
@@ -288,19 +310,22 @@ class _WeekEventBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = LandfallActiveTheme.of(context);
+    final accent = tokenColor(tokens.colorAccent);
+    final textPrimary = tokenColor(tokens.colorTextPrimary);
     return Container(
       margin: const EdgeInsets.only(bottom: 4, right: 2),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
       decoration: BoxDecoration(
-        color: LandfallColors.accent.withAlpha(40),
+        color: accent.withAlpha(40),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: LandfallColors.accent.withAlpha(100)),
+        border: Border.all(color: accent.withAlpha(100)),
       ),
       child: Text(
         event.title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 10,
-          color: LandfallColors.textPrimary,
+          color: textPrimary,
         ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
@@ -346,10 +371,15 @@ class _MonthlyView extends StatelessWidget {
     final totalCells = startOffset + daysInMonth;
     final rows = (totalCells / 7).ceil();
 
+    final tokens = LandfallActiveTheme.of(context);
+    final textTertiary = tokenColor(tokens.colorTextTertiary);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(_monthNames[now.month - 1], style: LandfallTypography.widgetHeading),
+        Text(_monthNames[now.month - 1],
+            style: LandfallTypography.widgetHeading
+                .copyWith(color: textTertiary)),
         const SizedBox(height: 8),
         // Day-of-week header
         Row(
@@ -358,10 +388,10 @@ class _MonthlyView extends StatelessWidget {
                     child: Center(
                       child: Text(
                         h,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: LandfallColors.textTertiary,
+                          color: textTertiary,
                         ),
                       ),
                     ),
@@ -414,6 +444,10 @@ class _MonthCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = LandfallActiveTheme.of(context);
+    final accent = tokenColor(tokens.colorAccent);
+    final textPrimary = tokenColor(tokens.colorTextPrimary);
+    final textTertiary = tokenColor(tokens.colorTextTertiary);
     final overflow = events.length > _maxDots ? events.length - _maxDots : 0;
     final dotCount = events.length.clamp(0, _maxDots);
 
@@ -432,10 +466,7 @@ class _MonthCell extends StatelessWidget {
             width: 22,
             height: 22,
             decoration: isToday
-                ? const BoxDecoration(
-                    color: LandfallColors.accent,
-                    shape: BoxShape.circle,
-                  )
+                ? BoxDecoration(color: accent, shape: BoxShape.circle)
                 : null,
             child: Center(
               child: Text(
@@ -444,9 +475,7 @@ class _MonthCell extends StatelessWidget {
                   fontSize: 12,
                   fontWeight:
                       isToday ? FontWeight.w700 : FontWeight.w400,
-                  color: isToday
-                      ? Colors.white
-                      : LandfallColors.textPrimary,
+                  color: isToday ? Colors.white : textPrimary,
                 ),
               ),
             ),
@@ -461,8 +490,8 @@ class _MonthCell extends StatelessWidget {
                   width: 4,
                   height: 4,
                   margin: const EdgeInsets.symmetric(horizontal: 1),
-                  decoration: const BoxDecoration(
-                    color: LandfallColors.accent,
+                  decoration: BoxDecoration(
+                    color: accent,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -472,9 +501,9 @@ class _MonthCell extends StatelessWidget {
           if (overflow > 0)
             Text(
               '+$overflow',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 9,
-                color: LandfallColors.textTertiary,
+                color: textTertiary,
               ),
             ),
         ],

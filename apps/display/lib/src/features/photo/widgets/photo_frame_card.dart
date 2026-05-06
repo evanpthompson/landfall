@@ -71,8 +71,9 @@ class _Placeholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = LandfallActiveTheme.of(context);
     return ColoredBox(
-      color: LandfallColors.surface,
+      color: tokenColor(tokens.cardFill),
       child: Center(
         child: label != null
             ? Text(

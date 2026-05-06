@@ -29,6 +29,7 @@ import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_state.dart';
 import 'package:display/src/features/weather/widgets/current_weather_card.dart';
 import 'package:display/src/features/weather/widgets/forecast_strip_card.dart';
+import 'package:ui_kit/ui_kit.dart';
 
 /// The primary display surface — renders all active widgets on a grid and
 /// shows agent-pushed cards in a live feed panel.
@@ -163,52 +164,62 @@ class _DisplayScreenState extends State<DisplayScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: _showGear,
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0D0D0F),
-        body: Stack(
-          children: [
-            BlocBuilder<DashboardProfileCubit, DashboardProfileState>(
-              builder: (context, profileState) {
-                return switch (profileState) {
-                  DashboardProfileLoading() => const _LoadingView(),
-                  DashboardProfileLoaded(:final active) =>
-                    _DisplayBody(layout: active.layout),
-                  DashboardProfileError(:final message) =>
-                    _ErrorView(message: message),
-                };
-              },
-            ),
-            // Ambient dim overlay — sits above content, ignores pointer events
-            const AmbientDimOverlay(),
-            // Ghost ticker strip — fixed at the bottom, zero height when empty
-            const Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: TickerStripWidget(),
-            ),
-            // Settings pill — appears on tap, fades after 5 seconds
-            Positioned(
-              right: 16,
-              bottom: 16,
-              child: AnimatedOpacity(
-                opacity: _gearVisible ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 300),
-                child: IgnorePointer(
-                  ignoring: !_gearVisible,
-                  child: _SettingsPill(
-                    key: const Key('settings_pill'),
-                    onTap: _openSettings,
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, themeState) {
+        final tokens = themeState is ThemeLoaded
+            ? themeState.active.tokens
+            : LandfallThemeTokens.defaults();
+        return LandfallActiveTheme(
+          tokens: tokens,
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: _showGear,
+            child: Scaffold(
+              backgroundColor: const Color(0xFF0D0D0F),
+              body: Stack(
+                children: [
+                  BlocBuilder<DashboardProfileCubit, DashboardProfileState>(
+                    builder: (context, profileState) {
+                      return switch (profileState) {
+                        DashboardProfileLoading() => const _LoadingView(),
+                        DashboardProfileLoaded(:final active) =>
+                          _DisplayBody(layout: active.layout),
+                        DashboardProfileError(:final message) =>
+                          _ErrorView(message: message),
+                      };
+                    },
                   ),
-                ),
+                  // Ambient dim overlay — sits above content, ignores pointer events
+                  const AmbientDimOverlay(),
+                  // Ghost ticker strip — fixed at the bottom, zero height when empty
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: TickerStripWidget(),
+                  ),
+                  // Settings pill — appears on tap, fades after 5 seconds
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: AnimatedOpacity(
+                      opacity: _gearVisible ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: IgnorePointer(
+                        ignoring: !_gearVisible,
+                        child: _SettingsPill(
+                          key: const Key('settings_pill'),
+                          onTap: _openSettings,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -389,7 +400,10 @@ class _GridView extends StatelessWidget {
         ),
       'system.calendar' => BlocBuilder<CalendarCubit, CalendarState>(
           builder: (_, state) => switch (state) {
-            CalendarLoaded(:final events) => CalendarCard(events: events),
+            CalendarLoaded(:final events) => CalendarCard(
+                events: events,
+                displayConfig: config.displayConfig,
+              ),
             _ => const _PlaceholderTile(source: 'system.calendar'),
           },
         ),
@@ -416,9 +430,7 @@ class _AgentCardFeed extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        final themeState = context.watch<ThemeCubit>().state;
-        final tokens =
-            themeState is ThemeLoaded ? themeState.active.tokens : null;
+        final tokens = LandfallActiveTheme.of(context);
 
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(0, 16, 16, 16),
