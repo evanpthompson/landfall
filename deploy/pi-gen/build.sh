@@ -99,6 +99,50 @@ fi
 ok "pi-gen ready"
 
 # ── Patch pi-gen Dockerfile ───────────────────────────────────────────────
+# Insert a weekly cache-buster ARG before the apt-get install layer so the
+# keyring (debian-archive-keyring) gets refreshed at least once per week.
+# Stale keyrings cause "E: Invalid Release signature" in debootstrap.
+CACHE_WEEK="$(date +%Y-W%V)"
+if ! grep -q "LANDFALL_CACHE_WEEK" "${PI_GEN_DIR}/Dockerfile"; then
+  # Insert ARG line before the RUN apt-get line using Python (macOS sed doesn't
+  # support \n in replacement strings)
+  python3 -c "
+import sys
+txt = open('${PI_GEN_DIR}/Dockerfile').read()
+txt = txt.replace(
+  'ENV DEBIAN_FRONTEND=noninteractive\n\nRUN apt-get',
+  'ENV DEBIAN_FRONTEND=noninteractive\n\nARG LANDFALL_CACHE_WEEK=${CACHE_WEEK}\nRUN apt-get'
+)
+open('${PI_GEN_DIR}/Dockerfile', 'w').write(txt)
+"
+  info "Patched pi-gen Dockerfile: added weekly cache-buster (${CACHE_WEEK})"
+else
+  sed -i '' "s/ARG LANDFALL_CACHE_WEEK=.*/ARG LANDFALL_CACHE_WEEK=${CACHE_WEEK}/" \
+    "${PI_GEN_DIR}/Dockerfile"
+fi
+
+# Pass the cache week to docker build so the ARG actually invalidates the layer.
+# build-docker.sh hard-codes the --build-arg list, so patch it each run.
+if grep -q "LANDFALL_CACHE_WEEK" "${PI_GEN_DIR}/build-docker.sh"; then
+  sed -i '' "s/LANDFALL_CACHE_WEEK=[^ ]*/LANDFALL_CACHE_WEEK=${CACHE_WEEK}/" \
+    "${PI_GEN_DIR}/build-docker.sh"
+else
+  sed -i '' "s|--build-arg BASE_IMAGE=\${BASE_IMAGE}|--build-arg BASE_IMAGE=\${BASE_IMAGE} --build-arg LANDFALL_CACHE_WEEK=${CACHE_WEEK}|" \
+    "${PI_GEN_DIR}/build-docker.sh"
+fi
+
+# Remove the cached pi-gen Docker image whenever the week changes so apt-get
+# re-runs and fetches a fresh debian-archive-keyring. Without this, stale
+# keyrings cause "E: Invalid Release signature" in debootstrap.
+LAST_WEEK_FILE="${WORK_DIR}/.last_cache_week"
+LAST_WEEK="$(cat "${LAST_WEEK_FILE}" 2>/dev/null || echo "")"
+if [[ "${LAST_WEEK}" != "${CACHE_WEEK}" ]]; then
+  info "Cache week changed (${LAST_WEEK:-none} → ${CACHE_WEEK}), removing stale Docker image..."
+  docker rmi pi-gen > /dev/null 2>&1 || true
+  mkdir -p "${WORK_DIR}"
+  echo "${CACHE_WEEK}" > "${LAST_WEEK_FILE}"
+fi
+
 # pi-gen's base image (i386/debian) doesn't include qemu-user-static.
 # Without it the ARM chroot has no interpreter binary, even if binfmt_misc
 # is registered on the host. Append it to the apt-get install layer.
