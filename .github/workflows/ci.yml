@@ -48,7 +48,7 @@ jobs:
 
       - name: Dependency vulnerability audit (A03:2025)
         run: |
-          cd server/landfall_server && dart pub audit
+          cd server/landfall_server && flutter pub audit
           cd ../../apps/display && flutter pub audit
 
       - name: Write test passwords.yaml
