@@ -241,7 +241,8 @@ else
     --platform linux/arm64 \
     --load \
     -t landfall-server:latest \
-    "${REPO_ROOT}/server/landfall_server"
+    -f "${REPO_ROOT}/server/landfall_server/Dockerfile" \
+    "${REPO_ROOT}"
 
   docker save landfall-server:latest | gzip > "${SERVER_TARBALL}"
   ok "Server image built and staged ($(du -sh "${SERVER_TARBALL}" | cut -f1))"

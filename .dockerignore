@@ -1,0 +1,16 @@
+# Keep the Docker build context small. We only need the Dart workspace root,
+# the server packages, and packages/landfall_shared (path dep).
+# Everything else (Flutter apps, deploy scripts, docs, pi-gen work) is excluded.
+
+apps/
+deploy/
+docs/
+themes/
+tools/
+.claude/
+packages/agent_sdk/
+packages/ui_kit/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/build/
