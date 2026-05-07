@@ -10,6 +10,9 @@ WORKDIR /app
 # Flutter packages that don't exist in this Docker context)
 COPY server/pubspec.yaml ./pubspec.yaml
 COPY server/ ./server/
+# Remove the server-level pubspec — Dart rejects any pubspec sitting between
+# the workspace root and a workspace package that isn't itself a member.
+RUN rm /app/server/pubspec.yaml
 COPY packages/landfall_shared/ ./packages/landfall_shared/
 
 # Resolve dependencies at workspace root so `resolution: workspace` is satisfied
