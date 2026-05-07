@@ -40,6 +40,9 @@ apt-get install -y --no-install-recommends \
 
 systemctl enable avahi-daemon
 
+# Boot into graphical.target so lightdm starts automatically
+systemctl set-default graphical.target
+
 # Disable the first-run setup wizard — everything is pre-configured via Pi Imager
 systemctl disable piwiz 2>/dev/null || true
 apt-get remove -y --purge piwiz 2>/dev/null || true
