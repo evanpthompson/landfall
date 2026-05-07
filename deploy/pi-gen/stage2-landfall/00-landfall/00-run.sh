@@ -60,6 +60,18 @@ install -d "${ROOTFS_DIR}/home/landfall/landfall/deploy"
 cp -r "${STAGE_FILES}/deploy/." \
       "${ROOTFS_DIR}/home/landfall/landfall/deploy/"
 
+# ── WiFi regulatory domain ───────────────────────────────────────────────────
+# Without a country code the kernel blocks the WiFi radio entirely.
+WIFI_COUNTRY="$(cat "${STAGE_FILES}/wifi-country" 2>/dev/null || echo US)"
+echo "REGDOMAIN=${WIFI_COUNTRY}" > "${ROOTFS_DIR}/etc/default/crda"
+
+# ── WiFi NetworkManager connection ───────────────────────────────────────────
+if [[ -f "${STAGE_FILES}/wifi.nmconnection" ]]; then
+  install -d "${ROOTFS_DIR}/etc/NetworkManager/system-connections"
+  install -m 600 "${STAGE_FILES}/wifi.nmconnection" \
+    "${ROOTFS_DIR}/etc/NetworkManager/system-connections/landfall-wifi.nmconnection"
+fi
+
 # ── Integration credentials for firstboot.sh ─────────────────────────────────
 # firstboot.sh generates all secrets and writes .env on first boot.
 # This file only contains optional API credentials from configure.sh.

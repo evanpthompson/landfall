@@ -38,8 +38,12 @@ echo ""
 echo "${CYAN}${BOLD}Landfall — Raspberry Pi image builder${RESET}"
 echo ""
 
-# ── Load optional integration credentials ─────────────────────────────────────
+# ── Load build configuration ──────────────────────────────────────────────────
 CONF_FILE="${SCRIPT_DIR}/landfall-build.conf"
+WIFI_COUNTRY="US"
+WIFI_SSID=""
+WIFI_PASSWORD=""
+PI_HOSTNAME="landfall"
 OWM_API_KEY=""
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
@@ -51,10 +55,10 @@ STRIPE_WEBHOOK_SECRET=""
 if [[ -f "${CONF_FILE}" ]]; then
   # shellcheck disable=SC1090
   source "${CONF_FILE}"
-  ok "Loaded integration credentials: ${CONF_FILE}"
+  ok "Loaded build config: ${CONF_FILE}"
 else
-  info "No landfall-build.conf — building without integration credentials."
-  info "Run configure.sh first if you want to bake in Google/Microsoft/Stripe."
+  warn "landfall-build.conf not found — run configure.sh first to set WiFi and hostname."
+  warn "Continuing with defaults: no WiFi, hostname=landfall."
 fi
 
 # ── Preflight ─────────────────────────────────────────────────────────────────
@@ -125,6 +129,13 @@ ok "pi-gen ready (arm64)"
 
 # ── Copy Landfall stage into pi-gen ───────────────────────────────────────────
 cp "${SCRIPT_DIR}/config" "${PI_GEN_DIR}/config"
+# Inject hostname and WiFi country into pi-gen config
+sed -i '' "s/^TARGET_HOSTNAME=.*/TARGET_HOSTNAME=\"${PI_HOSTNAME}\"/" "${PI_GEN_DIR}/config"
+if grep -q "^WPA_COUNTRY=" "${PI_GEN_DIR}/config"; then
+  sed -i '' "s/^WPA_COUNTRY=.*/WPA_COUNTRY=\"${WIFI_COUNTRY}\"/" "${PI_GEN_DIR}/config"
+else
+  echo "WPA_COUNTRY=\"${WIFI_COUNTRY}\"" >> "${PI_GEN_DIR}/config"
+fi
 
 rm -rf "${PI_GEN_DIR}/stage2-landfall"
 cp -r "${SCRIPT_DIR}/stage2-landfall" "${PI_GEN_DIR}/stage2-landfall"
@@ -149,6 +160,40 @@ MICROSOFT_CLIENT_SECRET=${MICROSOFT_CLIENT_SECRET}
 STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
 INTFILE
 ok "Integration credentials staged"
+
+# ── Stage: WiFi country (for /etc/default/crda in rootfs) ────────────────────
+echo "${WIFI_COUNTRY}" > "${STAGE_FILES}/wifi-country"
+
+# ── Stage: WiFi NetworkManager connection ────────────────────────────────────
+if [[ -n "${WIFI_SSID}" ]]; then
+  cat > "${STAGE_FILES}/wifi.nmconnection" << WIFICONF
+[connection]
+id=landfall-wifi
+type=wifi
+autoconnect=true
+autoconnect-priority=600
+
+[wifi]
+mode=infrastructure
+ssid=${WIFI_SSID}
+
+[wifi-security]
+auth-alg=open
+key-mgmt=wpa-psk
+psk=${WIFI_PASSWORD}
+
+[ipv4]
+method=auto
+
+[ipv6]
+method=auto
+addr-gen-mode=default
+WIFICONF
+  ok "WiFi staged: ${WIFI_SSID} (country: ${WIFI_COUNTRY})"
+else
+  rm -f "${STAGE_FILES}/wifi.nmconnection"
+  info "No WiFi configured — ethernet only, or add via nmcli after first boot"
+fi
 
 # ── Stage: Flutter display bundle ─────────────────────────────────────────────
 BUNDLE_DEST="${STAGE_FILES}/bundle"

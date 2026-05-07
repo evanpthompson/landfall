@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# Landfall Pi — optional pre-build integration configuration.
-# Run this BEFORE build.sh only if you want to bake in API credentials
-# (weather, Google Calendar, Microsoft Calendar, Stripe).
-#
-# WiFi, hostname, and SSH are configured in Raspberry Pi Imager when you flash —
-# you do NOT need to run this script for a basic working setup.
+# Landfall Pi — pre-build configuration wizard.
+# Run this BEFORE build.sh. Writes landfall-build.conf which build.sh reads
+# to bake WiFi, hostname, and integration credentials into the SD card image.
+# All secrets (DB password, JWT keys, etc.) are generated on the Pi at first
+# boot — nothing sensitive is stored here except integration API keys.
 #
 # Usage: bash deploy/pi-gen/configure.sh
 
@@ -25,17 +24,45 @@ info()    { echo "   $*"; }
 dim()     { echo "${DIM}   $*${RESET}"; }
 section() { echo ""; echo "${CYAN}${BOLD}$*${RESET}"; echo ""; }
 ask()     { printf "${BOLD}%s${RESET} " "$*"; }
-skip()    { echo "${YELLOW}   ↩  skipped — add via the app settings after first boot${RESET}"; }
+skip()    { echo "${YELLOW}   ↩  skipped — add via SSH later${RESET}"; }
 
 echo ""
-echo "${CYAN}${BOLD}Landfall — integration credentials${RESET}"
+echo "${CYAN}${BOLD}Landfall — Pi image configuration${RESET}"
 echo ""
-info "This configures optional API integrations baked into the image."
-info "WiFi, hostname, and SSH are set in Raspberry Pi Imager — not here."
+info "Answers are baked into the SD card image so the Pi connects and starts"
+info "automatically on first boot. Secrets are generated on the Pi itself."
 info ""
-info "Press Enter to skip any field — you can add credentials later via"
-info "SSH: nano /home/landfall/landfall/deploy/.env && sudo systemctl restart landfall-server"
+info "Press Enter to accept defaults. Optional fields can be added later via SSH:"
+info "  nano /home/landfall/landfall/deploy/.env"
+info "  sudo systemctl restart landfall-server"
 echo ""
+
+# ── Network ───────────────────────────────────────────────────────────────────
+section "Network"
+
+ask "WiFi country code [US]:"
+read -r WIFI_COUNTRY
+WIFI_COUNTRY="${WIFI_COUNTRY:-US}"
+
+echo ""
+info "WiFi credentials — leave blank to use ethernet."
+ask "WiFi SSID [blank to skip]:"
+read -r WIFI_SSID
+WIFI_PASSWORD=""
+if [[ -n "${WIFI_SSID}" ]]; then
+  ask "WiFi password:"
+  read -rs WIFI_PASSWORD
+  echo ""
+  ok "WiFi: ${WIFI_SSID} (country: ${WIFI_COUNTRY})"
+else
+  info "No WiFi — connect via ethernet or add credentials later."
+fi
+
+echo ""
+ask "Pi hostname [landfall]:"
+read -r PI_HOSTNAME
+PI_HOSTNAME="${PI_HOSTNAME:-landfall}"
+ok "Hostname: ${PI_HOSTNAME}  (reachable at ${PI_HOSTNAME}.local on your network)"
 
 # ── Weather ───────────────────────────────────────────────────────────────────
 section "Weather  (optional)"
@@ -48,8 +75,7 @@ read -r OWM_API_KEY
 section "Google Calendar + Drive Photos  (optional)"
 dim "Requires a Google Cloud project with Calendar API and Drive API enabled."
 dim "Create an OAuth 2.0 client ID (Web application) at console.cloud.google.com."
-dim "Set the redirect URI to: https://landfall.local/calendar/oauth/callback"
-dim "(replace landfall.local with your hostname if you used a different one in Pi Imager)"
+dim "Set the redirect URI to: https://${PI_HOSTNAME}.local/calendar/oauth/callback"
 echo ""
 ask "Google Client ID [blank to skip]:"
 read -r GOOGLE_CLIENT_ID
@@ -62,7 +88,6 @@ if [[ -n "${GOOGLE_CLIENT_ID}" ]]; then
   ok "Google OAuth configured"
   echo ""
   dim "Optional: restrict photo sync to a specific Google Drive folder."
-  dim "Leave blank to allow the user to pick any folder in the app."
   ask "Google Drive Folder ID [blank to skip]:"
   read -r GOOGLE_DRIVE_FOLDER_ID
 else
@@ -73,7 +98,7 @@ fi
 section "Microsoft Calendar  (optional)"
 dim "Requires an app registration at portal.azure.com."
 dim "Add Calendars.Read delegated permission and grant admin consent."
-dim "Set the redirect URI to: https://landfall.local/calendar/microsoft/oauth/callback"
+dim "Set the redirect URI to: https://${PI_HOSTNAME}.local/calendar/microsoft/oauth/callback"
 echo ""
 ask "Microsoft Client ID [blank to skip]:"
 read -r MICROSOFT_CLIENT_ID
@@ -96,31 +121,40 @@ read -r STRIPE_WEBHOOK_SECRET
 
 # ── Write config ──────────────────────────────────────────────────────────────
 {
-  echo "# Landfall integration credentials — $(date)"
-  echo "# WiFi/hostname/secrets are NOT stored here — they are set in Pi Imager"
-  echo "# and generated on the Pi at first boot."
+  echo "# Landfall Pi build config — $(date)"
+  echo "# Baked into the SD card image. Keep private — contains API credentials."
   echo ""
-  printf "OWM_API_KEY=%q\n"            "${OWM_API_KEY:-}"
-  printf "GOOGLE_CLIENT_ID=%q\n"       "${GOOGLE_CLIENT_ID:-}"
-  printf "GOOGLE_CLIENT_SECRET=%q\n"   "${GOOGLE_CLIENT_SECRET:-}"
-  printf "GOOGLE_DRIVE_FOLDER_ID=%q\n" "${GOOGLE_DRIVE_FOLDER_ID:-}"
-  printf "MICROSOFT_CLIENT_ID=%q\n"    "${MICROSOFT_CLIENT_ID:-}"
-  printf "MICROSOFT_CLIENT_SECRET=%q\n" "${MICROSOFT_CLIENT_SECRET:-}"
-  printf "STRIPE_WEBHOOK_SECRET=%q\n"  "${STRIPE_WEBHOOK_SECRET:-}"
+  echo "# ── Network ──────────────────────────────────────────────────────────────────"
+  printf "WIFI_COUNTRY=%q\n"   "${WIFI_COUNTRY}"
+  printf "WIFI_SSID=%q\n"      "${WIFI_SSID}"
+  printf "WIFI_PASSWORD=%q\n"  "${WIFI_PASSWORD}"
+  printf "PI_HOSTNAME=%q\n"    "${PI_HOSTNAME}"
+  echo ""
+  echo "# ── Optional integrations ────────────────────────────────────────────────────"
+  printf "OWM_API_KEY=%q\n"              "${OWM_API_KEY:-}"
+  printf "GOOGLE_CLIENT_ID=%q\n"         "${GOOGLE_CLIENT_ID:-}"
+  printf "GOOGLE_CLIENT_SECRET=%q\n"     "${GOOGLE_CLIENT_SECRET:-}"
+  printf "GOOGLE_DRIVE_FOLDER_ID=%q\n"   "${GOOGLE_DRIVE_FOLDER_ID:-}"
+  printf "MICROSOFT_CLIENT_ID=%q\n"      "${MICROSOFT_CLIENT_ID:-}"
+  printf "MICROSOFT_CLIENT_SECRET=%q\n"  "${MICROSOFT_CLIENT_SECRET:-}"
+  printf "STRIPE_WEBHOOK_SECRET=%q\n"    "${STRIPE_WEBHOOK_SECRET:-}"
 } > "${CONF_FILE}"
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "${CYAN}${BOLD}Summary${RESET}"
 echo ""
-[[ -n "${OWM_API_KEY:-}" ]]         && info "Weather:     enabled" \
-                                     || info "Weather:     not configured"
-[[ -n "${GOOGLE_CLIENT_ID:-}" ]]    && info "Google:      enabled (Calendar + Drive)" \
-                                     || info "Google:      not configured"
-[[ -n "${MICROSOFT_CLIENT_ID:-}" ]] && info "Microsoft:   enabled (Calendar)" \
-                                     || info "Microsoft:   not configured"
-[[ -n "${STRIPE_WEBHOOK_SECRET:-}" ]] && info "Stripe:      configured" \
-                                      || info "Stripe:      not configured"
+info "Hostname:  ${PI_HOSTNAME}  →  ${PI_HOSTNAME}.local"
+[[ -n "${WIFI_SSID}" ]] && info "WiFi:      ${WIFI_SSID} (${WIFI_COUNTRY})" \
+                        || info "WiFi:      ethernet only"
+[[ -n "${OWM_API_KEY:-}" ]]         && info "Weather:   enabled" \
+                                     || info "Weather:   not configured"
+[[ -n "${GOOGLE_CLIENT_ID:-}" ]]    && info "Google:    enabled (Calendar + Drive)" \
+                                     || info "Google:    not configured"
+[[ -n "${MICROSOFT_CLIENT_ID:-}" ]] && info "Microsoft: enabled (Calendar)" \
+                                     || info "Microsoft: not configured"
+[[ -n "${STRIPE_WEBHOOK_SECRET:-}" ]] && info "Stripe:    configured" \
+                                      || info "Stripe:    not configured"
 echo ""
 ok "Saved: ${CONF_FILE}"
 info ""
