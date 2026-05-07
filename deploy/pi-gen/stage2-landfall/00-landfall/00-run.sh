@@ -41,6 +41,10 @@ apt-get install -y --no-install-recommends \
 
 systemctl enable avahi-daemon
 
+# Disable the first-run setup wizard — everything is pre-configured in the image
+systemctl disable piwiz 2>/dev/null || true
+apt-get remove -y --purge piwiz 2>/dev/null || true
+
 # ── lightdm: auto-login the landfall user into an openbox session ─────────
 cat > /etc/lightdm/lightdm.conf << 'LIGHTDM'
 [Seat:*]
