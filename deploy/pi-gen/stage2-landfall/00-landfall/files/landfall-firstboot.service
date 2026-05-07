@@ -1,5 +1,5 @@
 [Unit]
-Description=Landfall first-boot image loader
+Description=Landfall first-boot setup (secrets + Docker image load)
 After=docker.service
 Requires=docker.service
 Before=landfall-server.service
@@ -9,7 +9,7 @@ ConditionPathExists=!/var/lib/landfall/.initialized
 Type=oneshot
 ExecStart=/opt/landfall/firstboot.sh
 RemainAfterExit=yes
-TimeoutStartSec=300
+TimeoutStartSec=600
 StandardOutput=journal
 StandardError=journal
 

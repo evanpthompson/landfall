@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 # Build the Landfall Raspberry Pi SD card image.
 #
-# Run configure.sh first to set WiFi, hostname, domain, and generate secrets.
-# This script handles everything else automatically:
-#   1. Builds the Flutter arm64 display binary (via Docker + QEMU, ~20 min)
-#   2. Cross-compiles the server Docker image for arm64 (~20–40 min)
-#   3. Runs pi-gen to produce a bootable .img (~20 min)
+# Produces a generic image that is configured via Raspberry Pi Imager when
+# flashing (WiFi, hostname, SSH). All secrets are generated on the Pi at
+# first boot — nothing sensitive is baked into the image.
 #
-# The resulting image is fully self-contained — flash it, boot it, done.
+# Optionally run configure.sh first to bake in API integration credentials
+# (Google Calendar, Microsoft Calendar, weather, Stripe).
+#
+# Steps:
+#   1. Build the Flutter arm64 display binary (Docker + QEMU, ~20 min)
+#   2. Cross-compile the server Docker image for arm64 (~20–40 min)
+#   3. Run pi-gen to assemble the bootable .img (~20 min)
 #
 # Usage:  bash deploy/pi-gen/build.sh
 # Output: deploy/pi-gen/work/pi-gen/deploy/<date>-landfall.img
@@ -30,50 +34,28 @@ info() { echo "   $*"; }
 warn() { echo "${YELLOW}⚠  $*${RESET}"; }
 die()  { echo "${RED}✗  $*${RESET}"; exit 1; }
 
-gen_secret()     { openssl rand -base64 32 | tr -d '\n/+=' | cut -c1-43; }
-gen_hex_secret() { openssl rand -hex 32; }
-
 echo ""
 echo "${CYAN}${BOLD}Landfall — Raspberry Pi image builder${RESET}"
 echo ""
 
-# ── Load build configuration ───────────────────────────────────────────────
+# ── Load optional integration credentials ─────────────────────────────────────
 CONF_FILE="${SCRIPT_DIR}/landfall-build.conf"
+OWM_API_KEY=""
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+GOOGLE_DRIVE_FOLDER_ID=""
+MICROSOFT_CLIENT_ID=""
+MICROSOFT_CLIENT_SECRET=""
+STRIPE_WEBHOOK_SECRET=""
+
 if [[ -f "${CONF_FILE}" ]]; then
   # shellcheck disable=SC1090
   source "${CONF_FILE}"
-  ok "Loaded build config: ${CONF_FILE}"
+  ok "Loaded integration credentials: ${CONF_FILE}"
 else
-  warn "landfall-build.conf not found — run configure.sh first for WiFi and custom settings."
-  warn "Continuing with defaults (no WiFi, landfall.local, auto-generated secrets)."
+  info "No landfall-build.conf — building without integration credentials."
+  info "Run configure.sh first if you want to bake in Google/Microsoft/Stripe."
 fi
-
-# Apply defaults for any unset variables
-WIFI_COUNTRY="${WIFI_COUNTRY:-US}"
-WIFI_SSID="${WIFI_SSID:-}"
-WIFI_PASSWORD="${WIFI_PASSWORD:-}"
-PI_HOSTNAME="${PI_HOSTNAME:-landfall}"
-LANDFALL_DOMAIN="${LANDFALL_DOMAIN:-landfall.local}"
-OWM_API_KEY="${OWM_API_KEY:-}"
-DB_NAME="${DB_NAME:-landfall}"
-DB_USER="${DB_USER:-landfall}"
-DB_PASSWORD="${DB_PASSWORD:-$(gen_secret)}"
-REDIS_PASSWORD="${REDIS_PASSWORD:-$(gen_secret)}"
-SERVERPOD_SERVICE_SECRET="${SERVERPOD_SERVICE_SECRET:-$(gen_secret)}"
-JWT_HMAC_KEY="${JWT_HMAC_KEY:-$(gen_secret)}"
-JWT_REFRESH_PEPPER="${JWT_REFRESH_PEPPER:-$(gen_secret)}"
-API_KEY_MANAGEMENT_TOKEN="${API_KEY_MANAGEMENT_TOKEN:-$(gen_secret)}"
-API_KEY_HMAC_SECRET="${API_KEY_HMAC_SECRET:-$(gen_secret)}"
-PHOTO_SIGNING_SECRET="${PHOTO_SIGNING_SECRET:-$(gen_secret)}"
-OAUTH_TOKEN_ENCRYPTION_KEY="${OAUTH_TOKEN_ENCRYPTION_KEY:-$(gen_hex_secret)}"
-GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
-GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-}"
-GOOGLE_REDIRECT_URI="${GOOGLE_REDIRECT_URI:-}"
-GOOGLE_DRIVE_FOLDER_ID="${GOOGLE_DRIVE_FOLDER_ID:-}"
-MICROSOFT_CLIENT_ID="${MICROSOFT_CLIENT_ID:-}"
-MICROSOFT_CLIENT_SECRET="${MICROSOFT_CLIENT_SECRET:-}"
-MICROSOFT_REDIRECT_URI="${MICROSOFT_REDIRECT_URI:-}"
-STRIPE_WEBHOOK_SECRET="${STRIPE_WEBHOOK_SECRET:-}"
 
 # ── Preflight ─────────────────────────────────────────────────────────────────
 command -v docker > /dev/null || die "Docker is not installed"
@@ -96,7 +78,6 @@ if [[ -d "${LINUX_BUNDLE}" ]]; then
 else
   echo ""
   info "Flutter arm64 binary not found — building via Docker + QEMU (~20 min)..."
-  info "This runs the arm64 Flutter toolchain under QEMU emulation."
   echo ""
 
   cat > /tmp/lf-display-build.sh << 'BUILDSCRIPT'
@@ -144,13 +125,6 @@ ok "pi-gen ready (arm64)"
 
 # ── Copy Landfall stage into pi-gen ───────────────────────────────────────────
 cp "${SCRIPT_DIR}/config" "${PI_GEN_DIR}/config"
-# Inject hostname and WiFi country into pi-gen config
-sed -i '' "s/^TARGET_HOSTNAME=.*/TARGET_HOSTNAME=\"${PI_HOSTNAME}\"/" "${PI_GEN_DIR}/config"
-if grep -q "^WPA_COUNTRY=" "${PI_GEN_DIR}/config"; then
-  sed -i '' "s/^WPA_COUNTRY=.*/WPA_COUNTRY=\"${WIFI_COUNTRY}\"/" "${PI_GEN_DIR}/config"
-else
-  echo "WPA_COUNTRY=\"${WIFI_COUNTRY}\"" >> "${PI_GEN_DIR}/config"
-fi
 
 rm -rf "${PI_GEN_DIR}/stage2-landfall"
 cp -r "${SCRIPT_DIR}/stage2-landfall" "${PI_GEN_DIR}/stage2-landfall"
@@ -162,66 +136,19 @@ DEPLOY_DEST="${STAGE_FILES}/deploy"
 mkdir -p "${DEPLOY_DEST}"
 rsync -a --exclude='pi-gen/' "${REPO_ROOT}/deploy/" "${DEPLOY_DEST}/"
 
-# ── Stage: .env ───────────────────────────────────────────────────────────────
-cat > "${STAGE_FILES}/.env" << ENVFILE
-LANDFALL_DOMAIN=${LANDFALL_DOMAIN}
-DB_NAME=${DB_NAME}
-DB_USER=${DB_USER}
-DB_PASSWORD=${DB_PASSWORD}
-REDIS_PASSWORD=${REDIS_PASSWORD}
-SERVERPOD_SERVICE_SECRET=${SERVERPOD_SERVICE_SECRET}
-JWT_HMAC_KEY=${JWT_HMAC_KEY}
-JWT_REFRESH_PEPPER=${JWT_REFRESH_PEPPER}
-API_KEY_MANAGEMENT_TOKEN=${API_KEY_MANAGEMENT_TOKEN}
-API_KEY_HMAC_SECRET=${API_KEY_HMAC_SECRET}
-PHOTO_SIGNING_SECRET=${PHOTO_SIGNING_SECRET}
-OAUTH_TOKEN_ENCRYPTION_KEY=${OAUTH_TOKEN_ENCRYPTION_KEY}
+# ── Stage: integration credentials for firstboot.sh ──────────────────────────
+# Secrets (DB password, JWT keys, etc.) are NOT staged here — firstboot.sh
+# generates them on the Pi so they are unique per device.
+cat > "${STAGE_FILES}/integrations.env" << INTFILE
 OWM_API_KEY=${OWM_API_KEY}
 GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
 GOOGLE_DRIVE_FOLDER_ID=${GOOGLE_DRIVE_FOLDER_ID}
 MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}
 MICROSOFT_CLIENT_SECRET=${MICROSOFT_CLIENT_SECRET}
-MICROSOFT_REDIRECT_URI=${MICROSOFT_REDIRECT_URI}
 STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-ENVFILE
-info ".env staged for domain: ${LANDFALL_DOMAIN}"
-
-# ── Stage: WiFi country ───────────────────────────────────────────────────────
-echo "${WIFI_COUNTRY}" > "${STAGE_FILES}/wifi-country"
-ok "WiFi country staged: ${WIFI_COUNTRY}"
-
-# ── Stage: WiFi config ────────────────────────────────────────────────────────
-if [[ -n "${WIFI_SSID}" ]]; then
-  cat > "${STAGE_FILES}/wifi.nmconnection" << WIFICONF
-[connection]
-id=landfall-wifi
-type=wifi
-autoconnect=true
-autoconnect-priority=600
-
-[wifi]
-mode=infrastructure
-ssid=${WIFI_SSID}
-
-[wifi-security]
-auth-alg=open
-key-mgmt=wpa-psk
-psk=${WIFI_PASSWORD}
-
-[ipv4]
-method=auto
-
-[ipv6]
-method=auto
-addr-gen-mode=default
-WIFICONF
-  ok "WiFi config staged for: ${WIFI_SSID}"
-else
-  rm -f "${STAGE_FILES}/wifi.nmconnection"
-  info "No WiFi configured — connect via ethernet or configure after first boot"
-fi
+INTFILE
+ok "Integration credentials staged"
 
 # ── Stage: Flutter display bundle ─────────────────────────────────────────────
 BUNDLE_DEST="${STAGE_FILES}/bundle"
@@ -236,10 +163,8 @@ if [[ -f "${SERVER_TARBALL}" ]]; then
 else
   echo ""
   info "Cross-compiling server Docker image for arm64 (~20–40 min)..."
-  info "This compiles the Dart server to a native arm64 binary under QEMU."
   echo ""
 
-  # Ensure a buildx builder that supports arm64 exists
   if ! docker buildx inspect landfall-builder > /dev/null 2>&1; then
     docker buildx create --name landfall-builder \
       --platform linux/arm64,linux/amd64 --use > /dev/null
@@ -321,11 +246,23 @@ if [[ -n "${IMAGE}" ]]; then
   echo ""
   ok "Image ready: ${IMAGE}"
   info ""
-  info "Flash with Raspberry Pi Imager (\"Use custom image\") or:"
-  info "  sudo dd if=${IMAGE} of=/dev/rdiskN bs=4m status=progress"
+  info "Flash with Raspberry Pi Imager:"
+  info "  1. Open Raspberry Pi Imager"
+  info "  2. Choose OS → Use custom → select the .img file above"
+  info "  3. Choose Storage → your SD card"
+  info "  4. Click Next → Edit Settings:"
+  info "       Hostname:     landfall  (or your preferred name)"
+  info "       Username:     landfall"
+  info "       Password:     (choose your own)"
+  info "       WiFi SSID:    your network name"
+  info "       WiFi password: your network password"
+  info "       WiFi country: your 2-letter country code (US, GB, etc.)"
+  info "       Enable SSH:   yes (optional but recommended)"
+  info "  5. Click Save → Yes → Write"
   info ""
-  info "First boot takes ~2 minutes while Docker images load."
-  info "The display starts automatically after the server is ready."
+  info "Boot sequence:"
+  info "  Boot 1 (~30s): Pi Imager configures WiFi/hostname → auto-reboots"
+  info "  Boot 2 (~2min): secrets generated, server starts, display appears"
 else
   die "Build finished but no .img found in ${PI_GEN_DIR}/deploy/"
 fi

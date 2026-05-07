@@ -36,12 +36,11 @@ apt-get install -y --no-install-recommends \
   libgtk-3-0t64 libblkid1 liblzma5 libgles2 libgbm1 \
   xorg openbox lightdm lightdm-autologin-greeter \
   unclutter x11-xserver-utils \
-  wireless-regdb \
-  avahi-daemon libnss-mdns
+  wireless-regdb avahi-daemon libnss-mdns
 
 systemctl enable avahi-daemon
 
-# Disable the first-run setup wizard — everything is pre-configured in the image
+# Disable the first-run setup wizard — everything is pre-configured via Pi Imager
 systemctl disable piwiz 2>/dev/null || true
 apt-get remove -y --purge piwiz 2>/dev/null || true
 
@@ -61,25 +60,12 @@ install -d "${ROOTFS_DIR}/home/landfall/landfall/deploy"
 cp -r "${STAGE_FILES}/deploy/." \
       "${ROOTFS_DIR}/home/landfall/landfall/deploy/"
 
-# ── Pre-configured .env ───────────────────────────────────────────────────────
-# Written by configure.sh via build.sh. If not present, the server will start
-# but with placeholder secrets — run deploy/scripts/setup.sh on the Pi to fix.
-if [[ -f "${STAGE_FILES}/.env" ]]; then
-  install -m 640 "${STAGE_FILES}/.env" \
-    "${ROOTFS_DIR}/home/landfall/landfall/deploy/.env"
-fi
-
-# ── WiFi regulatory domain ───────────────────────────────────────────────────
-# Without a country code the kernel blocks the WiFi radio entirely.
-WIFI_COUNTRY="$(cat "${STAGE_FILES}/wifi-country" 2>/dev/null || echo US)"
-echo "REGDOMAIN=${WIFI_COUNTRY}" > "${ROOTFS_DIR}/etc/default/crda"
-
-# ── WiFi (NetworkManager connection file) ─────────────────────────────────────
-if [[ -f "${STAGE_FILES}/wifi.nmconnection" ]]; then
-  install -d "${ROOTFS_DIR}/etc/NetworkManager/system-connections"
-  install -m 600 "${STAGE_FILES}/wifi.nmconnection" \
-    "${ROOTFS_DIR}/etc/NetworkManager/system-connections/landfall-wifi.nmconnection"
-fi
+# ── Integration credentials for firstboot.sh ─────────────────────────────────
+# firstboot.sh generates all secrets and writes .env on first boot.
+# This file only contains optional API credentials from configure.sh.
+install -d "${ROOTFS_DIR}/opt/landfall"
+install -m 640 "${STAGE_FILES}/integrations.env" \
+               "${ROOTFS_DIR}/opt/landfall/integrations.env"
 
 # ── Flutter display binary ────────────────────────────────────────────────────
 install -d "${ROOTFS_DIR}/home/landfall/landfall/display"
@@ -88,7 +74,7 @@ cp -r "${STAGE_FILES}/bundle/." \
 
 # ── Server Docker image tarball ───────────────────────────────────────────────
 # Pre-built for arm64 by build.sh. firstboot.sh loads it into Docker on first
-# boot, then deletes the tarball to reclaim space.
+# boot then deletes the tarball to reclaim space.
 if [[ -f "${STAGE_FILES}/landfall-server.tar.gz" ]]; then
   install -d "${ROOTFS_DIR}/opt/landfall"
   cp "${STAGE_FILES}/landfall-server.tar.gz" \
@@ -113,20 +99,12 @@ systemctl enable landfall-server
 EOF
 
 # ── Openbox autostart: launch and auto-restart the display app ────────────────
-# Using openbox autostart rather than a systemd service avoids X11 environment
-# variable plumbing (DISPLAY, XAUTHORITY). The while loop restarts the app if
-# it crashes. unclutter hides the mouse cursor after 1 second of inactivity.
 install -d "${ROOTFS_DIR}/etc/xdg/openbox"
 cat > "${ROOTFS_DIR}/etc/xdg/openbox/autostart" << 'AUTOSTART'
-# Disable screen blanking and power management
 xset s off
 xset -dpms
 xset s noblank
-
-# Hide cursor after 1 second of inactivity
 unclutter -idle 1 &
-
-# Launch Landfall display — restart automatically on crash
 while true; do
   /home/landfall/landfall/display/display
   sleep 2
