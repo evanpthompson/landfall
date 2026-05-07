@@ -36,7 +36,10 @@ apt-get install -y --no-install-recommends \
   libgtk-3-0t64 libblkid1 liblzma5 libgles2 libgbm1 \
   xorg openbox lightdm lightdm-autologin-greeter \
   unclutter x11-xserver-utils \
-  wireless-regdb
+  wireless-regdb \
+  avahi-daemon libnss-mdns
+
+systemctl enable avahi-daemon
 
 # ── lightdm: auto-login the landfall user into an openbox session ─────────
 cat > /etc/lightdm/lightdm.conf << 'LIGHTDM'
