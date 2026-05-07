@@ -100,10 +100,10 @@ else
   fail "server/landfall_server/Dockerfile not found"
 fi
 
-if [[ -f "${REPO_ROOT}/server/pubspec.yaml" ]]; then
-  pass "server/pubspec.yaml (workspace root)"
+if [[ -f "${REPO_ROOT}/server/docker-workspace.yaml" ]]; then
+  pass "server/docker-workspace.yaml (Docker workspace root)"
 else
-  fail "server/pubspec.yaml not found — Docker build will fail"
+  fail "server/docker-workspace.yaml not found — Docker build will fail"
 fi
 
 if [[ -d "${REPO_ROOT}/packages/landfall_shared" ]]; then
