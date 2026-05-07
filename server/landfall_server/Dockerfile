@@ -6,8 +6,9 @@
 FROM dart:3.8.0 AS build
 WORKDIR /app
 
-# Copy workspace root pubspec and only the packages the server needs
-COPY pubspec.yaml ./
+# Use the server-only workspace root (repo root lists apps/display and other
+# Flutter packages that don't exist in this Docker context)
+COPY server/pubspec.yaml ./pubspec.yaml
 COPY server/ ./server/
 COPY packages/landfall_shared/ ./packages/landfall_shared/
 

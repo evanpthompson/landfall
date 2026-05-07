@@ -1,0 +1,16 @@
+name: landfall_server_workspace
+publish_to: none
+
+# Minimal workspace root for Docker server builds.
+# The repo-root pubspec.yaml lists all packages including apps/display
+# (4 GB of Flutter artifacts that we don't want in the Docker context).
+# This workspace root covers only what the server image needs.
+
+environment:
+  sdk: "^3.8.0"
+
+workspace:
+  - server/landfall_server
+  - server/landfall_client
+  - server/landfall_mcp
+  - packages/landfall_shared
