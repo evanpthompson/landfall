@@ -84,16 +84,9 @@ else
   info "Flutter arm64 binary not found — building via Docker + QEMU (~20 min)..."
   echo ""
 
-  cat > /tmp/lf-display-build.sh << 'BUILDSCRIPT'
-apt-get update -q && apt-get install -y --no-install-recommends \
-  cmake ninja-build clang libgtk-3-dev pkg-config \
-  libblkid-dev liblzma-dev libsecret-1-dev lld
-flutter build linux --release
-BUILDSCRIPT
-
   docker run --rm --platform linux/arm64 \
     -v "${REPO_ROOT}":/app \
-    -v /tmp/lf-display-build.sh:/lf-build.sh \
+    -v "${SCRIPT_DIR}/build-display-docker.sh":/lf-build.sh \
     -w /app/apps/display \
     ghcr.io/cirruslabs/flutter:stable \
     bash /lf-build.sh
