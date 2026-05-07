@@ -48,3 +48,4 @@ lcov.info
 
 # Pi image build artifacts (cloned at runtime by deploy/pi-gen/build.sh)
 deploy/pi-gen/work/
+deploy/pi-gen/landfall-build.conf

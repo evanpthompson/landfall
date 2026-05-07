@@ -1,0 +1,17 @@
+[Unit]
+Description=Landfall first-boot image loader
+After=docker.service
+Requires=docker.service
+Before=landfall-server.service
+ConditionPathExists=!/var/lib/landfall/.initialized
+
+[Service]
+Type=oneshot
+ExecStart=/opt/landfall/firstboot.sh
+RemainAfterExit=yes
+TimeoutStartSec=300
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

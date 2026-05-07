@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
-# Build the Landfall Raspberry Pi image using pi-gen via Docker.
+# Build the Landfall Raspberry Pi SD card image.
 #
-# Works on Linux and macOS (Docker Desktop).
-# pi-gen requires QEMU ARM binfmt handlers to be registered. On Linux install
-# qemu-user-binfmt; on macOS this script registers them automatically via
-# tonistiigi/binfmt before starting the build.
+# Run configure.sh first to set WiFi, hostname, domain, and generate secrets.
+# This script handles everything else automatically:
+#   1. Builds the Flutter arm64 display binary (via Docker + QEMU, ~20 min)
+#   2. Cross-compiles the server Docker image for arm64 (~20–40 min)
+#   3. Runs pi-gen to produce a bootable .img (~20 min)
 #
-# Prerequisites:
-#   - Docker installed
-#   - Linux display binary built first (see docs/raspberry_pi_guide.md)
+# The resulting image is fully self-contained — flash it, boot it, done.
 #
 # Usage:  bash deploy/pi-gen/build.sh
-#
-# Output: deploy/pi-gen/work/landfall-<date>-lite.img.xz
+# Output: deploy/pi-gen/work/pi-gen/deploy/<date>-landfall.img
 
 set -euo pipefail
 
@@ -29,23 +27,52 @@ RESET=$'\033[0m'
 
 ok()   { echo "${GREEN}✓  $*${RESET}"; }
 info() { echo "   $*"; }
+warn() { echo "${YELLOW}⚠  $*${RESET}"; }
 die()  { echo "${RED}✗  $*${RESET}"; exit 1; }
+
+gen_secret()     { openssl rand -base64 32 | tr -d '\n/+=' | cut -c1-43; }
+gen_hex_secret() { openssl rand -hex 32; }
 
 echo ""
 echo "${CYAN}${BOLD}Landfall — Raspberry Pi image builder${RESET}"
 echo ""
 
-# ── Preflight ─────────────────────────────────────────────────────────────
+# ── Load build configuration ───────────────────────────────────────────────
+CONF_FILE="${SCRIPT_DIR}/landfall-build.conf"
+if [[ -f "${CONF_FILE}" ]]; then
+  # shellcheck disable=SC1090
+  source "${CONF_FILE}"
+  ok "Loaded build config: ${CONF_FILE}"
+else
+  warn "landfall-build.conf not found — run configure.sh first for WiFi and custom settings."
+  warn "Continuing with defaults (no WiFi, landfall.local, auto-generated secrets)."
+fi
+
+# Apply defaults for any unset variables
+WIFI_SSID="${WIFI_SSID:-}"
+WIFI_PASSWORD="${WIFI_PASSWORD:-}"
+PI_HOSTNAME="${PI_HOSTNAME:-landfall}"
+LANDFALL_DOMAIN="${LANDFALL_DOMAIN:-landfall.local}"
+OWM_API_KEY="${OWM_API_KEY:-}"
+DB_NAME="${DB_NAME:-landfall}"
+DB_USER="${DB_USER:-landfall}"
+DB_PASSWORD="${DB_PASSWORD:-$(gen_secret)}"
+REDIS_PASSWORD="${REDIS_PASSWORD:-$(gen_secret)}"
+SERVERPOD_SERVICE_SECRET="${SERVERPOD_SERVICE_SECRET:-$(gen_secret)}"
+JWT_HMAC_KEY="${JWT_HMAC_KEY:-$(gen_secret)}"
+JWT_REFRESH_PEPPER="${JWT_REFRESH_PEPPER:-$(gen_secret)}"
+API_KEY_MANAGEMENT_TOKEN="${API_KEY_MANAGEMENT_TOKEN:-$(gen_secret)}"
+API_KEY_HMAC_SECRET="${API_KEY_HMAC_SECRET:-$(gen_secret)}"
+PHOTO_SIGNING_SECRET="${PHOTO_SIGNING_SECRET:-$(gen_secret)}"
+OAUTH_TOKEN_ENCRYPTION_KEY="${OAUTH_TOKEN_ENCRYPTION_KEY:-$(gen_hex_secret)}"
+
+# ── Preflight ─────────────────────────────────────────────────────────────────
 command -v docker > /dev/null || die "Docker is not installed"
 
-# pi-gen needs QEMU ARM binfmt handlers registered so its chroot can execute
-# ARM binaries. On Linux, install qemu-user-binfmt. On macOS Docker Desktop,
-# tonistiigi/binfmt registers the same handlers in the Docker VM.
 HOST_OS="$(uname -s)"
 if [[ "${HOST_OS}" == "Linux" ]]; then
-  if ! command -v qemu-arm > /dev/null 2>&1; then
-    die "qemu-arm not found. Install it with: sudo apt-get install qemu-user-binfmt"
-  fi
+  command -v qemu-arm > /dev/null 2>&1 \
+    || die "qemu-arm not found — install with: sudo apt-get install qemu-user-binfmt"
 else
   info "Registering QEMU ARM binfmt handlers in Docker Desktop VM..."
   docker run --privileged --rm tonistiigi/binfmt --install arm > /dev/null 2>&1 \
@@ -53,49 +80,46 @@ else
     || die "Failed to register QEMU binfmt handlers. Is Docker running?"
 fi
 
+# ── Step 1: Flutter arm64 display binary ─────────────────────────────────────
 LINUX_BUNDLE="${REPO_ROOT}/apps/display/build/linux/arm64/release/bundle"
-if [[ ! -d "${LINUX_BUNDLE}" ]]; then
-  echo "${YELLOW}⚠  Linux arm64 display binary not found at:${RESET}"
-  info "   ${LINUX_BUNDLE}"
+if [[ -d "${LINUX_BUNDLE}" ]]; then
+  ok "Flutter arm64 binary found: ${LINUX_BUNDLE}"
+else
   echo ""
-  info "Build it first. Flutter cannot cross-compile, so you need one of:"
-  info ""
-  info "  Option 1 — Build directly on a Pi (takes ~15 min):"
-  info "    Install Flutter on the Pi, clone the repo, then run:"
-  info "      bash tools/scripts/build_linux.sh"
-  info "    Flutter install: https://docs.flutter.dev/get-started/install/linux"
-  info ""
-  info "  Option 2 — Docker + QEMU (from any machine with Docker):"
-  info "    cat > /tmp/lf-build.sh << 'EOF'"
-  info "    apt-get update -q && apt-get install -y cmake ninja-build clang \\"
-  info "      libgtk-3-dev pkg-config libblkid-dev liblzma-dev libsecret-1-dev lld"
-  info "    flutter build linux --release"
-  info "    EOF"
-  info "    docker run --rm --platform linux/arm64 \\"
-  info "      -v \"\$(pwd)\":/app -v /tmp/lf-build.sh:/lf-build.sh \\"
-  info "      -w /app/apps/display ghcr.io/cirruslabs/flutter:stable bash /lf-build.sh"
+  info "Flutter arm64 binary not found — building via Docker + QEMU (~20 min)..."
+  info "This runs the arm64 Flutter toolchain under QEMU emulation."
   echo ""
-  die "Missing display binary — see instructions above"
-fi
-ok "Display binary found: ${LINUX_BUNDLE}"
 
-# ── Fix permissions from previous Docker run ─────────────────────────────
-# Docker containers run as root, leaving root-owned files in the work dir.
-# Fix them before doing anything so subsequent cp/rsync steps don't fail.
+  cat > /tmp/lf-display-build.sh << 'BUILDSCRIPT'
+apt-get update -q && apt-get install -y --no-install-recommends \
+  cmake ninja-build clang libgtk-3-dev pkg-config \
+  libblkid-dev liblzma-dev libsecret-1-dev lld
+flutter build linux --release
+BUILDSCRIPT
+
+  docker run --rm --platform linux/arm64 \
+    -v "${REPO_ROOT}":/app \
+    -v /tmp/lf-display-build.sh:/lf-build.sh \
+    -w /app/apps/display \
+    ghcr.io/cirruslabs/flutter:stable \
+    bash /lf-build.sh
+
+  [[ -d "${LINUX_BUNDLE}" ]] \
+    || die "Flutter build finished but bundle not found at ${LINUX_BUNDLE}"
+  ok "Flutter arm64 binary built"
+fi
+
+# ── Fix permissions from previous Docker run ──────────────────────────────────
 if [[ -d "${WORK_DIR}" ]]; then
   sudo chown -R "$(whoami)" "${WORK_DIR}" 2>/dev/null || true
 fi
 
-# ── Clone or update pi-gen (arm64 branch) ────────────────────────────────
-# The master branch builds 32-bit Raspbian (armhf) from raspbian.raspberrypi.com
-# using SHA1-signed keys — rejected by modern GnuPG. The arm64 branch builds
-# 64-bit Raspberry Pi OS from archive.raspberrypi.com with proper modern keys.
-# We need arm64 for our Flutter arm64 display binary anyway.
+# ── Clone or update pi-gen (arm64 branch) ────────────────────────────────────
 PI_GEN_DIR="${WORK_DIR}/pi-gen"
 if [[ -d "${PI_GEN_DIR}" ]]; then
   CURRENT_BRANCH="$(git -C "${PI_GEN_DIR}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
   if [[ "${CURRENT_BRANCH}" != "arm64" ]]; then
-    info "Switching pi-gen to arm64 branch..."
+    info "Switching pi-gen clone to arm64 branch..."
     rm -rf "${PI_GEN_DIR}"
   fi
 fi
@@ -109,16 +133,116 @@ else
 fi
 ok "pi-gen ready (arm64)"
 
-# ── Patch pi-gen Dockerfile ───────────────────────────────────────────────
-# Insert a weekly cache-buster ARG before the apt-get install layer so the
-# keyring (debian-archive-keyring) gets refreshed at least once per week.
-# Stale keyrings cause "E: Invalid Release signature" in debootstrap.
+# ── Copy Landfall stage into pi-gen ───────────────────────────────────────────
+cp "${SCRIPT_DIR}/config" "${PI_GEN_DIR}/config"
+# Inject the hostname from build config
+sed -i '' "s/^TARGET_HOSTNAME=.*/TARGET_HOSTNAME=\"${PI_HOSTNAME}\"/" "${PI_GEN_DIR}/config"
+
+rm -rf "${PI_GEN_DIR}/stage2-landfall"
+cp -r "${SCRIPT_DIR}/stage2-landfall" "${PI_GEN_DIR}/stage2-landfall"
+
+STAGE_FILES="${PI_GEN_DIR}/stage2-landfall/00-landfall/files"
+
+# ── Stage: deploy directory ───────────────────────────────────────────────────
+DEPLOY_DEST="${STAGE_FILES}/deploy"
+mkdir -p "${DEPLOY_DEST}"
+rsync -a --exclude='pi-gen/' "${REPO_ROOT}/deploy/" "${DEPLOY_DEST}/"
+
+# ── Stage: .env ───────────────────────────────────────────────────────────────
+cat > "${STAGE_FILES}/.env" << ENVFILE
+LANDFALL_DOMAIN=${LANDFALL_DOMAIN}
+DB_NAME=${DB_NAME}
+DB_USER=${DB_USER}
+DB_PASSWORD=${DB_PASSWORD}
+REDIS_PASSWORD=${REDIS_PASSWORD}
+SERVERPOD_SERVICE_SECRET=${SERVERPOD_SERVICE_SECRET}
+JWT_HMAC_KEY=${JWT_HMAC_KEY}
+JWT_REFRESH_PEPPER=${JWT_REFRESH_PEPPER}
+API_KEY_MANAGEMENT_TOKEN=${API_KEY_MANAGEMENT_TOKEN}
+API_KEY_HMAC_SECRET=${API_KEY_HMAC_SECRET}
+PHOTO_SIGNING_SECRET=${PHOTO_SIGNING_SECRET}
+OAUTH_TOKEN_ENCRYPTION_KEY=${OAUTH_TOKEN_ENCRYPTION_KEY}
+OWM_API_KEY=${OWM_API_KEY}
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=
+GOOGLE_DRIVE_FOLDER_ID=
+MICROSOFT_CLIENT_ID=
+MICROSOFT_CLIENT_SECRET=
+MICROSOFT_REDIRECT_URI=
+STRIPE_WEBHOOK_SECRET=
+ENVFILE
+info ".env staged for domain: ${LANDFALL_DOMAIN}"
+
+# ── Stage: WiFi config ────────────────────────────────────────────────────────
+if [[ -n "${WIFI_SSID}" ]]; then
+  cat > "${STAGE_FILES}/wifi.nmconnection" << WIFICONF
+[connection]
+id=landfall-wifi
+type=wifi
+autoconnect=true
+autoconnect-priority=600
+
+[wifi]
+mode=infrastructure
+ssid=${WIFI_SSID}
+
+[wifi-security]
+auth-alg=open
+key-mgmt=wpa-psk
+psk=${WIFI_PASSWORD}
+
+[ipv4]
+method=auto
+
+[ipv6]
+method=auto
+addr-gen-mode=default
+WIFICONF
+  ok "WiFi config staged for: ${WIFI_SSID}"
+else
+  rm -f "${STAGE_FILES}/wifi.nmconnection"
+  info "No WiFi configured — connect via ethernet or configure after first boot"
+fi
+
+# ── Stage: Flutter display bundle ─────────────────────────────────────────────
+BUNDLE_DEST="${STAGE_FILES}/bundle"
+rm -rf "${BUNDLE_DEST}"
+cp -r "${LINUX_BUNDLE}/." "${BUNDLE_DEST}/"
+ok "Display bundle staged ($(du -sh "${BUNDLE_DEST}" | cut -f1))"
+
+# ── Step 2: Server Docker image for arm64 ────────────────────────────────────
+SERVER_TARBALL="${STAGE_FILES}/landfall-server.tar.gz"
+if [[ -f "${SERVER_TARBALL}" ]]; then
+  ok "Server image already staged ($(du -sh "${SERVER_TARBALL}" | cut -f1)) — delete to rebuild"
+else
+  echo ""
+  info "Cross-compiling server Docker image for arm64 (~20–40 min)..."
+  info "This compiles the Dart server to a native arm64 binary under QEMU."
+  echo ""
+
+  # Ensure a buildx builder that supports arm64 exists
+  if ! docker buildx inspect landfall-builder > /dev/null 2>&1; then
+    docker buildx create --name landfall-builder \
+      --platform linux/arm64,linux/amd64 --use > /dev/null
+  else
+    docker buildx use landfall-builder
+  fi
+
+  docker buildx build \
+    --platform linux/arm64 \
+    --load \
+    -t landfall-server:latest \
+    "${REPO_ROOT}/server/landfall_server"
+
+  docker save landfall-server:latest | gzip > "${SERVER_TARBALL}"
+  ok "Server image built and staged ($(du -sh "${SERVER_TARBALL}" | cut -f1))"
+fi
+
+# ── Patch pi-gen Dockerfile: weekly cache-buster ──────────────────────────────
 CACHE_WEEK="$(date +%Y-W%V)"
 if ! grep -q "LANDFALL_CACHE_WEEK" "${PI_GEN_DIR}/Dockerfile"; then
-  # Insert ARG line before the RUN apt-get line using Python (macOS sed doesn't
-  # support \n in replacement strings)
   python3 -c "
-import sys
 txt = open('${PI_GEN_DIR}/Dockerfile').read()
 txt = txt.replace(
   'ENV DEBIAN_FRONTEND=noninteractive\n\nRUN apt-get',
@@ -126,14 +250,11 @@ txt = txt.replace(
 )
 open('${PI_GEN_DIR}/Dockerfile', 'w').write(txt)
 "
-  info "Patched pi-gen Dockerfile: added weekly cache-buster (${CACHE_WEEK})"
 else
   sed -i '' "s/ARG LANDFALL_CACHE_WEEK=.*/ARG LANDFALL_CACHE_WEEK=${CACHE_WEEK}/" \
     "${PI_GEN_DIR}/Dockerfile"
 fi
 
-# Pass the cache week to docker build so the ARG actually invalidates the layer.
-# build-docker.sh hard-codes the --build-arg list, so patch it each run.
 if grep -q "LANDFALL_CACHE_WEEK" "${PI_GEN_DIR}/build-docker.sh"; then
   sed -i '' "s/LANDFALL_CACHE_WEEK=[^ ]*/LANDFALL_CACHE_WEEK=${CACHE_WEEK}/" \
     "${PI_GEN_DIR}/build-docker.sh"
@@ -142,91 +263,50 @@ else
     "${PI_GEN_DIR}/build-docker.sh"
 fi
 
-# Remove the cached pi-gen Docker image whenever the week changes so apt-get
-# re-runs and fetches a fresh debian-archive-keyring. Without this, stale
-# keyrings cause "E: Invalid Release signature" in debootstrap.
 LAST_WEEK_FILE="${WORK_DIR}/.last_cache_week"
 LAST_WEEK="$(cat "${LAST_WEEK_FILE}" 2>/dev/null || echo "")"
 if [[ "${LAST_WEEK}" != "${CACHE_WEEK}" ]]; then
-  info "Cache week changed (${LAST_WEEK:-none} → ${CACHE_WEEK}), removing stale Docker image..."
+  info "Cache week changed — removing stale Docker image to refresh keyring..."
   docker rmi pi-gen > /dev/null 2>&1 || true
   mkdir -p "${WORK_DIR}"
   echo "${CACHE_WEEK}" > "${LAST_WEEK_FILE}"
 fi
 
-# pi-gen's base image (i386/debian) doesn't include qemu-user-static.
-# Without it the ARM chroot has no interpreter binary, even if binfmt_misc
-# is registered on the host. Append it to the apt-get install layer.
-if ! grep -q "qemu-user-static" "${PI_GEN_DIR}/Dockerfile"; then
-  echo 'RUN apt-get install -y qemu-user-static' >> "${PI_GEN_DIR}/Dockerfile"
-  info "Patched pi-gen Dockerfile: added qemu-user-static"
-fi
-
-# ── Patch pi-gen build-docker.sh (macOS only) ────────────────────────────
-# pi-gen's build-docker.sh checks for `qemu-arm` on the HOST before starting
-# Docker. On macOS this binary doesn't exist — binfmt is already registered
-# in Docker Desktop's Linux VM by the tonistiigi/binfmt step above. Patch
-# the script to skip the host-side check entirely on non-Linux hosts.
+# ── Patch pi-gen build-docker.sh (macOS only) ────────────────────────────────
 if [[ "${HOST_OS}" != "Linux" ]]; then
   if ! grep -q "# Landfall: macOS binfmt skip" "${PI_GEN_DIR}/build-docker.sh"; then
     sed -i '' '/^binfmt_misc_required=1$/s/=1/=0 # Landfall: macOS binfmt skip/' \
       "${PI_GEN_DIR}/build-docker.sh"
-    info "Patched build-docker.sh: disabled host binfmt check (handled by Docker Desktop)"
   fi
 fi
 
-# ── Copy Landfall stage into pi-gen ──────────────────────────────────────
-cp "${SCRIPT_DIR}/config"                          "${PI_GEN_DIR}/config"
-rm -rf "${PI_GEN_DIR}/stage2-landfall"
-cp -r "${SCRIPT_DIR}/stage2-landfall"              "${PI_GEN_DIR}/stage2-landfall"
-
-# Copy runtime deploy files into the stage so they're baked into the Docker
-# image via COPY . /pi-gen/. Exclude deploy/pi-gen/ (build tooling) to avoid
-# a recursive copy (PI_GEN_DIR lives inside the deploy/ tree).
-STAGE_FILES="${PI_GEN_DIR}/stage2-landfall/00-landfall/files"
-DEPLOY_DEST="${STAGE_FILES}/deploy"
-mkdir -p "${DEPLOY_DEST}"
-rsync -a --exclude='pi-gen/' "${REPO_ROOT}/deploy/" "${DEPLOY_DEST}/"
-
-# Copy the display bundle into the stage files so 00-run.sh can find it at
-# ${SUB_STAGE_DIR}/files/bundle inside the container. The bundle is not in
-# the git repo (it's a build artifact), so we copy it here each run.
-BUNDLE_DEST="${STAGE_FILES}/bundle"
-rm -rf "${BUNDLE_DEST}"
-cp -r "${LINUX_BUNDLE}/." "${BUNDLE_DEST}/"
-info "Display bundle staged ($(du -sh "${BUNDLE_DEST}" | cut -f1))"
-
-# Skip and suppress image export for stages we don't need.
-# SKIP prevents a stage's scripts from running.
-# SKIP_IMAGES prevents a stage from being added to the export queue — without
-# it, pi-gen still tries to export the stage even if it was never built.
+# ── Stage skips ───────────────────────────────────────────────────────────────
 touch "${PI_GEN_DIR}/stage2/SKIP_IMAGES"
 touch "${PI_GEN_DIR}/stage3/SKIP" "${PI_GEN_DIR}/stage3/SKIP_IMAGES"
 touch "${PI_GEN_DIR}/stage4/SKIP" "${PI_GEN_DIR}/stage4/SKIP_IMAGES"
 touch "${PI_GEN_DIR}/stage5/SKIP" "${PI_GEN_DIR}/stage5/SKIP_IMAGES"
 
-# ── Build ─────────────────────────────────────────────────────────────────
-# Remove any stale container from a previous failed run so build-docker.sh
-# doesn't abort asking the user to set CONTINUE=1.
+# ── Step 3: Run pi-gen ────────────────────────────────────────────────────────
 docker rm -v pigen_work > /dev/null 2>&1 || true
 
 echo ""
-info "Starting pi-gen Docker build — this takes 20–40 minutes..."
+info "Running pi-gen — this takes 20–40 minutes..."
 echo ""
 
 cd "${PI_GEN_DIR}"
 bash build-docker.sh
 
-# ── Copy output ───────────────────────────────────────────────────────────
-IMAGE="$(ls "${PI_GEN_DIR}/deploy"/landfall-*.img.xz 2>/dev/null | sort | tail -1)"
+# ── Done ─────────────────────────────────────────────────────────────────────
+IMAGE="$(ls "${PI_GEN_DIR}/deploy/"*.img 2>/dev/null | sort | tail -1)"
 if [[ -n "${IMAGE}" ]]; then
-  cp "${IMAGE}" "${WORK_DIR}/"
   echo ""
-  ok "Image ready: ${WORK_DIR}/$(basename "${IMAGE}")"
+  ok "Image ready: ${IMAGE}"
   info ""
   info "Flash with Raspberry Pi Imager (\"Use custom image\") or:"
-  info "  xz -d ${WORK_DIR}/$(basename "${IMAGE}")"
-  info "  sudo dd if=${WORK_DIR}/landfall-*.img of=/dev/sdX bs=4M status=progress"
+  info "  sudo dd if=${IMAGE} of=/dev/rdiskN bs=4m status=progress"
+  info ""
+  info "First boot takes ~2 minutes while Docker images load."
+  info "The display starts automatically after the server is ready."
 else
-  die "Build succeeded but no image file found in ${PI_GEN_DIR}/deploy/"
+  die "Build finished but no .img found in ${PI_GEN_DIR}/deploy/"
 fi
