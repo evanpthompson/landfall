@@ -35,7 +35,8 @@ systemctl enable docker
 apt-get install -y --no-install-recommends \
   libgtk-3-0t64 libblkid1 liblzma5 libgles2 libgbm1 \
   xorg openbox lightdm lightdm-autologin-greeter \
-  unclutter x11-xserver-utils
+  unclutter x11-xserver-utils \
+  wireless-regdb
 
 # ── lightdm: auto-login the landfall user into an openbox session ─────────
 cat > /etc/lightdm/lightdm.conf << 'LIGHTDM'
@@ -60,6 +61,11 @@ if [[ -f "${STAGE_FILES}/.env" ]]; then
   install -m 640 "${STAGE_FILES}/.env" \
     "${ROOTFS_DIR}/home/landfall/landfall/deploy/.env"
 fi
+
+# ── WiFi regulatory domain ───────────────────────────────────────────────────
+# Without a country code the kernel blocks the WiFi radio entirely.
+WIFI_COUNTRY="$(cat "${STAGE_FILES}/wifi-country" 2>/dev/null || echo US)"
+echo "REGDOMAIN=${WIFI_COUNTRY}" > "${ROOTFS_DIR}/etc/default/crda"
 
 # ── WiFi (NetworkManager connection file) ─────────────────────────────────────
 if [[ -f "${STAGE_FILES}/wifi.nmconnection" ]]; then

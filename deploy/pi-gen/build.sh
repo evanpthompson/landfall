@@ -49,6 +49,7 @@ else
 fi
 
 # Apply defaults for any unset variables
+WIFI_COUNTRY="${WIFI_COUNTRY:-US}"
 WIFI_SSID="${WIFI_SSID:-}"
 WIFI_PASSWORD="${WIFI_PASSWORD:-}"
 PI_HOSTNAME="${PI_HOSTNAME:-landfall}"
@@ -143,8 +144,13 @@ ok "pi-gen ready (arm64)"
 
 # ── Copy Landfall stage into pi-gen ───────────────────────────────────────────
 cp "${SCRIPT_DIR}/config" "${PI_GEN_DIR}/config"
-# Inject the hostname from build config
+# Inject hostname and WiFi country into pi-gen config
 sed -i '' "s/^TARGET_HOSTNAME=.*/TARGET_HOSTNAME=\"${PI_HOSTNAME}\"/" "${PI_GEN_DIR}/config"
+if grep -q "^WPA_COUNTRY=" "${PI_GEN_DIR}/config"; then
+  sed -i '' "s/^WPA_COUNTRY=.*/WPA_COUNTRY=\"${WIFI_COUNTRY}\"/" "${PI_GEN_DIR}/config"
+else
+  echo "WPA_COUNTRY=\"${WIFI_COUNTRY}\"" >> "${PI_GEN_DIR}/config"
+fi
 
 rm -rf "${PI_GEN_DIR}/stage2-landfall"
 cp -r "${SCRIPT_DIR}/stage2-landfall" "${PI_GEN_DIR}/stage2-landfall"
@@ -181,6 +187,10 @@ MICROSOFT_REDIRECT_URI=${MICROSOFT_REDIRECT_URI}
 STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
 ENVFILE
 info ".env staged for domain: ${LANDFALL_DOMAIN}"
+
+# ── Stage: WiFi country ───────────────────────────────────────────────────────
+echo "${WIFI_COUNTRY}" > "${STAGE_FILES}/wifi-country"
+ok "WiFi country staged: ${WIFI_COUNTRY}"
 
 # ── Stage: WiFi config ────────────────────────────────────────────────────────
 if [[ -n "${WIFI_SSID}" ]]; then

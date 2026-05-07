@@ -38,6 +38,10 @@ echo ""
 # ── WiFi ─────────────────────────────────────────────────────────────────────
 section "Network"
 info "WiFi — leave blank to use ethernet or configure after first boot."
+ask "WiFi country code [US]:"
+read -r WIFI_COUNTRY
+WIFI_COUNTRY="${WIFI_COUNTRY:-US}"
+
 ask "WiFi SSID [blank to skip]:"
 read -r WIFI_SSID
 WIFI_PASSWORD=""
@@ -45,7 +49,7 @@ if [[ -n "${WIFI_SSID}" ]]; then
   ask "WiFi password:"
   read -rs WIFI_PASSWORD
   echo ""
-  ok "WiFi configured: ${WIFI_SSID}"
+  ok "WiFi configured: ${WIFI_SSID} (country: ${WIFI_COUNTRY})"
 fi
 
 echo ""
@@ -143,6 +147,7 @@ ok "All secrets generated"
   echo "# Baked into the SD card image. Keep this file private — it contains secrets."
   echo ""
   echo "# ── Network ──────────────────────────────────────────────────────────────────"
+  printf "WIFI_COUNTRY=%q\n"      "${WIFI_COUNTRY}"
   printf "WIFI_SSID=%q\n"        "${WIFI_SSID}"
   printf "WIFI_PASSWORD=%q\n"    "${WIFI_PASSWORD}"
   printf "PI_HOSTNAME=%q\n"      "${PI_HOSTNAME}"
