@@ -1,12 +1,14 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:serverpod_client/serverpod_client.dart';
 
+import 'auth_key_provider.dart';
+
 /// Stores the Landfall JWT in the platform keychain / secure storage.
 ///
-/// Implements [ClientAuthKeyProvider] so it can be passed directly to
+/// Implements [AuthKeyProvider] so it can be passed directly to
 /// [Client.authKeyProvider], automatically attaching the bearer token to
 /// every authenticated request.
-class SecureStorageAuthKeyProvider implements ClientAuthKeyProvider {
+class SecureStorageAuthKeyProvider implements AuthKeyProvider {
   static const _tokenKey = 'landfall_access_token';
 
   final FlutterSecureStorage _storage;

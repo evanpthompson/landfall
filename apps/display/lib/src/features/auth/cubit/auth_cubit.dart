@@ -1,14 +1,14 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_client/landfall_client.dart';
 
-import '../../../data/auth/secure_storage_auth_key_provider.dart';
+import '../../../data/auth/auth_key_provider.dart';
 
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit({
     required Client client,
-    required SecureStorageAuthKeyProvider keyProvider,
+    required AuthKeyProvider keyProvider,
   })  : _client = client,
         _keyProvider = keyProvider,
         super(const AuthUnauthenticated()) {
@@ -16,7 +16,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   final Client _client;
-  final SecureStorageAuthKeyProvider _keyProvider;
+  final AuthKeyProvider _keyProvider;
 
   Future<void> _init() async {
     try {

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -5,6 +7,8 @@ import 'package:landfall_client/landfall_client.dart' hide LandfallTheme;
 import 'package:landfall_shared/landfall_shared.dart';
 
 import 'package:display/src/app/app_config.dart';
+import 'package:display/src/data/auth/auth_key_provider.dart';
+import 'package:display/src/data/auth/file_auth_key_provider.dart';
 import 'package:display/src/data/auth/secure_storage_auth_key_provider.dart';
 import 'package:display/src/data/calendar/serverpod_calendar_repository.dart';
 import 'package:display/src/data/cards/serverpod_card_repository.dart';
@@ -57,9 +61,11 @@ class LandfallApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final keyProvider = SecureStorageAuthKeyProvider(
-      const FlutterSecureStorage(),
-    );
+    // Linux (Pi kiosk) uses file-based storage — no D-Bus keyring required.
+    // All other platforms use the platform keychain via flutter_secure_storage.
+    final AuthKeyProvider keyProvider = Platform.isLinux
+        ? FileAuthKeyProvider()
+        : SecureStorageAuthKeyProvider(const FlutterSecureStorage());
     final client = Client(serverUrl)
       ..authKeyProvider = keyProvider;
 

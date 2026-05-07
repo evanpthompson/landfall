@@ -47,8 +47,8 @@ COPY --from=build /app/server/landfall_server/lib/src/generated/protocol.yaml \
 COPY server/landfall_server/docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh /app/server
 
-# Run as non-root
-RUN adduser -S -H landfall
+# Run as non-root — chown /app first so entrypoint can write rendered configs
+RUN adduser -S -H landfall && chown -R landfall /app
 USER landfall
 
 EXPOSE 8080

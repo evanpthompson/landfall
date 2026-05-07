@@ -33,7 +33,7 @@ systemctl enable docker
 
 # ── Display dependencies (Flutter Linux arm64) ────────────────────────────
 apt-get install -y --no-install-recommends \
-  libgtk-3-0t64 libblkid1 liblzma5 libgles2 libgbm1 \
+  libgtk-3-0t64 libblkid1 liblzma5 libgles2 libgbm1 libsecret-1-0 \
   xorg openbox lightdm lightdm-autologin-greeter \
   unclutter x11-xserver-utils \
   wireless-regdb avahi-daemon libnss-mdns
