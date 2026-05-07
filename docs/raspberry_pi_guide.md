@@ -1,200 +1,181 @@
 # Raspberry Pi Guide
 
-This guide covers running Landfall on a Raspberry Pi — either using the pre-built image (simplest) or setting up manually on an existing Pi OS installation.
+This guide covers running Landfall on a Raspberry Pi. The recommended path is the pre-built image — it produces a single `.img` file that boots straight to the display with no manual setup on the Pi.
 
-**Supported hardware:** Raspberry Pi 4 (4 GB RAM recommended) or Pi 5. Pi 3 is not supported — it lacks the memory to run the Serverpod server reliably.
+**Supported hardware:** Raspberry Pi 4 (4 GB RAM recommended) or Pi 5. Pi 3 is not supported — it lacks the memory to run the server reliably.
 
 ---
 
 ## Option A: Pre-built image (recommended)
 
-The Landfall Pi image boots straight to the display. The server stack starts automatically. No manual setup required beyond flashing and filling in your `.env`.
+One command builds everything. Flash, boot, done.
 
-### 1. Build the Flutter Linux arm64 binary
+### 1. Configure
 
-Flutter cannot cross-compile to Linux arm64. The binary **must** be built on a Linux arm64 machine. You have three options:
-
-**Option 1a — Build on the Pi itself** (simplest, no extra hardware):
 ```bash
-# On the Pi — install Flutter first if not already installed:
-# https://docs.flutter.dev/get-started/install/linux
-git clone https://github.com/your-org/landfall.git
-cd landfall
-bash tools/scripts/build_linux.sh
-# Takes ~15 minutes on a Pi 4
+bash deploy/pi-gen/configure.sh
 ```
 
-**Option 1b — Docker + QEMU** (build from any machine with Docker):
-```bash
-# From your development machine (macOS, Linux x86_64, etc.)
-# Write a build script first to avoid shell-quoting issues:
-cat > /tmp/lf-build.sh << 'EOF'
-#!/bin/bash
-set -e
-apt-get update -q
-apt-get install -y cmake ninja-build clang \
-  libgtk-3-dev pkg-config \
-  libblkid-dev liblzma-dev libsecret-1-dev lld
+This interactive wizard asks for:
+- **WiFi SSID and password** — baked into the image; the Pi connects automatically on first boot
+- **Hostname** — default `landfall` (Pi appears as `landfall.local` on your network)
+- **Server domain/IP** — default `landfall.local`; use a real domain if you want Caddy to auto-fetch TLS
+- **OpenWeatherMap API key** — optional; skip to configure later
 
-# Remove stale CMakeCache so cmake picks up the correct install prefix.
-# Without this, a cached prefix of /usr/local causes the bundle to be written
-# inside the container instead of the mounted volume.
-rm -f build/linux/arm64/release/CMakeCache.txt
+All secrets (database password, JWT keys, etc.) are auto-generated and baked in. You do not need to run `setup.sh` on the Pi.
 
-flutter build linux --release
+Answers are saved to `deploy/pi-gen/landfall-build.conf` (gitignored — contains secrets).
 
-# Explicitly install to the bundle dir so output lands in the mounted volume.
-BUNDLE_DIR="$(pwd)/build/linux/arm64/release/bundle"
-cmake --install build/linux/arm64/release --prefix "${BUNDLE_DIR}"
-echo "Bundle ready at: ${BUNDLE_DIR}"
-EOF
-
-docker run --rm --platform linux/arm64 \
-  -v "$(pwd)":/app \
-  -v /tmp/lf-build.sh:/lf-build.sh \
-  -w /app/apps/display \
-  ghcr.io/cirruslabs/flutter:stable \
-  bash /lf-build.sh
-# Output: apps/display/build/linux/arm64/release/bundle/
-# Takes ~45 minutes under QEMU emulation
-```
-
-**Option 1c — GitHub Actions** (if you have the repo on GitHub):
-Push your branch and let the CI workflow produce the arm64 artifact — no local Linux required.
-
-### 2. Build the Pi image
-
-On any machine with Docker installed (macOS or Linux):
+### 2. Build
 
 ```bash
 bash deploy/pi-gen/build.sh
 ```
 
-On macOS, the script automatically registers the QEMU ARM binfmt handlers in Docker Desktop before starting. On Linux, install them first if not present: `sudo apt-get install qemu-user-binfmt`.
+This takes roughly **1–2 hours** on first run. It does three things automatically:
 
-This takes 20–40 minutes. Output: `deploy/pi-gen/work/landfall-<date>-lite.img.xz`
+1. **Builds the Flutter arm64 display binary** — runs the Flutter toolchain inside a Docker + QEMU arm64 container (~20 min). Skipped if the binary already exists.
+2. **Cross-compiles the server Docker image for arm64** — Dart compiles to a native arm64 binary inside QEMU (~30–40 min). Result is saved as a tarball; skipped on subsequent builds unless you delete it.
+3. **Runs pi-gen** — assembles the bootable image with all binaries, secrets, and WiFi config baked in (~20 min).
 
-### 3. Flash the image
+Output: `deploy/pi-gen/work/pi-gen/deploy/<date>-landfall.img`
+
+> **macOS:** Docker Desktop must be running. The script registers QEMU binfmt handlers automatically.
+>
+> **Linux:** Install QEMU binfmt support first: `sudo apt-get install qemu-user-binfmt`
+
+### 3. Flash
 
 Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/):
-1. Click **Choose OS** → **Use custom** → select the `.img.xz` file
-2. Click **Choose Storage** → select your SD card
-3. Click the gear icon to pre-configure Wi-Fi and SSH if needed
-4. Click **Write**
+1. **Choose OS** → **Use custom** → select the `.img` file
+2. **Choose Storage** → select your SD card
+3. **Write** — no need to configure anything in the imager; WiFi is already in the image
 
-Or with `dd`:
+Or with `dd` on macOS:
 ```bash
-xz -d deploy/pi-gen/work/landfall-*.img.xz
-sudo dd if=deploy/pi-gen/work/landfall-*.img of=/dev/sdX bs=4M status=progress
+diskutil list          # find your SD card, e.g. /dev/disk4
+diskutil unmountDisk /dev/disk4
+sudo dd if=deploy/pi-gen/work/pi-gen/deploy/<date>-landfall.img \
+     of=/dev/rdisk4 bs=4m status=progress
 ```
 
-Replace `/dev/sdX` with your SD card device (e.g. `/dev/sdb` on Linux, `/dev/disk2` on macOS — use `diskutil list` to find it).
+Use `/dev/rdisk4` (raw device) not `/dev/disk4` — it's significantly faster.
 
-### 4. Configure secrets
+### 4. Boot
 
-On first boot, SSH into the Pi. The default user is `landfall` and the default password is `landfall`. Find the Pi's IP address from your router, or connect a keyboard and run `hostname -I`.
+Plug in the SD card and power on the Pi. First boot takes about **2 minutes**:
+
+1. The Pi connects to WiFi (or ethernet)
+2. `landfall-firstboot.service` loads the server Docker image into Docker's storage
+3. `landfall-server.service` starts Postgres, Redis, Caddy, and the Landfall server
+4. lightdm auto-logs in the `landfall` user and starts an Openbox session
+5. The display app launches fullscreen and connects to the server
+
+No keyboard or manual steps required.
+
+> **Default SSH credentials:** user `landfall`, password `landfall`. Change it after first boot with `passwd`.
+
+### 5. Optional: add integrations after first boot
+
+SSH in and edit `.env` to add Google Calendar, Microsoft Calendar, or other API keys:
 
 ```bash
-ssh landfall@<PI_IP>
-cd /home/landfall/landfall/deploy
-bash scripts/setup.sh
-```
-
-Then restart the server:
-```bash
+ssh landfall@landfall.local
+nano /home/landfall/landfall/deploy/.env
 sudo systemctl restart landfall-server
 ```
-
-### 5. Connect a display
-
-Connect an HDMI monitor or TV to the Pi. The display app starts automatically after the server is ready (~30 seconds after boot).
 
 ---
 
 ## Option B: Manual setup on existing Pi OS
 
-Use this if you already have a Pi running and don't want to reflash.
-
-### Prerequisites
-
-- Raspberry Pi OS Bookworm (64-bit)
-- Pi 4 or Pi 5
+Use this if you already have a Pi running Raspberry Pi OS (64-bit, Trixie/Bookworm) and don't want to reflash.
 
 ### 1. Install Docker
 
 ```bash
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
+newgrp docker
 ```
 
-Log out and back in, then verify: `docker run hello-world`
-
-### 2. Clone and configure
+### 2. Clone the repo and configure
 
 ```bash
-git clone https://github.com/your-org/landfall.git
-cd landfall
+git clone https://github.com/your-org/landfall.git ~/landfall
+cd ~/landfall
 bash deploy/scripts/setup.sh
 ```
 
 ### 3. Start the server
 
 ```bash
-cd deploy
+cd ~/landfall/deploy
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-First build takes 15–20 minutes on a Pi 4. Grab a coffee.
+First run builds the server image on the Pi (~15–20 min). Subsequent starts are instant.
 
-### 4. Install the display app
+### 4. Build and install the display binary
 
-The display runs as a Flutter Linux app directly on the Pi (arm64 binary required).
+The display is a Flutter Linux arm64 binary. Build it directly on the Pi:
 
-**Directly on the Pi** (the simplest approach):
 ```bash
-# Install Flutter on the Pi first:
-# https://docs.flutter.dev/get-started/install/linux
+# Install Flutter first: https://docs.flutter.dev/get-started/install/linux
 cd ~/landfall
 bash tools/scripts/build_linux.sh
-# Takes ~15 minutes; output at apps/display/build/linux/arm64/release/bundle/
+# Output: apps/display/build/linux/arm64/release/bundle/
 ```
 
-**From a Linux arm64 build machine** (if you have one):
+Or build on another machine and rsync it over:
 ```bash
-bash tools/scripts/build_linux.sh
+# On a machine with Docker:
+bash deploy/pi-gen/build.sh   # builds the binary as a side effect
 rsync -av apps/display/build/linux/arm64/release/bundle/ \
-  landfall@<PI_IP>:/home/landfall/landfall-display/
+  landfall@<PI_IP>:/home/landfall/landfall/display/
 ```
 
-Replace `<PI_IP>` with the Pi's IP address (find it with `hostname -I` on the Pi, or check your router).
+### 5. Configure the display to auto-start
 
-### 5. Run the display
-
-The display requires an X session. For a headless Pi connected directly to a TV, install a minimal desktop:
+Install a minimal desktop and configure auto-login:
 
 ```bash
-sudo apt-get install -y xorg openbox lightdm lightdm-autologin-greeter
+sudo apt-get install -y xorg openbox lightdm lightdm-autologin-greeter unclutter x11-xserver-utils
 ```
 
-Configure autologin:
-```
-# /etc/lightdm/lightdm.conf
+```bash
+sudo tee /etc/lightdm/lightdm.conf << 'EOF'
 [Seat:*]
 autologin-user=landfall
 autologin-user-timeout=0
 user-session=openbox
+xserver-command=X -nocursor
+EOF
 ```
 
-Then install the systemd service:
+Configure openbox to launch the display app:
 ```bash
-sudo cp deploy/pi-gen/stage-landfall/00-landfall/files/landfall-display.service \
-        /etc/systemd/system/
-sudo systemctl enable --now landfall-display
+sudo tee /etc/xdg/openbox/autostart << 'EOF'
+xset s off
+xset -dpms
+xset s noblank
+unclutter -idle 1 &
+while true; do
+  /home/landfall/landfall/display/display
+  sleep 2
+done &
+EOF
+```
+
+Enable and start the display manager:
+```bash
+sudo systemctl enable lightdm
+sudo systemctl start lightdm
 ```
 
 ---
 
-## Performance notes
+## Performance
 
 | | Pi 4 (4 GB) | Pi 4 (8 GB) | Pi 5 (8 GB) |
 |---|---|---|---|
@@ -202,19 +183,59 @@ sudo systemctl enable --now landfall-display
 | Display startup | ~8s | ~6s | ~4s |
 | Steady-state RAM (server) | ~380 MB | ~380 MB | ~380 MB |
 | Steady-state RAM (display) | ~120 MB | ~120 MB | ~120 MB |
-| Total at idle | ~500 MB | ~500 MB | ~500 MB |
 
-4 GB is comfortable. 2 GB will work but leaves little headroom if Postgres grows.
+4 GB is comfortable. 2 GB will work but leaves little headroom as the database grows.
 
 ---
 
 ## Updating
 
+To update the server on the Pi:
+
 ```bash
-# On the build machine (or Pi itself):
+ssh landfall@landfall.local
+cd ~/landfall
 git pull
-bash tools/scripts/build_linux.sh
+cd deploy
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
+```
+
+To update the display binary, rebuild on a machine with Docker and copy it over:
+
+```bash
+# On build machine:
+bash deploy/pi-gen/build.sh       # rebuilds the Flutter binary
 rsync -av apps/display/build/linux/arm64/release/bundle/ \
-  landfall@<PI_IP>:/home/landfall/landfall-display/
-ssh landfall@<PI_IP> 'cd landfall/deploy && docker compose -f docker-compose.prod.yml build && docker compose -f docker-compose.prod.yml up -d && sudo systemctl restart landfall-display'
+  landfall@landfall.local:/home/landfall/landfall/display/
+# The display restarts automatically via the openbox autostart loop
+```
+
+---
+
+## Troubleshooting
+
+**Display app doesn't appear:**
+```bash
+ssh landfall@landfall.local
+journalctl -u lightdm -n 50
+```
+
+**Server not starting:**
+```bash
+ssh landfall@landfall.local
+docker compose -f /home/landfall/landfall/deploy/docker-compose.prod.yml logs
+```
+
+**First-boot took too long / image not loaded:**
+```bash
+ssh landfall@landfall.local
+journalctl -u landfall-firstboot -n 50
+journalctl -u landfall-server -n 50
+```
+
+**WiFi not connecting:**
+If you skipped WiFi in `configure.sh`, connect via ethernet then add WiFi:
+```bash
+sudo nmcli dev wifi connect "YourSSID" password "YourPassword"
 ```

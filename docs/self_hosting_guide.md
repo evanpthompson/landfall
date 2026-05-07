@@ -83,7 +83,7 @@ cd deploy
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-First run will build the server image (~5 minutes). Subsequent starts are instant.
+First run builds the server image from source (~5–15 minutes depending on hardware). Subsequent starts are instant.
 
 Check that it's running:
 ```bash
@@ -107,50 +107,9 @@ Then follow the printed sideload instructions (`adb connect` → `adb install`).
 
 ### Raspberry Pi (separate display device)
 
-The Pi requires a Linux arm64 binary. Flutter cannot cross-compile, so the binary must be built on a Linux arm64 machine. The simplest approach is to build directly on the Pi:
+The simplest path is the pre-built image — see the [Raspberry Pi Guide](raspberry_pi_guide.md). It handles the binary build, server image, WiFi, and auto-start in one command.
 
-```bash
-# On the Pi — install Flutter first if not already installed:
-# https://docs.flutter.dev/get-started/install/linux
-bash tools/scripts/build_linux.sh
-# Takes ~15 minutes; output at apps/display/build/linux/arm64/release/bundle/
-```
-
-Or use Docker + QEMU to build from any machine with Docker:
-```bash
-cat > /tmp/lf-build.sh << 'EOF'
-#!/bin/bash
-set -e
-apt-get update -q
-apt-get install -y cmake ninja-build clang \
-  libgtk-3-dev pkg-config \
-  libblkid-dev liblzma-dev libsecret-1-dev lld
-rm -f build/linux/arm64/release/CMakeCache.txt
-flutter build linux --release
-BUNDLE_DIR="$(pwd)/build/linux/arm64/release/bundle"
-cmake --install build/linux/arm64/release --prefix "${BUNDLE_DIR}"
-EOF
-
-docker run --rm --platform linux/arm64 \
-  -v "$(pwd)":/app \
-  -v /tmp/lf-build.sh:/lf-build.sh \
-  -w /app/apps/display \
-  ghcr.io/cirruslabs/flutter:stable \
-  bash /lf-build.sh
-```
-
-Then copy the bundle to the Pi (replace `<PI_IP>` with the Pi's IP address — run `hostname -I` on the Pi to find it):
-```bash
-rsync -av apps/display/build/linux/arm64/release/bundle/ \
-  pi@<PI_IP>:/home/pi/landfall-display/
-```
-
-Run it (requires a desktop session):
-```bash
-DISPLAY=:0 /home/pi/landfall-display/display
-```
-
-For auto-start on boot, see the systemd service in `deploy/pi-gen/stage-landfall/00-landfall/files/landfall-display.service`.
+For a manual install on an existing Pi, see [Option B in the Raspberry Pi Guide](raspberry_pi_guide.md#option-b-manual-setup-on-existing-pi-os).
 
 ### Any Android device
 
@@ -192,7 +151,7 @@ docker run --rm \
 ```bash
 git pull
 cd deploy
-docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml build --no-cache
 docker compose -f docker-compose.prod.yml up -d
 ```
 

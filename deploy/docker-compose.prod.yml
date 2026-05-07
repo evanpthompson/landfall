@@ -1,6 +1,9 @@
 services:
   server:
     image: landfall-server:latest
+    build:
+      context: ../server/landfall_server
+      dockerfile: Dockerfile
     restart: unless-stopped
     env_file: .env
     environment:
