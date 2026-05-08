@@ -36,7 +36,8 @@ apt-get install -y --no-install-recommends \
   libgtk-3-0t64 libblkid1 liblzma5 libgles2 libgbm1 libsecret-1-0 \
   xorg openbox lightdm lightdm-autologin-greeter \
   unclutter x11-xserver-utils \
-  wireless-regdb avahi-daemon libnss-mdns
+  wireless-regdb avahi-daemon libnss-mdns \
+  python3-tk
 
 systemctl enable avahi-daemon
 
@@ -101,6 +102,10 @@ install -d "${ROOTFS_DIR}/opt/landfall"
 install -m 755 "${STAGE_FILES}/firstboot.sh" \
                "${ROOTFS_DIR}/opt/landfall/firstboot.sh"
 
+# ── Boot splash ───────────────────────────────────────────────────────────────
+install -m 755 "${STAGE_FILES}/landfall-splash.py" \
+               "${ROOTFS_DIR}/opt/landfall/landfall-splash.py"
+
 # ── Systemd services ──────────────────────────────────────────────────────────
 install -m 644 "${STAGE_FILES}/landfall-firstboot.service" \
                "${ROOTFS_DIR}/etc/systemd/system/landfall-firstboot.service"
@@ -120,6 +125,9 @@ xset s off
 xset -dpms
 xset s noblank
 unclutter -idle 1 &
+
+# Show splash until the server is ready, then launch the display app
+python3 /opt/landfall/landfall-splash.py
 while true; do
   /home/landfall/landfall/display/display
   sleep 2
