@@ -44,12 +44,17 @@ systemctl enable avahi-daemon
 # Boot into graphical.target so lightdm starts automatically
 systemctl set-default graphical.target
 
-# Disable the first-run setup wizard — everything is pre-configured via Pi Imager
+# Remove the first-run setup wizard fully — package, leftover lightdm configs,
+# and the rpi-first-boot-wizard system user that would hijack autologin.
 systemctl disable piwiz 2>/dev/null || true
 apt-get remove -y --purge piwiz 2>/dev/null || true
+rm -f /etc/lightdm/lightdm.conf.d/*piwiz* /etc/lightdm/lightdm.conf.d/*wizard* 2>/dev/null || true
+userdel rpi-first-boot-wizard 2>/dev/null || true
 
 # ── lightdm: auto-login the landfall user into an openbox session ─────────
-cat > /etc/lightdm/lightdm.conf << 'LIGHTDM'
+# Write to conf.d so our settings take priority over any remaining defaults.
+mkdir -p /etc/lightdm/lightdm.conf.d
+cat > /etc/lightdm/lightdm.conf.d/99-landfall.conf << 'LIGHTDM'
 [Seat:*]
 autologin-user=landfall
 autologin-user-timeout=0

@@ -69,8 +69,9 @@ services:
       - backup_data:/backups
     entrypoint: >
       sh -c "
+        apt-get install -y --no-install-recommends cron &&
         echo '0 2 * * * /backup.sh' | crontab - &&
-        crond -f -d 6
+        cron -f
       "
     depends_on:
       postgres:
