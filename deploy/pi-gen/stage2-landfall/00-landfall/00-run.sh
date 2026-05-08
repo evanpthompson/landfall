@@ -52,8 +52,17 @@ rm -f /etc/lightdm/lightdm.conf.d/*piwiz* /etc/lightdm/lightdm.conf.d/*wizard* 2
 userdel rpi-first-boot-wizard 2>/dev/null || true
 
 # ── lightdm: auto-login the landfall user into an openbox session ─────────
-# Write to conf.d so our settings take priority over any remaining defaults.
+# Overwrite both lightdm.conf and a conf.d drop-in — the ARM64 pi-gen build
+# writes rpi-first-boot-wizard into lightdm.conf after our stage, so we need
+# both to ensure the correct user wins regardless of load order.
 mkdir -p /etc/lightdm/lightdm.conf.d
+cat > /etc/lightdm/lightdm.conf << 'LIGHTDM'
+[Seat:*]
+autologin-user=landfall
+autologin-user-timeout=0
+user-session=openbox
+xserver-command=X -nocursor
+LIGHTDM
 cat > /etc/lightdm/lightdm.conf.d/99-landfall.conf << 'LIGHTDM'
 [Seat:*]
 autologin-user=landfall
