@@ -382,12 +382,14 @@ class _TextLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Text(
-        label,
-        style: const TextStyle(color: Colors.white38, fontSize: 13, decoration: TextDecoration.underline),
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white38,
+        textStyle: const TextStyle(fontSize: 13, decoration: TextDecoration.underline),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       ),
+      child: Text(label),
     );
   }
 }
