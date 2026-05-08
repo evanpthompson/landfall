@@ -89,7 +89,9 @@ class OtpService {
       ),
     );
 
-    session.log(buildSanitizedLogMessage(normalizedEmail, _codeLifetime));
+    // Log the plaintext code so self-hosted installs without an email provider
+    // can retrieve it from docker logs. Remove this once SMTP is configured.
+    session.log('[OTP] Code for $normalizedEmail: $code (expires in ${_codeLifetime.inMinutes} min)');
   }
 
   /// Verifies [code] for [email] and returns an [AuthSuccess] with a JWT.
