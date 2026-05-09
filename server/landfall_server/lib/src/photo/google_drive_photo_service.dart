@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:serverpod/serverpod.dart';
 
 import '../generated/protocol.dart';
+import '../web/routes/oauth_token_encryptor.dart';
 import 'photo_service.dart';
 
 /// Lists and fetches photos from a Google Drive folder.
@@ -105,24 +106,33 @@ class GoogleDrivePhotoService implements PhotoService {
     Session session,
     LinkedCredential credential,
   ) async {
+    final encKey = session.passwords['oauthTokenEncryptionKey'];
+
     final expiresAt = credential.tokenExpiresAt;
     final needsRefresh = expiresAt == null ||
         expiresAt.isBefore(DateTime.now().toUtc().add(_refreshBuffer));
 
-    if (!needsRefresh) return credential.accessToken;
+    if (!needsRefresh) {
+      return OAuthTokenEncryptor.decryptIfEncrypted(
+        credential.accessToken,
+        encKey,
+      );
+    }
 
-    final refreshToken = credential.refreshToken;
-    if (refreshToken == null) {
+    final rawRefresh = credential.refreshToken;
+    if (rawRefresh == null) {
       throw StateError(
         'Google credential for ${credential.providerEmail} has no refresh token.',
       );
     }
+    final refreshToken =
+        OAuthTokenEncryptor.decryptIfEncrypted(rawRefresh, encKey);
 
-    final clientId = session.passwords['googleClientId'];
-    final clientSecret = session.passwords['googleClientSecret'];
+    final clientId = session.passwords['googleOAuthClientId'];
+    final clientSecret = session.passwords['googleOAuthClientSecret'];
     if (clientId == null || clientSecret == null) {
       throw StateError(
-        'googleClientId and googleClientSecret are required in passwords.yaml.',
+        'googleOAuthClientId and googleOAuthClientSecret are required in passwords.yaml.',
       );
     }
 
@@ -153,7 +163,7 @@ class GoogleDrivePhotoService implements PhotoService {
     await LinkedCredential.db.updateRow(
       session,
       credential.copyWith(
-        accessToken: newAccessToken,
+        accessToken: OAuthTokenEncryptor.encryptIfKey(newAccessToken, encKey),
         tokenExpiresAt: newExpiresAt,
         updatedAt: DateTime.now().toUtc(),
       ),

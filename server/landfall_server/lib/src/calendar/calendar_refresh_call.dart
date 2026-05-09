@@ -73,6 +73,12 @@ class CalendarRefreshCall extends FutureCall<SerializableModel> {
         to: to,
       );
 
+      // Deduplicate by externalEventId — Google can return the same event
+      // from multiple calendar feeds within one credential.
+      final seen = <String>{};
+      final unique =
+          events.where((e) => seen.add(e.externalEventId)).toList();
+
       // Replace all cached events for this credential atomically.
       await session.db.transaction((tx) async {
         await CalendarEvent.db.deleteWhere(
@@ -80,13 +86,13 @@ class CalendarRefreshCall extends FutureCall<SerializableModel> {
           where: (t) => t.credentialId.equals(credential.id!),
           transaction: tx,
         );
-        if (events.isNotEmpty) {
-          await CalendarEvent.db.insert(session, events, transaction: tx);
+        if (unique.isNotEmpty) {
+          await CalendarEvent.db.insert(session, unique, transaction: tx);
         }
       });
 
       session.log(
-        'Calendar refresh: ${events.length} events for '
+        'Calendar refresh: ${unique.length} events for '
         '${credential.provider}:${credential.providerEmail}',
       );
     } catch (e, stackTrace) {

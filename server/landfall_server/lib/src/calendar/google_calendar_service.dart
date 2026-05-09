@@ -87,11 +87,11 @@ class GoogleCalendarService implements CalendarService {
     final refreshToken =
         OAuthTokenEncryptor.decryptIfEncrypted(rawRefresh, encKey);
 
-    final clientId = session.passwords['googleClientId'];
-    final clientSecret = session.passwords['googleClientSecret'];
+    final clientId = session.passwords['googleOAuthClientId'];
+    final clientSecret = session.passwords['googleOAuthClientSecret'];
     if (clientId == null || clientSecret == null) {
       throw StateError(
-        'googleClientId and googleClientSecret are required in passwords.yaml.',
+        'googleOAuthClientId and googleOAuthClientSecret are required in passwords.yaml.',
       );
     }
 
