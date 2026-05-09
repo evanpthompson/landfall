@@ -6,14 +6,32 @@ import '../generated/profile/dashboard_profile.dart';
 import '../generated/theme/landfall_theme.dart';
 import 'theme_validator.dart';
 
-/// Seeds marketplace theme and companion profile demo data.
+/// Seeds marketplace themes.
 ///
 /// Safe to call repeatedly — already-present slugs are skipped (idempotent).
 /// Intended for startup and CI/testing environments.
 class MarketplaceSeeder {
   static Future<void> seed(Session session) async {
     await _seedThemes(session);
-    await _seedCompanionProfiles(session);
+  }
+
+  /// Removes auto-generated companion profiles that were created by a prior
+  /// version of the seeder. Only deletes profiles whose slug begins with
+  /// `companion-` and whose cardsJson is still the seeded empty array `[]`,
+  /// so any profile a user actually populated with cards is preserved.
+  static Future<void> cleanupOrphanedCompanionProfiles(
+      Session session) async {
+    final orphans = await DashboardProfile.db.find(
+      session,
+      where: (p) => p.slug.like('companion-%') & p.cardsJson.equals('[]'),
+    );
+    if (orphans.isEmpty) return;
+    await DashboardProfile.db
+        .deleteWhere(session, where: (p) => p.id.inSet(orphans.map((o) => o.id!).toSet()));
+    session.log(
+      'Removed ${orphans.length} orphaned companion profile(s): '
+      '${orphans.map((o) => o.slug).join(', ')}',
+    );
   }
 
   // ── theme seeding ────────────────────────────────────────────────────────────
@@ -58,46 +76,6 @@ class MarketplaceSeeder {
       );
     }
   }
-
-  // ── companion profile seeding ────────────────────────────────────────────────
-
-  static Future<void> _seedCompanionProfiles(Session session) async {
-    final themes = await LandfallTheme.db.find(
-      session,
-      where: (t) => t.isMarketplace.equals(true),
-    );
-
-    // Build a set of theme slugs that already have a companion profile.
-    final profiles = await DashboardProfile.db.find(session);
-    final existingSlugs = profiles
-        .map((p) => p.themeId)
-        .whereType<String>()
-        .toSet();
-
-    var sortOrder = profiles.isEmpty
-        ? 10
-        : (profiles.map((p) => p.sortOrder).reduce((a, b) => a > b ? a : b) +
-            10);
-
-    for (final theme in themes) {
-      if (existingSlugs.contains(theme.slug)) continue;
-
-      await DashboardProfile.db.insertRow(
-        session,
-        DashboardProfile(
-          name: theme.name,
-          slug: _toProfileSlug(theme.slug),
-          themeId: theme.slug,
-          cardsJson: '[]',
-          createdAt: DateTime.now().toUtc(),
-          sortOrder: sortOrder,
-        ),
-      );
-      sortOrder += 10;
-    }
-  }
-
-  static String _toProfileSlug(String themeSlug) => 'companion-$themeSlug';
 
   // ── theme definitions ────────────────────────────────────────────────────────
 

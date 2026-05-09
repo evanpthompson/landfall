@@ -124,11 +124,13 @@ void run(List<String> args) async {
   // Start the server.
   await pod.start();
 
-  // Seed built-in themes and marketplace demo data if not already present.
+  // Seed built-in themes and marketplace themes if not already present.
+  // Also clean up any orphaned companion profiles left by prior server versions.
   final seedSession = await pod.createSession();
   try {
     await ThemeSeeder.seed(seedSession);
     await MarketplaceSeeder.seed(seedSession);
+    await MarketplaceSeeder.cleanupOrphanedCompanionProfiles(seedSession);
   } finally {
     await seedSession.close();
   }

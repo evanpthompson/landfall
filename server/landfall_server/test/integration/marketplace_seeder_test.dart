@@ -80,33 +80,69 @@ void main() {
       expect(all.length, equals(8));
     });
 
-    test('seeds one companion profile per marketplace theme', () async {
+    test('seed does not create any companion profiles', () async {
       await MarketplaceSeeder.seed(session);
-
-      final themes = await LandfallTheme.db.find(
-        session,
-        where: (t) => t.isMarketplace.equals(true),
-      );
-      final themeSlugs = themes.map((t) => t.slug).toSet();
 
       final profiles = await DashboardProfile.db.find(session);
-      final profileThemeIds =
-          profiles.map((p) => p.themeId).whereType<String>().toSet();
+      final companionProfiles =
+          profiles.where((p) => p.slug.startsWith('companion-')).toList();
 
-      // Every marketplace theme slug must appear as a profile's themeId.
-      for (final slug in themeSlugs) {
-        expect(profileThemeIds, contains(slug));
-      }
+      expect(companionProfiles, isEmpty);
     });
 
-    test('companion profile seeding is idempotent', () async {
-      await MarketplaceSeeder.seed(session);
-      final countAfterFirst = (await DashboardProfile.db.find(session)).length;
+    test('cleanupOrphanedCompanionProfiles removes empty companion profiles',
+        () async {
+      // Manually insert two orphaned companion profiles.
+      await DashboardProfile.db.insertRow(
+        session,
+        DashboardProfile(
+          name: 'Synthwave \'84',
+          slug: 'companion-synthwave-84',
+          themeId: 'synthwave-84',
+          cardsJson: '[]',
+          createdAt: DateTime.now().toUtc(),
+          sortOrder: 100,
+        ),
+      );
+      await DashboardProfile.db.insertRow(
+        session,
+        DashboardProfile(
+          name: 'Colorful Pop',
+          slug: 'companion-colorful-pop',
+          themeId: 'colorful-pop',
+          cardsJson: '[]',
+          createdAt: DateTime.now().toUtc(),
+          sortOrder: 110,
+        ),
+      );
 
-      await MarketplaceSeeder.seed(session);
-      final countAfterSecond = (await DashboardProfile.db.find(session)).length;
+      await MarketplaceSeeder.cleanupOrphanedCompanionProfiles(session);
 
-      expect(countAfterSecond, equals(countAfterFirst));
+      final remaining = await DashboardProfile.db.find(session);
+      final companionProfiles =
+          remaining.where((p) => p.slug.startsWith('companion-')).toList();
+      expect(companionProfiles, isEmpty);
+    });
+
+    test(
+        'cleanupOrphanedCompanionProfiles preserves companion profiles with cards',
+        () async {
+      await DashboardProfile.db.insertRow(
+        session,
+        DashboardProfile(
+          name: 'My Synthwave',
+          slug: 'companion-synthwave-84',
+          themeId: 'synthwave-84',
+          cardsJson: '[{"type":"clock"}]',
+          createdAt: DateTime.now().toUtc(),
+          sortOrder: 100,
+        ),
+      );
+
+      await MarketplaceSeeder.cleanupOrphanedCompanionProfiles(session);
+
+      final remaining = await DashboardProfile.db.find(session);
+      expect(remaining.any((p) => p.slug == 'companion-synthwave-84'), isTrue);
     });
 
     test('seeded themes have author and description', () async {
