@@ -48,7 +48,15 @@ systemctl set-default graphical.target
 # and the rpi-first-boot-wizard system user that would hijack autologin.
 systemctl disable piwiz 2>/dev/null || true
 apt-get remove -y --purge piwiz 2>/dev/null || true
-rm -f /etc/lightdm/lightdm.conf.d/*piwiz* /etc/lightdm/lightdm.conf.d/*wizard* 2>/dev/null || true
+# Remove ALL conf.d files that could set an unintended autologin user.
+# lightdm-autologin-greeter.conf ships with lightdm-autologin-greeter and
+# sets autologin-user=AUTOLOGIN-USER-NOT-CONFIGURED, which sorts after
+# 99-landfall.conf alphabetically and therefore overrides it, causing
+# rpi-first-boot-wizard to get the session instead of landfall.
+rm -f /etc/lightdm/lightdm.conf.d/*piwiz* \
+      /etc/lightdm/lightdm.conf.d/*wizard* \
+      /etc/lightdm/lightdm.conf.d/lightdm-autologin-greeter.conf \
+      2>/dev/null || true
 userdel rpi-first-boot-wizard 2>/dev/null || true
 
 # ── lightdm: auto-login the landfall user into an openbox session ─────────
