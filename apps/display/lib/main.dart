@@ -16,7 +16,8 @@ import 'package:display/setup_wizard_app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+  if (!kLandfallFlutterPi &&
+      (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
     await windowManager.ensureInitialized();
     await windowManager.setFullScreen(true);
   }
