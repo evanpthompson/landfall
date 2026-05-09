@@ -37,6 +37,20 @@ const kLandfallDefaultServerUrl = String.fromEnvironment(
   defaultValue: '',
 );
 
+/// Override for the Serverpod web server URL (port 8082 in direct-connect
+/// setups). Defaults to [kLandfallDefaultServerUrl] so reverse-proxy
+/// deployments (Caddy) need only set [kLandfallDefaultServerUrl].
+///
+/// Set this on Pi dev builds where the Flutter app talks directly to
+/// Serverpod ports:
+/// ```
+/// flutter run --dart-define=LANDFALL_WEB_SERVER_URL=http://127.0.0.1:8082/
+/// ```
+const kLandfallWebServerUrl = String.fromEnvironment(
+  'LANDFALL_WEB_SERVER_URL',
+  defaultValue: '',
+);
+
 /// Runs under the `flutter-pi` embedder instead of Flutter's GTK desktop
 /// embedder.
 ///

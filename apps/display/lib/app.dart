@@ -71,7 +71,8 @@ class LandfallApp extends StatelessWidget {
     final cardRepository = ServerpodCardRepository(client);
     final weatherRepository = ServerpodWeatherRepository(client, database);
     final calendarRepository = ServerpodCalendarRepository(client);
-    final photoRepository = ServerpodPhotoRepository(client, serverUrl);
+    final webServerUrl = kLandfallWebServerUrl.isNotEmpty ? kLandfallWebServerUrl : serverUrl;
+    final photoRepository = ServerpodPhotoRepository(client, webServerUrl);
     final displaySettingsRepository = DriftDisplaySettingsRepository(database);
     final clockRepository = const SystemClockRepository();
     final getCurrentTime = GetCurrentTimeUseCase(clockRepository);

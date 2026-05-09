@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'package:display/src/features/auth/cubit/auth_cubit.dart';
 import '../cubit/photo_cubit.dart';
 
 /// Displays a rotating photo slideshow from the configured Drive folder.
@@ -42,16 +43,18 @@ class _PhotoDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final photo = state.current;
+    final authState = context.read<AuthCubit>().state;
+    final token = authState is AuthAuthenticated ? authState.accessToken : null;
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 1200),
       switchInCurve: Curves.easeIn,
       switchOutCurve: Curves.easeOut,
-      child: _imageFor(photo),
+      child: _imageFor(photo, token),
     );
   }
 
-  Widget _imageFor(PhotoEntity photo) {
+  Widget _imageFor(PhotoEntity photo, String? token) {
     final isLocal = photo.imageUrl.startsWith('file://');
     if (isLocal) {
       final path = photo.imageUrl.replaceFirst('file://', '');
@@ -70,6 +73,7 @@ class _PhotoDisplay extends StatelessWidget {
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
+      headers: token != null ? {'Authorization': 'Bearer $token'} : null,
       errorBuilder: (_, _, _) => const _Placeholder(label: 'Photo unavailable'),
       loadingBuilder: (_, child, loadingProgress) {
         if (loadingProgress == null) return child;
