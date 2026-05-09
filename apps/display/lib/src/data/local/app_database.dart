@@ -12,12 +12,14 @@ import 'package:display/src/data/local/tables/weather_cache.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [
-  LayoutEntries,
-  WeatherCurrentCacheEntries,
-  WeatherForecastDayCacheEntries,
-  DisplaySettingsEntries,
-])
+@DriftDatabase(
+  tables: [
+    LayoutEntries,
+    WeatherCurrentCacheEntries,
+    WeatherForecastDayCacheEntries,
+    DisplaySettingsEntries,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -29,29 +31,29 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) async {
-          await m.createAll();
-        },
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.createTable(weatherCurrentCacheEntries);
-            await m.createTable(weatherForecastDayCacheEntries);
-          }
-          if (from < 3) {
-            await m.createTable(displaySettingsEntries);
-          }
-          if (from < 4) {
-            await m.addColumn(
-              displaySettingsEntries,
-              displaySettingsEntries.serverUrl,
-            );
-            await m.addColumn(
-              displaySettingsEntries,
-              displaySettingsEntries.wizardComplete,
-            );
-          }
-        },
-      );
+    onCreate: (m) async {
+      await m.createAll();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(weatherCurrentCacheEntries);
+        await m.createTable(weatherForecastDayCacheEntries);
+      }
+      if (from < 3) {
+        await m.createTable(displaySettingsEntries);
+      }
+      if (from < 4) {
+        await m.addColumn(
+          displaySettingsEntries,
+          displaySettingsEntries.serverUrl,
+        );
+        await m.addColumn(
+          displaySettingsEntries,
+          displaySettingsEntries.wizardComplete,
+        );
+      }
+    },
+  );
 }
 
 LazyDatabase _openConnection() {

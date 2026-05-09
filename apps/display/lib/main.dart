@@ -55,10 +55,7 @@ void main() async {
   if (decision.target == StartupTarget.display) {
     if (decision.persistDefaultSettings) {
       await settingsRepository.saveSettings(
-        settings.copyWith(
-          serverUrl: decision.serverUrl,
-          wizardComplete: true,
-        ),
+        settings.copyWith(serverUrl: decision.serverUrl, wizardComplete: true),
       );
     }
     launchApp(decision.serverUrl);
