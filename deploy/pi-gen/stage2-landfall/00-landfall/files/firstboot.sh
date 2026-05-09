@@ -68,6 +68,12 @@ PHOTO_SIGNING_SECRET="$(gen_secret)"
 OAUTH_TOKEN_ENCRYPTION_KEY="$(gen_hex_secret)"
 
 # ── Write .env ────────────────────────────────────────────────────────────────
+# Without SMTP, OTP codes are logged to docker logs so self-hosted installs
+# can sign in. Automatically disabled once an SMTP host is configured.
+SMTP_HOST="${SMTP_HOST:-}"
+OTP_LOG_CODES=false
+[[ -z "${SMTP_HOST}" ]] && OTP_LOG_CODES=true
+
 log "Writing .env..."
 mkdir -p "$(dirname "${ENV_FILE}")"
 cat > "${ENV_FILE}" << ENVFILE
@@ -83,7 +89,7 @@ API_KEY_MANAGEMENT_TOKEN=${API_KEY_MANAGEMENT_TOKEN}
 API_KEY_HMAC_SECRET=${API_KEY_HMAC_SECRET}
 PHOTO_SIGNING_SECRET=${PHOTO_SIGNING_SECRET}
 OAUTH_TOKEN_ENCRYPTION_KEY=${OAUTH_TOKEN_ENCRYPTION_KEY}
-SMTP_HOST=
+SMTP_HOST=${SMTP_HOST}
 SMTP_PORT=587
 SMTP_USERNAME=
 SMTP_PASSWORD=
@@ -91,7 +97,7 @@ SMTP_FROM_EMAIL=
 SMTP_FROM_NAME=Landfall
 SMTP_SSL=false
 SMTP_ALLOW_INSECURE=false
-OTP_LOG_CODES=false
+OTP_LOG_CODES=${OTP_LOG_CODES}
 OWM_API_KEY=${OWM_API_KEY}
 GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
