@@ -1,0 +1,56 @@
+# Deployment Validation
+
+Use cheap checks before starting long Pi image or release builds.
+
+## Every PR
+
+```bash
+bash deploy/tests/run_deploy_tests.sh
+```
+
+This runner performs:
+
+- shell syntax checks for deployment scripts
+- existing `deploy/scripts/test_setup.sh` secret-generation checks
+- `firstboot.sh` tests with redirected paths and stubbed Docker
+- `configure.sh` scripted-input and quoting tests
+- `build.sh --stage-only` rootfs staging tests
+- pi-gen stage artifact contract checks
+
+CI runs the same command in `.github/workflows/ci.yml`.
+
+## Before a Pi Image Build
+
+```bash
+bash deploy/tests/run_deploy_tests.sh
+bash deploy/pi-gen/preflight.sh
+bash deploy/pi-gen/build.sh --stage-only
+```
+
+`--stage-only` requires an existing arm64 display bundle and a server tarball source when used outside the normal build cache. Tests pass those paths through environment variables:
+
+```bash
+LANDFALL_PI_GEN_DIR=/tmp/pi-gen \
+LANDFALL_LINUX_BUNDLE=/tmp/display-bundle \
+LANDFALL_SERVER_TARBALL_SOURCE=/tmp/landfall-server.tar.gz \
+  bash deploy/pi-gen/build.sh --stage-only
+```
+
+## Nightly Or Release Candidate
+
+Run these only after the cheap checks pass:
+
+- host-architecture Docker Compose config and server smoke test
+- ARM64 server image build through Docker buildx
+- full pi-gen image build
+- QEMU boot smoke test when available
+- physical Pi 4, Pi 5, and Fire TV validation
+
+## Release Checklist
+
+- server starts through `deploy/docker-compose.prod.yml`
+- `landfall-firstboot.service` generates `.env` on the Pi
+- no general runtime secrets are staged into the image
+- display bundle exists at `/home/landfall/landfall/display/display`
+- Fire TV APK exists and has Android TV manifest metadata
+- docs commands match scripts and artifact paths

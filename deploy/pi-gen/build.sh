@@ -19,8 +19,23 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-WORK_DIR="${SCRIPT_DIR}/work"
+REPO_ROOT="${LANDFALL_REPO_ROOT:-$(cd "${SCRIPT_DIR}/../.." && pwd)}"
+WORK_DIR="${LANDFALL_WORK_DIR:-${SCRIPT_DIR}/work}"
+PI_GEN_DIR="${LANDFALL_PI_GEN_DIR:-${WORK_DIR}/pi-gen}"
+STAGE_ONLY=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --stage-only|--dry-run)
+      STAGE_ONLY=1
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1"
+      exit 1
+      ;;
+  esac
+done
 
 BOLD=$'\033[1m'
 GREEN=$'\033[1;32m'
@@ -33,6 +48,15 @@ ok()   { echo "${GREEN}✓  $*${RESET}"; }
 info() { echo "   $*"; }
 warn() { echo "${YELLOW}⚠  $*${RESET}"; }
 die()  { echo "${RED}✗  $*${RESET}"; exit 1; }
+sed_in_place() {
+  local expr="$1"
+  local file="$2"
+  if sed --version > /dev/null 2>&1; then
+    sed -i "${expr}" "${file}"
+  else
+    sed -i '' "${expr}" "${file}"
+  fi
+}
 
 echo ""
 echo "${CYAN}${BOLD}Landfall — Raspberry Pi image builder${RESET}"
@@ -62,23 +86,31 @@ else
 fi
 
 # ── Preflight ─────────────────────────────────────────────────────────────────
-command -v docker > /dev/null || die "Docker is not installed"
+if (( STAGE_ONLY == 0 )); then
+  command -v docker > /dev/null || die "Docker is not installed"
+fi
 
 HOST_OS="$(uname -s)"
-if [[ "${HOST_OS}" == "Linux" ]]; then
-  command -v qemu-arm > /dev/null 2>&1 \
-    || die "qemu-arm not found — install with: sudo apt-get install qemu-user-binfmt"
-else
-  info "Registering QEMU ARM binfmt handlers in Docker Desktop VM..."
-  docker run --privileged --rm tonistiigi/binfmt --install arm > /dev/null 2>&1 \
-    && ok "QEMU ARM binfmt registered" \
-    || die "Failed to register QEMU binfmt handlers. Is Docker running?"
+if (( STAGE_ONLY == 0 )); then
+  if [[ "${HOST_OS}" == "Linux" ]]; then
+    if ! command -v qemu-aarch64 > /dev/null 2>&1 && \
+       [[ ! -f /proc/sys/fs/binfmt_misc/qemu-aarch64 ]]; then
+      die "qemu-aarch64 not found — install with: sudo apt-get install qemu-user-binfmt"
+    fi
+  else
+    info "Registering QEMU ARM64 binfmt handlers in Docker Desktop VM..."
+    docker run --privileged --rm tonistiigi/binfmt --install arm64 > /dev/null 2>&1 \
+      && ok "QEMU ARM64 binfmt registered" \
+      || die "Failed to register QEMU binfmt handlers. Is Docker running?"
+  fi
 fi
 
 # ── Step 1: Flutter arm64 display binary ─────────────────────────────────────
-LINUX_BUNDLE="${REPO_ROOT}/apps/display/build/linux/arm64/release/bundle"
+LINUX_BUNDLE="${LANDFALL_LINUX_BUNDLE:-${REPO_ROOT}/apps/display/build/linux/arm64/release/bundle}"
 if [[ -d "${LINUX_BUNDLE}" ]]; then
   ok "Flutter arm64 binary found: ${LINUX_BUNDLE}"
+elif (( STAGE_ONLY == 1 )); then
+  die "Flutter arm64 binary not found at ${LINUX_BUNDLE}"
 else
   echo ""
   info "Flutter arm64 binary not found — building via Docker + QEMU (~20 min)..."
@@ -102,17 +134,22 @@ if [[ -d "${WORK_DIR}" ]]; then
 fi
 
 # ── Clone or update pi-gen (arm64 branch) ────────────────────────────────────
-PI_GEN_DIR="${WORK_DIR}/pi-gen"
 if [[ -d "${PI_GEN_DIR}" ]]; then
   CURRENT_BRANCH="$(git -C "${PI_GEN_DIR}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
-  if [[ "${CURRENT_BRANCH}" != "arm64" ]]; then
+  if [[ "${CURRENT_BRANCH}" != "arm64" && -d "${PI_GEN_DIR}/.git" ]]; then
     info "Switching pi-gen clone to arm64 branch..."
     rm -rf "${PI_GEN_DIR}"
   fi
 fi
 if [[ -d "${PI_GEN_DIR}" ]]; then
-  info "Updating pi-gen..."
-  git -C "${PI_GEN_DIR}" pull --quiet
+  if (( STAGE_ONLY == 1 )); then
+    info "Using existing pi-gen directory for stage-only build: ${PI_GEN_DIR}"
+  else
+    info "Updating pi-gen..."
+    git -C "${PI_GEN_DIR}" pull --quiet
+  fi
+elif (( STAGE_ONLY == 1 )); then
+  die "pi-gen directory not found for stage-only build: ${PI_GEN_DIR}"
 else
   info "Cloning pi-gen (arm64 branch)..."
   mkdir -p "${WORK_DIR}"
@@ -123,9 +160,9 @@ ok "pi-gen ready (arm64)"
 # ── Copy Landfall stage into pi-gen ───────────────────────────────────────────
 cp "${SCRIPT_DIR}/config" "${PI_GEN_DIR}/config"
 # Inject hostname and WiFi country into pi-gen config
-sed -i '' "s/^TARGET_HOSTNAME=.*/TARGET_HOSTNAME=\"${PI_HOSTNAME}\"/" "${PI_GEN_DIR}/config"
+sed_in_place "s/^TARGET_HOSTNAME=.*/TARGET_HOSTNAME=\"${PI_HOSTNAME}\"/" "${PI_GEN_DIR}/config"
 if grep -q "^WPA_COUNTRY=" "${PI_GEN_DIR}/config"; then
-  sed -i '' "s/^WPA_COUNTRY=.*/WPA_COUNTRY=\"${WIFI_COUNTRY}\"/" "${PI_GEN_DIR}/config"
+  sed_in_place "s/^WPA_COUNTRY=.*/WPA_COUNTRY=\"${WIFI_COUNTRY}\"/" "${PI_GEN_DIR}/config"
 else
   echo "WPA_COUNTRY=\"${WIFI_COUNTRY}\"" >> "${PI_GEN_DIR}/config"
 fi
@@ -143,15 +180,15 @@ rsync -a --exclude='pi-gen/' "${REPO_ROOT}/deploy/" "${DEPLOY_DEST}/"
 # ── Stage: integration credentials for firstboot.sh ──────────────────────────
 # Secrets (DB password, JWT keys, etc.) are NOT staged here — firstboot.sh
 # generates them on the Pi so they are unique per device.
-cat > "${STAGE_FILES}/integrations.env" << INTFILE
-OWM_API_KEY=${OWM_API_KEY}
-GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-GOOGLE_DRIVE_FOLDER_ID=${GOOGLE_DRIVE_FOLDER_ID}
-MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}
-MICROSOFT_CLIENT_SECRET=${MICROSOFT_CLIENT_SECRET}
-STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-INTFILE
+{
+  printf "OWM_API_KEY=%q\n" "${OWM_API_KEY}"
+  printf "GOOGLE_CLIENT_ID=%q\n" "${GOOGLE_CLIENT_ID}"
+  printf "GOOGLE_CLIENT_SECRET=%q\n" "${GOOGLE_CLIENT_SECRET}"
+  printf "GOOGLE_DRIVE_FOLDER_ID=%q\n" "${GOOGLE_DRIVE_FOLDER_ID}"
+  printf "MICROSOFT_CLIENT_ID=%q\n" "${MICROSOFT_CLIENT_ID}"
+  printf "MICROSOFT_CLIENT_SECRET=%q\n" "${MICROSOFT_CLIENT_SECRET}"
+  printf "STRIPE_WEBHOOK_SECRET=%q\n" "${STRIPE_WEBHOOK_SECRET}"
+} > "${STAGE_FILES}/integrations.env"
 ok "Integration credentials staged"
 
 # ── Stage: WiFi country (for /etc/default/crda in rootfs) ────────────────────
@@ -182,6 +219,7 @@ method=auto
 method=auto
 addr-gen-mode=default
 WIFICONF
+  chmod 600 "${STAGE_FILES}/wifi.nmconnection"
   ok "WiFi staged: ${WIFI_SSID} (country: ${WIFI_COUNTRY})"
 else
   rm -f "${STAGE_FILES}/wifi.nmconnection"
@@ -198,6 +236,11 @@ ok "Display bundle staged ($(du -sh "${BUNDLE_DEST}" | cut -f1))"
 SERVER_TARBALL="${STAGE_FILES}/landfall-server.tar.gz"
 if [[ -f "${SERVER_TARBALL}" ]]; then
   ok "Server image already staged ($(du -sh "${SERVER_TARBALL}" | cut -f1)) — delete to rebuild"
+elif [[ -n "${LANDFALL_SERVER_TARBALL_SOURCE:-}" ]]; then
+  cp "${LANDFALL_SERVER_TARBALL_SOURCE}" "${SERVER_TARBALL}"
+  ok "Server image tarball staged from ${LANDFALL_SERVER_TARBALL_SOURCE}"
+elif (( STAGE_ONLY == 1 )); then
+  die "Server image tarball not staged and LANDFALL_SERVER_TARBALL_SOURCE is not set"
 else
   echo ""
   info "Cross-compiling server Docker image for arm64 (~20–40 min)..."
@@ -221,6 +264,11 @@ else
   ok "Server image built and staged ($(du -sh "${SERVER_TARBALL}" | cut -f1))"
 fi
 
+if (( STAGE_ONLY == 1 )); then
+  ok "Stage-only build complete: ${PI_GEN_DIR}/stage2-landfall"
+  exit 0
+fi
+
 # ── Patch pi-gen Dockerfile: weekly cache-buster ──────────────────────────────
 CACHE_WEEK="$(date +%Y-W%V)"
 if ! grep -q "LANDFALL_CACHE_WEEK" "${PI_GEN_DIR}/Dockerfile"; then
@@ -233,15 +281,15 @@ txt = txt.replace(
 open('${PI_GEN_DIR}/Dockerfile', 'w').write(txt)
 "
 else
-  sed -i '' "s/ARG LANDFALL_CACHE_WEEK=.*/ARG LANDFALL_CACHE_WEEK=${CACHE_WEEK}/" \
+  sed_in_place "s/ARG LANDFALL_CACHE_WEEK=.*/ARG LANDFALL_CACHE_WEEK=${CACHE_WEEK}/" \
     "${PI_GEN_DIR}/Dockerfile"
 fi
 
 if grep -q "LANDFALL_CACHE_WEEK" "${PI_GEN_DIR}/build-docker.sh"; then
-  sed -i '' "s/LANDFALL_CACHE_WEEK=[^ ]*/LANDFALL_CACHE_WEEK=${CACHE_WEEK}/" \
+  sed_in_place "s/LANDFALL_CACHE_WEEK=[^ ]*/LANDFALL_CACHE_WEEK=${CACHE_WEEK}/" \
     "${PI_GEN_DIR}/build-docker.sh"
 else
-  sed -i '' "s|--build-arg BASE_IMAGE=\${BASE_IMAGE}|--build-arg BASE_IMAGE=\${BASE_IMAGE} --build-arg LANDFALL_CACHE_WEEK=${CACHE_WEEK}|" \
+  sed_in_place "s|--build-arg BASE_IMAGE=\${BASE_IMAGE}|--build-arg BASE_IMAGE=\${BASE_IMAGE} --build-arg LANDFALL_CACHE_WEEK=${CACHE_WEEK}|" \
     "${PI_GEN_DIR}/build-docker.sh"
 fi
 
@@ -257,7 +305,7 @@ fi
 # ── Patch pi-gen build-docker.sh (macOS only) ────────────────────────────────
 if [[ "${HOST_OS}" != "Linux" ]]; then
   if ! grep -q "# Landfall: macOS binfmt skip" "${PI_GEN_DIR}/build-docker.sh"; then
-    sed -i '' '/^binfmt_misc_required=1$/s/=1/=0 # Landfall: macOS binfmt skip/' \
+    sed_in_place '/^binfmt_misc_required=1$/s/=1/=0 # Landfall: macOS binfmt skip/' \
       "${PI_GEN_DIR}/build-docker.sh"
   fi
 fi

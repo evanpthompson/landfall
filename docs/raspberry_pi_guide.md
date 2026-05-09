@@ -1,12 +1,12 @@
 # Raspberry Pi Guide
 
-This guide covers running Landfall on a Raspberry Pi. The recommended path is the pre-built image — it produces a single `.img` file that boots straight to the display with no manual setup on the Pi.
+This guide covers running Landfall on a Raspberry Pi. The all-in-one image is the beta appliance path: it produces a single `.img` file that runs the server and display on one Pi. For alpha, the most stable path is still the self-hosted Docker server plus Fire TV/Android display.
 
 **Supported hardware:** Raspberry Pi 4 (4 GB RAM recommended) or Pi 5. Pi 3 is not supported — it lacks the memory to run the server reliably.
 
 ---
 
-## Option A: Pre-built image (recommended)
+## Option A: All-in-one image (beta)
 
 One command builds everything. Flash, boot, done.
 
@@ -19,10 +19,9 @@ bash deploy/pi-gen/configure.sh
 This interactive wizard asks for:
 - **WiFi SSID and password** — baked into the image; the Pi connects automatically on first boot
 - **Hostname** — default `landfall` (Pi appears as `landfall.local` on your network)
-- **Server domain/IP** — default `landfall.local`; use a real domain if you want Caddy to auto-fetch TLS
 - **OpenWeatherMap API key** — optional; skip to configure later
 
-All secrets (database password, JWT keys, etc.) are auto-generated and baked in. You do not need to run `setup.sh` on the Pi.
+Runtime secrets such as the database password, JWT keys, API-key HMAC secret, OAuth token encryption key, and photo signing secret are not baked into the image. `landfall-firstboot.service` generates them on the Pi during first boot and writes `/home/landfall/landfall/deploy/.env`.
 
 Answers are saved to `deploy/pi-gen/landfall-build.conf` (gitignored — contains secrets).
 
@@ -36,7 +35,7 @@ This takes roughly **1–2 hours** on first run. It does three things automatica
 
 1. **Builds the Flutter arm64 display binary** — runs the Flutter toolchain inside a Docker + QEMU arm64 container (~20 min). Skipped if the binary already exists.
 2. **Cross-compiles the server Docker image for arm64** — Dart compiles to a native arm64 binary inside QEMU (~30–40 min). Result is saved as a tarball; skipped on subsequent builds unless you delete it.
-3. **Runs pi-gen** — assembles the bootable image with all binaries, secrets, and WiFi config baked in (~20 min).
+3. **Runs pi-gen** — assembles the bootable image with binaries, optional integration credentials, and WiFi config staged in the rootfs (~20 min).
 
 Output: `deploy/pi-gen/work/pi-gen/deploy/<date>-landfall.img`
 
@@ -47,9 +46,11 @@ Output: `deploy/pi-gen/work/pi-gen/deploy/<date>-landfall.img`
 ### 3. Flash
 
 Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/):
-1. **Choose OS** → **Use custom** → select the `.img` file
-2. **Choose Storage** → select your SD card
-3. **Write** — no need to configure anything in the imager; WiFi is already in the image
+1. **Choose OS** -> **Use custom** -> select the `.img` file
+2. **Choose Storage** -> select your SD card
+3. **Write**
+
+If you configured WiFi in `configure.sh`, it is staged into the image. If you left WiFi blank, use ethernet for first boot and add WiFi later with `nmcli`.
 
 Or with `dd` on macOS:
 ```bash
@@ -66,12 +67,19 @@ Use `/dev/rdisk4` (raw device) not `/dev/disk4` — it's significantly faster.
 Plug in the SD card and power on the Pi. First boot takes about **2 minutes**:
 
 1. The Pi connects to WiFi (or ethernet)
-2. `landfall-firstboot.service` loads the server Docker image into Docker's storage
+2. `landfall-firstboot.service` derives `LANDFALL_DOMAIN` from `/etc/hostname`, generates runtime secrets, writes `.env`, and loads the server Docker image into Docker's storage
 3. `landfall-server.service` starts Postgres, Redis, Caddy, and the Landfall server
 4. lightdm auto-logs in the `landfall` user and starts an Openbox session
 5. The display app launches fullscreen and connects to the server
 
 No keyboard or manual steps required.
+
+Before spending an hour on a full build, run the fast deployment checks:
+
+```bash
+bash deploy/tests/run_deploy_tests.sh
+bash deploy/pi-gen/build.sh --stage-only
+```
 
 > **Default SSH credentials:** user `landfall`, password `landfall`. Change it after first boot with `passwd`.
 

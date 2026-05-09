@@ -61,7 +61,12 @@ docs/                     # Architecture decisions, guides
 
 ## Getting started
 
-See [docs/self_hosting_guide.md](docs/self_hosting_guide.md) for self-hosting instructions.
+Landfall is self-host first for alpha. Start with the Docker server and a Fire TV/Android display:
+
+- [Self-hosting guide](docs/self_hosting_guide.md) - recommended server path
+- [Fire TV guide](docs/fire_tv_guide.md) - APK build/sideload path
+- [Raspberry Pi guide](docs/raspberry_pi_guide.md) - beta all-in-one appliance image and manual Pi setup
+- [Deployment validation](docs/deployment_validation.md) - checks to run before long image builds
 
 ## Agent integration
 

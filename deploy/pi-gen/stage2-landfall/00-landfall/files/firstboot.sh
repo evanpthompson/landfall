@@ -18,15 +18,17 @@ log() { echo "[landfall-firstboot] $*"; }
 gen_secret()     { openssl rand -base64 32 | tr -d '\n/+=' | cut -c1-43; }
 gen_hex_secret() { openssl rand -hex 32; }
 
-IMAGE_TARBALL="/opt/landfall/landfall-server.tar.gz"
-INITIALIZED_FLAG="/var/lib/landfall/.initialized"
-ENV_FILE="/home/landfall/landfall/deploy/.env"
-INTEGRATIONS_FILE="/opt/landfall/integrations.env"
+IMAGE_TARBALL="${LANDFALL_IMAGE_TARBALL:-/opt/landfall/landfall-server.tar.gz}"
+INITIALIZED_FLAG="${LANDFALL_INITIALIZED_FLAG:-/var/lib/landfall/.initialized}"
+ENV_FILE="${LANDFALL_ENV_FILE:-/home/landfall/landfall/deploy/.env}"
+INTEGRATIONS_FILE="${LANDFALL_INTEGRATIONS_FILE:-/opt/landfall/integrations.env}"
+HOSTNAME_FILE="${LANDFALL_HOSTNAME_FILE:-/etc/hostname}"
+DOCKER_BIN="${LANDFALL_DOCKER_BIN:-docker}"
 
 # ── Derive domain from hostname ───────────────────────────────────────────────
 # Pi Imager's firstrun.sh sets /etc/hostname on boot 1 and reboots.
 # By the time this service runs we have the correct hostname.
-HOSTNAME_VAL="$(cat /etc/hostname | tr -d '[:space:]')"
+HOSTNAME_VAL="$(cat "${HOSTNAME_FILE}" | tr -d '[:space:]')"
 LANDFALL_DOMAIN="${HOSTNAME_VAL}.local"
 log "Domain: ${LANDFALL_DOMAIN}"
 
@@ -92,14 +94,18 @@ MICROSOFT_REDIRECT_URI=${MICROSOFT_REDIRECT_URI}
 STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
 ENVFILE
 
-chown landfall:landfall "${ENV_FILE}"
+if [[ "$(id -u)" -eq 0 ]] && id landfall > /dev/null 2>&1; then
+  chown landfall:landfall "${ENV_FILE}"
+else
+  log "Skipping chown for ${ENV_FILE}"
+fi
 chmod 640 "${ENV_FILE}"
 log ".env written"
 
 # ── Load server Docker image ──────────────────────────────────────────────────
 log "Loading Landfall server Docker image..."
 if [[ -f "${IMAGE_TARBALL}" ]]; then
-  docker load < "${IMAGE_TARBALL}"
+  "${DOCKER_BIN}" load < "${IMAGE_TARBALL}"
   log "Image loaded — removing tarball to reclaim space"
   rm -f "${IMAGE_TARBALL}"
 else
@@ -107,6 +113,6 @@ else
   log "The server may fail to start if the image was not pre-loaded."
 fi
 
-mkdir -p /var/lib/landfall
+mkdir -p "$(dirname "${INITIALIZED_FLAG}")"
 touch "${INITIALIZED_FLAG}"
 log "First-boot initialization complete"

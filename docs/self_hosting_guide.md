@@ -1,6 +1,6 @@
 # Self-Hosting Guide
 
-Landfall runs entirely on your own hardware. Nothing leaves your network unless you explicitly connect an external API (weather, Google Calendar, etc.). This guide walks from zero to a running display.
+Landfall runs entirely on your own hardware. Nothing leaves your network unless you explicitly connect an external API such as weather, Google Calendar, Microsoft Calendar, or Stripe. For alpha, this Docker server plus Fire TV/Android display path is the recommended delivery path.
 
 ---
 
@@ -103,7 +103,7 @@ Build the APK on your development machine:
 bash tools/scripts/build_apk.sh
 ```
 
-Then follow the printed sideload instructions (`adb connect` → `adb install`).
+Then follow the printed sideload instructions (`adb connect` -> `adb install`). The script currently fails early if `apps/display/android/` is missing; generate and configure the Android platform scaffold before treating Fire TV builds as release-ready. See the [Fire TV guide](fire_tv_guide.md).
 
 ### Raspberry Pi (separate display device)
 
@@ -162,6 +162,20 @@ Serverpod applies any new migrations automatically on startup.
 ## Health monitoring
 
 The server exposes a health endpoint at `http://<server>:8081`. You can point a free [UptimeRobot](https://uptimerobot.com) monitor at it to get notified if the server goes down.
+
+## Validation
+
+Run the fast deployment checks before a Pi image build or release candidate:
+
+```bash
+bash deploy/tests/run_deploy_tests.sh
+```
+
+For the Pi image staging contract, run:
+
+```bash
+bash deploy/pi-gen/build.sh --stage-only
+```
 
 ---
 

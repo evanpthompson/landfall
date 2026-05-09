@@ -7,6 +7,17 @@ on:
     branches: [main]
 
 jobs:
+  deployment_tests:
+    name: Deployment Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run deployment tests
+        run: bash deploy/tests/run_deploy_tests.sh
+
   analyze_and_test:
     name: Analyze & Test
     runs-on: ubuntu-latest

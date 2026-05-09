@@ -14,10 +14,12 @@ DISPLAY_DIR="${REPO_ROOT}/apps/display"
 BOLD=$'\033[1m'
 GREEN=$'\033[1;32m'
 CYAN=$'\033[1;36m'
+RED=$'\033[1;31m'
 RESET=$'\033[0m'
 
 ok()   { echo "${GREEN}✓  $*${RESET}"; }
 info() { echo "   $*"; }
+die()  { echo "${RED}✗  $*${RESET}"; exit 1; }
 
 echo ""
 echo "${CYAN}${BOLD}Landfall — Fire TV APK build${RESET}"
@@ -26,6 +28,10 @@ echo ""
 if ! command -v flutter > /dev/null; then
   echo "flutter not found. Install it from https://docs.flutter.dev/get-started/install"
   exit 1
+fi
+
+if [[ ! -f "${DISPLAY_DIR}/android/app/src/main/AndroidManifest.xml" ]]; then
+  die "Android platform files are missing under apps/display/android. Run 'flutter create --platforms=android apps/display' and apply the Fire TV manifest settings before building an APK."
 fi
 
 cd "${DISPLAY_DIR}"

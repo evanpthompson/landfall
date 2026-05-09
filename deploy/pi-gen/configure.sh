@@ -10,7 +10,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONF_FILE="${SCRIPT_DIR}/landfall-build.conf"
+CONF_FILE="${LANDFALL_CONFIG_OUTPUT:-${SCRIPT_DIR}/landfall-build.conf}"
 
 BOLD=$'\033[1m'
 GREEN=$'\033[1;32m'
