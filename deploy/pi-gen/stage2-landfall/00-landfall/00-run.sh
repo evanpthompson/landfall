@@ -33,12 +33,20 @@ systemctl enable docker
 
 # ── Display dependencies (Flutter Linux arm64) ────────────────────────────
 apt-get install -y --no-install-recommends \
-  libgtk-3-0t64 libblkid1 liblzma5 libgles2 libgbm1 libsecret-1-0 \
+  libgtk-3-0t64 libblkid1 liblzma5 libsecret-1-0 \
+  libgl1 libegl1 libgles2 libglx-mesa0 libgl1-mesa-dri libgbm1 \
+  mesa-vulkan-drivers mesa-utils vulkan-tools dbus-x11 \
   xorg openbox lightdm lightdm-autologin-greeter \
   unclutter x11-xserver-utils \
   wireless-regdb avahi-daemon libnss-mdns \
   gnome-keyring \
   python3-tk
+
+for group in docker video render input; do
+  if getent group "${group}" >/dev/null; then
+    usermod -aG "${group}" landfall
+  fi
+done
 
 systemctl enable avahi-daemon
 
@@ -148,19 +156,37 @@ EOF
 # ── Openbox autostart: launch and auto-restart the display app ────────────────
 install -d "${ROOTFS_DIR}/etc/xdg/openbox"
 cat > "${ROOTFS_DIR}/etc/xdg/openbox/autostart" << 'AUTOSTART'
+LOG_FILE="${HOME}/.landfall-display.log"
+exec >>"${LOG_FILE}" 2>&1
+
+echo "[$(date --iso-8601=seconds)] openbox autostart starting"
+echo "DISPLAY=${DISPLAY:-}"
+echo "XDG_SESSION_TYPE=${XDG_SESSION_TYPE:-}"
+echo "XAUTHORITY=${XAUTHORITY:-}"
+
 xset s off
 xset -dpms
 xset s noblank
 unclutter -idle 1 &
 
-# Start gnome-keyring secret service so flutter_secure_storage can persist tokens
-eval $(gnome-keyring-daemon --daemonize --components=secrets)
-export GNOME_KEYRING_CONTROL GNOME_KEYRING_PID
+# Keep the Flutter GTK embedder on X11 in the Openbox session.
+export GDK_BACKEND=x11
+export LIBGL_DEBUG=verbose
+
+# Start gnome-keyring secret service if available. Linux kiosk auth now uses
+# file-backed tokens, so keyring startup must not block the display.
+if command -v gnome-keyring-daemon >/dev/null 2>&1; then
+  eval "$(gnome-keyring-daemon --daemonize --components=secrets 2>/dev/null || true)"
+  export GNOME_KEYRING_CONTROL GNOME_KEYRING_PID
+fi
 
 # Show splash until the server is ready, then launch the display app
-python3 /opt/landfall/landfall-splash.py
+python3 /opt/landfall/landfall-splash.py || true
 while true; do
+  echo "[$(date --iso-8601=seconds)] launching Flutter display"
   /home/landfall/landfall/display/display
+  status=$?
+  echo "[$(date --iso-8601=seconds)] Flutter display exited with status ${status}"
   sleep 2
 done &
 AUTOSTART
