@@ -37,6 +37,7 @@ apt-get install -y --no-install-recommends \
   xorg openbox lightdm lightdm-autologin-greeter \
   unclutter x11-xserver-utils \
   wireless-regdb avahi-daemon libnss-mdns \
+  gnome-keyring \
   python3-tk
 
 systemctl enable avahi-daemon
@@ -147,6 +148,10 @@ xset s off
 xset -dpms
 xset s noblank
 unclutter -idle 1 &
+
+# Start gnome-keyring secret service so flutter_secure_storage can persist tokens
+eval $(gnome-keyring-daemon --daemonize --components=secrets)
+export GNOME_KEYRING_CONTROL GNOME_KEYRING_PID
 
 # Show splash until the server is ready, then launch the display app
 python3 /opt/landfall/landfall-splash.py
