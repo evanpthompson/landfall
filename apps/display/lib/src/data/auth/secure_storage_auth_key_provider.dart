@@ -22,10 +22,13 @@ class SecureStorageAuthKeyProvider implements AuthKeyProvider {
     return wrapAsBearerAuthHeaderValue(token);
   }
 
+  @override
   Future<void> saveToken(String token) =>
       _storage.write(key: _tokenKey, value: token);
 
+  @override
   Future<void> deleteToken() => _storage.delete(key: _tokenKey);
 
+  @override
   Future<String?> readToken() => _storage.read(key: _tokenKey);
 }
