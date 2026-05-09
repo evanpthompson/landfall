@@ -26,6 +26,7 @@ dependencies:
   landfall_client:
     path: ../../server/landfall_client
   flutter_secure_storage: ^9.2.2
+  serverpod_auth_core_client: 3.4.6
   serverpod_auth_idp_client: 3.4.6
   serverpod_client: 3.4.6
   url_launcher: ^6.3.1

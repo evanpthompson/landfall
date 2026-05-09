@@ -1,15 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:landfall_client/landfall_client.dart' hide LandfallTheme;
 import 'package:landfall_shared/landfall_shared.dart';
 
 import 'package:display/src/app/app_config.dart';
-import 'package:display/src/data/auth/auth_key_provider.dart';
-import 'package:display/src/data/auth/file_auth_key_provider.dart';
-import 'package:display/src/data/auth/secure_storage_auth_key_provider.dart';
+import 'package:display/src/data/auth/file_client_auth_success_storage.dart';
 import 'package:display/src/data/calendar/serverpod_calendar_repository.dart';
 import 'package:display/src/data/cards/serverpod_card_repository.dart';
 import 'package:display/src/data/clock/system_clock_repository.dart';
@@ -24,6 +19,7 @@ import 'package:display/src/data/weather/serverpod_weather_repository.dart';
 import 'package:display/src/domain/use_cases/get_current_time_use_case.dart';
 import 'package:display/src/features/auth/cubit/auth_cubit.dart';
 import 'package:display/src/features/auth/screens/login_screen.dart';
+import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 import 'package:display/src/features/calendar/cubit/calendar_cubit.dart';
 import 'package:display/src/features/cards/cubit/card_cubit.dart';
 import 'package:display/src/features/clock/cubit/clock_cubit.dart';
@@ -61,13 +57,15 @@ class LandfallApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Linux (Pi kiosk) uses file-based storage — no D-Bus keyring required.
-    // All other platforms use the platform keychain via flutter_secure_storage.
-    final AuthKeyProvider keyProvider = Platform.isLinux
-        ? FileAuthKeyProvider()
-        : SecureStorageAuthKeyProvider(const FlutterSecureStorage());
+    // Build the session manager with file-based storage so the full AuthSuccess
+    // (access token + refresh token) survives app restarts. The session manager
+    // implements RefresherClientAuthKeyProvider, so the Serverpod Client will
+    // automatically refresh the 10-minute access token before it expires.
+    final sessionManager = ClientAuthSessionManager(
+      storage: FileClientAuthSuccessStorage(),
+    );
     final client = Client(serverUrl)
-      ..authKeyProvider = keyProvider;
+      ..authSessionManager = sessionManager;
 
     final profileRepository = ServerpodProfileRepository(client);
     final cardRepository = ServerpodCardRepository(client);
@@ -105,7 +103,10 @@ class LandfallApp extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (_) => AuthCubit(client: client, keyProvider: keyProvider),
+            create: (_) => AuthCubit(
+              client: client,
+              sessionManager: sessionManager,
+            ),
           ),
           BlocProvider(
             create: (ctx) => DashboardProfileCubit(
