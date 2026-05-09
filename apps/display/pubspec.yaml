@@ -29,6 +29,7 @@ dependencies:
   serverpod_auth_idp_client: 3.4.6
   serverpod_client: 3.4.6
   url_launcher: ^6.3.1
+  window_manager: ^0.4.3
 
 dev_dependencies:
   flutter_test:

@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:landfall_shared/landfall_shared.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'package:display/src/app/app_config.dart';
 import 'package:display/src/app/startup_decision.dart';
@@ -12,6 +15,11 @@ import 'package:display/setup_wizard_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+    await windowManager.ensureInitialized();
+    await windowManager.setFullScreen(true);
+  }
 
   // Lock to landscape — the display is always a TV or monitor.
   await SystemChrome.setPreferredOrientations([
