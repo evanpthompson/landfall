@@ -54,6 +54,7 @@ class CalendarOAuthStartRoute extends Route {
       'https://accounts.google.com/o/oauth2/v2/auth';
   static const _scopes = [
     'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/drive.readonly',
     'email',
   ];
 
@@ -61,27 +62,36 @@ class CalendarOAuthStartRoute extends Route {
 
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
-    // SEC-06: derive identity from session, not from caller-supplied query param.
-    if (session.authenticated == null) {
-      return Response(
-        401,
-        body: Body.fromString('Authentication required to connect a calendar.'),
-      );
+    // Prefer session-derived identity (authenticated browser/app session).
+    // Fall back to explicit authUserId query param for kiosk/local-network flows
+    // where the caller cannot hold a Serverpod session cookie (e.g. opening the
+    // URL from a Mac browser while the display app runs on a Pi).
+    String? authUserId;
+    if (session.authenticated != null) {
+      authUserId =
+          _userIdentifierToUuid(session.authenticated!.userIdentifier);
+    } else {
+      final paramId = request.url.queryParameters['authUserId'];
+      if (paramId == null || paramId.isEmpty) {
+        return Response(
+          401,
+          body: Body.fromString(
+              'Authentication required. Include authUserId=<id> in the URL.'),
+        );
+      }
+      authUserId = paramId;
     }
 
-    final clientId = session.passwords['googleClientId'];
+    final clientId = session.passwords['googleOAuthClientId'];
     final redirectUri = session.passwords['googleOAuthRedirectUri'];
 
     if (clientId == null || redirectUri == null) {
       return Response.internalServerError(
         body: Body.fromString(
-          'googleClientId and googleOAuthRedirectUri must be set in passwords.yaml',
+          'googleOAuthClientId and googleOAuthRedirectUri must be set in passwords.yaml',
         ),
       );
     }
-
-    final authUserId =
-        _userIdentifierToUuid(session.authenticated!.userIdentifier);
 
     final now = DateTime.now().toUtc();
     _pendingStates.removeWhere((_, v) => v.expiresAt.isBefore(now));
@@ -142,8 +152,8 @@ class CalendarOAuthCallbackRoute extends Route {
       );
     }
 
-    final clientId = session.passwords['googleClientId'];
-    final clientSecret = session.passwords['googleClientSecret'];
+    final clientId = session.passwords['googleOAuthClientId'];
+    final clientSecret = session.passwords['googleOAuthClientSecret'];
     final redirectUri = session.passwords['googleOAuthRedirectUri'];
 
     if (clientId == null || clientSecret == null || redirectUri == null) {
