@@ -9,6 +9,13 @@
         -Server
     }
 
+    # Web server routes (OAuth callbacks, static pages) — must come before
+    # the API catch-alls so Caddy's longest-prefix matching picks these first.
+    reverse_proxy /calendar/oauth/* server:8082
+    reverse_proxy /calendar/microsoft/oauth/* server:8082
+    reverse_proxy /stripe/* server:8082
+    reverse_proxy /app/* server:8082
+
     # API server (HTTP + WebSocket)
     reverse_proxy /api/* server:8080
     reverse_proxy /card/* server:8080
@@ -19,6 +26,6 @@
     # WebSocket endpoint for real-time card push
     reverse_proxy /websocket server:8080
 
-    # Catch-all: everything else goes to the server too
-    reverse_proxy server:8080
+    # Catch-all: everything else goes to the web server (serves root page, /app)
+    reverse_proxy server:8082
 }
