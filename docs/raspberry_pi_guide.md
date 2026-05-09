@@ -70,7 +70,8 @@ Plug in the SD card and power on the Pi. First boot takes about **2 minutes**:
 2. `landfall-firstboot.service` derives `LANDFALL_DOMAIN` from `/etc/hostname`, generates runtime secrets, writes `.env`, and loads the server Docker image into Docker's storage
 3. `landfall-server.service` starts Postgres, Redis, Caddy, and the Landfall server
 4. lightdm auto-logs in the `landfall` user and starts an Openbox session
-5. The display app launches fullscreen with `LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/`, saves that local server URL as completed setup on first launch, and connects to the server
+5. Openbox autostart waits for the local server health check, then launches the Flutter Linux display binary fullscreen with `LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/`
+6. The display app saves that local server URL as completed setup on first launch and connects to the server
 
 No keyboard or manual steps required.
 
@@ -174,8 +175,16 @@ Fire TV and general Android builds do not set this define, so they still show th
 Install a minimal desktop and configure auto-login:
 
 ```bash
-sudo apt-get install -y xorg openbox lightdm lightdm-autologin-greeter unclutter x11-xserver-utils
+sudo apt-get install -y \
+  xorg openbox lightdm lightdm-autologin-greeter \
+  unclutter x11-xserver-utils python3-xdg \
+  libgtk-3-0t64 libgl1 libegl1 libgles2 libglx-mesa0 libgl1-mesa-dri libgbm1 \
+  mesa-vulkan-drivers mesa-utils vulkan-tools dbus-x11
 ```
+
+`python3-xdg` is required by Openbox's XDG autostart helper. Without it,
+Openbox can start successfully but skip autostart entries, leaving the display
+at a black desktop with no Flutter process.
 
 ```bash
 sudo tee /etc/lightdm/lightdm.conf << 'EOF'
@@ -190,10 +199,16 @@ EOF
 Configure openbox to launch the display app:
 ```bash
 sudo tee /etc/xdg/openbox/autostart << 'EOF'
+LOG_FILE="${HOME}/.landfall-display.log"
+exec >>"${LOG_FILE}" 2>&1
+
 xset s off
 xset -dpms
 xset s noblank
 unclutter -idle 1 &
+
+export GDK_BACKEND=x11
+
 while true; do
   /home/landfall/landfall/display/display
   sleep 2
@@ -249,27 +264,116 @@ rsync -av apps/display/build/linux/arm64/release/bundle/ \
 
 ## Troubleshooting
 
-**Display app doesn't appear:**
+### What a working display boot looks like
+
+After boot, these should all be true:
+
+```bash
+ssh landfall@landfall.local
+systemctl is-active docker landfall-server lightdm
+ps -ef | grep -E 'openbox|/home/landfall/landfall/display/display' | grep -v grep
+curl -sS http://127.0.0.1:8080/
+```
+
+Expected:
+
+- `docker`, `landfall-server`, and `lightdm` are `active`
+- Openbox is running as user `landfall`
+- The display binary is running, or the Openbox autostart loop is launching it
+- The local server health check returns `OK ...`
+
+### Display is black or no app appears
+
+First check whether Openbox autostart ran:
+
 ```bash
 ssh landfall@landfall.local
 journalctl -u lightdm -n 50
+tail -160 ~/.xsession-errors
+tail -160 ~/.landfall-display.log
+ps -ef | grep -E 'flutter|display|openbox|lightdm' | grep -v grep
 ```
 
-**Server not starting:**
+If `~/.xsession-errors` contains this:
+
+```text
+ERROR: openbox-xdg-autostart requires PyXDG to be installed
+```
+
+install the missing package and restart LightDM:
+
+```bash
+sudo apt-get install -y python3-xdg
+sudo systemctl restart lightdm
+```
+
+If the Flutter process is running but the screen is still black, capture the X
+root window to distinguish "no app" from "app painted a black frame":
+
+```bash
+DISPLAY=:0 XAUTHORITY=/home/landfall/.Xauthority \
+  import -window root /tmp/landfall-screen.png
+file /tmp/landfall-screen.png
+identify -verbose /tmp/landfall-screen.png | grep -E 'Geometry:|Colors:|mean'
+```
+
+The debug session that fixed this path showed a fullscreen Flutter window in
+`xwininfo`, but a single dark color in the screenshot until Openbox autostart
+was repaired and the Flutter run finished building.
+
+### Graphics stack diagnostics
+
+Use these to confirm the Pi exposes the expected GL/Vulkan devices:
+
+```bash
+DISPLAY=:0 XAUTHORITY=/home/landfall/.Xauthority glxinfo -B
+DISPLAY=:0 XAUTHORITY=/home/landfall/.Xauthority vulkaninfo --summary
+```
+
+On a working Pi 4/5 image, `vulkaninfo --summary` should list the Broadcom V3D
+GPU. If `glxinfo` or `vulkaninfo` is missing, install:
+
+```bash
+sudo apt-get install -y mesa-utils vulkan-tools mesa-vulkan-drivers
+```
+
+### Server not starting
+
 ```bash
 ssh landfall@landfall.local
 docker compose -f /home/landfall/landfall/deploy/docker-compose.prod.yml logs
 ```
 
-**First-boot took too long / image not loaded:**
+### First-boot took too long / image not loaded
+
 ```bash
 ssh landfall@landfall.local
 journalctl -u landfall-firstboot -n 50
 journalctl -u landfall-server -n 50
 ```
 
-**WiFi not connecting:**
+### WiFi not connecting
+
 If you skipped WiFi in `configure.sh`, connect via ethernet then add WiFi:
 ```bash
 sudo nmcli dev wifi connect "YourSSID" password "YourPassword"
 ```
+
+### `flutter-pi` experiment
+
+`flutter-pi` was tested as a way to bypass X11/GTK entirely. It successfully
+built and started the Dart VM on the Pi, but required additional app and runtime
+adaptation:
+
+- The app must be built with `--dart-define=LANDFALL_FLUTTER_PI=true` so it
+  skips desktop-only plugins such as `window_manager`.
+- Drift/SQLite needs a system `libsqlite3.so` available at runtime
+  (`sudo apt-get install -y libsqlite3-dev` on the test Pi).
+- `flutter-pi` needs `libflutter_engine.so.*` and `icudtl.dat` from compatible
+  ARM engine binaries beside the asset bundle.
+- When launched over SSH, `flutter-pi` can report `drmdev is paused`; launching
+  from an active virtual terminal with `openvt` avoids SSH session ownership
+  problems.
+
+For now, the production image remains on the Flutter Linux GTK embedder under
+LightDM/Openbox because that is the path currently showing the display.
