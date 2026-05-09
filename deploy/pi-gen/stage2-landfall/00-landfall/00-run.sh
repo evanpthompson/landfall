@@ -45,6 +45,10 @@ systemctl enable avahi-daemon
 # Boot into graphical.target so lightdm starts automatically
 systemctl set-default graphical.target
 
+# Remove the Raspberry Pi "SSH may not work" banner — it's for the default
+# first-boot user setup flow which we don't use.
+rm -f /etc/ssh/sshd_config.d/rename_user.conf
+
 # Remove the first-run setup wizard fully — package, leftover lightdm configs,
 # and the rpi-first-boot-wizard system user that would hijack autologin.
 systemctl disable piwiz 2>/dev/null || true
