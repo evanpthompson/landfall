@@ -16,6 +16,9 @@ This runner performs:
 - `configure.sh` scripted-input and quoting tests
 - `build.sh --stage-only` rootfs staging tests
 - pi-gen stage artifact contract checks
+- Fire TV Android manifest checks
+- Pi display default-server build define checks
+- first-boot SMTP/OTP defaults
 
 CI runs the same command in `.github/workflows/ci.yml`.
 
@@ -50,7 +53,9 @@ Run these only after the cheap checks pass:
 
 - server starts through `deploy/docker-compose.prod.yml`
 - `landfall-firstboot.service` generates `.env` on the Pi
+- SMTP is configured or OTP sign-in is intentionally disabled for the target release
 - no general runtime secrets are staged into the image
 - display bundle exists at `/home/landfall/landfall/display/display`
+- Pi display build receives `LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/`
 - Fire TV APK exists and has Android TV manifest metadata
 - docs commands match scripts and artifact paths

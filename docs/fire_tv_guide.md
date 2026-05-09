@@ -2,6 +2,8 @@
 
 Fire TV delivery is APK based. The server remains self-hosted; the Fire TV app connects to the server URL you enter during setup.
 
+Unlike the Raspberry Pi all-in-one image, Fire TV APK builds do not set `LANDFALL_DEFAULT_SERVER_URL`. First launch shows the setup wizard so you can enter the URL of your self-hosted server. Stored settings on the device override any future defaults.
+
 ## Current Status
 
 `tools/scripts/build_apk.sh` is the build entry point. The Android scaffold is committed with the expected application ID, internet permission, Android TV launcher metadata, and landscape behavior.

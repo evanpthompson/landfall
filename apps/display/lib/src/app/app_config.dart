@@ -25,3 +25,14 @@ const kIntegrationTestWizardMode = bool.fromEnvironment(
   'INTEGRATION_TEST_WIZARD_MODE',
   defaultValue: false,
 );
+
+/// Production default server URL injected via `--dart-define`.
+///
+/// The Raspberry Pi all-in-one image sets this to the local Serverpod backend
+/// so the appliance boots past the setup wizard without asking for a server
+/// address. Fire TV and generic Android builds leave it empty so users can
+/// enter their self-hosted server URL on first launch.
+const kLandfallDefaultServerUrl = String.fromEnvironment(
+  'LANDFALL_DEFAULT_SERVER_URL',
+  defaultValue: '',
+);

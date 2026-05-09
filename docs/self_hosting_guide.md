@@ -55,6 +55,21 @@ This script:
 
 Open `deploy/.env` in a text editor. The file has comments explaining each field.
 
+**Email sign-in** — configure SMTP so Landfall can send one-time login codes:
+```
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USERNAME=apikey
+SMTP_PASSWORD=your_smtp_password_or_api_key
+SMTP_FROM_EMAIL=landfall@example.com
+SMTP_FROM_NAME=Landfall
+SMTP_SSL=false
+SMTP_ALLOW_INSECURE=false
+OTP_LOG_CODES=false
+```
+
+For local development only, set `OTP_LOG_CODES=true` to write OTP codes to server logs when SMTP is blank. Keep it `false` for production and Pi images.
+
 **Weather** — free API key from [openweathermap.org/api](https://openweathermap.org/api):
 ```
 OWM_API_KEY=your_key_here
@@ -183,6 +198,13 @@ bash deploy/pi-gen/build.sh --stage-only
 
 **Server won't start:**
 ```bash
+docker compose -f docker-compose.prod.yml logs server
+```
+
+**Sign-in email never arrives:**
+Check the SMTP values in `deploy/.env`, then restart the server:
+```bash
+docker compose -f docker-compose.prod.yml restart server
 docker compose -f docker-compose.prod.yml logs server
 ```
 

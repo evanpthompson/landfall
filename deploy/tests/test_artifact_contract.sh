@@ -30,3 +30,5 @@ grep -q '^After=.*graphical.target.*landfall-server.service' "${FILES}/landfall-
 grep -q '^ENV_FILE=.*home/landfall/landfall/deploy/.env' "${FILES}/firstboot.sh"
 grep -q 'cp -r "\${STAGE_FILES}/deploy/."' "${STAGE}/00-run.sh"
 grep -q '/home/landfall/landfall/display/display' "${STAGE}/00-run.sh"
+grep -q 'LANDFALL_DEFAULT_SERVER_URL' "${REPO_ROOT}/deploy/pi-gen/build-display-docker.sh"
+grep -q 'http://127.0.0.1:8080/' "${REPO_ROOT}/deploy/pi-gen/build-display-docker.sh"

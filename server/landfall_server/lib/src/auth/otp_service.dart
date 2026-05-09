@@ -5,6 +5,7 @@ import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart';
 
 import '../generated/protocol.dart';
+import 'otp_email_sender.dart';
 
 /// Manages OTP email challenges.
 ///
@@ -22,6 +23,9 @@ import '../generated/protocol.dart';
 ///
 /// Fail-closed: any mismatch, expiry, reuse, or rate-limit throws [LandfallException].
 class OtpService {
+  OtpService({OtpEmailSender emailSender = const OtpEmailSender()})
+      : _emailSender = emailSender;
+
   static const _codeLifetime = Duration(minutes: 10);
   static const _method = 'otp-email';
   static const _maxVerifyFailures = 5;
@@ -35,6 +39,8 @@ class OtpService {
   // These are server-level singletons that persist across sessions.
   static final _verifyFailures = <String, _RateWindow>{};
   static final _genRequests = <String, _RateWindow>{};
+
+  final OtpEmailSender _emailSender;
 
   /// Clears all in-memory rate-limit counters. For testing only.
   static void resetRateLimits() {
@@ -89,9 +95,13 @@ class OtpService {
       ),
     );
 
-    // Log the plaintext code so self-hosted installs without an email provider
-    // can retrieve it from docker logs. Remove this once SMTP is configured.
-    session.log('[OTP] Code for $normalizedEmail: $code (expires in ${_codeLifetime.inMinutes} min)');
+    await _emailSender.sendCode(
+      session,
+      email: normalizedEmail,
+      code: code,
+      lifetime: _codeLifetime,
+    );
+    session.log(buildSanitizedLogMessage(normalizedEmail, _codeLifetime));
   }
 
   /// Verifies [code] for [email] and returns an [AuthSuccess] with a JWT.

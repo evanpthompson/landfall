@@ -81,7 +81,12 @@ for key in \
   API_KEY_MANAGEMENT_TOKEN \
   API_KEY_HMAC_SECRET \
   PHOTO_SIGNING_SECRET \
-  OAUTH_TOKEN_ENCRYPTION_KEY; do
+  OAUTH_TOKEN_ENCRYPTION_KEY \
+  SMTP_PORT \
+  SMTP_FROM_NAME \
+  SMTP_SSL \
+  SMTP_ALLOW_INSECURE \
+  OTP_LOG_CODES; do
   assert_contains "${env_file}" "^${key}=.+"
 done
 

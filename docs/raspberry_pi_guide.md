@@ -70,7 +70,7 @@ Plug in the SD card and power on the Pi. First boot takes about **2 minutes**:
 2. `landfall-firstboot.service` derives `LANDFALL_DOMAIN` from `/etc/hostname`, generates runtime secrets, writes `.env`, and loads the server Docker image into Docker's storage
 3. `landfall-server.service` starts Postgres, Redis, Caddy, and the Landfall server
 4. lightdm auto-logs in the `landfall` user and starts an Openbox session
-5. The display app launches fullscreen and connects to the server
+5. The display app launches fullscreen with `LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/`, saves that local server URL as completed setup on first launch, and connects to the server
 
 No keyboard or manual steps required.
 
@@ -92,6 +92,22 @@ ssh landfall@landfall.local
 nano /home/landfall/landfall/deploy/.env
 sudo systemctl restart landfall-server
 ```
+
+To use OTP sign-in on the Pi image, configure SMTP in the same `.env` file:
+
+```dotenv
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USERNAME=apikey
+SMTP_PASSWORD=your_smtp_password_or_api_key
+SMTP_FROM_EMAIL=landfall@example.com
+SMTP_FROM_NAME=Landfall
+SMTP_SSL=false
+SMTP_ALLOW_INSECURE=false
+OTP_LOG_CODES=false
+```
+
+The Pi image does not log OTP codes by default. Without SMTP, email sign-in cannot deliver a code.
 
 ---
 
@@ -142,6 +158,16 @@ bash deploy/pi-gen/build.sh   # builds the binary as a side effect
 rsync -av apps/display/build/linux/arm64/release/bundle/ \
   landfall@<PI_IP>:/home/landfall/landfall/display/
 ```
+
+For a manual all-in-one Pi display build, pass the same default server URL used by the image build:
+
+```bash
+cd apps/display
+flutter build linux --release \
+  --dart-define=LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/
+```
+
+Fire TV and general Android builds do not set this define, so they still show the setup wizard and ask for the self-hosted server URL. If a display already has stored settings, those stored settings override the compile-time default.
 
 ### 5. Configure the display to auto-start
 

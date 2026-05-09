@@ -1,8 +1,10 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:landfall_shared/landfall_shared.dart';
 
 import 'package:display/src/app/app_config.dart';
+import 'package:display/src/app/startup_decision.dart';
 import 'package:display/src/data/local/app_database.dart';
 import 'package:display/src/data/settings/drift_display_settings_repository.dart';
 import 'package:display/app.dart';
@@ -20,35 +22,39 @@ void main() async {
   // Hide system UI chrome for an immersive ambient display.
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-  // Integration tests inject the server URL at compile time to bypass the
-  // setup wizard and boot directly to DisplayScreen.
-  if (kIntegrationTestServerUrl.isNotEmpty) {
-    final database = AppDatabase();
-    runApp(LandfallApp(database: database, serverUrl: kIntegrationTestServerUrl));
-    return;
-  }
-
   // Wizard integration tests use an in-memory database so settings are always
   // empty (fresh-install state) regardless of prior test runs.
   final database = kIntegrationTestWizardMode
       ? AppDatabase.forTesting(NativeDatabase.memory())
       : AppDatabase();
+  final settingsRepository = DriftDisplaySettingsRepository(database);
 
   void launchApp(String serverUrl) {
     runApp(LandfallApp(database: database, serverUrl: serverUrl));
   }
 
-  if (kIntegrationTestWizardMode) {
-    runApp(SetupWizardApp(database: database, onComplete: launchApp));
+  final settings = kIntegrationTestWizardMode
+      ? const DisplaySettings()
+      : await settingsRepository.getSettings();
+  final decision = resolveStartupDecision(
+    settings: settings,
+    integrationTestServerUrl: kIntegrationTestServerUrl,
+    integrationTestWizardMode: kIntegrationTestWizardMode,
+    defaultServerUrl: kLandfallDefaultServerUrl,
+  );
+
+  if (decision.target == StartupTarget.display) {
+    if (decision.persistDefaultSettings) {
+      await settingsRepository.saveSettings(
+        settings.copyWith(
+          serverUrl: decision.serverUrl,
+          wizardComplete: true,
+        ),
+      );
+    }
+    launchApp(decision.serverUrl);
     return;
   }
 
-  final settings =
-      await DriftDisplaySettingsRepository(database).getSettings();
-
-  if (settings.serverUrl.isEmpty || !settings.wizardComplete) {
-    runApp(SetupWizardApp(database: database, onComplete: launchApp));
-  } else {
-    launchApp(settings.serverUrl);
-  }
+  runApp(SetupWizardApp(database: database, onComplete: launchApp));
 }
