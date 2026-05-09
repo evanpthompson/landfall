@@ -66,6 +66,12 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  /// Returns the current access token directly from the session manager.
+  ///
+  /// Always reflects the latest token even after a silent auto-refresh, unlike
+  /// [AuthAuthenticated.accessToken] which is set only at sign-in time.
+  String? get currentAccessToken => _sessionManager.authInfo?.token;
+
   Future<void> resendCode(String email) => sendCode(email);
 
   Future<void> signOut() async {

@@ -43,8 +43,7 @@ class _PhotoDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final photo = state.current;
-    final authState = context.read<AuthCubit>().state;
-    final token = authState is AuthAuthenticated ? authState.accessToken : null;
+    final token = context.read<AuthCubit>().currentAccessToken;
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 1200),
@@ -61,7 +60,7 @@ class _PhotoDisplay extends StatelessWidget {
       return Image.file(
         File(path),
         key: ValueKey(photo.imageUrl),
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         width: double.infinity,
         height: double.infinity,
         errorBuilder: (_, _, _) => const _Placeholder(label: 'Photo unavailable'),
@@ -70,7 +69,7 @@ class _PhotoDisplay extends StatelessWidget {
     return Image.network(
       photo.imageUrl,
       key: ValueKey(photo.imageUrl),
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       width: double.infinity,
       height: double.infinity,
       headers: token != null ? {'Authorization': 'Bearer $token'} : null,
