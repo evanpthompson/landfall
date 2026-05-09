@@ -4,7 +4,7 @@ Fire TV delivery is APK based. The server remains self-hosted; the Fire TV app c
 
 ## Current Status
 
-`tools/scripts/build_apk.sh` is the build entry point, but it now fails early if `apps/display/android/` is missing. Before Fire TV can be treated as release-ready, the Android platform scaffold must be committed with the expected package ID, internet permission, Android TV launcher metadata, and landscape/fullscreen behavior.
+`tools/scripts/build_apk.sh` is the build entry point. The Android scaffold is committed with the expected application ID, internet permission, Android TV launcher metadata, and landscape behavior.
 
 ## Build
 
@@ -18,11 +18,7 @@ Expected release artifact:
 apps/display/build/app/outputs/flutter-apk/app-release.apk
 ```
 
-If the script reports missing Android platform files, generate them from the display app and then apply the Fire TV manifest settings:
-
-```bash
-flutter create --platforms=android apps/display
-```
+Alpha APKs are signed with Flutter's debug signing config so local release builds and sideloading work without a shared keystore. Before public distribution, replace that with a private release keystore and keep `android/key.properties` out of git.
 
 ## Sideload
 

@@ -18,6 +18,36 @@ jobs:
       - name: Run deployment tests
         run: bash deploy/tests/run_deploy_tests.sh
 
+  android_apk:
+    name: Fire TV APK Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Install workspace deps
+        run: dart pub get
+
+      - name: Build Fire TV APK
+        run: bash tools/scripts/build_apk.sh
+
+      - name: Assert APK artifact exists
+        run: test -f apps/display/build/app/outputs/flutter-apk/app-release.apk
+
   analyze_and_test:
     name: Analyze & Test
     runs-on: ubuntu-latest

@@ -103,7 +103,7 @@ Build the APK on your development machine:
 bash tools/scripts/build_apk.sh
 ```
 
-Then follow the printed sideload instructions (`adb connect` -> `adb install`). The script currently fails early if `apps/display/android/` is missing; generate and configure the Android platform scaffold before treating Fire TV builds as release-ready. See the [Fire TV guide](fire_tv_guide.md).
+Then follow the printed sideload instructions (`adb connect` -> `adb install`). See the [Fire TV guide](fire_tv_guide.md) for the full APK and sideload workflow.
 
 ### Raspberry Pi (separate display device)
 

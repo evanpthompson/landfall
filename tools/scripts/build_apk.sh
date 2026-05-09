@@ -34,6 +34,17 @@ if [[ ! -f "${DISPLAY_DIR}/android/app/src/main/AndroidManifest.xml" ]]; then
   die "Android platform files are missing under apps/display/android. Run 'flutter create --platforms=android apps/display' and apply the Fire TV manifest settings before building an APK."
 fi
 
+MANIFEST="${DISPLAY_DIR}/android/app/src/main/AndroidManifest.xml"
+GRADLE_FILE="${DISPLAY_DIR}/android/app/build.gradle.kts"
+grep -q 'android.permission.INTERNET' "${MANIFEST}" \
+  || die "Android manifest is missing INTERNET permission"
+grep -q 'android.intent.category.LEANBACK_LAUNCHER' "${MANIFEST}" \
+  || die "Android manifest is missing Android TV leanback launcher category"
+grep -q 'android:screenOrientation="landscape"' "${MANIFEST}" \
+  || die "Android manifest must force landscape orientation for Fire TV"
+grep -q 'applicationId = "io.landfall.display"' "${GRADLE_FILE}" \
+  || die "Unexpected Android applicationId; expected io.landfall.display"
+
 cd "${DISPLAY_DIR}"
 
 info "Building release APK..."
