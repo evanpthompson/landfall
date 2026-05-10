@@ -45,16 +45,27 @@ class _PhotoDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     final photo = state.current;
     final token = context.read<AuthCubit>().currentAccessToken;
+    final cubit = context.read<PhotoCubit>();
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 1200),
       switchInCurve: Curves.easeIn,
       switchOutCurve: Curves.easeOut,
-      child: _imageFor(photo, token),
+      child: _imageFor(photo, token, cubit),
     );
   }
 
-  Widget _imageFor(PhotoEntity photo, String? token) {
+  Widget _imageFor(PhotoEntity photo, String? token, PhotoCubit cubit) {
+    // Skip to next photo when a frame fails (e.g. stale ID deleted from DB).
+    void onError(Object error) {
+      dev.log(
+        'Failed to load photo: ${photo.imageUrl}',
+        name: 'landfall.photo',
+        error: error,
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) => cubit.advance());
+    }
+
     final isLocal = photo.imageUrl.startsWith('file://');
     if (isLocal) {
       final path = photo.imageUrl.replaceFirst('file://', '');
@@ -64,13 +75,9 @@ class _PhotoDisplay extends StatelessWidget {
         fit: BoxFit.contain,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, error, _) {
-          dev.log(
-            'Failed to load local photo: ${photo.imageUrl}',
-            name: 'landfall.photo',
-            error: error,
-          );
-          return const _Placeholder(label: 'Photo unavailable');
+        errorBuilder: (_, error, st) {
+          onError(error);
+          return const _Placeholder(label: null);
         },
       );
     }
@@ -81,13 +88,9 @@ class _PhotoDisplay extends StatelessWidget {
       width: double.infinity,
       height: double.infinity,
       headers: token != null ? {'Authorization': 'Bearer $token'} : null,
-      errorBuilder: (_, error, _) {
-        dev.log(
-          'Failed to load network photo: ${photo.imageUrl}',
-          name: 'landfall.photo',
-          error: error,
-        );
-        return const _Placeholder(label: 'Photo unavailable');
+      errorBuilder: (_, error, st) {
+        onError(error);
+        return const _Placeholder(label: null);
       },
       loadingBuilder: (_, child, loadingProgress) {
         if (loadingProgress == null) return child;

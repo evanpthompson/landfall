@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'weather_card.dart';
+
 /// A horizontal forecast strip.
 ///
 /// Each column shows: short day name, weather emoji, high/low in °F.
@@ -72,7 +74,7 @@ class _DayColumn extends StatelessWidget {
               style: LandfallTypography.widgetHeading
                   .copyWith(color: textTertiary)),
           const SizedBox(height: 4),
-          Text(_weatherIcon(day.iconCode), style: const TextStyle(fontSize: 24)),
+          Icon(WeatherCard.weatherIconData(day.iconCode), size: 24, color: textSecondary),
           const SizedBox(height: 4),
           Text('$hi°',
               style: LandfallTypography.cardBody.copyWith(color: textPrimary)),
@@ -90,19 +92,4 @@ class _DayColumn extends StatelessWidget {
     return days[dt.weekday - 1];
   }
 
-  static String _weatherIcon(String code) {
-    final prefix = code.length >= 2 ? code.substring(0, 2) : code;
-    return switch (prefix) {
-      '01' => '☀️',
-      '02' => '⛅',
-      '03' => '🌥',
-      '04' => '☁️',
-      '09' => '🌧',
-      '10' => '🌦',
-      '11' => '⛈',
-      '13' => '❄️',
-      '50' => '🌫',
-      _ => '🌡',
-    };
-  }
 }

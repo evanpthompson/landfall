@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'weather_card.dart';
+
 /// Displays current weather conditions from a [WeatherEntity].
 ///
 /// Responds to [displayConfig] keys:
@@ -64,9 +66,10 @@ class CurrentWeatherCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: Text(
-                      _weatherIcon(entity.iconCode),
-                      style: const TextStyle(fontSize: 36),
+                    child: Icon(
+                      WeatherCard.weatherIconData(entity.iconCode),
+                      size: 36,
+                      color: textSecondary,
                     ),
                   ),
                 ],
@@ -91,22 +94,6 @@ class CurrentWeatherCard extends StatelessWidget {
   }
 
   static int _toF(double c) => (c * 9 / 5 + 32).round();
-
-  static String _weatherIcon(String code) {
-    final prefix = code.length >= 2 ? code.substring(0, 2) : code;
-    return switch (prefix) {
-      '01' => '☀️',
-      '02' => '⛅',
-      '03' => '🌥',
-      '04' => '☁️',
-      '09' => '🌧',
-      '10' => '🌦',
-      '11' => '⛈',
-      '13' => '❄️',
-      '50' => '🌫',
-      _ => '🌡',
-    };
-  }
 }
 
 class _MetaRow extends StatelessWidget {

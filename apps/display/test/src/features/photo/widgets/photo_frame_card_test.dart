@@ -1,25 +1,39 @@
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:landfall_shared/landfall_shared.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:ui_kit/ui_kit.dart';
+import 'package:display/src/features/auth/cubit/auth_cubit.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/photo/widgets/photo_frame_card.dart';
 
-Widget _wrapWithState(PhotoState state, {double width = 800, double height = 600}) =>
-    MaterialApp(
-      theme: LandfallTheme.dark,
-      home: Scaffold(
-        body: SizedBox(
-          width: width,
-          height: height,
-          child: BlocProvider<PhotoCubit>(
-            create: (_) => _FakePhotoCubit(state),
-            child: const PhotoFrameCard(),
-          ),
+class MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {
+  @override
+  String? get currentAccessToken => null;
+}
+
+Widget _wrapWithState(PhotoState state, {double width = 800, double height = 600}) {
+  final authCubit = MockAuthCubit();
+  when(() => authCubit.state).thenReturn(const AuthUnauthenticated());
+  return MaterialApp(
+    theme: LandfallTheme.dark,
+    home: Scaffold(
+      body: SizedBox(
+        width: width,
+        height: height,
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider<PhotoCubit>(create: (_) => _FakePhotoCubit(state)),
+            BlocProvider<AuthCubit>.value(value: authCubit),
+          ],
+          child: const PhotoFrameCard(),
         ),
       ),
-    );
+    ),
+  );
+}
 
 class _FakePhotoCubit extends PhotoCubit {
   _FakePhotoCubit(PhotoState initial) : super(_NullRepo()) {

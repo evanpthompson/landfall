@@ -70,7 +70,6 @@ class DashboardLayout {
           id: 'slot_photos',
           source: 'system.photos',
           slot: DashboardSlot(column: 7, row: 4, columnSpan: 5, rowSpan: 4),
-          visible: false,
         ),
       ],
     );

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 import 'package:display/src/features/weather/widgets/current_weather_card.dart';
+import 'package:display/src/features/weather/widgets/weather_card.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
       theme: LandfallTheme.dark,
@@ -72,25 +73,40 @@ void main() {
       expect(find.text('10 mph'), findsOneWidget);
     });
 
-    testWidgets('renders sunny emoji for clear sky icon', (tester) async {
+    testWidgets('renders sunny icon for clear sky icon code', (tester) async {
       await tester.pumpWidget(
         _wrap(CurrentWeatherCard(entity: _entity(iconCode: '01d'))),
       );
-      expect(find.text('☀️'), findsOneWidget);
+      expect(find.byIcon(Icons.wb_sunny), findsOneWidget);
     });
 
-    testWidgets('renders snow emoji for snow icon', (tester) async {
+    testWidgets('renders snowflake icon for snow icon code', (tester) async {
       await tester.pumpWidget(
         _wrap(CurrentWeatherCard(entity: _entity(iconCode: '13n'))),
       );
-      expect(find.text('❄️'), findsOneWidget);
+      expect(find.byIcon(Icons.ac_unit), findsOneWidget);
     });
 
-    testWidgets('renders thunderstorm emoji for storm icon', (tester) async {
+    testWidgets('renders lightning icon for thunderstorm icon code',
+        (tester) async {
       await tester.pumpWidget(
         _wrap(CurrentWeatherCard(entity: _entity(iconCode: '11d'))),
       );
-      expect(find.text('⛈'), findsOneWidget);
+      expect(find.byIcon(Icons.flash_on), findsOneWidget);
+    });
+
+    testWidgets('weatherIconData returns correct icon for all codes',
+        (tester) async {
+      expect(WeatherCard.weatherIconData('01d'), Icons.wb_sunny);
+      expect(WeatherCard.weatherIconData('02d'), Icons.wb_cloudy);
+      expect(WeatherCard.weatherIconData('03d'), Icons.cloud);
+      expect(WeatherCard.weatherIconData('04d'), Icons.cloud);
+      expect(WeatherCard.weatherIconData('09d'), Icons.grain);
+      expect(WeatherCard.weatherIconData('10d'), Icons.umbrella);
+      expect(WeatherCard.weatherIconData('11d'), Icons.flash_on);
+      expect(WeatherCard.weatherIconData('13d'), Icons.ac_unit);
+      expect(WeatherCard.weatherIconData('50d'), Icons.blur_on);
+      expect(WeatherCard.weatherIconData('xx'), Icons.device_thermostat);
     });
 
     testWidgets('freezing temp converts correctly', (tester) async {

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 import 'package:display/src/features/weather/widgets/forecast_strip_card.dart';
+import 'package:display/src/features/weather/widgets/weather_card.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
       theme: LandfallTheme.dark,
@@ -56,10 +57,10 @@ void main() {
       expect(find.text('50°'), findsOneWidget);
     });
 
-    testWidgets('renders weather emoji for each day', (tester) async {
+    testWidgets('renders weather icon for each day', (tester) async {
       await tester.pumpWidget(_wrap(ForecastStripCard(forecast: days)));
-      // 5 sunny icons
-      expect(find.text('☀️'), findsNWidgets(5));
+      // 5 days all with '01d' → 5 wb_sunny icons
+      expect(find.byIcon(Icons.wb_sunny), findsNWidgets(5));
     });
 
     // BUG-01: _DayColumn must not overflow its 110px slot height.
@@ -129,14 +130,23 @@ void main() {
 
     testWidgets('renders mixed icon types correctly', (tester) async {
       final mixed = [
-        _day(date: DateTime.utc(2026, 4, 20), iconCode: '01d'), // ☀️
-        _day(date: DateTime.utc(2026, 4, 21), iconCode: '13n'), // ❄️
-        _day(date: DateTime.utc(2026, 4, 22), iconCode: '11d'), // ⛈
+        _day(date: DateTime.utc(2026, 4, 20), iconCode: '01d'), // wb_sunny
+        _day(date: DateTime.utc(2026, 4, 21), iconCode: '13n'), // ac_unit
+        _day(date: DateTime.utc(2026, 4, 22), iconCode: '11d'), // flash_on
       ];
       await tester.pumpWidget(_wrap(ForecastStripCard(forecast: mixed)));
-      expect(find.text('☀️'), findsOneWidget);
-      expect(find.text('❄️'), findsOneWidget);
-      expect(find.text('⛈'), findsOneWidget);
+      expect(
+        find.byIcon(WeatherCard.weatherIconData('01d')),
+        findsOneWidget,
+      );
+      expect(
+        find.byIcon(WeatherCard.weatherIconData('13n')),
+        findsOneWidget,
+      );
+      expect(
+        find.byIcon(WeatherCard.weatherIconData('11d')),
+        findsOneWidget,
+      );
     });
   });
 }
