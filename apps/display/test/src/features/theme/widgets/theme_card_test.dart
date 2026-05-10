@@ -60,6 +60,7 @@ LandfallThemeTokens _tokens({String accent = '#7C3AED'}) =>
       moodMutedScale: 1.0,
       moodMutedAnimation: 'none',
       moodMutedOpacity: 0.5,
+      photoTransition: 'drift',
     );
 
 ThemeInfo _theme({

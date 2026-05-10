@@ -66,6 +66,7 @@ LandfallThemeTokens _tokens({
       moodMutedScale: 1.0,
       moodMutedAnimation: 'none',
       moodMutedOpacity: mutedOpacity,
+      photoTransition: 'drift',
     );
 
 Widget _wrap(Widget child) => MaterialApp(

@@ -71,6 +71,7 @@ LandfallThemeTokens _tokens() => const LandfallThemeTokens(
       moodMutedScale: 1.0,
       moodMutedAnimation: 'none',
       moodMutedOpacity: 0.5,
+      photoTransition: 'drift',
     );
 
 ThemeInfo _theme(int id, String slug, String name) => ThemeInfo(

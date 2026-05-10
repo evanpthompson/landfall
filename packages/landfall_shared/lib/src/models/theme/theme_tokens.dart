@@ -36,6 +36,7 @@ class LandfallThemeTokens {
     required this.animationSpeed,
     required this.animationCardEntry,
     required this.animationTickerScroll,
+    required this.photoTransition,
     required this.moodUrgentBorderColor,
     required this.moodUrgentFillColor,
     required this.moodUrgentPulse,
@@ -99,6 +100,10 @@ class LandfallThemeTokens {
   final String animationSpeed;
   final String animationCardEntry;
   final String animationTickerScroll;
+
+  // Photo slideshow
+  /// One of: `'fade'`, `'zoom'`, `'slide'`, `'drift'`, `'random'`.
+  final String photoTransition;
 
   // Moods — urgent
   final String moodUrgentBorderColor;
@@ -168,6 +173,7 @@ class LandfallThemeTokens {
       animationSpeed: s('animation.speed'),
       animationCardEntry: s('animation.cardEntry'),
       animationTickerScroll: s('animation.tickerScroll'),
+      photoTransition: (m['photo.transition'] as String?) ?? 'drift',
       moodUrgentBorderColor: s('moods.urgent.borderColor'),
       moodUrgentFillColor: s('moods.urgent.fillColor'),
       moodUrgentPulse: b('moods.urgent.pulse'),
@@ -225,6 +231,7 @@ class LandfallThemeTokens {
         'animation.speed': animationSpeed,
         'animation.cardEntry': animationCardEntry,
         'animation.tickerScroll': animationTickerScroll,
+        'photo.transition': photoTransition,
         'moods.urgent.borderColor': moodUrgentBorderColor,
         'moods.urgent.fillColor': moodUrgentFillColor,
         'moods.urgent.pulse': moodUrgentPulse,
@@ -285,6 +292,7 @@ class LandfallThemeTokens {
         animationSpeed: 'normal',
         animationCardEntry: 'fade',
         animationTickerScroll: 'normal',
+        photoTransition: 'drift',
         moodUrgentBorderColor: 'rgba(255,59,48,0.8)',
         moodUrgentFillColor: 'rgba(255,59,48,0.1)',
         moodUrgentPulse: true,
@@ -340,6 +348,7 @@ class LandfallThemeTokens {
     String? animationSpeed,
     String? animationCardEntry,
     String? animationTickerScroll,
+    String? photoTransition,
     String? moodUrgentBorderColor,
     String? moodUrgentFillColor,
     bool? moodUrgentPulse,
@@ -396,6 +405,7 @@ class LandfallThemeTokens {
         animationCardEntry: animationCardEntry ?? this.animationCardEntry,
         animationTickerScroll:
             animationTickerScroll ?? this.animationTickerScroll,
+        photoTransition: photoTransition ?? this.photoTransition,
         moodUrgentBorderColor:
             moodUrgentBorderColor ?? this.moodUrgentBorderColor,
         moodUrgentFillColor: moodUrgentFillColor ?? this.moodUrgentFillColor,

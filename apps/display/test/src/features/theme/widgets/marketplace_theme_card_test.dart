@@ -58,6 +58,7 @@ LandfallThemeTokens _tokens() => const LandfallThemeTokens(
       moodMutedScale: 1.0,
       moodMutedAnimation: 'none',
       moodMutedOpacity: 0.5,
+      photoTransition: 'drift',
     );
 
 ThemeInfo _theme({String name = 'Neon Arcade', String? author}) => ThemeInfo(

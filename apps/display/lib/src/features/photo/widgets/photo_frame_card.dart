@@ -1,5 +1,6 @@
 import 'dart:developer' as dev;
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
@@ -7,25 +8,30 @@ import 'package:ui_kit/ui_kit.dart';
 
 import 'package:display/src/features/auth/cubit/auth_cubit.dart';
 import '../cubit/photo_cubit.dart';
+import 'photo_transition.dart';
 
 /// Displays a rotating photo slideshow from the configured Drive folder.
 ///
-/// Uses [AnimatedSwitcher] for a crossfade transition between photos.
-/// Shows a placeholder when no photos have been configured or synced yet.
+/// Reads [LandfallThemeTokens.photoTransition] from the active theme to select
+/// the transition style. The Ken Burns (drift) effect animates the displayed
+/// image while it is on screen; other styles animate the switch itself.
 ///
-/// Wrap with [BlocBuilder<PhotoCubit, PhotoState>] or use as a direct child
-/// of a BlocBuilder — the internal builder handles all states.
+/// Preloads the next two photos into Flutter's image cache so transitions are
+/// instantaneous even over the local network.
 class PhotoFrameCard extends StatelessWidget {
   const PhotoFrameCard({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final tokens = LandfallActiveTheme.of(context);
+    final style = PhotoTransitionStyle.fromString(tokens.photoTransition);
+
     return BlocBuilder<PhotoCubit, PhotoState>(
       builder: (context, state) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: switch (state) {
-            PhotoLoaded() => _PhotoDisplay(state: state),
+            PhotoLoaded() => _PhotoDisplay(state: state, style: style),
             PhotoLoading() => const _Placeholder(label: null),
             PhotoEmpty() => const _Placeholder(label: 'No photos configured'),
             PhotoError() => const _Placeholder(label: 'Photos unavailable'),
@@ -36,27 +42,89 @@ class PhotoFrameCard extends StatelessWidget {
   }
 }
 
-class _PhotoDisplay extends StatelessWidget {
-  const _PhotoDisplay({required this.state});
+// ---------------------------------------------------------------------------
+// Photo display — handles preloading, transition selection, Ken Burns
+// ---------------------------------------------------------------------------
+
+class _PhotoDisplay extends StatefulWidget {
+  const _PhotoDisplay({required this.state, required this.style});
 
   final PhotoLoaded state;
+  final PhotoTransitionStyle style;
+
+  @override
+  State<_PhotoDisplay> createState() => _PhotoDisplayState();
+}
+
+class _PhotoDisplayState extends State<_PhotoDisplay> {
+  /// The concrete style active for the *current* photo.
+  late PhotoTransitionStyle _activeStyle;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeStyle = widget.style.resolve();
+  }
+
+  @override
+  void didUpdateWidget(_PhotoDisplay old) {
+    super.didUpdateWidget(old);
+    final photoChanged =
+        widget.state.current.id != old.state.current.id;
+    if (photoChanged) {
+      // Re-resolve style on each photo change so random picks vary.
+      _activeStyle = widget.style.resolve();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final photo = state.current;
+    final photo = widget.state.current;
     final token = context.read<AuthCubit>().currentAccessToken;
     final cubit = context.read<PhotoCubit>();
 
+    _preloadNext(context, widget.state, token);
+
+    final duration = _transitionDuration(widget.state);
+
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 1200),
+      duration: duration,
       switchInCurve: Curves.easeIn,
       switchOutCurve: Curves.easeOut,
+      transitionBuilder: PhotoTransitions.builderFor(_activeStyle),
       child: _imageFor(photo, token, cubit),
     );
   }
 
+  // Preload the next two photos so the transition is instant.
+  void _preloadNext(
+      BuildContext context, PhotoLoaded state, String? token) {
+    for (var i = 1; i <= 2; i++) {
+      final idx = (state.currentIndex + i) % state.photos.length;
+      final p = state.photos[idx];
+      if (p.imageUrl.startsWith('file://')) {
+        final path = p.imageUrl.replaceFirst('file://', '');
+        precacheImage(FileImage(File(path)), context,
+            onError: (_, __) {});
+      } else {
+        precacheImage(
+          NetworkImage(
+            p.imageUrl,
+            headers: token != null ? {'Authorization': 'Bearer $token'} : null,
+          ),
+          context,
+          onError: (_, __) {},
+        );
+      }
+    }
+  }
+
+  Duration _transitionDuration(PhotoLoaded state) {
+    // Could read animationSpeed from tokens here in future; hardcoded for now.
+    return const Duration(milliseconds: 1200);
+  }
+
   Widget _imageFor(PhotoEntity photo, String? token, PhotoCubit cubit) {
-    // Skip to next photo when a frame fails (e.g. stale ID deleted from DB).
     void onError(Object error) {
       dev.log(
         'Failed to load photo: ${photo.imageUrl}',
@@ -66,8 +134,21 @@ class _PhotoDisplay extends StatelessWidget {
       WidgetsBinding.instance.addPostFrameCallback((_) => cubit.advance());
     }
 
-    final isLocal = photo.imageUrl.startsWith('file://');
-    if (isLocal) {
+    final imageWidget = _rawImage(photo, token, onError);
+
+    // Wrap in Ken Burns for the drift style.
+    if (_activeStyle == PhotoTransitionStyle.drift) {
+      return KenBurnsWidget(
+        key: ValueKey('kb_${photo.id}'),
+        child: imageWidget,
+      );
+    }
+
+    return imageWidget;
+  }
+
+  Widget _rawImage(PhotoEntity photo, String? token, void Function(Object) onError) {
+    if (photo.imageUrl.startsWith('file://')) {
       final path = photo.imageUrl.replaceFirst('file://', '');
       return Image.file(
         File(path),
@@ -92,13 +173,17 @@ class _PhotoDisplay extends StatelessWidget {
         onError(error);
         return const _Placeholder(label: null);
       },
-      loadingBuilder: (_, child, loadingProgress) {
-        if (loadingProgress == null) return child;
+      loadingBuilder: (_, child, progress) {
+        if (progress == null) return child;
         return const _Placeholder(label: null);
       },
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Placeholder
+// ---------------------------------------------------------------------------
 
 class _Placeholder extends StatelessWidget {
   const _Placeholder({required this.label});
