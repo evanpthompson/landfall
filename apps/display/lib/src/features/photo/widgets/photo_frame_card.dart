@@ -69,8 +69,7 @@ class _PhotoDisplayState extends State<_PhotoDisplay> {
   @override
   void didUpdateWidget(_PhotoDisplay old) {
     super.didUpdateWidget(old);
-    final photoChanged =
-        widget.state.current.id != old.state.current.id;
+    final photoChanged = widget.state.current.id != old.state.current.id;
     if (photoChanged) {
       // Re-resolve style on each photo change so random picks vary.
       _activeStyle = widget.style.resolve();
@@ -97,15 +96,13 @@ class _PhotoDisplayState extends State<_PhotoDisplay> {
   }
 
   // Preload the next two photos so the transition is instant.
-  void _preloadNext(
-      BuildContext context, PhotoLoaded state, String? token) {
+  void _preloadNext(BuildContext context, PhotoLoaded state, String? token) {
     for (var i = 1; i <= 2; i++) {
       final idx = (state.currentIndex + i) % state.photos.length;
       final p = state.photos[idx];
       if (p.imageUrl.startsWith('file://')) {
         final path = p.imageUrl.replaceFirst('file://', '');
-        precacheImage(FileImage(File(path)), context,
-            onError: (_, __) {});
+        precacheImage(FileImage(File(path)), context, onError: (_, _) {});
       } else {
         precacheImage(
           NetworkImage(
@@ -113,7 +110,7 @@ class _PhotoDisplayState extends State<_PhotoDisplay> {
             headers: token != null ? {'Authorization': 'Bearer $token'} : null,
           ),
           context,
-          onError: (_, __) {},
+          onError: (_, _) {},
         );
       }
     }
@@ -147,7 +144,11 @@ class _PhotoDisplayState extends State<_PhotoDisplay> {
     return imageWidget;
   }
 
-  Widget _rawImage(PhotoEntity photo, String? token, void Function(Object) onError) {
+  Widget _rawImage(
+    PhotoEntity photo,
+    String? token,
+    void Function(Object) onError,
+  ) {
     if (photo.imageUrl.startsWith('file://')) {
       final path = photo.imageUrl.replaceFirst('file://', '');
       return Image.file(
