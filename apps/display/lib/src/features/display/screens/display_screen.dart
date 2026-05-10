@@ -15,6 +15,7 @@ import 'package:display/src/features/cards/widgets/generic_agent_card.dart';
 import 'package:display/src/features/clock/cubit/clock_cubit.dart';
 import 'package:display/src/features/clock/cubit/clock_state.dart';
 import 'package:display/src/features/clock/widgets/clock_card.dart';
+import 'package:display/src/features/display/cursor_mode_shortcuts.dart';
 import 'package:display/src/features/display/widgets/ambient_dim_overlay.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
@@ -68,15 +69,19 @@ class _DisplayScreenState extends State<DisplayScreen> {
   Timer? _photoRefreshTimer;
   Timer? _tickerRefreshTimer;
   Timer? _gearHideTimer;
+  final FocusNode _displayFocusNode = FocusNode();
   final FocusNode _settingsFocusNode = FocusNode();
 
   bool _gearVisible = false;
-  bool _cursorHidden = false;
+  bool _cursorModeEnabled = false;
 
   static const _photoSlideshowInterval = Duration(seconds: 45);
   static const _gearAutoHideDuration = Duration(seconds: 5);
 
-  void _toggleCursor() => setState(() => _cursorHidden = !_cursorHidden);
+  void _toggleCursorMode() {
+    setState(() => _cursorModeEnabled = !_cursorModeEnabled);
+    if (_cursorModeEnabled) _showGear();
+  }
 
   void _showGear() {
     _gearHideTimer?.cancel();
@@ -91,10 +96,8 @@ class _DisplayScreenState extends State<DisplayScreen> {
     setState(() => _gearVisible = false);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => SettingsScreen(
-          client: widget.client,
-          serverUrl: widget.serverUrl,
-        ),
+        builder: (_) =>
+            SettingsScreen(client: widget.client, serverUrl: widget.serverUrl),
       ),
     );
   }
@@ -111,47 +114,29 @@ class _DisplayScreenState extends State<DisplayScreen> {
     context.read<DisplaySettingsCubit>().loadSettings();
     context.read<TickerCubit>().loadTicker();
 
-    _cardRefreshTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) {
-        if (mounted) context.read<CardCubit>().fetchCards();
-      },
-    );
+    _cardRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) context.read<CardCubit>().fetchCards();
+    });
 
-    _weatherRefreshTimer = Timer.periodic(
-      const Duration(minutes: 10),
-      (_) {
-        if (mounted) context.read<WeatherCubit>().loadWeather();
-      },
-    );
+    _weatherRefreshTimer = Timer.periodic(const Duration(minutes: 10), (_) {
+      if (mounted) context.read<WeatherCubit>().loadWeather();
+    });
 
-    _calendarRefreshTimer = Timer.periodic(
-      const Duration(minutes: 15),
-      (_) {
-        if (mounted) context.read<CalendarCubit>().loadEvents();
-      },
-    );
+    _calendarRefreshTimer = Timer.periodic(const Duration(minutes: 15), (_) {
+      if (mounted) context.read<CalendarCubit>().loadEvents();
+    });
 
-    _photoSlideshowTimer = Timer.periodic(
-      _photoSlideshowInterval,
-      (_) {
-        if (mounted) context.read<PhotoCubit>().advance();
-      },
-    );
+    _photoSlideshowTimer = Timer.periodic(_photoSlideshowInterval, (_) {
+      if (mounted) context.read<PhotoCubit>().advance();
+    });
 
-    _photoRefreshTimer = Timer.periodic(
-      const Duration(minutes: 30),
-      (_) {
-        if (mounted) context.read<PhotoCubit>().loadPhotos();
-      },
-    );
+    _photoRefreshTimer = Timer.periodic(const Duration(minutes: 30), (_) {
+      if (mounted) context.read<PhotoCubit>().loadPhotos();
+    });
 
-    _tickerRefreshTimer = Timer.periodic(
-      const Duration(seconds: 15),
-      (_) {
-        if (mounted) context.read<TickerCubit>().loadTicker();
-      },
-    );
+    _tickerRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (mounted) context.read<TickerCubit>().loadTicker();
+    });
   }
 
   @override
@@ -163,6 +148,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
     _photoRefreshTimer?.cancel();
     _tickerRefreshTimer?.cancel();
     _gearHideTimer?.cancel();
+    _displayFocusNode.dispose();
     _settingsFocusNode.dispose();
     super.dispose();
   }
@@ -177,67 +163,69 @@ class _DisplayScreenState extends State<DisplayScreen> {
         return LandfallActiveTheme(
           tokens: tokens,
           child: MouseRegion(
-            cursor: _cursorHidden ? SystemMouseCursors.none : MouseCursor.defer,
+            cursor: _cursorModeEnabled
+                ? MouseCursor.defer
+                : SystemMouseCursors.none,
             child: KeyboardListener(
-              focusNode: FocusNode(),
+              focusNode: _displayFocusNode,
               autofocus: true,
               onKeyEvent: (event) {
-                if (event is KeyDownEvent &&
-                    event.logicalKey == LogicalKeyboardKey.f11) {
-                  _toggleCursor();
+                if (isCursorModeToggle(event)) {
+                  _toggleCursorMode();
                 }
               },
               child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _showGear,
-            child: Scaffold(
-              backgroundColor: tokenColor(tokens.backgroundValue),
-              body: Stack(
-                children: [
-                  BlocBuilder<DashboardProfileCubit, DashboardProfileState>(
-                    builder: (context, profileState) {
-                      return switch (profileState) {
-                        DashboardProfileLoading() => const _LoadingView(),
-                        DashboardProfileLoaded(:final active) =>
-                          _DisplayBody(layout: active.layout),
-                        DashboardProfileError(:final message) =>
-                          _ErrorView(message: message),
-                      };
-                    },
-                  ),
-                  // Ambient dim overlay — sits above content, ignores pointer events
-                  const AmbientDimOverlay(),
-                  // Ghost ticker strip — fixed at the bottom, zero height when empty
-                  const Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: TickerStripWidget(),
-                  ),
-                  // Settings pill — appears on tap/focus, fades after 5 seconds
-                  Positioned(
-                    right: 16,
-                    bottom: 16,
-                    child: AnimatedOpacity(
-                      opacity: _gearVisible ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: IgnorePointer(
-                        ignoring: !_gearVisible,
-                        child: _SettingsPill(
-                          key: const Key('settings_pill'),
-                          focusNode: _settingsFocusNode,
-                          onTap: _openSettings,
-                          onFocusGained: _showGear,
+                behavior: HitTestBehavior.translucent,
+                onTap: _showGear,
+                child: Scaffold(
+                  backgroundColor: tokenColor(tokens.backgroundValue),
+                  body: Stack(
+                    children: [
+                      BlocBuilder<DashboardProfileCubit, DashboardProfileState>(
+                        builder: (context, profileState) {
+                          return switch (profileState) {
+                            DashboardProfileLoading() => const _LoadingView(),
+                            DashboardProfileLoaded(:final active) =>
+                              _DisplayBody(layout: active.layout),
+                            DashboardProfileError(:final message) => _ErrorView(
+                              message: message,
+                            ),
+                          };
+                        },
+                      ),
+                      // Ambient dim overlay — sits above content, ignores pointer events
+                      const AmbientDimOverlay(),
+                      // Ghost ticker strip — fixed at the bottom, zero height when empty
+                      const Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: TickerStripWidget(),
+                      ),
+                      // Settings pill — appears on tap/focus, fades after 5 seconds
+                      Positioned(
+                        right: 16,
+                        bottom: 16,
+                        child: AnimatedOpacity(
+                          opacity: _gearVisible ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 300),
+                          child: IgnorePointer(
+                            ignoring: !_gearVisible,
+                            child: _SettingsPill(
+                              key: const Key('settings_pill'),
+                              focusNode: _settingsFocusNode,
+                              onTap: _openSettings,
+                              onFocusGained: _showGear,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
         );
       },
     );
@@ -268,11 +256,13 @@ class _SettingsPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Focus(
       focusNode: focusNode,
-      onFocusChange: (gained) { if (gained) onFocusGained(); },
+      onFocusChange: (gained) {
+        if (gained) onFocusGained();
+      },
       onKeyEvent: (_, event) {
         if (event is KeyDownEvent &&
             (event.logicalKey == LogicalKeyboardKey.enter ||
-             event.logicalKey == LogicalKeyboardKey.space)) {
+                event.logicalKey == LogicalKeyboardKey.space)) {
           onTap();
           return KeyEventResult.handled;
         }
@@ -365,13 +355,12 @@ class _DisplayBody extends StatelessWidget {
       children: [
         // Grid takes all remaining space so no card slot is ever obscured by
         // the feed panel.
-        Expanded(child: _GridView(key: const Key('dashboard_grid'), layout: layout)),
+        Expanded(
+          child: _GridView(key: const Key('dashboard_grid'), layout: layout),
+        ),
         // Feed panel: fixed width, always present so the grid width is stable
         // regardless of whether there are active agent cards.
-        const SizedBox(
-          width: _feedPanelWidth,
-          child: _AgentCardFeed(),
-        ),
+        const SizedBox(width: _feedPanelWidth, child: _AgentCardFeed()),
       ],
     );
   }
@@ -412,36 +401,36 @@ class _GridView extends StatelessWidget {
   Widget _widgetFor(BuildContext context, CardConfig config) {
     return switch (config.source) {
       'system.clock' => BlocBuilder<ClockCubit, ClockState>(
-          builder: (_, state) => switch (state) {
-            ClockTicking(:final entity) => ClockCard(
-                entity: entity,
-                displayConfig: config.displayConfig,
-              ),
-            _ => const _PlaceholderTile(source: 'system.clock'),
-          },
-        ),
+        builder: (_, state) => switch (state) {
+          ClockTicking(:final entity) => ClockCard(
+            entity: entity,
+            displayConfig: config.displayConfig,
+          ),
+          _ => const _PlaceholderTile(source: 'system.clock'),
+        },
+      ),
       'system.weather' => BlocBuilder<WeatherCubit, WeatherState>(
-          builder: (_, state) => switch (state) {
-            WeatherLoaded(:final current, :final forecast) => WeatherCard(
-                current: current,
-                forecast: forecast,
-                displayConfig: config.displayConfig,
-              ),
-            _ => const _PlaceholderTile(source: 'system.weather'),
-          },
-        ),
+        builder: (_, state) => switch (state) {
+          WeatherLoaded(:final current, :final forecast) => WeatherCard(
+            current: current,
+            forecast: forecast,
+            displayConfig: config.displayConfig,
+          ),
+          _ => const _PlaceholderTile(source: 'system.weather'),
+        },
+      ),
       // Forecast strip was merged into WeatherCard. Render nothing if an old
       // stored layout still references this slot.
       'system.weather.forecast' => const SizedBox.shrink(),
       'system.calendar' => BlocBuilder<CalendarCubit, CalendarState>(
-          builder: (_, state) => switch (state) {
-            CalendarLoaded(:final events) => CalendarCard(
-                events: events,
-                displayConfig: config.displayConfig,
-              ),
-            _ => const _PlaceholderTile(source: 'system.calendar'),
-          },
-        ),
+        builder: (_, state) => switch (state) {
+          CalendarLoaded(:final events) => CalendarCard(
+            events: events,
+            displayConfig: config.displayConfig,
+          ),
+          _ => const _PlaceholderTile(source: 'system.calendar'),
+        },
+      ),
       'system.photos' => const PhotoFrameCard(),
       _ => _PlaceholderTile(source: config.source),
     };
@@ -471,10 +460,8 @@ class _AgentCardFeed extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(0, 16, 16, 16),
           itemCount: state.cards.length,
           separatorBuilder: (context, idx) => const SizedBox(height: 12),
-          itemBuilder: (_, i) => GenericAgentCard(
-            card: state.cards[i],
-            tokens: tokens,
-          ),
+          itemBuilder: (_, i) =>
+              GenericAgentCard(card: state.cards[i], tokens: tokens),
         );
       },
     );

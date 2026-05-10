@@ -64,14 +64,15 @@ class LandfallApp extends StatelessWidget {
     final sessionManager = ClientAuthSessionManager(
       storage: FileClientAuthSuccessStorage(),
     );
-    final client = Client(serverUrl)
-      ..authSessionManager = sessionManager;
+    final client = Client(serverUrl)..authSessionManager = sessionManager;
 
     final profileRepository = ServerpodProfileRepository(client);
     final cardRepository = ServerpodCardRepository(client);
     final weatherRepository = ServerpodWeatherRepository(client, database);
     final calendarRepository = ServerpodCalendarRepository(client);
-    final webServerUrl = kLandfallWebServerUrl.isNotEmpty ? kLandfallWebServerUrl : serverUrl;
+    final webServerUrl = kLandfallWebServerUrl.isNotEmpty
+        ? kLandfallWebServerUrl
+        : serverUrl;
     final photoRepository = ServerpodPhotoRepository(client, webServerUrl);
     final displaySettingsRepository = DriftDisplaySettingsRepository(database);
     final clockRepository = const SystemClockRepository();
@@ -85,18 +86,12 @@ class LandfallApp extends StatelessWidget {
         RepositoryProvider<DashboardProfileRepository>(
           create: (_) => profileRepository,
         ),
-        RepositoryProvider<CardRepository>(
-          create: (_) => cardRepository,
-        ),
-        RepositoryProvider<WeatherRepository>(
-          create: (_) => weatherRepository,
-        ),
+        RepositoryProvider<CardRepository>(create: (_) => cardRepository),
+        RepositoryProvider<WeatherRepository>(create: (_) => weatherRepository),
         RepositoryProvider<CalendarRepository>(
           create: (_) => calendarRepository,
         ),
-        RepositoryProvider<PhotoRepository>(
-          create: (_) => photoRepository,
-        ),
+        RepositoryProvider<PhotoRepository>(create: (_) => photoRepository),
         RepositoryProvider<DisplaySettingsRepository>(
           create: (_) => displaySettingsRepository,
         ),
@@ -104,22 +99,15 @@ class LandfallApp extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (_) => AuthCubit(
-              client: client,
-              sessionManager: sessionManager,
-            ),
+            create: (_) =>
+                AuthCubit(client: client, sessionManager: sessionManager),
           ),
           BlocProvider(
-            create: (ctx) => DashboardProfileCubit(
-              ctx.read<DashboardProfileRepository>(),
-            ),
+            create: (ctx) =>
+                DashboardProfileCubit(ctx.read<DashboardProfileRepository>()),
           ),
-          BlocProvider(
-            create: (_) => ClockCubit(getCurrentTime),
-          ),
-          BlocProvider(
-            create: (ctx) => CardCubit(ctx.read<CardRepository>()),
-          ),
+          BlocProvider(create: (_) => ClockCubit(getCurrentTime)),
+          BlocProvider(create: (ctx) => CardCubit(ctx.read<CardRepository>())),
           BlocProvider(
             create: (ctx) => WeatherCubit(ctx.read<WeatherRepository>()),
           ),
@@ -136,11 +124,12 @@ class LandfallApp extends StatelessWidget {
           BlocProvider(
             create: (ctx) => TickerCubit(ctx.read<CardRepository>()),
           ),
+          BlocProvider(create: (_) => LicenseCubit(licenseRepository)),
           BlocProvider(
-            create: (_) => LicenseCubit(licenseRepository),
-          ),
-          BlocProvider(
-            create: (_) => ThemeCubit(themeRepository)..loadThemes(),
+            create: (_) => ThemeCubit(
+              themeRepository,
+              profileRepository: profileRepository,
+            )..loadThemes(),
           ),
           BlocProvider(
             create: (_) =>

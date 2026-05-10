@@ -82,14 +82,14 @@ cat > /etc/lightdm/lightdm.conf << 'LIGHTDM'
 autologin-user=landfall
 autologin-user-timeout=0
 user-session=openbox
-xserver-command=X -nocursor
+xserver-command=X
 LIGHTDM
 cat > /etc/lightdm/lightdm.conf.d/99-landfall.conf << 'LIGHTDM'
 [Seat:*]
 autologin-user=landfall
 autologin-user-timeout=0
 user-session=openbox
-xserver-command=X -nocursor
+xserver-command=X
 LIGHTDM
 
 EOF

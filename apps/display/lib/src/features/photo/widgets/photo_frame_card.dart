@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
-import 'package:display/src/features/auth/cubit/auth_cubit.dart';
 import '../cubit/photo_cubit.dart';
 import 'photo_transition.dart';
 
@@ -79,10 +78,9 @@ class _PhotoDisplayState extends State<_PhotoDisplay> {
   @override
   Widget build(BuildContext context) {
     final photo = widget.state.current;
-    final token = context.read<AuthCubit>().currentAccessToken;
     final cubit = context.read<PhotoCubit>();
 
-    _preloadNext(context, widget.state, token);
+    _preloadNext(context, widget.state);
 
     final duration = _transitionDuration(widget.state);
 
@@ -91,12 +89,12 @@ class _PhotoDisplayState extends State<_PhotoDisplay> {
       switchInCurve: Curves.easeIn,
       switchOutCurve: Curves.easeOut,
       transitionBuilder: PhotoTransitions.builderFor(_activeStyle),
-      child: _imageFor(photo, token, cubit),
+      child: _imageFor(photo, cubit),
     );
   }
 
   // Preload the next two photos so the transition is instant.
-  void _preloadNext(BuildContext context, PhotoLoaded state, String? token) {
+  void _preloadNext(BuildContext context, PhotoLoaded state) {
     for (var i = 1; i <= 2; i++) {
       final idx = (state.currentIndex + i) % state.photos.length;
       final p = state.photos[idx];
@@ -104,14 +102,7 @@ class _PhotoDisplayState extends State<_PhotoDisplay> {
         final path = p.imageUrl.replaceFirst('file://', '');
         precacheImage(FileImage(File(path)), context, onError: (_, _) {});
       } else {
-        precacheImage(
-          NetworkImage(
-            p.imageUrl,
-            headers: token != null ? {'Authorization': 'Bearer $token'} : null,
-          ),
-          context,
-          onError: (_, _) {},
-        );
+        precacheImage(NetworkImage(p.imageUrl), context, onError: (_, _) {});
       }
     }
   }
@@ -121,7 +112,7 @@ class _PhotoDisplayState extends State<_PhotoDisplay> {
     return const Duration(milliseconds: 1200);
   }
 
-  Widget _imageFor(PhotoEntity photo, String? token, PhotoCubit cubit) {
+  Widget _imageFor(PhotoEntity photo, PhotoCubit cubit) {
     void onError(Object error) {
       dev.log(
         'Failed to load photo: ${photo.imageUrl}',
@@ -131,7 +122,7 @@ class _PhotoDisplayState extends State<_PhotoDisplay> {
       WidgetsBinding.instance.addPostFrameCallback((_) => cubit.advance());
     }
 
-    final imageWidget = _rawImage(photo, token, onError);
+    final imageWidget = _rawImage(photo, onError);
 
     // Wrap in Ken Burns for the drift style.
     if (_activeStyle == PhotoTransitionStyle.drift) {
@@ -144,11 +135,7 @@ class _PhotoDisplayState extends State<_PhotoDisplay> {
     return imageWidget;
   }
 
-  Widget _rawImage(
-    PhotoEntity photo,
-    String? token,
-    void Function(Object) onError,
-  ) {
+  Widget _rawImage(PhotoEntity photo, void Function(Object) onError) {
     if (photo.imageUrl.startsWith('file://')) {
       final path = photo.imageUrl.replaceFirst('file://', '');
       return Image.file(
@@ -169,7 +156,6 @@ class _PhotoDisplayState extends State<_PhotoDisplay> {
       fit: BoxFit.contain,
       width: double.infinity,
       height: double.infinity,
-      headers: token != null ? {'Authorization': 'Bearer $token'} : null,
       errorBuilder: (_, error, st) {
         onError(error);
         return const _Placeholder(label: null);

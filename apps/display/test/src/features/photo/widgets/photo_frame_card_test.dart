@@ -14,7 +14,11 @@ class MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {
   String? get currentAccessToken => null;
 }
 
-Widget _wrapWithState(PhotoState state, {double width = 800, double height = 600}) {
+Widget _wrapWithState(
+  PhotoState state, {
+  double width = 800,
+  double height = 600,
+}) {
   final authCubit = MockAuthCubit();
   when(() => authCubit.state).thenReturn(const AuthUnauthenticated());
   return MaterialApp(
@@ -65,7 +69,9 @@ void main() {
     });
 
     // BUG-05: card must not overflow at small slot sizes.
-    testWidgets('does not overflow in a 200x200 slot (loading)', (tester) async {
+    testWidgets('does not overflow in a 200x200 slot (loading)', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         _wrapWithState(const PhotoLoading(), width: 200, height: 200),
       );
@@ -118,6 +124,8 @@ void main() {
       final images = tester.widgetList<Image>(find.byType(Image)).toList();
       final hasNetworkImage = images.any((img) => img.image is NetworkImage);
       expect(hasNetworkImage, isTrue);
+      final network = images.firstWhere((img) => img.image is NetworkImage);
+      expect((network.image as NetworkImage).headers, isNull);
     });
   });
 }

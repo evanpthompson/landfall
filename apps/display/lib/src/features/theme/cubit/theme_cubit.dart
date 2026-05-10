@@ -10,9 +10,12 @@ import 'theme_state.dart';
 /// - Applying a theme (linking it to a profile or globally)
 /// - Providing the theme list for [ThemeBrowserScreen]
 class ThemeCubit extends Cubit<ThemeState> {
-  ThemeCubit(this._repository) : super(const ThemeInitial());
+  ThemeCubit(this._repository, {DashboardProfileRepository? profileRepository})
+    : _profileRepository = profileRepository,
+      super(const ThemeInitial());
 
   final ThemeRepository _repository;
+  final DashboardProfileRepository? _profileRepository;
 
   /// Loads all available themes.
   ///
@@ -22,9 +25,15 @@ class ThemeCubit extends Cubit<ThemeState> {
     emit(const ThemeLoading());
     try {
       final themes = await _repository.listThemes();
+      final activeSlug = await _activeProfileThemeSlug();
       final active = themes.firstWhere(
-        (t) => t.slug == 'default-dark',
-        orElse: () => themes.first,
+        (t) => t.slug == activeSlug,
+        orElse: () {
+          return themes.firstWhere(
+            (t) => t.slug == 'default-dark',
+            orElse: () => themes.first,
+          );
+        },
       );
       emit(ThemeLoaded(active, themes: themes));
     } catch (e) {
@@ -40,7 +49,8 @@ class ThemeCubit extends Cubit<ThemeState> {
   Future<void> applyTheme(int themeId, {int? profileId}) async {
     if (state is! ThemeLoaded) return;
     try {
-      await _repository.applyTheme(themeId, profileId: profileId);
+      final resolvedProfileId = profileId ?? await _activeProfileId();
+      await _repository.applyTheme(themeId, profileId: resolvedProfileId);
       final themes = await _repository.listThemes();
       final active = themes.firstWhere(
         (t) => t.id == themeId,
@@ -50,5 +60,15 @@ class ThemeCubit extends Cubit<ThemeState> {
     } catch (e) {
       emit(ThemeError(e.toString()));
     }
+  }
+
+  Future<String?> _activeProfileThemeSlug() async {
+    final active = await _profileRepository?.getActiveProfile();
+    return active?.companionThemeSlug;
+  }
+
+  Future<int?> _activeProfileId() async {
+    final active = await _profileRepository?.getActiveProfile();
+    return active?.id;
   }
 }

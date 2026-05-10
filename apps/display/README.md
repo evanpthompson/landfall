@@ -12,6 +12,11 @@ flutter run -d macos
 flutter run -d <device-id>
 ```
 
+## Cursor mode
+
+The display hides the cursor by default for kiosk use. Toggle cursor mode with
+`F11`, `Ctrl+Alt+C`, or `Option+Command+C` on macOS.
+
 ## Testing
 
 See [`integration_test/README.md`](integration_test/README.md) for how to run the integration test suite.

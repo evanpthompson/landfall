@@ -195,9 +195,14 @@ sudo tee /etc/lightdm/lightdm.conf << 'EOF'
 autologin-user=landfall
 autologin-user-timeout=0
 user-session=openbox
-xserver-command=X -nocursor
+xserver-command=X
 EOF
 ```
+
+Landfall hides the pointer in app code by default. Press `F11`, `Ctrl+Alt+C`,
+or `Option+Command+C` on macOS to enable cursor mode, and press the same
+shortcut again to hide it. Do not start X with `-nocursor`; that prevents the
+app from showing the pointer when cursor mode is enabled.
 
 Configure openbox to launch the display app:
 ```bash

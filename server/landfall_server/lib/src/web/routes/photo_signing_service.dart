@@ -9,7 +9,7 @@ import 'package:crypto/crypto.dart';
 ///
 /// URL format: `/photos/{id}?token=<base64url_hmac>&exp=<epoch_seconds>`
 class PhotoSigningService {
-  static const tokenLifetime = Duration(minutes: 5);
+  static const tokenLifetime = Duration(hours: 24);
 
   const PhotoSigningService(this._secret);
 
@@ -20,14 +20,18 @@ class PhotoSigningService {
     final exp =
         DateTime.now().toUtc().add(tokenLifetime).millisecondsSinceEpoch ~/
         1000;
-    return (token: signStatic(photoId: photoId, expEpoch: exp, secret: _secret), exp: exp);
+    return (
+      token: signStatic(photoId: photoId, expEpoch: exp, secret: _secret),
+      exp: exp,
+    );
   }
 
   /// Returns true if [token] is a valid, unexpired HMAC for [photoId] at [exp].
   bool verify(int photoId, String token, int exp) {
     final now = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
     if (now > exp) return false;
-    return token == signStatic(photoId: photoId, expEpoch: exp, secret: _secret);
+    return token ==
+        signStatic(photoId: photoId, expEpoch: exp, secret: _secret);
   }
 
   /// Computes an HMAC token for [photoId]:[expEpoch] using [secret].

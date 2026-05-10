@@ -20,7 +20,11 @@ class ServerpodPhotoRepository implements PhotoRepository {
   Future<List<PhotoEntity>> getPhotos() async {
     try {
       final rows = await _client.photo.getPhotos();
-      return rows.map(_toEntity).toList();
+      final photos = <PhotoEntity>[];
+      for (final row in rows) {
+        photos.add(await _toEntity(row));
+      }
+      return photos;
     } catch (e, stackTrace) {
       dev.log(
         'getPhotos failed (serverUrl: $_serverUrl)',
@@ -32,14 +36,18 @@ class ServerpodPhotoRepository implements PhotoRepository {
     }
   }
 
-  PhotoEntity _toEntity(Photo row) {
+  Future<PhotoEntity> _toEntity(Photo row) async {
     final base = _serverUrl.endsWith('/') ? _serverUrl : '$_serverUrl/';
+    final signedPath = await _client.photo.getSignedPhotoUrl(row.id!);
+    final imageUrl = signedPath.startsWith('http')
+        ? signedPath
+        : '$base${signedPath.startsWith('/') ? signedPath.substring(1) : signedPath}';
     return PhotoEntity(
       id: row.id!,
       filename: row.filename,
       mimeType: row.mimeType,
       fetchedAt: row.fetchedAt,
-      imageUrl: '${base}photos/${row.id}',
+      imageUrl: imageUrl,
     );
   }
 }
