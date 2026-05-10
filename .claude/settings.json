@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "WebFetch"
+      "WebFetch",
+      "Read(/Users/ethompson/files/automation/skills/**)"
     ]
   }
 }
