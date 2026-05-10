@@ -1,3 +1,4 @@
+import 'dart:developer' as dev;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -63,7 +64,14 @@ class _PhotoDisplay extends StatelessWidget {
         fit: BoxFit.contain,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, _, _) => const _Placeholder(label: 'Photo unavailable'),
+        errorBuilder: (_, error, _) {
+          dev.log(
+            'Failed to load local photo: ${photo.imageUrl}',
+            name: 'landfall.photo',
+            error: error,
+          );
+          return const _Placeholder(label: 'Photo unavailable');
+        },
       );
     }
     return Image.network(
@@ -73,7 +81,14 @@ class _PhotoDisplay extends StatelessWidget {
       width: double.infinity,
       height: double.infinity,
       headers: token != null ? {'Authorization': 'Bearer $token'} : null,
-      errorBuilder: (_, _, _) => const _Placeholder(label: 'Photo unavailable'),
+      errorBuilder: (_, error, _) {
+        dev.log(
+          'Failed to load network photo: ${photo.imageUrl}',
+          name: 'landfall.photo',
+          error: error,
+        );
+        return const _Placeholder(label: 'Photo unavailable');
+      },
       loadingBuilder: (_, child, loadingProgress) {
         if (loadingProgress == null) return child;
         return const _Placeholder(label: null);

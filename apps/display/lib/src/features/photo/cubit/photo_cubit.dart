@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
@@ -53,7 +55,13 @@ class PhotoCubit extends Cubit<PhotoState> {
             : 0;
         emit(PhotoLoaded(photos: photos, currentIndex: index));
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      dev.log(
+        'loadPhotos error: $e',
+        name: 'landfall.photo',
+        error: e,
+        stackTrace: stackTrace,
+      );
       emit(PhotoError(e.toString()));
     }
   }

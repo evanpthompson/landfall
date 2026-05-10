@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 import 'package:landfall_client/landfall_client.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
@@ -19,7 +21,13 @@ class ServerpodPhotoRepository implements PhotoRepository {
     try {
       final rows = await _client.photo.getPhotos();
       return rows.map(_toEntity).toList();
-    } catch (_) {
+    } catch (e, stackTrace) {
+      dev.log(
+        'getPhotos failed (serverUrl: $_serverUrl)',
+        name: 'landfall.photo',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return [];
     }
   }

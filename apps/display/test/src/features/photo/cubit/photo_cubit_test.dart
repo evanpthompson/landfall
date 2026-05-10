@@ -70,6 +70,61 @@ void main() {
     );
 
     blocTest<PhotoCubit, PhotoState>(
+      'advance wraps around to index 0 after the last photo',
+      build: () => PhotoCubit(repository),
+      seed: () => PhotoLoaded(
+        photos: [_photo(1, 'https://a.com/1.jpg'), _photo(2, 'https://a.com/2.jpg')],
+        currentIndex: 1,
+      ),
+      act: (c) => c.advance(),
+      expect: () => [
+        isA<PhotoLoaded>().having((s) => s.currentIndex, 'index', 0),
+      ],
+    );
+
+    blocTest<PhotoCubit, PhotoState>(
+      'advance on PhotoLoading state emits no new state',
+      build: () => PhotoCubit(repository),
+      seed: () => const PhotoLoading(),
+      act: (c) => c.advance(),
+      expect: () => [],
+    );
+
+    blocTest<PhotoCubit, PhotoState>(
+      'advance on PhotoEmpty state emits no new state',
+      build: () => PhotoCubit(repository),
+      seed: () => const PhotoEmpty(),
+      act: (c) => c.advance(),
+      expect: () => [],
+    );
+
+    blocTest<PhotoCubit, PhotoState>(
+      'advance on PhotoError state emits no new state',
+      build: () => PhotoCubit(repository),
+      seed: () => const PhotoError('some error'),
+      act: (c) => c.advance(),
+      expect: () => [],
+    );
+
+    blocTest<PhotoCubit, PhotoState>(
+      'loadPhotos preserves currentIndex on reload when photos are same length',
+      build: () {
+        when(() => repository.getPhotos()).thenAnswer(
+          (_) async => [_photo(1, 'https://a.com/1.jpg'), _photo(2, 'https://a.com/2.jpg')],
+        );
+        return PhotoCubit(repository);
+      },
+      seed: () => PhotoLoaded(
+        photos: [_photo(1, 'https://a.com/1.jpg'), _photo(2, 'https://a.com/2.jpg')],
+        currentIndex: 1,
+      ),
+      act: (c) => c.loadPhotos(),
+      expect: () => [
+        isA<PhotoLoaded>().having((s) => s.currentIndex, 'currentIndex', 1),
+      ],
+    );
+
+    blocTest<PhotoCubit, PhotoState>(
       'setSource switches repository and reloads',
       build: () {
         when(() => repository.getPhotos()).thenAnswer(
