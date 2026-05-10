@@ -1,4 +1,5 @@
 import 'dart:developer' as dev;
+import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
@@ -47,13 +48,8 @@ class PhotoCubit extends Cubit<PhotoState> {
       if (photos.isEmpty) {
         emit(const PhotoEmpty());
       } else {
-        final current = state;
-        // Preserve the current index when reloading so the display doesn't
-        // jump back to photo 0 on every 30-minute refresh.
-        final index = (current is PhotoLoaded && current.currentIndex < photos.length)
-            ? current.currentIndex
-            : 0;
-        emit(PhotoLoaded(photos: photos, currentIndex: index));
+        final shuffled = List.of(photos)..shuffle(Random());
+        emit(PhotoLoaded(photos: shuffled, currentIndex: 0));
       }
     } catch (e, stackTrace) {
       dev.log(

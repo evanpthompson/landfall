@@ -107,7 +107,7 @@ void main() {
     );
 
     blocTest<PhotoCubit, PhotoState>(
-      'loadPhotos preserves currentIndex on reload when photos are same length',
+      'loadPhotos shuffles photos and resets to index 0',
       build: () {
         when(() => repository.getPhotos()).thenAnswer(
           (_) async => [_photo(1, 'https://a.com/1.jpg'), _photo(2, 'https://a.com/2.jpg')],
@@ -120,7 +120,9 @@ void main() {
       ),
       act: (c) => c.loadPhotos(),
       expect: () => [
-        isA<PhotoLoaded>().having((s) => s.currentIndex, 'currentIndex', 1),
+        isA<PhotoLoaded>()
+            .having((s) => s.currentIndex, 'currentIndex', 0)
+            .having((s) => s.photos.length, 'length', 2),
       ],
     );
 
