@@ -57,11 +57,6 @@ class DashboardLayout {
           slot: DashboardSlot(column: 3, row: 0, columnSpan: 9, rowSpan: 4),
         ),
         CardConfig(
-          id: 'slot_forecast',
-          source: 'system.weather.forecast',
-          slot: DashboardSlot(column: 0, row: 2, columnSpan: 3, rowSpan: 2),
-        ),
-        CardConfig(
           id: 'slot_calendar',
           source: 'system.calendar',
           slot: DashboardSlot(column: 0, row: 4, columnSpan: 7, rowSpan: 4),

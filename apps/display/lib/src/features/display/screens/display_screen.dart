@@ -28,7 +28,6 @@ import 'package:display/src/features/ticker/cubit/ticker_cubit.dart';
 import 'package:display/src/features/ticker/widgets/ticker_strip_widget.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_state.dart';
-import 'package:display/src/features/weather/widgets/forecast_strip_card.dart';
 import 'package:display/src/features/weather/widgets/weather_card.dart';
 import 'package:ui_kit/ui_kit.dart';
 
@@ -431,15 +430,9 @@ class _GridView extends StatelessWidget {
             _ => const _PlaceholderTile(source: 'system.weather'),
           },
         ),
-      'system.weather.forecast' => BlocBuilder<WeatherCubit, WeatherState>(
-          builder: (_, state) => switch (state) {
-            WeatherLoaded(:final forecast) => ForecastStripCard(
-                forecast: forecast,
-                displayConfig: config.displayConfig,
-              ),
-            _ => const _PlaceholderTile(source: 'system.weather.forecast'),
-          },
-        ),
+      // Forecast strip was merged into WeatherCard. Render nothing if an old
+      // stored layout still references this slot.
+      'system.weather.forecast' => const SizedBox.shrink(),
       'system.calendar' => BlocBuilder<CalendarCubit, CalendarState>(
           builder: (_, state) => switch (state) {
             CalendarLoaded(:final events) => CalendarCard(

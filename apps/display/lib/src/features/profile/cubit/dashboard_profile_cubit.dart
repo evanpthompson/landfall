@@ -27,12 +27,41 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
       if (all.isEmpty) {
         all = await _seedDefaults();
       }
+      // One-time migration: remove standalone forecast slots now that forecast
+      // is embedded in WeatherCard. Saves back any profile whose layout changed.
+      all = await _migrateForecastSlots(all);
       final active =
           all.firstWhere((p) => p.isActive, orElse: () => all.first);
       emit(DashboardProfileLoaded(active, profiles: all));
     } catch (e) {
       emit(DashboardProfileError(e.toString()));
     }
+  }
+
+  Future<List<ProfileInfo>> _migrateForecastSlots(
+      List<ProfileInfo> profiles) async {
+    final migrated = <ProfileInfo>[];
+    for (final profile in profiles) {
+      final layout = profile.layout;
+      final hadForecastSlot =
+          layout.cards.any((c) => c.source == 'system.weather.forecast');
+      if (!hadForecastSlot) {
+        migrated.add(profile);
+        continue;
+      }
+      final cleaned = DashboardLayout(
+        id: layout.id,
+        name: layout.name,
+        columns: layout.columns,
+        rows: layout.rows,
+        cards: layout.cards
+            .where((c) => c.source != 'system.weather.forecast')
+            .toList(),
+      );
+      await _repository.updateProfile(profile.id, layout: cleaned);
+      migrated.add(profile.copyWith(layout: cleaned));
+    }
+    return migrated;
   }
 
   Future<List<ProfileInfo>> _seedDefaults() async {
