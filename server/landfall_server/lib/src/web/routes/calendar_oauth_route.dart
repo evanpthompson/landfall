@@ -16,8 +16,8 @@ import 'oauth_token_encryptor.dart';
 ///      confirmation page.
 ///
 /// Configuration required in passwords.yaml:
-///   googleClientId            — OAuth client ID
-///   googleClientSecret        — OAuth client secret
+///   googleOAuthClientId       — OAuth client ID
+///   googleOAuthClientSecret   — OAuth client secret
 ///   googleOAuthRedirectUri    — Full callback URL
 ///   oauthTokenEncryptionKey   — 64-char hex, AES-256 key for token encryption
 ///
@@ -50,8 +50,7 @@ String _userIdentifierToUuid(String userIdentifier) {
 /// GET /calendar/oauth/start — requires authentication, then redirects to
 /// Google's consent screen.
 class CalendarOAuthStartRoute extends Route {
-  static const _authEndpoint =
-      'https://accounts.google.com/o/oauth2/v2/auth';
+  static const _authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
   static const _scopes = [
     'https://www.googleapis.com/auth/calendar.readonly',
     'https://www.googleapis.com/auth/drive.readonly',
@@ -62,28 +61,23 @@ class CalendarOAuthStartRoute extends Route {
 
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
-    // Prefer session-derived identity (authenticated browser/app session).
-    // Fall back to explicit authUserId query param for kiosk/local-network flows
-    // where the caller cannot hold a Serverpod session cookie (e.g. opening the
-    // URL from a Mac browser while the display app runs on a Pi).
-    String? authUserId;
-    if (session.authenticated != null) {
-      authUserId =
-          _userIdentifierToUuid(session.authenticated!.userIdentifier);
-    } else {
-      final paramId = request.url.queryParameters['authUserId'];
-      if (paramId == null || paramId.isEmpty) {
-        return Response(
-          401,
-          body: Body.fromString(
-              'Authentication required. Include authUserId=<id> in the URL.'),
-        );
-      }
-      authUserId = paramId;
+    // SEC-06: derive identity from the authenticated session, never from a
+    // caller-supplied query parameter.
+    if (session.authenticated == null) {
+      return Response(
+        401,
+        body: Body.fromString(
+          'Authentication required to connect a calendar.',
+        ),
+      );
     }
 
-    final clientId = session.passwords['googleOAuthClientId'];
-    final redirectUri = session.passwords['googleOAuthRedirectUri'];
+    final clientId = _password(
+      session,
+      'googleOAuthClientId',
+      legacyKey: 'googleClientId',
+    );
+    final redirectUri = _password(session, 'googleOAuthRedirectUri');
 
     if (clientId == null || redirectUri == null) {
       return Response.internalServerError(
@@ -93,6 +87,9 @@ class CalendarOAuthStartRoute extends Route {
       );
     }
 
+    final authUserId = _userIdentifierToUuid(
+      session.authenticated!.userIdentifier,
+    );
     final now = DateTime.now().toUtc();
     _pendingStates.removeWhere((_, v) => v.expiresAt.isBefore(now));
 
@@ -125,8 +122,8 @@ class CalendarOAuthCallbackRoute extends Route {
   final http.Client _httpClient;
 
   CalendarOAuthCallbackRoute({http.Client? httpClient})
-      : _httpClient = httpClient ?? http.Client(),
-        super(methods: {Method.get});
+    : _httpClient = httpClient ?? http.Client(),
+      super(methods: {Method.get});
 
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
@@ -152,9 +149,17 @@ class CalendarOAuthCallbackRoute extends Route {
       );
     }
 
-    final clientId = session.passwords['googleOAuthClientId'];
-    final clientSecret = session.passwords['googleOAuthClientSecret'];
-    final redirectUri = session.passwords['googleOAuthRedirectUri'];
+    final clientId = _password(
+      session,
+      'googleOAuthClientId',
+      legacyKey: 'googleClientId',
+    );
+    final clientSecret = _password(
+      session,
+      'googleOAuthClientSecret',
+      legacyKey: 'googleClientSecret',
+    );
+    final redirectUri = _password(session, 'googleOAuthRedirectUri');
 
     if (clientId == null || clientSecret == null || redirectUri == null) {
       return _htmlResponse(500, 'Server OAuth configuration is incomplete');
@@ -181,8 +186,7 @@ class CalendarOAuthCallbackRoute extends Route {
       return _htmlResponse(500, 'Token exchange failed. Please try again.');
     }
 
-    final tokenJson =
-        jsonDecode(tokenResponse.body) as Map<String, dynamic>;
+    final tokenJson = jsonDecode(tokenResponse.body) as Map<String, dynamic>;
     final accessToken = tokenJson['access_token'] as String;
     final refreshToken = tokenJson['refresh_token'] as String?;
     final expiresIn = (tokenJson['expires_in'] as num).toInt();
@@ -202,8 +206,7 @@ class CalendarOAuthCallbackRoute extends Route {
       );
     }
 
-    final userJson =
-        jsonDecode(userInfoResponse.body) as Map<String, dynamic>;
+    final userJson = jsonDecode(userInfoResponse.body) as Map<String, dynamic>;
     final providerEmail = userJson['email'] as String;
 
     // SEC-07: encrypt tokens at rest.
@@ -265,4 +268,12 @@ class CalendarOAuthCallbackRoute extends Route {
       ),
     );
   }
+}
+
+String? _password(Session session, String key, {String? legacyKey}) {
+  final value = session.passwords[key];
+  if (value != null && value.isNotEmpty) return value;
+  if (legacyKey == null) return null;
+  final legacyValue = session.passwords[legacyKey];
+  return legacyValue != null && legacyValue.isNotEmpty ? legacyValue : null;
 }
