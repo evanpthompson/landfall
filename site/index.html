@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Landfall — the open-source ambient display for people who build things. Your calendar, weather, photos, and AI agent output, beautiful on any screen." />
+  <title>Landfall — Ambient Display for the Agentic Era</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f12;
+      --surface:   #141720;
+      --border:    #1e2330;
+      --accent:    #4f7cff;
+      --accent-dim:#2a3f80;
+      --text:      #e8eaf0;
+      --text-muted:#7a8099;
+      --text-dim:  #4a5268;
+      --green:     #3dd68c;
+      --amber:     #f5a623;
+      --radius:    12px;
+      --max:       1120px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13,15,18,0.85);
+      backdrop-filter: blur(12px);
+    }
+    .nav-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: var(--text);
+    }
+    .logo span { color: var(--accent); }
+    .nav-links { display: flex; align-items: center; gap: 24px; }
+    .nav-links a { color: var(--text-muted); font-size: 14px; font-weight: 500; }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+    .btn {
+      display: inline-block;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      border: none;
+    }
+    .btn:hover { opacity: 0.85; text-decoration: none; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--text-muted); }
+
+    /* ── Hero ── */
+    .hero {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 96px 24px 80px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 100px;
+      border: 1px solid var(--accent-dim);
+      background: rgba(79,124,255,0.08);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 32px;
+    }
+    .hero-badge .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 68px);
+      font-weight: 700;
+      letter-spacing: -2px;
+      line-height: 1.05;
+      margin-bottom: 24px;
+      color: var(--text);
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, #4f7cff 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--text-muted);
+      max-width: 640px;
+      margin: 0 auto 40px;
+      line-height: 1.5;
+    }
+    .hero-ctas {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .hero-ctas .btn { padding: 13px 28px; font-size: 15px; }
+
+    /* ── Display mockup ── */
+    .mockup-wrap {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 0 24px 96px;
+    }
+    .mockup {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden;
+      position: relative;
+    }
+    .mockup-bar {
+      background: #0a0b0f;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mockup-screen {
+      padding: 32px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 12px;
+      min-height: 320px;
+    }
+    .mock-card {
+      background: #0d0f12;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .mock-card.span2 { grid-column: span 2; }
+    .mock-card.span3 { grid-column: span 3; }
+    .mock-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mock-time {
+      font-size: 52px;
+      font-weight: 700;
+      letter-spacing: -2px;
+      line-height: 1;
+      color: var(--text);
+    }
+    .mock-date { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+    .mock-weather-row { display: flex; align-items: center; gap: 12px; }
+    .mock-weather-temp { font-size: 36px; font-weight: 700; color: var(--text); }
+    .mock-weather-desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    .mock-agent-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 8px;
+    }
+    .pill-green { background: rgba(61,214,140,0.1); color: var(--green); }
+    .pill-amber { background: rgba(245,166,35,0.1); color: var(--amber); }
+    .mock-agent-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .mock-agent-body { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+    .mock-ticker {
+      background: #080a0d;
+      border-top: 1px solid var(--border);
+      padding: 10px 20px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .ticker-inner { display: inline-block; animation: scroll 20s linear infinite; }
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* ── Sections ── */
+    section { max-width: var(--max); margin: 0 auto; padding: 80px 24px; }
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    h2 {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 18px;
+      color: var(--text-muted);
+      max-width: 560px;
+      line-height: 1.55;
+      margin-bottom: 56px;
+    }
+    hr.divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0;
+    }
+
+    /* ── What is it ── */
+    .what-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+    .what-text p { color: var(--text-muted); line-height: 1.7; margin-bottom: 16px; font-size: 17px; }
+    .what-text p strong { color: var(--text); }
+    .what-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .pill {
+      padding: 6px 14px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    .devices-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+    .device-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .device-row:last-child { border-bottom: none; }
+    .device-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .device-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .device-sub { font-size: 12px; color: var(--text-muted); }
+    .status-dot {
+      margin-left: auto;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    /* ── Features ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: border-color 0.2s;
+    }
+    .feature-card:hover { border-color: var(--accent-dim); }
+    .feature-icon {
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+    .feature-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .feature-body {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* ── How it works ── */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+    .step { position: relative; }
+    .step-num {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .step-title { font-size: 18px; font-weight: 600; margin-bottom: 10px; }
+    .step-body { font-size: 14px; color: var(--text-muted); line-height: 1.55; }
+    .step-code {
+      margin-top: 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      overflow-x: auto;
+    }
+    .step-code .kw { color: var(--accent); }
+    .step-code .str { color: var(--green); }
+
+    /* ── Companion teaser ── */
+    .companion-wrap {
+      background: linear-gradient(135deg, rgba(79,124,255,0.07) 0%, rgba(167,139,250,0.07) 100%);
+      border: 1px solid rgba(79,124,255,0.2);
+      border-radius: 20px;
+      padding: 56px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 48px;
+      align-items: center;
+    }
+    .companion-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 100px;
+      background: rgba(167,139,250,0.1);
+      border: 1px solid rgba(167,139,250,0.25);
+      font-size: 12px;
+      font-weight: 600;
+      color: #a78bfa;
+      margin-bottom: 20px;
+    }
+    .companion-wrap h2 { letter-spacing: -1px; }
+    .companion-wrap p { font-size: 16px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; }
+    .rarity-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+    .rarity-pill {
+      padding: 5px 14px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .r-common  { background: rgba(120,120,140,0.15); color: #9090a8; border: 1px solid rgba(120,120,140,0.2); }
+    .r-uncommon{ background: rgba(61,214,140,0.1);  color: #3dd68c; border: 1px solid rgba(61,214,140,0.2); }
+    .r-rare    { background: rgba(79,124,255,0.12); color: #7fa4ff; border: 1px solid rgba(79,124,255,0.2); }
+    .r-epic    { background: rgba(167,139,250,0.12);color: #a78bfa; border: 1px solid rgba(167,139,250,0.2); }
+    .r-legendary{background: rgba(245,166,35,0.1); color: #f5a623; border: 1px solid rgba(245,166,35,0.2); }
+    .companion-sprite {
+      width: 160px;
+      height: 160px;
+      border-radius: 20px;
+      background: rgba(13,15,18,0.6);
+      border: 1px solid rgba(79,124,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 72px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .companion-sprite::after {
+      content: '?';
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+      font-size: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-dim);
+    }
+
+    /* ── Open source ── */
+    .oss-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 40px;
+    }
+    .oss-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .oss-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+    .oss-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .oss-body { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+    /* ── Signup ── */
+    #signup {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .signup-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 80px 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: start;
+    }
+    .signup-left h2 { margin-bottom: 12px; }
+    .signup-left p { color: var(--text-muted); font-size: 16px; line-height: 1.6; margin-bottom: 24px; }
+    .signup-bullets { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .signup-bullets li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .signup-bullets li::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+    .form-wrap {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .form-wrap iframe {
+      width: 100%;
+      min-height: 480px;
+      border: none;
+      display: block;
+    }
+    .form-placeholder {
+      padding: 40px 32px;
+      text-align: center;
+    }
+    .form-placeholder .fp-icon { font-size: 36px; margin-bottom: 16px; }
+    .form-placeholder p { color: var(--text-muted); font-size: 14px; line-height: 1.5; }
+    .form-placeholder code {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 8px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 24px;
+    }
+    .footer-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .footer-left { font-size: 14px; color: var(--text-dim); }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { font-size: 13px; color: var(--text-muted); }
+    .footer-links a:hover { color: var(--text); text-decoration: none; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .what-grid,
+      .features-grid,
+      .steps,
+      .oss-grid,
+      .signup-inner { grid-template-columns: 1fr; }
+      .companion-wrap { grid-template-columns: 1fr; padding: 32px; }
+      .companion-sprite { display: none; }
+      .mockup-screen { grid-template-columns: 1fr 1fr; min-height: 240px; }
+      .mock-card.span2,
+      .mock-card.span3 { grid-column: span 2; }
+      .nav-links a:not(:last-child) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <div class="nav-inner">
+    <div class="logo">land<span>fall</span></div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="https://github.com/evanpthompson/landfall">GitHub</a>
+      <a href="#signup" class="btn btn-primary">Get early access</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<div class="hero">
+  <div class="hero-badge">
+    <span class="dot"></span>
+    Early access — join the list
+  </div>
+  <h1>Your AI-assisted life,<br /><em>on the wall.</em></h1>
+  <p class="hero-sub">
+    Landfall is an open-source ambient display platform. Calendar, weather, photos, and live AI agent output — beautiful on any screen, running on hardware you already own.
+  </p>
+  <div class="hero-ctas">
+    <a href="#signup" class="btn btn-primary">Get early access</a>
+    <a href="https://github.com/evanpthompson/landfall" class="btn btn-ghost">View on GitHub</a>
+  </div>
+</div>
+
+<!-- ── Mockup ── -->
+<div class="mockup-wrap">
+  <div class="mockup">
+    <div class="mockup-bar">
+      <div class="mockup-dot" style="background:#ff5f56"></div>
+      <div class="mockup-dot" style="background:#ffbd2e"></div>
+      <div class="mockup-dot" style="background:#27c93f"></div>
+      <span style="margin-left:8px;font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text-dim)">landfall display — living room</span>
+    </div>
+    <div class="mockup-screen">
+      <div class="mock-card">
+        <div class="mock-label">Clock</div>
+        <div class="mock-time">9:41</div>
+        <div class="mock-date">Sunday, May 10</div>
+      </div>
+      <div class="mock-card">
+        <div class="mock-label">Weather</div>
+        <div class="mock-weather-row">
+          <span style="font-size:32px">⛅</span>
+          <div>
+            <div class="mock-weather-temp">68°</div>
+            <div class="mock-weather-desc">Partly cloudy · Portland</div>
+          </div>
+        </div>
+      </div>
+      <div class="mock-card">
+        <div class="mock-label">Agent — Claude</div>
+        <div class="mock-agent-pill pill-green">✓ agent.claude</div>
+        <div class="mock-agent-title">Sprint planning notes ready</div>
+        <div class="mock-agent-body">Summarized 23 open issues into 4 themes for Tuesday's meeting.</div>
+      </div>
+      <div class="mock-card span2">
+        <div class="mock-label">Calendar — Today</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+          <div style="display:flex;gap:10px;align-items:center">
+            <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--accent);min-width:36px">10:00</span>
+            <span style="font-size:13px;color:var(--text)">Sprint planning</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);min-width:36px">2:00</span>
+            <span style="font-size:13px;color:var(--text-muted)">Design review</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);min-width:36px">5:30</span>
+            <span style="font-size:13px;color:var(--text-muted)">Dinner — The Kellys</span>
+          </div>
+        </div>
+      </div>
+      <div class="mock-card">
+        <div class="mock-label">Agent — CI</div>
+        <div class="mock-agent-pill pill-amber">↯ agent.ci</div>
+        <div class="mock-agent-title">Deploy failed</div>
+        <div class="mock-agent-body">prod-api — 2 tests failed in auth module. PR #214.</div>
+      </div>
+    </div>
+    <div class="mock-ticker">
+      <span class="ticker-inner">
+        agent.github → PR #214 merged by @ethompson &nbsp;·&nbsp; agent.claude → Meeting summary pushed &nbsp;·&nbsp; agent.ci → Build #891 passed ✓ &nbsp;·&nbsp; agent.github → PR #214 merged by @ethompson &nbsp;·&nbsp; agent.claude → Meeting summary pushed &nbsp;·&nbsp; agent.ci → Build #891 passed ✓ &nbsp;·&nbsp;
+      </span>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ── What is it ── -->
+<section>
+  <div class="section-label">What is Landfall</div>
+  <div class="what-grid">
+    <div class="what-text">
+      <h2>The display layer your home was missing.</h2>
+      <p>
+        Every AI assistant, home automation system, and script you run produces output — and it disappears into a chat window or a notification you swipe away. <strong>Landfall gives that output a home.</strong>
+      </p>
+      <p>
+        Any agent, any language, any tool can push a card to your display over a simple REST API or native MCP integration. You decide what lives on the screen. It stays there until it doesn't matter anymore.
+      </p>
+      <p>
+        Self-hosted from the start. Your data never leaves your network.
+      </p>
+      <div class="what-pills">
+        <span class="pill">Open source</span>
+        <span class="pill">Self-hosted</span>
+        <span class="pill">REST API</span>
+        <span class="pill">MCP native</span>
+        <span class="pill">No subscription</span>
+        <span class="pill">Your hardware</span>
+      </div>
+    </div>
+    <div>
+      <div class="devices-block">
+        <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Runs on</div>
+        <div class="device-row">
+          <div class="device-icon">🔥</div>
+          <div>
+            <div class="device-name">Fire TV Stick</div>
+            <div class="device-sub">4K, 4K Max, Lite — plug into any HDMI port</div>
+          </div>
+          <div class="status-dot"></div>
+        </div>
+        <div class="device-row">
+          <div class="device-icon">🫐</div>
+          <div>
+            <div class="device-name">Raspberry Pi</div>
+            <div class="device-sub">Pi 4 and Pi 5 — runs headless from a wall mount</div>
+          </div>
+          <div class="status-dot"></div>
+        </div>
+        <div class="device-row">
+          <div class="device-icon">📱</div>
+          <div>
+            <div class="device-name">Any Android Device</div>
+            <div class="device-sub">Tablet, old phone, dedicated panel</div>
+          </div>
+          <div class="status-dot"></div>
+        </div>
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Backend runs on</div>
+          <div class="device-row" style="padding-top:10px">
+            <div class="device-icon">🐳</div>
+            <div>
+              <div class="device-name">Docker Compose</div>
+              <div class="device-sub">Any Linux server, NAS, or cloud VPS</div>
+            </div>
+            <div class="status-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ── Features ── -->
+<section id="features">
+  <div class="section-label">Features</div>
+  <h2>Everything on the wall, nothing in the way.</h2>
+  <p class="section-sub">Built for households where automation is already happening. Landfall surfaces it.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <div class="feature-title">AI Agent Cards</div>
+      <div class="feature-body">Any AI agent — Claude, GPT, a local model, a cron script — can push a card over REST or MCP. Output doesn't disappear when the chat closes.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📅</div>
+      <div class="feature-title">Calendar Integration</div>
+      <div class="feature-body">Google Calendar and Microsoft 365 sync out of the box. See today's events at a glance. More providers on the way.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌤</div>
+      <div class="feature-title">Live Weather</div>
+      <div class="feature-body">Current conditions with animated icons. Automatic updates. No API key required in the default configuration.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🖼</div>
+      <div class="feature-title">Photo Frame</div>
+      <div class="feature-body">Rotating photo slideshow with Ken Burns transitions and theme-aware styling. Upload your own or pull from a shared album.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎨</div>
+      <div class="feature-title">Themes & Layouts</div>
+      <div class="feature-body">Preset layout switcher with resize handles. Multiple theme profiles — day, night, ambient. Drag-and-drop layout editor coming in early access.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <div class="feature-title">Fully Self-Hosted</div>
+      <div class="feature-body">Docker Compose stack, optional Pi image, or cloud VPS. Your calendar, photos, and agent data never touch a third-party server.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎰</div>
+      <div class="feature-title">Ticker Strip</div>
+      <div class="feature-body">A scrolling ticker across the bottom of the display — ephemeral messages from agents, CI runs, automations. Think news crawl for your home network.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚙️</div>
+      <div class="feature-title">First-Run Wizard</div>
+      <div class="feature-body">On-screen setup flow with QR-based phone pairing. Configure server URL, calendars, and API keys without touching a config file.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📦</div>
+      <div class="feature-title">Agent SDK</div>
+      <div class="feature-body">A Dart package (<code style="font-size:12px;font-family:'JetBrains Mono',monospace">landfall_agent_sdk</code>) for native integration. CardDraft builder, type-safe API, 30 tests included.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ── How it works ── -->
+<section id="how">
+  <div class="section-label">How it works</div>
+  <h2>Up in an afternoon.</h2>
+  <p class="section-sub">Self-hosting doesn't have to mean a weekend project. Landfall is designed to be running before dinner.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01 — DEPLOY</div>
+      <div class="step-title">Run the stack</div>
+      <div class="step-body">Docker Compose brings up the Serverpod backend, Caddy reverse proxy, and HTTPS in one command. Or flash the Pi image and boot.</div>
+      <div class="step-code">
+        <span class="kw">git clone</span> landfall &amp;&amp; <span class="kw">cd</span> landfall<br/>
+        <span class="kw">cp</span> deploy/.env.example deploy/.env<br/>
+        <span class="kw">docker compose up</span> -d
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">02 — CONNECT</div>
+      <div class="step-title">Pair your display</div>
+      <div class="step-body">Install the app on your Fire TV or Pi. The first-run wizard walks through server URL, calendar auth, and API key generation — all on-screen.</div>
+      <div class="step-code">
+        <span class="str"># On your display</span><br/>
+        Open Landfall → Follow setup wizard<br/>
+        Scan QR with phone → Done
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">03 — PUSH</div>
+      <div class="step-title">Send your first card</div>
+      <div class="step-body">Any script, agent, or automation can push a card with a single HTTP POST. The card appears on the display within seconds.</div>
+      <div class="step-code">
+        curl -X POST /api/v1/cards \<br/>
+        &nbsp;&nbsp;-H <span class="str">"Authorization: Bearer lf_..."</span> \<br/>
+        &nbsp;&nbsp;-d <span class="str">'{"title":"Deploy succeeded"}'</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ── Companion Card ── -->
+<section>
+  <div class="companion-wrap">
+    <div>
+      <div class="companion-badge">✦ Coming in Phase 21</div>
+      <h2>Your display gets a companion.</h2>
+      <p>Every Landfall display will have its own procedurally generated creature — unique to that display, forever. It reacts to what's happening in the house: calm when things are quiet, excited when something ships, sleepy at night.</p>
+      <p>Scan the QR code on the display to pet it, play with it, or just say hi from your phone. It evolves over time based on how your household uses Landfall.</p>
+      <div class="rarity-pills">
+        <span class="rarity-pill r-common">◆ Common</span>
+        <span class="rarity-pill r-uncommon">◆ Uncommon</span>
+        <span class="rarity-pill r-rare">◆ Rare</span>
+        <span class="rarity-pill r-epic">◆ Epic</span>
+        <span class="rarity-pill r-legendary">◆ Legendary</span>
+      </div>
+    </div>
+    <div class="companion-sprite">🐾</div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ── Open source ── -->
+<section>
+  <div class="section-label">Open source</div>
+  <h2>Built in the open. Yours to keep.</h2>
+  <p class="section-sub">No hostage data, no forced upgrades, no subscription that makes your display stop working.</p>
+  <div class="oss-grid">
+    <div class="oss-card">
+      <div class="oss-icon">⚖️</div>
+      <div>
+        <div class="oss-title">MIT Licensed</div>
+        <div class="oss-body">Fork it, modify it, run it commercially. No gotchas in the license.</div>
+      </div>
+    </div>
+    <div class="oss-card">
+      <div class="oss-icon">🔍</div>
+      <div>
+        <div class="oss-title">Auditable</div>
+        <div class="oss-body">Every line of code that touches your calendar, photos, and network traffic is on GitHub.</div>
+      </div>
+    </div>
+    <div class="oss-card">
+      <div class="oss-icon">🏗</div>
+      <div>
+        <div class="oss-title">Extensible</div>
+        <div class="oss-body">Push cards from anything. Build integrations. Submit themes. The Card model is the extension point.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ── Signup ── -->
+<section id="signup" style="padding:0">
+  <div class="signup-inner">
+    <div class="signup-left">
+      <div class="section-label">Early access</div>
+      <h2>Get notified when it's ready.</h2>
+      <p>Landfall is in active development. Sign up to be among the first to get access, follow progress, and shape what gets built next.</p>
+      <ul class="signup-bullets">
+        <li>Early access before public release</li>
+        <li>No spam — one email when it ships, occasional updates</li>
+        <li>Influence on features and priorities</li>
+        <li>Direct line to the builder</li>
+      </ul>
+    </div>
+    <div class="form-wrap">
+      <!--
+        REPLACE THIS BLOCK with your Google Form embed code.
+
+        To get it:
+        1. Create a Google Form with fields: Name (short answer), Email (short answer)
+        2. Click Send → Embed (<>) tab
+        3. Copy the <iframe> tag and paste it here, replacing the placeholder below
+        4. In the iframe URL, change ?embedded=true to &embedded=true if needed
+        5. Set width="100%" and remove fixed height — or set min-height to taste
+
+        Example of what the iframe will look like:
+        <iframe src="https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?embedded=true"
+          width="100%" height="480" frameborder="0" marginheight="0" marginwidth="0">
+        </iframe>
+      -->
+      <div class="form-placeholder">
+        <div class="fp-icon">📋</div>
+        <p>The sign-up form will appear here.<br/>Replace this block with your Google Form embed code.</p>
+        <code>&lt;!-- Google Form iframe goes here --&gt;</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">© 2026 Landfall · Open source, MIT License</div>
+    <div class="footer-links">
+      <a href="https://github.com/evanpthompson/landfall">GitHub</a>
+      <a href="https://github.com/evanpthompson/landfall/blob/main/LICENSE">License</a>
+      <a href="https://github.com/evanpthompson/landfall/blob/main/docs/self_hosting_guide.md">Docs</a>
+      <a href="mailto:evanpthompson@gmail.com">Contact</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
