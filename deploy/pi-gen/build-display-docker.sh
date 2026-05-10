@@ -4,4 +4,5 @@ apt-get update -q && apt-get install -y --no-install-recommends \
   cmake ninja-build clang libgtk-3-dev pkg-config \
   libblkid-dev liblzma-dev libsecret-1-dev lld
 flutter build linux --release \
-  --dart-define=LANDFALL_DEFAULT_SERVER_URL="${LANDFALL_DEFAULT_SERVER_URL:-http://127.0.0.1:8080/}"
+  --dart-define=LANDFALL_DEFAULT_SERVER_URL="${LANDFALL_DEFAULT_SERVER_URL:-http://127.0.0.1:8080/}" \
+  --dart-define=LANDFALL_WEB_SERVER_URL="${LANDFALL_WEB_SERVER_URL:-http://127.0.0.1:8082/}"

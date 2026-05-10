@@ -160,15 +160,18 @@ rsync -av apps/display/build/linux/arm64/release/bundle/ \
   landfall@<PI_IP>:/home/landfall/landfall/display/
 ```
 
-For a manual all-in-one Pi display build, pass the same default server URL used by the image build:
+For a manual all-in-one Pi display build, pass both the API server URL and the web server URL. The display app uses the web server URL (`8082`) to load photos; without it photos are served from the wrong port and fail to load.
 
 ```bash
 cd apps/display
 flutter build linux --release \
-  --dart-define=LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/
+  --dart-define=LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/ \
+  --dart-define=LANDFALL_WEB_SERVER_URL=http://127.0.0.1:8082/
 ```
 
-Fire TV and general Android builds do not set this define, so they still show the setup wizard and ask for the self-hosted server URL. If a display already has stored settings, those stored settings override the compile-time default.
+Fire TV and general Android builds do not set these defines, so they still show the setup wizard and ask for the self-hosted server URL. If a display already has stored settings, those stored settings override the compile-time default.
+
+> **Why two URLs?** Serverpod runs two processes: an API server on port `8080` and a web server on port `8082`. Photos, OAuth callbacks, and other web routes are served from `8082`. In reverse-proxy deployments (Caddy), a single domain resolves both, so only one URL is needed. In direct-connect mode (Pi or dev), both ports must be specified.
 
 ### 5. Configure the display to auto-start
 
