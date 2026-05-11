@@ -40,11 +40,16 @@ class DashboardLayout {
   /// The out-of-box layout, used when no saved layout exists.
   static DashboardLayout defaultLayout() => weekdayLayout();
 
-  /// Weekday preset — three-column layout.
+  /// Weekday preset — two-column layout.
   ///
-  /// Left  (cols 0–2,  3 cols): clock, top two rows only.
-  /// Middle (cols 3–7,  5 cols): weather above, calendar below — same width.
-  /// Right  (cols 8–11, 4 cols): companion above, photos below — same width.
+  /// Left half (cols 0–5, 6 cols):
+  ///   clock  — top-left corner (3×2), open space to its right.
+  ///   weather — full left width (6×2), sits between clock and calendar.
+  ///   calendar — full left width (6×4), bottom half.
+  ///
+  /// Right half (cols 6–11, 6 cols):
+  ///   companion — top half (6×4), reaches the top of the screen.
+  ///   photos    — bottom half (6×4).
   static DashboardLayout weekdayLayout() {
     return DashboardLayout(
       id: 'layout-weekday',
@@ -59,23 +64,23 @@ class DashboardLayout {
         CardConfig(
           id: 'slot_weather',
           source: 'system.weather',
-          slot: DashboardSlot(column: 3, row: 0, columnSpan: 5, rowSpan: 4),
+          slot: DashboardSlot(column: 0, row: 2, columnSpan: 6, rowSpan: 2),
         ),
         CardConfig(
           id: 'slot_calendar',
           source: 'system.calendar',
-          slot: DashboardSlot(column: 3, row: 4, columnSpan: 5, rowSpan: 4),
+          slot: DashboardSlot(column: 0, row: 4, columnSpan: 6, rowSpan: 4),
           displayConfig: {'view': 'monthly'},
         ),
         CardConfig(
           id: 'slot_companion',
           source: 'system.companion',
-          slot: DashboardSlot(column: 8, row: 0, columnSpan: 4, rowSpan: 4),
+          slot: DashboardSlot(column: 6, row: 0, columnSpan: 6, rowSpan: 4),
         ),
         CardConfig(
           id: 'slot_photos',
           source: 'system.photos',
-          slot: DashboardSlot(column: 8, row: 4, columnSpan: 4, rowSpan: 4),
+          slot: DashboardSlot(column: 6, row: 4, columnSpan: 6, rowSpan: 4),
         ),
       ],
     );
