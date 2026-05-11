@@ -40,7 +40,10 @@ class DashboardLayout {
   /// The out-of-box layout, used when no saved layout exists.
   static DashboardLayout defaultLayout() => weekdayLayout();
 
-  /// Weekday preset — clock, weather, forecast strip, calendar.
+  /// Weekday preset — clock, companion, weather, calendar, photos.
+  ///
+  /// Left column (cols 0–2): clock top, companion filling the rest.
+  /// Right columns (cols 3–11): weather top half, calendar + photos bottom.
   static DashboardLayout weekdayLayout() {
     return DashboardLayout(
       id: 'layout-weekday',
@@ -52,6 +55,11 @@ class DashboardLayout {
           slot: DashboardSlot(column: 0, row: 0, columnSpan: 3, rowSpan: 2),
         ),
         CardConfig(
+          id: 'slot_companion',
+          source: 'system.companion',
+          slot: DashboardSlot(column: 0, row: 2, columnSpan: 3, rowSpan: 6),
+        ),
+        CardConfig(
           id: 'slot_weather',
           source: 'system.weather',
           slot: DashboardSlot(column: 3, row: 0, columnSpan: 9, rowSpan: 4),
@@ -59,12 +67,12 @@ class DashboardLayout {
         CardConfig(
           id: 'slot_calendar',
           source: 'system.calendar',
-          slot: DashboardSlot(column: 0, row: 4, columnSpan: 7, rowSpan: 4),
+          slot: DashboardSlot(column: 3, row: 4, columnSpan: 5, rowSpan: 4),
         ),
         CardConfig(
           id: 'slot_photos',
           source: 'system.photos',
-          slot: DashboardSlot(column: 7, row: 4, columnSpan: 5, rowSpan: 4),
+          slot: DashboardSlot(column: 8, row: 4, columnSpan: 4, rowSpan: 4),
         ),
       ],
     );
