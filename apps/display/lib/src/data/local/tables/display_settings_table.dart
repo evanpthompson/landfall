@@ -13,6 +13,7 @@ class DisplaySettingsEntries extends Table {
   TextColumn get serverUrl => text().withDefault(const Constant(''))();
   BoolColumn get wizardComplete =>
       boolean().withDefault(const Constant(false))();
+  TextColumn get displayId => text().nullable()();
   DateTimeColumn get updatedAt => dateTime()();
 
   @override

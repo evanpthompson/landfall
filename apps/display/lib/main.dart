@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:landfall_shared/landfall_shared.dart';
+import 'package:uuid/uuid.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'package:display/src/app/app_config.dart';
@@ -38,13 +39,21 @@ void main() async {
       : AppDatabase();
   final settingsRepository = DriftDisplaySettingsRepository(database);
 
-  void launchApp(String serverUrl) {
-    runApp(LandfallApp(database: database, serverUrl: serverUrl));
+  void launchApp(String serverUrl, String displayId) {
+    runApp(LandfallApp(database: database, serverUrl: serverUrl, displayId: displayId));
   }
 
-  final settings = kIntegrationTestWizardMode
+  var settings = kIntegrationTestWizardMode
       ? const DisplaySettings()
       : await settingsRepository.getSettings();
+
+  // Generate a stable display UUID on first launch and persist it.
+  if (settings.displayId.isEmpty && !kIntegrationTestWizardMode) {
+    final displayId = const Uuid().v4();
+    settings = settings.copyWith(displayId: displayId);
+    await settingsRepository.saveSettings(settings);
+  }
+
   final decision = resolveStartupDecision(
     settings: settings,
     integrationTestServerUrl: kIntegrationTestServerUrl,
@@ -58,9 +67,12 @@ void main() async {
         settings.copyWith(serverUrl: decision.serverUrl, wizardComplete: true),
       );
     }
-    launchApp(decision.serverUrl);
+    launchApp(decision.serverUrl, settings.displayId);
     return;
   }
 
-  runApp(SetupWizardApp(database: database, onComplete: launchApp));
+  runApp(SetupWizardApp(
+    database: database,
+    onComplete: (serverUrl) => launchApp(serverUrl, settings.displayId),
+  ));
 }

@@ -30,6 +30,7 @@ class DriftDisplaySettingsRepository implements DisplaySettingsRepository {
       locationName: entry.locationName,
       serverUrl: entry.serverUrl,
       wizardComplete: entry.wizardComplete,
+      displayId: entry.displayId ?? '',
     );
   }
 
@@ -45,6 +46,7 @@ class DriftDisplaySettingsRepository implements DisplaySettingsRepository {
             locationName: Value(settings.locationName),
             serverUrl: Value(settings.serverUrl),
             wizardComplete: Value(settings.wizardComplete),
+            displayId: Value(settings.displayId.isEmpty ? null : settings.displayId),
             updatedAt: Value(DateTime.now()),
           ),
         );

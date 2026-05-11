@@ -11,6 +11,7 @@ class DisplaySettings {
     this.locationName = '',
     this.serverUrl = '',
     this.wizardComplete = false,
+    this.displayId = '',
   });
 
   /// Whether the scheduled dim mode is active.
@@ -45,6 +46,12 @@ class DisplaySettings {
   /// Prevents re-showing the wizard after setup even if [serverUrl] changes.
   final bool wizardComplete;
 
+  /// Stable unique identifier for this display, generated on first launch.
+  ///
+  /// Used to identify this display to the server (companion entity, QR routing).
+  /// Empty string means not yet generated — check at startup and populate.
+  final String displayId;
+
   DisplaySettings copyWith({
     bool? dimEnabled,
     int? dimStartHour,
@@ -53,6 +60,7 @@ class DisplaySettings {
     String? locationName,
     String? serverUrl,
     bool? wizardComplete,
+    String? displayId,
   }) {
     return DisplaySettings(
       dimEnabled: dimEnabled ?? this.dimEnabled,
@@ -62,6 +70,7 @@ class DisplaySettings {
       locationName: locationName ?? this.locationName,
       serverUrl: serverUrl ?? this.serverUrl,
       wizardComplete: wizardComplete ?? this.wizardComplete,
+      displayId: displayId ?? this.displayId,
     );
   }
 
@@ -75,7 +84,8 @@ class DisplaySettings {
           dimLevel == other.dimLevel &&
           locationName == other.locationName &&
           serverUrl == other.serverUrl &&
-          wizardComplete == other.wizardComplete;
+          wizardComplete == other.wizardComplete &&
+          displayId == other.displayId;
 
   @override
   int get hashCode => Object.hash(
@@ -86,5 +96,6 @@ class DisplaySettings {
         locationName,
         serverUrl,
         wizardComplete,
+        displayId,
       );
 }

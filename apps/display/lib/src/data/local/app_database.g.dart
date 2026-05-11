@@ -1551,6 +1551,17 @@ class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _displayIdMeta = const VerificationMeta(
+    'displayId',
+  );
+  @override
+  late final GeneratedColumn<String> displayId = GeneratedColumn<String>(
+    'display_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -1572,6 +1583,7 @@ class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
     locationName,
     serverUrl,
     wizardComplete,
+    displayId,
     updatedAt,
   ];
   @override
@@ -1643,6 +1655,12 @@ class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
         ),
       );
     }
+    if (data.containsKey('display_id')) {
+      context.handle(
+        _displayIdMeta,
+        displayId.isAcceptableOrUnknown(data['display_id']!, _displayIdMeta),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -1692,6 +1710,10 @@ class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
         DriftSqlType.bool,
         data['${effectivePrefix}wizard_complete'],
       )!,
+      displayId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_id'],
+      ),
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -1715,6 +1737,7 @@ class DisplaySettingsEntry extends DataClass
   final String locationName;
   final String serverUrl;
   final bool wizardComplete;
+  final String? displayId;
   final DateTime updatedAt;
   const DisplaySettingsEntry({
     required this.id,
@@ -1725,6 +1748,7 @@ class DisplaySettingsEntry extends DataClass
     required this.locationName,
     required this.serverUrl,
     required this.wizardComplete,
+    this.displayId,
     required this.updatedAt,
   });
   @override
@@ -1738,6 +1762,9 @@ class DisplaySettingsEntry extends DataClass
     map['location_name'] = Variable<String>(locationName);
     map['server_url'] = Variable<String>(serverUrl);
     map['wizard_complete'] = Variable<bool>(wizardComplete);
+    if (!nullToAbsent || displayId != null) {
+      map['display_id'] = Variable<String>(displayId);
+    }
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -1752,6 +1779,9 @@ class DisplaySettingsEntry extends DataClass
       locationName: Value(locationName),
       serverUrl: Value(serverUrl),
       wizardComplete: Value(wizardComplete),
+      displayId: displayId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayId),
       updatedAt: Value(updatedAt),
     );
   }
@@ -1770,6 +1800,7 @@ class DisplaySettingsEntry extends DataClass
       locationName: serializer.fromJson<String>(json['locationName']),
       serverUrl: serializer.fromJson<String>(json['serverUrl']),
       wizardComplete: serializer.fromJson<bool>(json['wizardComplete']),
+      displayId: serializer.fromJson<String?>(json['displayId']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -1785,6 +1816,7 @@ class DisplaySettingsEntry extends DataClass
       'locationName': serializer.toJson<String>(locationName),
       'serverUrl': serializer.toJson<String>(serverUrl),
       'wizardComplete': serializer.toJson<bool>(wizardComplete),
+      'displayId': serializer.toJson<String?>(displayId),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -1798,6 +1830,7 @@ class DisplaySettingsEntry extends DataClass
     String? locationName,
     String? serverUrl,
     bool? wizardComplete,
+    Value<String?> displayId = const Value.absent(),
     DateTime? updatedAt,
   }) => DisplaySettingsEntry(
     id: id ?? this.id,
@@ -1808,6 +1841,7 @@ class DisplaySettingsEntry extends DataClass
     locationName: locationName ?? this.locationName,
     serverUrl: serverUrl ?? this.serverUrl,
     wizardComplete: wizardComplete ?? this.wizardComplete,
+    displayId: displayId.present ? displayId.value : this.displayId,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   DisplaySettingsEntry copyWithCompanion(DisplaySettingsEntriesCompanion data) {
@@ -1830,6 +1864,7 @@ class DisplaySettingsEntry extends DataClass
       wizardComplete: data.wizardComplete.present
           ? data.wizardComplete.value
           : this.wizardComplete,
+      displayId: data.displayId.present ? data.displayId.value : this.displayId,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -1845,6 +1880,7 @@ class DisplaySettingsEntry extends DataClass
           ..write('locationName: $locationName, ')
           ..write('serverUrl: $serverUrl, ')
           ..write('wizardComplete: $wizardComplete, ')
+          ..write('displayId: $displayId, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -1860,6 +1896,7 @@ class DisplaySettingsEntry extends DataClass
     locationName,
     serverUrl,
     wizardComplete,
+    displayId,
     updatedAt,
   );
   @override
@@ -1874,6 +1911,7 @@ class DisplaySettingsEntry extends DataClass
           other.locationName == this.locationName &&
           other.serverUrl == this.serverUrl &&
           other.wizardComplete == this.wizardComplete &&
+          other.displayId == this.displayId &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -1887,6 +1925,7 @@ class DisplaySettingsEntriesCompanion
   final Value<String> locationName;
   final Value<String> serverUrl;
   final Value<bool> wizardComplete;
+  final Value<String?> displayId;
   final Value<DateTime> updatedAt;
   const DisplaySettingsEntriesCompanion({
     this.id = const Value.absent(),
@@ -1897,6 +1936,7 @@ class DisplaySettingsEntriesCompanion
     this.locationName = const Value.absent(),
     this.serverUrl = const Value.absent(),
     this.wizardComplete = const Value.absent(),
+    this.displayId = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   DisplaySettingsEntriesCompanion.insert({
@@ -1908,6 +1948,7 @@ class DisplaySettingsEntriesCompanion
     this.locationName = const Value.absent(),
     this.serverUrl = const Value.absent(),
     this.wizardComplete = const Value.absent(),
+    this.displayId = const Value.absent(),
     required DateTime updatedAt,
   }) : updatedAt = Value(updatedAt);
   static Insertable<DisplaySettingsEntry> custom({
@@ -1919,6 +1960,7 @@ class DisplaySettingsEntriesCompanion
     Expression<String>? locationName,
     Expression<String>? serverUrl,
     Expression<bool>? wizardComplete,
+    Expression<String>? displayId,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
@@ -1930,6 +1972,7 @@ class DisplaySettingsEntriesCompanion
       if (locationName != null) 'location_name': locationName,
       if (serverUrl != null) 'server_url': serverUrl,
       if (wizardComplete != null) 'wizard_complete': wizardComplete,
+      if (displayId != null) 'display_id': displayId,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -1943,6 +1986,7 @@ class DisplaySettingsEntriesCompanion
     Value<String>? locationName,
     Value<String>? serverUrl,
     Value<bool>? wizardComplete,
+    Value<String?>? displayId,
     Value<DateTime>? updatedAt,
   }) {
     return DisplaySettingsEntriesCompanion(
@@ -1954,6 +1998,7 @@ class DisplaySettingsEntriesCompanion
       locationName: locationName ?? this.locationName,
       serverUrl: serverUrl ?? this.serverUrl,
       wizardComplete: wizardComplete ?? this.wizardComplete,
+      displayId: displayId ?? this.displayId,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -1985,6 +2030,9 @@ class DisplaySettingsEntriesCompanion
     if (wizardComplete.present) {
       map['wizard_complete'] = Variable<bool>(wizardComplete.value);
     }
+    if (displayId.present) {
+      map['display_id'] = Variable<String>(displayId.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -2002,6 +2050,7 @@ class DisplaySettingsEntriesCompanion
           ..write('locationName: $locationName, ')
           ..write('serverUrl: $serverUrl, ')
           ..write('wizardComplete: $wizardComplete, ')
+          ..write('displayId: $displayId, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -2805,6 +2854,7 @@ typedef $$DisplaySettingsEntriesTableCreateCompanionBuilder =
       Value<String> locationName,
       Value<String> serverUrl,
       Value<bool> wizardComplete,
+      Value<String?> displayId,
       required DateTime updatedAt,
     });
 typedef $$DisplaySettingsEntriesTableUpdateCompanionBuilder =
@@ -2817,6 +2867,7 @@ typedef $$DisplaySettingsEntriesTableUpdateCompanionBuilder =
       Value<String> locationName,
       Value<String> serverUrl,
       Value<bool> wizardComplete,
+      Value<String?> displayId,
       Value<DateTime> updatedAt,
     });
 
@@ -2866,6 +2917,11 @@ class $$DisplaySettingsEntriesTableFilterComposer
 
   ColumnFilters<bool> get wizardComplete => $composableBuilder(
     column: $table.wizardComplete,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayId => $composableBuilder(
+    column: $table.displayId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2924,6 +2980,11 @@ class $$DisplaySettingsEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get displayId => $composableBuilder(
+    column: $table.displayId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -2972,6 +3033,9 @@ class $$DisplaySettingsEntriesTableAnnotationComposer
     column: $table.wizardComplete,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get displayId =>
+      $composableBuilder(column: $table.displayId, builder: (column) => column);
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -3031,6 +3095,7 @@ class $$DisplaySettingsEntriesTableTableManager
                 Value<String> locationName = const Value.absent(),
                 Value<String> serverUrl = const Value.absent(),
                 Value<bool> wizardComplete = const Value.absent(),
+                Value<String?> displayId = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => DisplaySettingsEntriesCompanion(
                 id: id,
@@ -3041,6 +3106,7 @@ class $$DisplaySettingsEntriesTableTableManager
                 locationName: locationName,
                 serverUrl: serverUrl,
                 wizardComplete: wizardComplete,
+                displayId: displayId,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
@@ -3053,6 +3119,7 @@ class $$DisplaySettingsEntriesTableTableManager
                 Value<String> locationName = const Value.absent(),
                 Value<String> serverUrl = const Value.absent(),
                 Value<bool> wizardComplete = const Value.absent(),
+                Value<String?> displayId = const Value.absent(),
                 required DateTime updatedAt,
               }) => DisplaySettingsEntriesCompanion.insert(
                 id: id,
@@ -3063,6 +3130,7 @@ class $$DisplaySettingsEntriesTableTableManager
                 locationName: locationName,
                 serverUrl: serverUrl,
                 wizardComplete: wizardComplete,
+                displayId: displayId,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0

@@ -47,6 +47,7 @@ class LandfallApp extends StatelessWidget {
     super.key,
     required this.database,
     required this.serverUrl,
+    required this.displayId,
   });
 
   final AppDatabase database;
@@ -56,6 +57,9 @@ class LandfallApp extends StatelessWidget {
   /// Development: `'http://localhost:8080/'`
   /// Production:  `'https://api.makefastlandfall.com/'`
   final String serverUrl;
+
+  /// Stable unique identifier for this display, generated on first launch.
+  final String displayId;
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +145,7 @@ class LandfallApp extends StatelessWidget {
                 MarketplaceCubit(marketplaceRepository)..loadMarketplace(),
           ),
           BlocProvider(
-            create: (_) => CompanionCubit(displayId: 'default'),
+            create: (_) => CompanionCubit(displayId: displayId),
           ),
         ],
         child: BlocBuilder<ThemeCubit, ThemeState>(

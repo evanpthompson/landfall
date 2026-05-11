@@ -32,6 +32,7 @@ dependencies:
   url_launcher: ^6.3.1
   window_manager: ^0.4.3
   xrandom: ^0.7.2
+  uuid: ^4.5.3
 
 dev_dependencies:
   flutter_test:
