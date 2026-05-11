@@ -1,6 +1,6 @@
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
 import 'dart:js_interop';
+
+import 'package:web/web.dart' as web;
 
 import 'package:flutter/material.dart';
 import 'package:landfall_client/landfall_client.dart' as lf;
@@ -111,7 +111,7 @@ class _CompanionWebAppState extends State<_CompanionWebApp> {
                 color: const Color(0x66FFFFFF),
                 iconSize: 20,
                 tooltip: 'Refresh',
-                onPressed: () => html.window.location.reload(),
+                onPressed: () => web.window.location.reload(),
               ),
             ),
           ),
