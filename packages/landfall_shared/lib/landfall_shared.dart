@@ -34,3 +34,6 @@ export 'src/models/theme/theme_info.dart';
 export 'src/models/theme/marketplace_theme_info.dart';
 export 'src/repositories/theme_repository.dart';
 export 'src/repositories/marketplace_repository.dart';
+export 'src/models/companion/companion_animation_state.dart';
+export 'src/models/companion/companion_entity.dart';
+export 'src/models/companion/companion_trigger.dart';

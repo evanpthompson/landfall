@@ -27,6 +27,8 @@ import 'package:display/src/features/settings/cubit/display_settings_cubit.dart'
 import 'package:display/src/features/settings/screens/settings_screen.dart';
 import 'package:display/src/features/ticker/cubit/ticker_cubit.dart';
 import 'package:display/src/features/ticker/widgets/ticker_strip_widget.dart';
+import 'package:display/src/features/companion/cubit/companion_cubit.dart';
+import 'package:display/src/features/companion/widgets/companion_card.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_state.dart';
 import 'package:display/src/features/weather/widgets/weather_card.dart';
@@ -432,6 +434,10 @@ class _GridView extends StatelessWidget {
         },
       ),
       'system.photos' => const PhotoFrameCard(),
+      'system.companion' => BlocProvider.value(
+        value: context.read<CompanionCubit>(),
+        child: const CompanionCard(),
+      ),
       _ => _PlaceholderTile(source: config.source),
     };
   }

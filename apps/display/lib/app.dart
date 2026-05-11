@@ -31,6 +31,8 @@ import 'package:display/src/features/settings/cubit/display_settings_cubit.dart'
 import 'package:display/src/features/theme/cubit/marketplace_cubit.dart';
 import 'package:display/src/features/theme/cubit/theme_cubit.dart';
 import 'package:display/src/features/theme/cubit/theme_state.dart';
+import 'package:display/src/features/companion/companion_event_bus.dart';
+import 'package:display/src/features/companion/cubit/companion_cubit.dart';
 import 'package:display/src/features/ticker/cubit/ticker_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:ui_kit/ui_kit.dart';
@@ -81,8 +83,11 @@ class LandfallApp extends StatelessWidget {
     final themeRepository = ServerpodThemeRepository(client);
     final marketplaceRepository = ServerpodMarketplaceRepository(client);
 
+    final companionEventBus = CompanionEventBus();
+
     return MultiRepositoryProvider(
       providers: [
+        RepositoryProvider<CompanionEventBus>(create: (_) => companionEventBus),
         RepositoryProvider<DashboardProfileRepository>(
           create: (_) => profileRepository,
         ),
@@ -134,6 +139,9 @@ class LandfallApp extends StatelessWidget {
           BlocProvider(
             create: (_) =>
                 MarketplaceCubit(marketplaceRepository)..loadMarketplace(),
+          ),
+          BlocProvider(
+            create: (_) => CompanionCubit(displayId: 'default'),
           ),
         ],
         child: BlocBuilder<ThemeCubit, ThemeState>(
