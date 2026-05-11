@@ -128,6 +128,16 @@ else
   log "The server may fail to start if the image was not pre-loaded."
 fi
 
+# ── Ensure display app data directory is owned by landfall ───────────────────
+# The app creates this directory at first launch. If anything ever ran the
+# binary as root (e.g. during dev/testing), the directory ends up root-owned
+# and the app can no longer write its SQLite database. Pre-creating it here
+# with correct ownership prevents that regardless of how the device was used.
+DATA_DIR="/home/landfall/.local/share/landfall"
+mkdir -p "${DATA_DIR}"
+chown -R landfall:landfall "/home/landfall/.local"
+log "Data directory ownership set: ${DATA_DIR}"
+
 mkdir -p "$(dirname "${INITIALIZED_FLAG}")"
 touch "${INITIALIZED_FLAG}"
 log "First-boot initialization complete"

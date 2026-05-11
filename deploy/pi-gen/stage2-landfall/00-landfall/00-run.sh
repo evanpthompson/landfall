@@ -192,6 +192,10 @@ done &
 AUTOSTART
 
 # ── Fix ownership of landfall home dir ────────────────────────────────────────
+# Also pre-creates the app's SQLite data directory so it is never created by
+# a root process, which would lock the landfall user out of writing to it.
 on_chroot << 'EOF'
 chown -R landfall:landfall /home/landfall/landfall
+mkdir -p /home/landfall/.local/share/landfall
+chown -R landfall:landfall /home/landfall/.local
 EOF
