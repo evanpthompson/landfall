@@ -133,13 +133,13 @@ class _SpritePainter extends CustomPainter {
       frameHeight,
     );
 
-    // Integer-scale the frame to the largest multiple that fits, then center.
+    // Aspect-fit: scale uniformly so the frame fills as much of the card as
+    // possible without cropping, then center the result.
     final scaleX = size.width / frameWidth;
     final scaleY = size.height / frameHeight;
     final scale = scaleX < scaleY ? scaleX : scaleY;
-    final k = scale < 1.0 ? scale : scale.floorToDouble();
-    final dstW = frameWidth * k;
-    final dstH = frameHeight * k;
+    final dstW = frameWidth * scale;
+    final dstH = frameHeight * scale;
     final dx = (size.width - dstW) / 2;
     final dy = (size.height - dstH) / 2;
     final dst = Rect.fromLTWH(dx, dy, dstW, dstH);

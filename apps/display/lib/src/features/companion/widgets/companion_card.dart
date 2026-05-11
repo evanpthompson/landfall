@@ -42,7 +42,6 @@ class _CompanionCardState extends State<CompanionCard>
     with TickerProviderStateMixin {
   late final SpriteSheetCompanionRenderer _renderer;
   StreamSubscription<CompanionTrigger>? _busSub;
-  bool _showAttribution = false;
 
   @override
   void initState() {
@@ -97,64 +96,45 @@ class _CompanionCardState extends State<CompanionCard>
     final bgColor = tokenColor(tokens.cardFill);
     final borderColor = tokenColor(tokens.cardBorderColor);
     final radius = tokens.cardRadius.toDouble();
-    final primaryColor = tokenColor(tokens.colorTextPrimary);
-    final secondaryColor = tokenColor(tokens.colorTextSecondary);
-    final tertiaryColor = tokenColor(tokens.colorTextTertiary);
 
     final displayName = entity.customName ?? entity.name;
     final rarityColor = _rarityColors[entity.rarityTier] ?? const Color(0xFF9E9E9E);
     final rarityLabel = _rarityLabels[entity.rarityTier] ?? '';
 
-    return GestureDetector(
-      onLongPress: () => setState(() => _showAttribution = !_showAttribution),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(radius),
-          border: Border.all(color: borderColor, width: tokens.cardBorderWidth),
-        ),
-        child: Stack(
-          children: [
-            // Sprite — fills the card, pixel-art scaled
-            Positioned.fill(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(radius - 1),
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 64),
-                  child: _renderer.buildView(),
-                ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: borderColor, width: tokens.cardBorderWidth),
+      ),
+      child: Stack(
+        children: [
+          // Sprite — fills the card above the meta strip
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(radius - 1),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 72),
+                child: _renderer.buildView(),
               ),
             ),
+          ),
 
-            // Bottom metadata strip
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _MetaStrip(
-                displayName: displayName,
-                rarityLabel: rarityLabel,
-                rarityColor: rarityColor,
-                evolutionStage: entity.evolutionStage,
-                primaryColor: primaryColor,
-                secondaryColor: secondaryColor,
-                tertiaryColor: tertiaryColor,
-                bgColor: bgColor,
-                radius: radius,
-              ),
+          // Bottom metadata strip — dark overlay for legibility on any sprite bg
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _MetaStrip(
+              displayName: displayName,
+              rarityLabel: rarityLabel,
+              rarityColor: rarityColor,
+              evolutionStage: entity.evolutionStage,
+              assetCredit: entity.assetCredit,
+              radius: radius,
             ),
-
-            // Attribution overlay — shown on long press
-            if (_showAttribution && entity.assetCredit != null)
-              Positioned.fill(
-                child: _AttributionOverlay(
-                  credit: entity.assetCredit!,
-                  radius: radius,
-                  onDismiss: () => setState(() => _showAttribution = false),
-                ),
-              ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -168,10 +148,7 @@ class _MetaStrip extends StatelessWidget {
     required this.rarityLabel,
     required this.rarityColor,
     required this.evolutionStage,
-    required this.primaryColor,
-    required this.secondaryColor,
-    required this.tertiaryColor,
-    required this.bgColor,
+    required this.assetCredit,
     required this.radius,
   });
 
@@ -179,43 +156,44 @@ class _MetaStrip extends StatelessWidget {
   final String rarityLabel;
   final Color rarityColor;
   final int evolutionStage;
-  final Color primaryColor;
-  final Color secondaryColor;
-  final Color tertiaryColor;
-  final Color bgColor;
+  final String? assetCredit;
   final double radius;
+
+  static const _bg = Color(0xCC0D0D0F);
+  static const _nameColor = Colors.white;
+  static const _creditColor = Color(0x99FFFFFF);
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: bgColor.withValues(alpha: 0.92),
+        color: _bg,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(radius),
           bottomRight: Radius.circular(radius),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              displayName,
-              style: LandfallTypography.cardTitle.copyWith(color: primaryColor),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
             Row(
               children: [
+                Text(
+                  displayName,
+                  style: LandfallTypography.cardTitle.copyWith(color: _nameColor),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: rarityColor.withValues(alpha: 0.15),
+                    color: rarityColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: rarityColor.withValues(alpha: 0.4)),
+                    border: Border.all(color: rarityColor.withValues(alpha: 0.5)),
                   ),
                   child: Text(
                     rarityLabel,
@@ -229,81 +207,21 @@ class _MetaStrip extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     'Stage $evolutionStage',
-                    style: LandfallTypography.caption.copyWith(color: secondaryColor),
+                    style: LandfallTypography.caption.copyWith(color: _creditColor),
                   ),
                 ],
-                const Spacer(),
-                // Hold for attribution hint
-                Icon(Icons.info_outline, size: 14, color: tertiaryColor),
               ],
             ),
+            if (assetCredit != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                assetCredit!,
+                style: LandfallTypography.caption.copyWith(color: _creditColor),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-
-class _AttributionOverlay extends StatelessWidget {
-  const _AttributionOverlay({
-    required this.credit,
-    required this.radius,
-    required this.onDismiss,
-  });
-
-  final String credit;
-  final double radius;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onDismiss,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: const Color(0xFF0D0D0F).withValues(alpha: 0.88),
-          borderRadius: BorderRadius.circular(radius),
-        ),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Companion by',
-                  style: LandfallTypography.caption.copyWith(
-                    color: Colors.white54,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  credit,
-                  style: LandfallTypography.cardBody.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'petdex.crafter.run',
-                  style: LandfallTypography.caption.copyWith(
-                    color: Colors.white38,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Tap to dismiss',
-                  style: LandfallTypography.caption.copyWith(
-                    color: Colors.white24,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );
