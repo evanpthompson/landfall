@@ -35,6 +35,17 @@ const _rarityLabels = <RarityTier, String>{
 class CompanionCard extends StatefulWidget {
   const CompanionCard({super.key});
 
+  /// Derives the Serverpod web server URL from the API server URL.
+  ///
+  /// Serverpod runs the web server on API port + 2 by default (8080 → 8082).
+  /// This lets the companion QR use a single configured URL while hitting the
+  /// correct port for the static web content.
+  static String _webServerUrl(String apiUrl) {
+    final uri = Uri.tryParse(apiUrl);
+    if (uri == null || uri.port == 0) return apiUrl;
+    return uri.replace(port: uri.port + 2).toString();
+  }
+
   /// Maps a raw action kind string from the server to an animation state.
   static CompanionAnimationState kindToState(String kind) {
     return switch (kind) {
@@ -162,7 +173,7 @@ class _CompanionCardState extends State<CompanionCard>
     final radius = tokens.cardRadius.toDouble();
 
     final cubit = context.read<CompanionCubit>();
-    final qrUrl = '${cubit.serverUrl}c/${entity.displayId}';
+    final qrUrl = '${CompanionCard._webServerUrl(cubit.serverUrl)}c/${entity.displayId}';
 
     final displayName = entity.customName ?? entity.name;
     final rarityColor = _rarityColors[entity.rarityTier] ?? const Color(0xFF9E9E9E);

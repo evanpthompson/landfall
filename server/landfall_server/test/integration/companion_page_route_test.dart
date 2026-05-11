@@ -8,6 +8,32 @@ import 'package:landfall_server/src/web/routes/companion/companion_page_route.da
 import 'test_tools/serverpod_test_tools.dart';
 
 void main() {
+  group('CompanionPageRoute.injectDisplayId', () {
+    const html =
+        '<html><head><base href="/"><title>T</title></head><body></body></html>';
+
+    test('injects LANDFALL_DISPLAY_ID script', () {
+      final result = CompanionPageRoute.injectDisplayId(html, 'my-uuid');
+      expect(result, contains('window.LANDFALL_DISPLAY_ID = "my-uuid"'));
+    });
+
+    test('patches base href to /c/{uuid}/', () {
+      final result = CompanionPageRoute.injectDisplayId(html, 'my-uuid');
+      expect(result, contains('<base href="/c/my-uuid/">'));
+      expect(result, isNot(contains('<base href="/">')));
+    });
+
+    test('JS-escapes backslash in display ID', () {
+      final result = CompanionPageRoute.injectDisplayId(html, r'a\b');
+      expect(result, contains(r'a\\b'));
+    });
+
+    test('JS-escapes double quote in display ID', () {
+      final result = CompanionPageRoute.injectDisplayId(html, 'a"b');
+      expect(result, contains(r'a\"b'));
+    });
+  });
+
   withServerpod('Given CompanionPageRoute', (sessionBuilder, endpoints) {
     late Directory webDir;
     late CompanionPageRoute route;
@@ -50,7 +76,7 @@ void main() {
     group('when Flutter web build is present', () {
       setUp(() async {
         await File('${webDir.path}/index.html').writeAsString(
-          '<html><head><title>Companion</title></head><body></body></html>',
+          '<html><head><base href="/"><title>Companion</title></head><body></body></html>',
         );
         await File('${webDir.path}/main.dart.js').writeAsString('console.log(1);');
         await Directory('${webDir.path}/assets').create();

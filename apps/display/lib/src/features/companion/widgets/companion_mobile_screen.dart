@@ -2,29 +2,48 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../provider/petdex_provider.dart';
 import '../renderer/sprite_sheet_renderer.dart';
 
-/// The companion interaction page loaded on the phone after scanning the QR code.
-///
-/// Shows the companion creature full-screen with three action buttons at the
-/// bottom: Pet, Play, Feed. Tapping a button calls [onAction] with the action
-/// kind string, which the caller wires to [CompanionEndpoint.pushAction] so the
-/// TV companion animates in near-real-time.
+// ---------------------------------------------------------------------------
+// Data
+
+class CompanionInfo {
+  const CompanionInfo({
+    required this.name,
+    required this.rarityLabel,
+    required this.rarityColor,
+    required this.traits,
+    required this.evolutionStage,
+    this.assetCredit,
+  });
+
+  final String name;
+  final String rarityLabel;
+  final Color rarityColor;
+  final List<String> traits;
+  final int evolutionStage;
+  final String? assetCredit;
+}
+
+// ---------------------------------------------------------------------------
+// Screen
+
 class CompanionMobileScreen extends StatefulWidget {
   const CompanionMobileScreen({
     super.key,
     required this.displayId,
     required this.onAction,
+    this.info,
   });
 
   final String displayId;
-
-  /// Called when the user taps an action button. The [kind] argument is one of
-  /// `"pet"`, `"play"`, or `"feed"`. The caller is responsible for forwarding
-  /// this to the server.
   final Future<void> Function(String kind) onAction;
+
+  /// Companion metadata shown in the Info tab. Null while loading.
+  final CompanionInfo? info;
 
   @override
   State<CompanionMobileScreen> createState() => _CompanionMobileScreenState();
@@ -33,6 +52,8 @@ class CompanionMobileScreen extends StatefulWidget {
 class _CompanionMobileScreenState extends State<CompanionMobileScreen>
     with TickerProviderStateMixin {
   late final SpriteSheetCompanionRenderer _renderer;
+  late final TabController _tabController;
+  bool _loaded = false;
   bool _showFeedback = false;
   Timer? _feedbackTimer;
 
@@ -41,22 +62,28 @@ class _CompanionMobileScreenState extends State<CompanionMobileScreen>
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _renderer = SpriteSheetCompanionRenderer(
       provider: PetdexProvider(),
       vsync: this,
     );
-    rootBundle
-        .load(_kLumenAsset)
-        .then((_) => _renderer.load(rootBundle, _kLumenAsset))
-        .then((_) {
-          if (mounted) setState(() {});
-        })
-        .ignore();
+    _loadSprite();
+  }
+
+  Future<void> _loadSprite() async {
+    try {
+      await _renderer.load(rootBundle, _kLumenAsset);
+    } catch (_) {
+      // Asset unavailable — show buttons without sprite rather than
+      // leaving the user on a permanent loading screen.
+    }
+    if (mounted) setState(() => _loaded = true);
   }
 
   @override
   void dispose() {
     _feedbackTimer?.cancel();
+    _tabController.dispose();
     _renderer.dispose();
     super.dispose();
   }
@@ -64,12 +91,10 @@ class _CompanionMobileScreenState extends State<CompanionMobileScreen>
   Future<void> _onAction(String kind) async {
     setState(() => _showFeedback = true);
     _feedbackTimer?.cancel();
-
-    await widget.onAction(kind);
-
     _feedbackTimer = Timer(const Duration(milliseconds: 800), () {
       if (mounted) setState(() => _showFeedback = false);
     });
+    widget.onAction(kind).ignore();
   }
 
   @override
@@ -79,17 +104,49 @@ class _CompanionMobileScreenState extends State<CompanionMobileScreen>
       body: SafeArea(
         child: Column(
           children: [
+            // Creature — always visible regardless of active tab.
             Expanded(
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  _renderer.buildView(),
-                  if (_showFeedback)
-                    const _FeedbackOverlay(),
+                  if (_loaded)
+                    _renderer.buildView()
+                  else
+                    const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF4F8EF7),
+                        strokeWidth: 2.5,
+                      ),
+                    ),
+                  if (_showFeedback) const _FeedbackOverlay(),
                 ],
               ),
             ),
-            _ActionBar(onAction: _onAction),
+
+            // Tab bar.
+            TabBar(
+              controller: _tabController,
+              indicatorColor: const Color(0xFF4F8EF7),
+              labelColor: Colors.white,
+              unselectedLabelColor: const Color(0xFF5A6070),
+              dividerColor: const Color(0xFF1E2130),
+              tabs: const [
+                Tab(text: 'Interact'),
+                Tab(text: 'Info'),
+              ],
+            ),
+
+            // Tab content — fixed height so the creature area doesn't shift.
+            SizedBox(
+              height: 160,
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _InteractTab(onAction: _onAction),
+                  _InfoTab(info: widget.info),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -104,25 +161,21 @@ class _FeedbackOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Icon(
-      Icons.favorite,
-      color: Color(0xFFFF6B9D),
-      size: 64,
-    );
+    return const Icon(Icons.favorite, color: Color(0xFFFF6B9D), size: 64);
   }
 }
 
 // ---------------------------------------------------------------------------
 
-class _ActionBar extends StatelessWidget {
-  const _ActionBar({required this.onAction});
+class _InteractTab extends StatelessWidget {
+  const _InteractTab({required this.onAction});
 
   final Future<void> Function(String kind) onAction;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       child: Row(
         children: [
           Expanded(child: _ActionButton(label: 'Pet', kind: 'pet', icon: Icons.back_hand, onAction: onAction)),
@@ -168,6 +221,156 @@ class _ActionButton extends StatelessWidget {
           const SizedBox(height: 6),
           Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+class _InfoTab extends StatelessWidget {
+  const _InfoTab({required this.info});
+
+  final CompanionInfo? info;
+
+  static const _petdexUrl = 'https://github.com/crafter-station/petdex';
+
+  @override
+  Widget build(BuildContext context) {
+    final info = this.info;
+    if (info == null) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF4F8EF7), strokeWidth: 2),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Name + rarity badge row.
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  info.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _RarityBadge(label: info.rarityLabel, color: info.rarityColor),
+            ],
+          ),
+
+          if (info.evolutionStage > 0) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Stage ${info.evolutionStage}',
+              style: const TextStyle(color: Color(0xFF8892A4), fontSize: 12),
+            ),
+          ],
+
+          if (info.traits.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: info.traits
+                  .map((t) => _TraitChip(label: _capitalize(t)))
+                  .toList(),
+            ),
+          ],
+
+          const SizedBox(height: 12),
+          const Divider(color: Color(0xFF1E2130), height: 1),
+          const SizedBox(height: 10),
+
+          // Attribution.
+          if (info.assetCredit != null) ...[
+            Text(
+              info.assetCredit!,
+              style: const TextStyle(color: Color(0xFF8892A4), fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+          ],
+          GestureDetector(
+            onTap: () => launchUrl(
+              Uri.parse(_petdexUrl),
+              mode: LaunchMode.externalApplication,
+            ),
+            child: const Text(
+              'Sprites via petdex (crafter.run)',
+              style: TextStyle(
+                color: Color(0xFF4F8EF7),
+                fontSize: 12,
+                decoration: TextDecoration.underline,
+                decorationColor: Color(0xFF4F8EF7),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _capitalize(String s) =>
+      s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
+}
+
+// ---------------------------------------------------------------------------
+
+class _RarityBadge extends StatelessWidget {
+  const _RarityBadge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+class _TraitChip extends StatelessWidget {
+  const _TraitChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E2130),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(color: Color(0xFFB0B8C8), fontSize: 12),
       ),
     );
   }

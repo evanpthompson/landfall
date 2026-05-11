@@ -3,13 +3,27 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:display/src/features/companion/widgets/companion_mobile_screen.dart';
 
-Widget _wrap(String displayId, Future<void> Function(String) onAction) =>
+Widget _wrap(
+  String displayId,
+  Future<void> Function(String) onAction, {
+  CompanionInfo? info,
+}) =>
     MaterialApp(
       home: CompanionMobileScreen(
         displayId: displayId,
         onAction: onAction,
+        info: info,
       ),
     );
+
+const _testInfo = CompanionInfo(
+  name: 'Lumen',
+  rarityLabel: 'Uncommon',
+  rarityColor: Color(0xFF66BB6A),
+  traits: ['curious', 'gentle'],
+  evolutionStage: 0,
+  assetCredit: '@changhaoliao via petdex',
+);
 
 void main() {
   group('CompanionMobileScreen', () {
@@ -74,9 +88,63 @@ void main() {
       await tester.pump();
       expect(find.byIcon(Icons.favorite), findsOneWidget);
 
-      // Advance past the 800ms feedback window.
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      // Advance past the 800ms feedback window. pumpAndSettle is not usable
+      // here because the loading spinner animates indefinitely.
+      await tester.pump(const Duration(milliseconds: 900));
       expect(find.byIcon(Icons.favorite), findsNothing);
+    });
+
+    testWidgets('Info tab shows loading indicator when info is null',
+        (tester) async {
+      await tester.pumpWidget(_wrap('test-display', (_) async {}));
+      await tester.pump();
+
+      await tester.tap(find.text('Info'));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(CircularProgressIndicator), findsWidgets);
+    });
+
+    testWidgets('Info tab shows name and rarity when info is provided',
+        (tester) async {
+      await tester.pumpWidget(
+        _wrap('test-display', (_) async {}, info: _testInfo),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Info'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Lumen'), findsOneWidget);
+      expect(find.text('Uncommon'), findsOneWidget);
+    });
+
+    testWidgets('Info tab shows traits when info is provided', (tester) async {
+      await tester.pumpWidget(
+        _wrap('test-display', (_) async {}, info: _testInfo),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Info'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Curious'), findsOneWidget);
+      expect(find.text('Gentle'), findsOneWidget);
+    });
+
+    testWidgets('Info tab shows asset credit when provided', (tester) async {
+      await tester.pumpWidget(
+        _wrap('test-display', (_) async {}, info: _testInfo),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Info'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('@changhaoliao via petdex'), findsOneWidget);
     });
 
     testWidgets('golden — renders at phone resolution', (tester) async {

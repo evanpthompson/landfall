@@ -104,6 +104,19 @@ void main() {
       final qr = tester.widget<QrImageView>(find.byType(QrImageView));
       expect(qr.semanticsLabel, contains('my-uuid'));
       expect(qr.semanticsLabel, contains('/c/'));
+      // Web server runs on API port + 2 (8080 → 8082).
+      expect(qr.semanticsLabel, contains(':8082/'));
+    });
+
+    testWidgets('QR URL uses webserver port (API port + 2)',
+        (tester) async {
+      await tester.pumpWidget(
+        _wrap(displayId: 'port-test', serverUrl: 'http://192.168.1.118:8080/'),
+      );
+      await tester.pump();
+
+      final qr = tester.widget<QrImageView>(find.byType(QrImageView));
+      expect(qr.semanticsLabel, startsWith('http://192.168.1.118:8082/'));
     });
 
     test('kindToState maps pet → pet animation', () {

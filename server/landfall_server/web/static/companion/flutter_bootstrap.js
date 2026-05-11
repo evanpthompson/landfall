@@ -35,8 +35,31 @@ if (!window._flutter) {
 }
 _flutter.buildConfig = {"engineRevision":"425cfb54d01a9472b3e81d9e76fd63a4a44cfbcb","builds":[{"compileTarget":"dart2js","renderer":"canvaskit","mainJsPath":"main.dart.js"},{}]};
 
-_flutter.loader.load({
-  serviceWorkerSettings: {
-    serviceWorkerVersion: "2504813818" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */
+
+(function () {
+  var bar = document.getElementById('loading-bar');
+  var status = document.getElementById('loading-status');
+
+  function setProgress(pct, label) {
+    if (bar) {
+      bar.style.animation = 'none';
+      bar.style.width = pct + '%';
+    }
+    if (status) status.textContent = label;
   }
-});
+
+  function hideLoading() {
+    var el = document.getElementById('loading');
+    if (el) el.style.display = 'none';
+  }
+
+  _flutter.loader.load({
+    onEntrypointLoaded: async function (engineInitializer) {
+      setProgress(45, 'Initializing engine...');
+      const appRunner = await engineInitializer.initializeEngine();
+      setProgress(85, 'Starting app...');
+      await appRunner.runApp();
+      hideLoading();
+    }
+  });
+})();

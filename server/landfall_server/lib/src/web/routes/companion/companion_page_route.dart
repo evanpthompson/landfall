@@ -68,16 +68,24 @@ class CompanionPageRoute extends Route {
     );
   }
 
-  /// Injects `window.LANDFALL_DISPLAY_ID` immediately after the `<head>` tag.
+  /// Injects `window.LANDFALL_DISPLAY_ID` and fixes the Flutter base href.
+  ///
+  /// Flutter web builds with `<base href="/">` which resolves all relative
+  /// asset URLs (flutter_bootstrap.js, main.dart.js, etc.) to the server
+  /// root — outside the /c/** route. Patching it to `/c/{uuid}/` keeps all
+  /// relative fetches inside the companion route.
+  ///
   /// The [displayId] is JS-escaped so backslashes and double quotes are safe.
   static String injectDisplayId(String html, String displayId) {
     final escaped = displayId
         .replaceAll(r'\', r'\\')
         .replaceAll('"', r'\"');
-    return html.replaceFirst(
-      '<head>',
-      '<head><script>window.LANDFALL_DISPLAY_ID = "$escaped";</script>',
-    );
+    return html
+        .replaceFirst(
+          '<head>',
+          '<head><script>window.LANDFALL_DISPLAY_ID = "$escaped";</script>',
+        )
+        .replaceFirst('<base href="/">', '<base href="/c/$displayId/">');
   }
 
   static MimeType _mimeFor(String path) {
