@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:landfall_shared/landfall_shared.dart';
 
 class CompanionEventBus {
-  final _controller = StreamController<CompanionTrigger>.broadcast();
+  final _controller = StreamController<CompanionTrigger>.broadcast(sync: true);
 
   Stream<CompanionTrigger> get events => _controller.stream;
 

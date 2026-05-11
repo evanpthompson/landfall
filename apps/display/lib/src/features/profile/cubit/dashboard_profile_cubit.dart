@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
+import 'package:display/src/features/companion/companion_event_bus.dart';
 import 'dashboard_profile_state.dart';
 
 /// Manages named dashboard profiles and the currently active one.
@@ -11,10 +12,12 @@ import 'dashboard_profile_state.dart';
 /// - Saving layout edits back into the active profile
 /// - CRUD for the profile list (create, rename, duplicate, delete)
 class DashboardProfileCubit extends Cubit<DashboardProfileState> {
-  DashboardProfileCubit(this._repository)
-      : super(const DashboardProfileLoading());
+  DashboardProfileCubit(this._repository, {CompanionEventBus? bus})
+      : _bus = bus,
+        super(const DashboardProfileLoading());
 
   final DashboardProfileRepository _repository;
+  final CompanionEventBus? _bus;
 
   /// Loads all profiles and emits the active one.
   ///
@@ -86,9 +89,23 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
     try {
       await _repository.activateProfile(id);
       await _refreshAfterWrite();
+      _emitProfileTrigger();
     } catch (e) {
       emit(DashboardProfileError(e.toString()));
     }
+  }
+
+  void _emitProfileTrigger() {
+    final bus = _bus;
+    if (bus == null) return;
+    final current = state;
+    if (current is! DashboardProfileLoaded) return;
+    final isNight = current.active.name.toLowerCase().contains('night');
+    bus.emit(
+      isNight
+          ? CompanionTrigger.nightProfileActivated
+          : CompanionTrigger.dayProfileActivated,
+    );
   }
 
   /// Persists [layout] into the currently active profile.

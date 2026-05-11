@@ -123,13 +123,18 @@ class LandfallApp extends StatelessWidget {
                 AuthCubit(client: client, sessionManager: sessionManager),
           ),
           BlocProvider(
-            create: (ctx) =>
-                DashboardProfileCubit(ctx.read<DashboardProfileRepository>()),
+            create: (ctx) => DashboardProfileCubit(
+              ctx.read<DashboardProfileRepository>(),
+              bus: companionEventBus,
+            ),
           ),
           BlocProvider(create: (_) => ClockCubit(getCurrentTime)),
-          BlocProvider(create: (ctx) => CardCubit(ctx.read<CardRepository>())),
           BlocProvider(
-            create: (ctx) => WeatherCubit(ctx.read<WeatherRepository>()),
+            create: (_) => CardCubit(cardRepository, bus: companionEventBus),
+          ),
+          BlocProvider(
+            create: (_) =>
+                WeatherCubit(weatherRepository, bus: companionEventBus),
           ),
           BlocProvider(
             create: (ctx) => CalendarCubit(ctx.read<CalendarRepository>()),
