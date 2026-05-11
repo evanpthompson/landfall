@@ -25,6 +25,10 @@ card:
   - getTickerMessages:
   - pushCard:
   - dismissCard:
+companion:
+  - getOrCreateForDisplay:
+  - pollForEvents:
+  - pushAction:
 greeting:
   - hello:
 layout:

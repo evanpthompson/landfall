@@ -1,0 +1,44 @@
+### The companion creature assigned to a display.
+### One row per display, identified by displayId (the client-generated UUID).
+### Rarity, species, name, and traits are seeded once at creation and are fixed
+### forever. Evolution stage advances over time via the nightly evolution job.
+class: CompanionEntity
+table: companion_entities
+
+fields:
+  ### The display's stable UUID. One companion per display.
+  displayId: String
+
+  ### Deterministic seed derived from displayId — used by xrandom to pick
+  ### species/rarity/name. Stored so future seeded draws stay reproducible.
+  seed: int
+
+  ### Rarity bucket: common | uncommon | rare | epic | legendary.
+  rarityTier: String
+
+  ### Identifies the creature template (e.g. "lumen", "axolotl").
+  speciesId: String
+
+  ### Display name — procedurally generated from seed, fixed forever.
+  name: String
+
+  ### Personality traits as a comma-separated list (e.g. "curious,gentle").
+  ### Maps to PersonalityTrait enum in the client.
+  traits: String
+
+  ### 0 = Baby, 1 = Juvenile, 2 = Adult, 3 = Elder. Advances over time.
+  evolutionStage: int, default=0
+
+  ### When the companion was first created for this display.
+  createdAt: DateTime
+
+  ### Optional attribution string for the sprite artist.
+  assetCredit: String?
+
+  ### Last time the evolution stage changed. Null if never evolved.
+  lastEvolutionAt: DateTime?
+
+indexes:
+  companion_entities_display_id_idx:
+    fields: displayId
+    unique: true

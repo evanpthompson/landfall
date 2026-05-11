@@ -25,27 +25,31 @@ import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
 import 'dart:typed_data' as _i9;
 import 'package:landfall_client/src/protocol/calendar/calendar_event.dart'
     as _i10;
-import 'package:landfall_client/src/protocol/greetings/greeting.dart' as _i11;
-import 'package:landfall_client/src/protocol/layout/layout_config.dart' as _i12;
+import 'package:landfall_client/src/protocol/companion/companion_entity.dart'
+    as _i11;
+import 'package:landfall_client/src/protocol/companion/companion_action.dart'
+    as _i12;
+import 'package:landfall_client/src/protocol/greetings/greeting.dart' as _i13;
+import 'package:landfall_client/src/protocol/layout/layout_config.dart' as _i14;
 import 'package:landfall_client/src/protocol/license/license_status_response.dart'
-    as _i13;
+    as _i15;
 import 'package:landfall_client/src/protocol/license/pack_info_response.dart'
-    as _i14;
-import 'package:landfall_client/src/protocol/photo/photo.dart' as _i15;
-import 'package:landfall_client/src/protocol/profile/dashboard_profile.dart'
     as _i16;
-import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
-    as _i17;
-import 'package:landfall_client/src/protocol/theme/marketplace_theme_info.dart'
+import 'package:landfall_client/src/protocol/photo/photo.dart' as _i17;
+import 'package:landfall_client/src/protocol/profile/dashboard_profile.dart'
     as _i18;
-import 'package:landfall_client/src/protocol/theme/landfall_theme.dart' as _i19;
-import 'package:landfall_client/src/protocol/theme/theme_upload_result.dart'
+import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
+    as _i19;
+import 'package:landfall_client/src/protocol/theme/marketplace_theme_info.dart'
     as _i20;
-import 'package:landfall_client/src/protocol/weather/weather_current.dart'
-    as _i21;
-import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+import 'package:landfall_client/src/protocol/theme/landfall_theme.dart' as _i21;
+import 'package:landfall_client/src/protocol/theme/theme_upload_result.dart'
     as _i22;
-import 'protocol.dart' as _i23;
+import 'package:landfall_client/src/protocol/weather/weather_current.dart'
+    as _i23;
+import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+    as _i24;
+import 'protocol.dart' as _i25;
 
 /// The authenticated agent push API.
 ///
@@ -409,6 +413,75 @@ class EndpointCard extends _i1.EndpointRef {
       );
 }
 
+/// Companion server endpoint.
+///
+/// Owns the per-display companion entity (one row per display, seeded once)
+/// and the phone→TV event delivery channel via long-polling.
+///
+/// Delivery model:
+/// - TV calls [pollForEvents] which blocks until either an action arrives
+///   or the timeout elapses (returns null on timeout).
+/// - Phone calls [pushAction] which completes any pending poll for that
+///   display, or enqueues the action if no TV is currently polling.
+/// - State is in-memory: server restart drops pending actions and forces
+///   TVs to reconnect their poll. Acceptable for alpha — actions are
+///   ephemeral by design.
+/// {@category Endpoint}
+class EndpointCompanion extends _i1.EndpointRef {
+  EndpointCompanion(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'companion';
+
+  /// Returns the companion entity for [displayId], creating it on first
+  /// access. MVP seeds every display with Lumen — Phase 22+ will use the
+  /// displayId hash to seed an xrandom draw across the full creature pool.
+  _i2.Future<_i11.CompanionEntity> getOrCreateForDisplay(String displayId) =>
+      caller.callServerEndpoint<_i11.CompanionEntity>(
+        'companion',
+        'getOrCreateForDisplay',
+        {'displayId': displayId},
+      );
+
+  /// Long-polls for the next companion action targeted at [displayId].
+  ///
+  /// Returns the action as soon as one is pushed via [pushAction], or null
+  /// if [timeoutSeconds] elapses with no action. Clients should immediately
+  /// reissue the poll on either outcome.
+  ///
+  /// If actions are already queued for this display (pushed while no poll
+  /// was active), the oldest is returned immediately.
+  _i2.Future<_i12.CompanionAction?> pollForEvents(
+    String displayId, {
+    required int timeoutSeconds,
+  }) => caller.callServerEndpoint<_i12.CompanionAction?>(
+    'companion',
+    'pollForEvents',
+    {
+      'displayId': displayId,
+      'timeoutSeconds': timeoutSeconds,
+    },
+  );
+
+  /// Pushes a [kind] action for [displayId], typically called from the
+  /// phone web page tap handler.
+  ///
+  /// If a TV is currently long-polling for this display, the action is
+  /// delivered to it immediately. Otherwise the action is queued
+  /// (capped at [_maxQueuePerDisplay] — oldest dropped on overflow).
+  _i2.Future<void> pushAction(
+    String displayId,
+    String kind,
+  ) => caller.callServerEndpoint<void>(
+    'companion',
+    'pushAction',
+    {
+      'displayId': displayId,
+      'kind': kind,
+    },
+  );
+}
+
 /// This is an example endpoint that returns a greeting message through
 /// its [hello] method.
 /// {@category Endpoint}
@@ -419,8 +492,8 @@ class EndpointGreeting extends _i1.EndpointRef {
   String get name => 'greeting';
 
   /// Returns a personalized greeting message: "Hello {name}".
-  _i2.Future<_i11.Greeting> hello(String name) =>
-      caller.callServerEndpoint<_i11.Greeting>(
+  _i2.Future<_i13.Greeting> hello(String name) =>
+      caller.callServerEndpoint<_i13.Greeting>(
         'greeting',
         'hello',
         {'name': name},
@@ -443,8 +516,8 @@ class EndpointLayout extends _i1.EndpointRef {
   /// Returns all saved layouts, ordered by preset type then name.
   ///
   /// Returns an empty list if no layouts have been saved yet.
-  _i2.Future<List<_i12.LayoutConfig>> getLayouts() =>
-      caller.callServerEndpoint<List<_i12.LayoutConfig>>(
+  _i2.Future<List<_i14.LayoutConfig>> getLayouts() =>
+      caller.callServerEndpoint<List<_i14.LayoutConfig>>(
         'layout',
         'getLayouts',
         {},
@@ -453,8 +526,8 @@ class EndpointLayout extends _i1.EndpointRef {
   /// Saves [layout], inserting a new row or updating an existing one by id.
   ///
   /// If [layout.id] is null a new row is created. Returns the saved row.
-  _i2.Future<_i12.LayoutConfig> saveLayout(_i12.LayoutConfig layout) =>
-      caller.callServerEndpoint<_i12.LayoutConfig>(
+  _i2.Future<_i14.LayoutConfig> saveLayout(_i14.LayoutConfig layout) =>
+      caller.callServerEndpoint<_i14.LayoutConfig>(
         'layout',
         'saveLayout',
         {'layout': layout},
@@ -463,8 +536,8 @@ class EndpointLayout extends _i1.EndpointRef {
   /// Marks [layoutId] as active and clears the active flag on all others.
   ///
   /// Returns the newly activated [LayoutConfig].
-  _i2.Future<_i12.LayoutConfig> setActiveLayout(int layoutId) =>
-      caller.callServerEndpoint<_i12.LayoutConfig>(
+  _i2.Future<_i14.LayoutConfig> setActiveLayout(int layoutId) =>
+      caller.callServerEndpoint<_i14.LayoutConfig>(
         'layout',
         'setActiveLayout',
         {'layoutId': layoutId},
@@ -495,8 +568,8 @@ class EndpointLicense extends _i1.EndpointRef {
   /// Returns the current license status for the authenticated user.
   ///
   /// Returns free tier when the user has no activated license or is not signed in.
-  _i2.Future<_i13.LicenseStatusResponse> getLicenseStatus() =>
-      caller.callServerEndpoint<_i13.LicenseStatusResponse>(
+  _i2.Future<_i15.LicenseStatusResponse> getLicenseStatus() =>
+      caller.callServerEndpoint<_i15.LicenseStatusResponse>(
         'license',
         'getLicenseStatus',
         {},
@@ -506,8 +579,8 @@ class EndpointLicense extends _i1.EndpointRef {
   ///
   /// Throws [LicenseException] if the key is not found or already activated
   /// by a different user.
-  _i2.Future<_i13.LicenseStatusResponse> activateLicense(String key) =>
-      caller.callServerEndpoint<_i13.LicenseStatusResponse>(
+  _i2.Future<_i15.LicenseStatusResponse> activateLicense(String key) =>
+      caller.callServerEndpoint<_i15.LicenseStatusResponse>(
         'license',
         'activateLicense',
         {'key': key},
@@ -524,8 +597,8 @@ class EndpointPack extends _i1.EndpointRef {
 
   /// Returns all active packs in the catalog, with ownership flags for the
   /// authenticated user. Anonymous sessions see all packs as unowned.
-  _i2.Future<List<_i14.PackInfoResponse>> listPacks() =>
-      caller.callServerEndpoint<List<_i14.PackInfoResponse>>(
+  _i2.Future<List<_i16.PackInfoResponse>> listPacks() =>
+      caller.callServerEndpoint<List<_i16.PackInfoResponse>>(
         'pack',
         'listPacks',
         {},
@@ -534,8 +607,8 @@ class EndpointPack extends _i1.EndpointRef {
   /// Returns packs owned by the authenticated user.
   ///
   /// Returns an empty list for anonymous sessions.
-  _i2.Future<List<_i14.PackInfoResponse>> getOwnedPacks() =>
-      caller.callServerEndpoint<List<_i14.PackInfoResponse>>(
+  _i2.Future<List<_i16.PackInfoResponse>> getOwnedPacks() =>
+      caller.callServerEndpoint<List<_i16.PackInfoResponse>>(
         'pack',
         'getOwnedPacks',
         {},
@@ -549,8 +622,8 @@ class EndpointPhoto extends _i1.EndpointRef {
   @override
   String get name => 'photo';
 
-  _i2.Future<List<_i15.Photo>> getPhotos() =>
-      caller.callServerEndpoint<List<_i15.Photo>>(
+  _i2.Future<List<_i17.Photo>> getPhotos() =>
+      caller.callServerEndpoint<List<_i17.Photo>>(
         'photo',
         'getPhotos',
         {},
@@ -582,8 +655,8 @@ class EndpointProfile extends _i1.EndpointRef {
   String get name => 'profile';
 
   /// Returns all profiles ordered by [DashboardProfile.sortOrder] ascending.
-  _i2.Future<List<_i16.DashboardProfile>> listProfiles() =>
-      caller.callServerEndpoint<List<_i16.DashboardProfile>>(
+  _i2.Future<List<_i18.DashboardProfile>> listProfiles() =>
+      caller.callServerEndpoint<List<_i18.DashboardProfile>>(
         'profile',
         'listProfiles',
         {},
@@ -596,10 +669,10 @@ class EndpointProfile extends _i1.EndpointRef {
   /// to duplicate it as a starting point.
   ///
   /// Returns the created [DashboardProfile] with its assigned id.
-  _i2.Future<_i16.DashboardProfile> createProfile(
+  _i2.Future<_i18.DashboardProfile> createProfile(
     String name, {
     String? cardsJson,
-  }) => caller.callServerEndpoint<_i16.DashboardProfile>(
+  }) => caller.callServerEndpoint<_i18.DashboardProfile>(
     'profile',
     'createProfile',
     {
@@ -611,7 +684,7 @@ class EndpointProfile extends _i1.EndpointRef {
   /// Updates the mutable fields of an existing profile.
   ///
   /// Only non-null arguments are applied — pass null to leave a field unchanged.
-  _i2.Future<_i16.DashboardProfile> updateProfile(
+  _i2.Future<_i18.DashboardProfile> updateProfile(
     int id, {
     String? name,
     String? themeId,
@@ -619,7 +692,7 @@ class EndpointProfile extends _i1.EndpointRef {
     String? scheduleJson,
     int? sortOrder,
     String? cardsJson,
-  }) => caller.callServerEndpoint<_i16.DashboardProfile>(
+  }) => caller.callServerEndpoint<_i18.DashboardProfile>(
     'profile',
     'updateProfile',
     {
@@ -647,8 +720,8 @@ class EndpointProfile extends _i1.EndpointRef {
   ///
   /// Clears [isActive] on all other profiles atomically. Returns the newly
   /// activated profile.
-  _i2.Future<_i16.DashboardProfile> activateProfile(int id) =>
-      caller.callServerEndpoint<_i16.DashboardProfile>(
+  _i2.Future<_i18.DashboardProfile> activateProfile(int id) =>
+      caller.callServerEndpoint<_i18.DashboardProfile>(
         'profile',
         'activateProfile',
         {'id': id},
@@ -658,10 +731,10 @@ class EndpointProfile extends _i1.EndpointRef {
   ///
   /// The duplicate is inactive and placed at the end of the sort order.
   /// Returns the newly created profile.
-  _i2.Future<_i16.DashboardProfile> duplicateProfile(
+  _i2.Future<_i18.DashboardProfile> duplicateProfile(
     int id,
     String newName,
-  ) => caller.callServerEndpoint<_i16.DashboardProfile>(
+  ) => caller.callServerEndpoint<_i18.DashboardProfile>(
     'profile',
     'duplicateProfile',
     {
@@ -682,8 +755,8 @@ class EndpointSettings extends _i1.EndpointRef {
   String get name => 'settings';
 
   /// Returns all linked credentials for the current user, token-free.
-  _i2.Future<List<_i17.LinkedCredentialSummary>> getLinkedCredentials() =>
-      caller.callServerEndpoint<List<_i17.LinkedCredentialSummary>>(
+  _i2.Future<List<_i19.LinkedCredentialSummary>> getLinkedCredentials() =>
+      caller.callServerEndpoint<List<_i19.LinkedCredentialSummary>>(
         'settings',
         'getLinkedCredentials',
         {},
@@ -716,8 +789,8 @@ class EndpointMarketplace extends _i1.EndpointRef {
   /// Returns all themes where [LandfallTheme.isMarketplace] is true, ordered
   /// by name. Each entry carries an [MarketplaceThemeInfo.isOwned] flag based
   /// on the authenticated caller's purchase history.
-  _i2.Future<List<_i18.MarketplaceThemeInfo>> listMarketplaceThemes() =>
-      caller.callServerEndpoint<List<_i18.MarketplaceThemeInfo>>(
+  _i2.Future<List<_i20.MarketplaceThemeInfo>> listMarketplaceThemes() =>
+      caller.callServerEndpoint<List<_i20.MarketplaceThemeInfo>>(
         'marketplace',
         'listMarketplaceThemes',
         {},
@@ -727,8 +800,8 @@ class EndpointMarketplace extends _i1.EndpointRef {
   ///
   /// Throws [NotFoundException] when [themeId] is unknown or is not a
   /// marketplace theme.
-  _i2.Future<_i18.MarketplaceThemeInfo> getMarketplaceTheme(int themeId) =>
-      caller.callServerEndpoint<_i18.MarketplaceThemeInfo>(
+  _i2.Future<_i20.MarketplaceThemeInfo> getMarketplaceTheme(int themeId) =>
+      caller.callServerEndpoint<_i20.MarketplaceThemeInfo>(
         'marketplace',
         'getMarketplaceTheme',
         {'themeId': themeId},
@@ -736,8 +809,8 @@ class EndpointMarketplace extends _i1.EndpointRef {
 
   /// Returns all marketplace themes owned (purchased) by the authenticated
   /// caller. Returns an empty list for unauthenticated sessions.
-  _i2.Future<List<_i18.MarketplaceThemeInfo>> getOwnedThemes() =>
-      caller.callServerEndpoint<List<_i18.MarketplaceThemeInfo>>(
+  _i2.Future<List<_i20.MarketplaceThemeInfo>> getOwnedThemes() =>
+      caller.callServerEndpoint<List<_i20.MarketplaceThemeInfo>>(
         'marketplace',
         'getOwnedThemes',
         {},
@@ -755,8 +828,8 @@ class EndpointTheme extends _i1.EndpointRef {
   /// Returns all themes available on this display (built-in + imported).
   ///
   /// Built-ins are seeded if the themes table is empty.
-  _i2.Future<List<_i19.LandfallTheme>> listThemes() =>
-      caller.callServerEndpoint<List<_i19.LandfallTheme>>(
+  _i2.Future<List<_i21.LandfallTheme>> listThemes() =>
+      caller.callServerEndpoint<List<_i21.LandfallTheme>>(
         'theme',
         'listThemes',
         {},
@@ -768,8 +841,8 @@ class EndpointTheme extends _i1.EndpointRef {
   /// On failure [theme] is null and [errors] lists each validation problem.
   ///
   /// If a theme with the same slug already exists it is replaced.
-  _i2.Future<_i20.ThemeUploadResult> uploadTheme(String yaml) =>
-      caller.callServerEndpoint<_i20.ThemeUploadResult>(
+  _i2.Future<_i22.ThemeUploadResult> uploadTheme(String yaml) =>
+      caller.callServerEndpoint<_i22.ThemeUploadResult>(
         'theme',
         'uploadTheme',
         {'yaml': yaml},
@@ -781,8 +854,8 @@ class EndpointTheme extends _i1.EndpointRef {
   /// Returns the same [ThemeUploadResult] shape as [uploadTheme].
   /// Rejects non-HTTPS URLs, private IP ranges, and loopback addresses to
   /// prevent SSRF. Enforces a 10-second fetch timeout. OWASP A06:2025.
-  _i2.Future<_i20.ThemeUploadResult> importTheme(String url) =>
-      caller.callServerEndpoint<_i20.ThemeUploadResult>(
+  _i2.Future<_i22.ThemeUploadResult> importTheme(String url) =>
+      caller.callServerEndpoint<_i22.ThemeUploadResult>(
         'theme',
         'importTheme',
         {'url': url},
@@ -842,8 +915,8 @@ class EndpointWeather extends _i1.EndpointRef {
   String get name => 'weather';
 
   /// Returns the most recently cached current conditions, or null if none.
-  _i2.Future<_i21.WeatherCurrent?> getCurrentWeather() =>
-      caller.callServerEndpoint<_i21.WeatherCurrent?>(
+  _i2.Future<_i23.WeatherCurrent?> getCurrentWeather() =>
+      caller.callServerEndpoint<_i23.WeatherCurrent?>(
         'weather',
         'getCurrentWeather',
         {},
@@ -852,8 +925,8 @@ class EndpointWeather extends _i1.EndpointRef {
   /// Returns the cached 5-day forecast, oldest day first.
   ///
   /// Returns an empty list if no forecast data has been cached yet.
-  _i2.Future<List<_i22.WeatherForecast>> getForecast() =>
-      caller.callServerEndpoint<List<_i22.WeatherForecast>>(
+  _i2.Future<List<_i24.WeatherForecast>> getForecast() =>
+      caller.callServerEndpoint<List<_i24.WeatherForecast>>(
         'weather',
         'getForecast',
         {},
@@ -891,7 +964,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i23.Protocol(),
+         _i25.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -907,6 +980,7 @@ class Client extends _i1.ServerpodClientShared {
     passkeyIdp = EndpointPasskeyIdp(this);
     calendar = EndpointCalendar(this);
     card = EndpointCard(this);
+    companion = EndpointCompanion(this);
     greeting = EndpointGreeting(this);
     layout = EndpointLayout(this);
     license = EndpointLicense(this);
@@ -933,6 +1007,8 @@ class Client extends _i1.ServerpodClientShared {
   late final EndpointCalendar calendar;
 
   late final EndpointCard card;
+
+  late final EndpointCompanion companion;
 
   late final EndpointGreeting greeting;
 
@@ -965,6 +1041,7 @@ class Client extends _i1.ServerpodClientShared {
     'passkeyIdp': passkeyIdp,
     'calendar': calendar,
     'card': card,
+    'companion': companion,
     'greeting': greeting,
     'layout': layout,
     'license': license,

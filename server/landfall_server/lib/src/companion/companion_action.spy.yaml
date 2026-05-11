@@ -1,0 +1,13 @@
+### A companion interaction triggered by the phone web page.
+### Wire-only — not persisted. Pushed from CompanionEndpoint.pushAction and
+### delivered via CompanionEndpoint.pollForEvents long-polling.
+class: CompanionAction
+
+fields:
+  ### The interaction type: "pet" | "play" | "feed".
+  ### Maps to CompanionAnimationState on the client.
+  kind: String
+
+  ### When the action was emitted, server-side. Used by clients to ignore
+  ### actions older than their last seen timestamp (de-dupe on reconnect).
+  timestamp: DateTime
