@@ -31,6 +31,9 @@ import 'package:display/src/features/settings/cubit/display_settings_cubit.dart'
 import 'package:display/src/features/theme/cubit/marketplace_cubit.dart';
 import 'package:display/src/features/theme/cubit/theme_cubit.dart';
 import 'package:display/src/features/theme/cubit/theme_state.dart';
+import 'package:display/src/data/companion/companion_poll_service.dart';
+import 'package:display/src/data/companion/companion_repository.dart';
+import 'package:display/src/data/companion/serverpod_companion_repository.dart';
 import 'package:display/src/features/companion/companion_event_bus.dart';
 import 'package:display/src/features/companion/cubit/companion_cubit.dart';
 import 'package:display/src/features/ticker/cubit/ticker_cubit.dart';
@@ -88,10 +91,18 @@ class LandfallApp extends StatelessWidget {
     final marketplaceRepository = ServerpodMarketplaceRepository(client);
 
     final companionEventBus = CompanionEventBus();
+    final companionRepository = ServerpodCompanionRepository(client);
+    final companionPollService = ClientCompanionPollService(client);
 
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<CompanionEventBus>(create: (_) => companionEventBus),
+        RepositoryProvider<CompanionRepository>(
+          create: (_) => companionRepository,
+        ),
+        RepositoryProvider<CompanionPollService>(
+          create: (_) => companionPollService,
+        ),
         RepositoryProvider<DashboardProfileRepository>(
           create: (_) => profileRepository,
         ),
@@ -145,7 +156,11 @@ class LandfallApp extends StatelessWidget {
                 MarketplaceCubit(marketplaceRepository)..loadMarketplace(),
           ),
           BlocProvider(
-            create: (_) => CompanionCubit(displayId: displayId),
+            create: (ctx) => CompanionCubit(
+              displayId: displayId,
+              serverUrl: serverUrl,
+              repository: ctx.read<CompanionRepository>(),
+            ),
           ),
         ],
         child: BlocBuilder<ThemeCubit, ThemeState>(

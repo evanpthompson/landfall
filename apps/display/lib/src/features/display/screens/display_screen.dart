@@ -110,6 +110,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
     context.read<DashboardProfileCubit>().loadProfiles();
     context.read<ClockCubit>().startTicking();
     context.read<CardCubit>().fetchCards();
+    context.read<CompanionCubit>().load();
     context.read<WeatherCubit>().loadWeather();
     context.read<CalendarCubit>().loadEvents();
     context.read<PhotoCubit>().loadPhotos();

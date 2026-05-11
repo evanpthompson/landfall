@@ -1,20 +1,21 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'package:display/src/data/companion/companion_poll_service.dart';
 import '../companion_event_bus.dart';
 import '../cubit/companion_cubit.dart';
 import '../provider/petdex_provider.dart';
 import '../renderer/sprite_sheet_renderer.dart';
 
-/// Asset key for the Lumen petdex sprite sheet bundled with the display app.
 const _kLumenAsset = 'assets/companions/lumen.webp';
 
-/// Rarity badge colours — intentionally desaturated to complement any theme.
 const _rarityColors = <RarityTier, Color>{
   RarityTier.common: Color(0xFF9E9E9E),
   RarityTier.uncommon: Color(0xFF66BB6A),
@@ -34,6 +35,16 @@ const _rarityLabels = <RarityTier, String>{
 class CompanionCard extends StatefulWidget {
   const CompanionCard({super.key});
 
+  /// Maps a raw action kind string from the server to an animation state.
+  static CompanionAnimationState kindToState(String kind) {
+    return switch (kind) {
+      'pet' => CompanionAnimationState.pet,
+      'play' => CompanionAnimationState.play,
+      'feed' => CompanionAnimationState.reactCelebratory,
+      _ => CompanionAnimationState.idle,
+    };
+  }
+
   @override
   State<CompanionCard> createState() => _CompanionCardState();
 }
@@ -42,6 +53,8 @@ class _CompanionCardState extends State<CompanionCard>
     with TickerProviderStateMixin {
   late final SpriteSheetCompanionRenderer _renderer;
   StreamSubscription<CompanionTrigger>? _busSub;
+  Timer? _lookAtViewerTimer;
+  bool _polling = false;
 
   @override
   void initState() {
@@ -59,12 +72,16 @@ class _CompanionCardState extends State<CompanionCard>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _busSub?.cancel();
-    // CompanionEventBus is provided as a singleton via get_it; for now we
-    // tolerate its absence so the card renders even without the bus wired.
     try {
       final bus = context.read<CompanionEventBus>();
       _busSub = bus.events.listen(_onTrigger);
     } catch (_) {}
+
+    if (!_polling) {
+      _polling = true;
+      _startPollLoop();
+    }
+    _scheduleLookAtViewer();
   }
 
   void _onTrigger(CompanionTrigger trigger) {
@@ -72,9 +89,56 @@ class _CompanionCardState extends State<CompanionCard>
     if (mounted) setState(() {});
   }
 
+  void _startPollLoop() {
+    final cubit = context.read<CompanionCubit>();
+    CompanionPollService? pollService;
+    try {
+      pollService = context.read<CompanionPollService>();
+    } catch (_) {
+      return;
+    }
+    _pollLoop(cubit.displayId, pollService);
+  }
+
+  Future<void> _pollLoop(
+    String displayId,
+    CompanionPollService pollService,
+  ) async {
+    while (mounted) {
+      try {
+        final action = await pollService.pollForEvents(
+          displayId,
+          timeoutSeconds: 30,
+        );
+        if (!mounted) break;
+        if (action != null) {
+          _renderer.triggerState(CompanionCard.kindToState(action.kind));
+          setState(() {});
+        }
+      } catch (_) {
+        // Network error — wait briefly before retrying to avoid hammering.
+        await Future<void>.delayed(const Duration(seconds: 5));
+      }
+    }
+  }
+
+  void _scheduleLookAtViewer() {
+    _lookAtViewerTimer?.cancel();
+    final delay = Duration(
+      seconds: 60 + Random().nextInt(60),
+    );
+    _lookAtViewerTimer = Timer(delay, () {
+      if (!mounted) return;
+      _renderer.triggerState(CompanionAnimationState.lookAtViewer);
+      setState(() {});
+      _scheduleLookAtViewer();
+    });
+  }
+
   @override
   void dispose() {
     _busSub?.cancel();
+    _lookAtViewerTimer?.cancel();
     _renderer.dispose();
     super.dispose();
   }
@@ -93,10 +157,12 @@ class _CompanionCardState extends State<CompanionCard>
 
   Widget _buildCard(BuildContext context, CompanionEntity entity) {
     final tokens = LandfallActiveTheme.of(context);
-    // Dark background so the sprite's purple glow reads as a glow, not an outline.
     const bgColor = Color(0xFF111318);
     final borderColor = tokenColor(tokens.cardBorderColor);
     final radius = tokens.cardRadius.toDouble();
+
+    final cubit = context.read<CompanionCubit>();
+    final qrUrl = '${cubit.serverUrl}companion/${entity.displayId}';
 
     final displayName = entity.customName ?? entity.name;
     final rarityColor = _rarityColors[entity.rarityTier] ?? const Color(0xFF9E9E9E);
@@ -110,7 +176,6 @@ class _CompanionCardState extends State<CompanionCard>
       ),
       child: Stack(
         children: [
-          // Sprite — fills the card above the meta strip
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(radius - 1),
@@ -121,7 +186,14 @@ class _CompanionCardState extends State<CompanionCard>
             ),
           ),
 
-          // Bottom metadata strip — dark overlay for legibility on any sprite bg
+          // QR code — upper right
+          Positioned(
+            top: 10,
+            right: 10,
+            child: _QrWidget(url: qrUrl),
+          ),
+
+          // Bottom metadata strip
           Positioned(
             left: 0,
             right: 0,
@@ -136,6 +208,39 @@ class _CompanionCardState extends State<CompanionCard>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+class _QrWidget extends StatelessWidget {
+  const _QrWidget({required this.url});
+
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: QrImageView(
+        data: url,
+        semanticsLabel: url,
+        version: QrVersions.auto,
+        size: 72,
+        eyeStyle: const QrEyeStyle(
+          eyeShape: QrEyeShape.square,
+          color: Color(0xFF111318),
+        ),
+        dataModuleStyle: const QrDataModuleStyle(
+          dataModuleShape: QrDataModuleShape.square,
+          color: Color(0xFF111318),
+        ),
       ),
     );
   }
