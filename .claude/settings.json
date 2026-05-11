@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "WebSearch",
-      "WebFetch",
-      "Read(/Users/ethompson/files/automation/skills/**)"
-    ]
-  }
-}

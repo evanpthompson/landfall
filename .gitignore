@@ -39,6 +39,20 @@ infra/.terraform.lock.hcl
 # Melos
 .melos_tool/
 
+# Claude Code
+.claude/
+
+# Internal docs (kept in ~/files/automation/landfall)
+docs/app_failure_log.md
+docs/competitive_analysis.md
+docs/known_bugs.md
+docs/security_hardening_phase.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
 # Coverage
 coverage/
 lcov.info
