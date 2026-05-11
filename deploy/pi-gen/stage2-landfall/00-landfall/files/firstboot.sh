@@ -133,10 +133,14 @@ fi
 # binary as root (e.g. during dev/testing), the directory ends up root-owned
 # and the app can no longer write its SQLite database. Pre-creating it here
 # with correct ownership prevents that regardless of how the device was used.
-DATA_DIR="/home/landfall/.local/share/landfall"
-mkdir -p "${DATA_DIR}"
-chown -R landfall:landfall "/home/landfall/.local"
-log "Data directory ownership set: ${DATA_DIR}"
+if [[ "$(id -u)" -eq 0 ]] && id landfall > /dev/null 2>&1; then
+  DATA_DIR="/home/landfall/.local/share/landfall"
+  mkdir -p "${DATA_DIR}"
+  chown -R landfall:landfall "/home/landfall/.local"
+  log "Data directory ownership set: ${DATA_DIR}"
+else
+  log "Skipping data directory setup (not running as root with landfall user)"
+fi
 
 mkdir -p "$(dirname "${INITIALIZED_FLAG}")"
 touch "${INITIALIZED_FLAG}"

@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
 import '../provider/companion_provider.dart';
@@ -89,7 +88,7 @@ class _SpriteView extends StatelessWidget {
     }
     return AnimatedBuilder(
       animation: renderer._animationController,
-      builder: (_, __) {
+      builder: (_, _) {
         final spec = renderer.provider.specFor(renderer._state) ??
             renderer.provider.specFor(CompanionAnimationState.idle)!;
         final t = renderer._animationController.value;
