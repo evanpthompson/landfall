@@ -6,9 +6,13 @@ import 'package:serverpod/serverpod.dart';
 /// Serves the companion interaction web page and its Flutter web assets.
 ///
 /// URL layout:
-///   GET /companion/{uuid}              → index.html with injected display ID
-///   GET /companion/{uuid}/index.html   → same as above
-///   GET /companion/{uuid}/**           → static asset from the Flutter web build
+///   GET /c/{uuid}              → index.html with injected display ID
+///   GET /c/{uuid}/index.html   → same as above
+///   GET /c/{uuid}/**           → static asset from the Flutter web build
+///
+/// The path prefix /c/ (not /companion/) is intentional — Serverpod routes
+/// URL-path-based endpoint calls as /endpoint/method, so /companion/** would
+/// be shadowed by the companion endpoint before the web route could handle it.
 ///
 /// The Flutter web build is expected at [webDir] (default: web/static/companion).
 /// When the build is absent every request returns 404 so the TV still functions
@@ -23,7 +27,7 @@ class CompanionPageRoute extends Route {
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
     final segments = request.url.pathSegments;
-    // Expect at least ['companion', '{uuid}'].
+    // Expect at least ['c', '{uuid}'].
     if (segments.length < 2) return Response(404);
 
     final subSegments = segments.length > 2 ? segments.sublist(2) : <String>[];

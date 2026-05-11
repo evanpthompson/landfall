@@ -118,7 +118,7 @@ void run(List<String> args) async {
 
   // Companion interaction web page — serves the Flutter web build at
   // /companion/{uuid} with the display ID injected, plus static assets.
-  pod.webServer.addRoute(CompanionPageRoute(), '/companion/**');
+  pod.webServer.addRoute(CompanionPageRoute(), '/c/**');
 
   // REST API — agent card push/list/dismiss over plain HTTP.
   // Authentication: Authorization: Bearer <api_key>

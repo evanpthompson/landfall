@@ -162,7 +162,7 @@ class _CompanionCardState extends State<CompanionCard>
     final radius = tokens.cardRadius.toDouble();
 
     final cubit = context.read<CompanionCubit>();
-    final qrUrl = '${cubit.serverUrl}companion/${entity.displayId}';
+    final qrUrl = '${cubit.serverUrl}c/${entity.displayId}';
 
     final displayName = entity.customName ?? entity.name;
     final rarityColor = _rarityColors[entity.rarityTier] ?? const Color(0xFF9E9E9E);

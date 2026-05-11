@@ -103,7 +103,7 @@ void main() {
 
       final qr = tester.widget<QrImageView>(find.byType(QrImageView));
       expect(qr.semanticsLabel, contains('my-uuid'));
-      expect(qr.semanticsLabel, contains('companion'));
+      expect(qr.semanticsLabel, contains('/c/'));
     });
 
     test('kindToState maps pet → pet animation', () {
