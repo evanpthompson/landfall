@@ -190,21 +190,11 @@ class _CompanionCardState extends State<CompanionCard>
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(radius - 1),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 72),
-                child: _renderer.buildView(),
-              ),
+              child: _renderer.buildView(),
             ),
           ),
 
-          // QR code — upper right
-          Positioned(
-            top: 10,
-            right: 10,
-            child: _QrWidget(url: qrUrl),
-          ),
-
-          // Bottom metadata strip
+          // Bottom metadata strip — QR lives inside it now
           Positioned(
             left: 0,
             right: 0,
@@ -215,6 +205,7 @@ class _CompanionCardState extends State<CompanionCard>
               rarityColor: rarityColor,
               evolutionStage: entity.evolutionStage,
               assetCredit: entity.assetCredit,
+              qrUrl: qrUrl,
               radius: radius,
             ),
           ),
@@ -233,26 +224,35 @@ class _QrWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: QrImageView(
-        data: url,
-        semanticsLabel: url,
-        version: QrVersions.auto,
-        size: 72,
-        eyeStyle: const QrEyeStyle(
-          eyeShape: QrEyeShape.square,
-          color: Color(0xFF111318),
-        ),
-        dataModuleStyle: const QrDataModuleStyle(
-          dataModuleShape: QrDataModuleShape.square,
-          color: Color(0xFF111318),
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Size the QR to the available height, clamped to a readable range.
+        final size = constraints.maxHeight.isFinite
+            ? constraints.maxHeight.clamp(48.0, 96.0)
+            : 64.0;
+        return Container(
+          width: size,
+          height: size,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: QrImageView(
+            data: url,
+            semanticsLabel: url,
+            version: QrVersions.auto,
+            eyeStyle: const QrEyeStyle(
+              eyeShape: QrEyeShape.square,
+              color: Color(0xFF111318),
+            ),
+            dataModuleStyle: const QrDataModuleStyle(
+              dataModuleShape: QrDataModuleShape.square,
+              color: Color(0xFF111318),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -266,6 +266,7 @@ class _MetaStrip extends StatelessWidget {
     required this.rarityColor,
     required this.evolutionStage,
     required this.assetCredit,
+    required this.qrUrl,
     required this.radius,
   });
 
@@ -274,6 +275,7 @@ class _MetaStrip extends StatelessWidget {
   final Color rarityColor;
   final int evolutionStage;
   final String? assetCredit;
+  final String qrUrl;
   final double radius;
 
   static const _bg = Color(0xCC0D0D0F);
@@ -291,53 +293,68 @@ class _MetaStrip extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+        padding: const EdgeInsets.fromLTRB(14, 8, 10, 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Row(
-              children: [
-                Text(
-                  displayName,
-                  style: LandfallTypography.cardTitle.copyWith(color: _nameColor),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: rarityColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: rarityColor.withValues(alpha: 0.5)),
+            // Left: name, rarity, credit.
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          displayName,
+                          style: LandfallTypography.cardTitle.copyWith(color: _nameColor),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: rarityColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: rarityColor.withValues(alpha: 0.5)),
+                        ),
+                        child: Text(
+                          rarityLabel,
+                          style: LandfallTypography.caption.copyWith(
+                            color: rarityColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      if (evolutionStage > 0) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          'Stage $evolutionStage',
+                          style: LandfallTypography.caption.copyWith(color: _creditColor),
+                        ),
+                      ],
+                    ],
                   ),
-                  child: Text(
-                    rarityLabel,
-                    style: LandfallTypography.caption.copyWith(
-                      color: rarityColor,
-                      fontWeight: FontWeight.w600,
+                  if (assetCredit != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      assetCredit!,
+                      style: LandfallTypography.caption.copyWith(color: _creditColor),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ),
-                if (evolutionStage > 0) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    'Stage $evolutionStage',
-                    style: LandfallTypography.caption.copyWith(color: _creditColor),
-                  ),
+                  ],
                 ],
-              ],
-            ),
-            if (assetCredit != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                assetCredit!,
-                style: LandfallTypography.caption.copyWith(color: _creditColor),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ],
+            ),
+
+            const SizedBox(width: 10),
+
+            // Right: QR code, sized to match strip height naturally.
+            _QrWidget(url: qrUrl),
           ],
         ),
       ),

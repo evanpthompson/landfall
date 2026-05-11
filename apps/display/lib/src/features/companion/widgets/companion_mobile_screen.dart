@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:landfall_shared/landfall_shared.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../provider/petdex_provider.dart';
@@ -88,7 +89,15 @@ class _CompanionMobileScreenState extends State<CompanionMobileScreen>
     super.dispose();
   }
 
+  static CompanionAnimationState _kindToState(String kind) => switch (kind) {
+    'pet'  => CompanionAnimationState.pet,
+    'play' => CompanionAnimationState.play,
+    'feed' => CompanionAnimationState.reactCelebratory,
+    _      => CompanionAnimationState.idle,
+  };
+
   Future<void> _onAction(String kind) async {
+    _renderer.triggerState(_kindToState(kind));
     setState(() => _showFeedback = true);
     _feedbackTimer?.cancel();
     _feedbackTimer = Timer(const Duration(milliseconds: 800), () {

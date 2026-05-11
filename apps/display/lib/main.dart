@@ -20,6 +20,7 @@ void main() async {
   if (!kLandfallFlutterPi &&
       (Platform.isLinux || Platform.isMacOS || Platform.isWindows)) {
     await windowManager.ensureInitialized();
+    await windowManager.setMinimumSize(const Size(900, 560));
     await windowManager.setFullScreen(true);
   }
 
