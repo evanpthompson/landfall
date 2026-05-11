@@ -42,7 +42,14 @@ Subsequent runs without `--build` will open the existing build. Re-run with `--b
 |------|--------|
 | *(none)* | Start backend + open existing app (debug build if no release exists) |
 | `--build` | Rebuild the macOS app with `flutter build macos --release`, then launch |
+| `--reset` | Clear profile data, rebuild app, fresh start (see below) |
 | `--server` | Start backend only, skip launching the app |
+
+### How `--reset` works
+
+`--reset` truncates only the `dashboard_profiles` table and clears the app's local settings, then rebuilds and launches. When the app connects and calls `loadProfiles()` against an empty table, the client automatically seeds the three default profiles (Weekday, Weekend, Night) using the current `DashboardLayout` definitions in `landfall_shared`. No hardcoded JSON — the Dart code is always the source of truth for layout defaults.
+
+Use `--reset` any time layouts have changed in code and you want the DB to reflect them, or any time you want a clean slate.
 
 ## Backend only
 
