@@ -179,6 +179,9 @@ class _DisplayScreenState extends State<DisplayScreen> {
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
                 onTap: _showGear,
+                // Long-press anywhere toggles cursor mode — works on devices
+                // without a keyboard where F11 / Ctrl+Alt+C is unavailable.
+                onLongPress: _toggleCursorMode,
                 child: Scaffold(
                   backgroundColor: tokenColor(tokens.backgroundValue),
                   body: Stack(
