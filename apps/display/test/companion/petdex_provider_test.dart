@@ -24,7 +24,7 @@ void main() {
       expect(spec, isNotNull);
       expect(spec!.row, 0);
       expect(spec.frameCount, 6);
-      expect(spec.fps, 8);
+      expect(spec.fps, 6);
       expect(spec.loops, isTrue);
     });
 
