@@ -19,6 +19,7 @@ import 'src/web/routes/rest/ticker_route.dart';
 import 'src/web/routes/calendar_oauth_route.dart';
 import 'src/web/routes/microsoft_calendar_oauth_route.dart';
 import 'src/web/routes/photo_serve_route.dart';
+import 'src/web/routes/companion/companion_page_route.dart';
 import 'src/web/routes/root.dart';
 import 'src/weather/weather_refresh_call.dart';
 
@@ -114,6 +115,10 @@ void run(List<String> args) async {
   // Stripe webhook — receives purchase confirmation events.
   // Verifies Stripe-Signature using stripeWebhookSecret from passwords.yaml.
   pod.webServer.addRoute(StripeWebhookRoute(), '/stripe/webhook');
+
+  // Companion interaction web page — serves the Flutter web build at
+  // /companion/{uuid} with the display ID injected, plus static assets.
+  pod.webServer.addRoute(CompanionPageRoute(), '/companion/**');
 
   // REST API — agent card push/list/dismiss over plain HTTP.
   // Authentication: Authorization: Bearer <api_key>
