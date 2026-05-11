@@ -19,23 +19,32 @@ export 'photo_state.dart';
 ///
 /// Call [setSource] to switch to a different photo source at runtime.
 class PhotoCubit extends Cubit<PhotoState> {
-  PhotoCubit(this._repository) : super(const PhotoLoading());
+  PhotoCubit(PhotoRepository repository)
+      : _repository = repository,
+        _serverpodRepository = repository,
+        _activeSource = const PhotoSourceServerpod(),
+        super(const PhotoLoading());
 
   PhotoRepository _repository;
 
+  /// The original serverpod repository, kept so switching back to it works.
+  final PhotoRepository _serverpodRepository;
+
+  /// The currently configured source.
+  PhotoSource _activeSource;
+  PhotoSource get activeSource => _activeSource;
+
   /// Switches to a new photo source and reloads.
   Future<void> setSource(PhotoSource source) async {
+    _activeSource = source;
     _repository = _repositoryForSource(source);
     emit(const PhotoLoading());
     await loadPhotos();
   }
 
-  static PhotoRepository _repositoryForSource(PhotoSource source) =>
+  PhotoRepository _repositoryForSource(PhotoSource source) =>
       switch (source) {
-        PhotoSourceServerpod() => throw UnimplementedError(
-            'PhotoSourceServerpod requires the original repository — '
-            'pass it at construction time instead',
-          ),
+        PhotoSourceServerpod() => _serverpodRepository,
         PhotoSourceLocalDirectory(:final path) =>
           LocalDirectoryPhotoRepository(path),
         PhotoSourceNetwork(:final urls) => NetworkPhotoRepository(urls),
