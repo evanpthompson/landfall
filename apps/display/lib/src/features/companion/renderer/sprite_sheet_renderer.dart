@@ -132,7 +132,18 @@ class _SpritePainter extends CustomPainter {
       frameWidth,
       frameHeight,
     );
-    final dst = Rect.fromLTWH(0, 0, size.width, size.height);
+
+    // Integer-scale the frame to the largest multiple that fits, then center.
+    final scaleX = size.width / frameWidth;
+    final scaleY = size.height / frameHeight;
+    final scale = scaleX < scaleY ? scaleX : scaleY;
+    final k = scale < 1.0 ? scale : scale.floorToDouble();
+    final dstW = frameWidth * k;
+    final dstH = frameHeight * k;
+    final dx = (size.width - dstW) / 2;
+    final dy = (size.height - dstH) / 2;
+    final dst = Rect.fromLTWH(dx, dy, dstW, dstH);
+
     canvas.drawImageRect(
       image,
       src,
