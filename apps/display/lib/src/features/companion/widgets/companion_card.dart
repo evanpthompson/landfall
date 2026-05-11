@@ -93,7 +93,8 @@ class _CompanionCardState extends State<CompanionCard>
 
   Widget _buildCard(BuildContext context, CompanionEntity entity) {
     final tokens = LandfallActiveTheme.of(context);
-    final bgColor = tokenColor(tokens.cardFill);
+    // Dark background so the sprite's purple glow reads as a glow, not an outline.
+    const bgColor = Color(0xFF111318);
     final borderColor = tokenColor(tokens.cardBorderColor);
     final radius = tokens.cardRadius.toDouble();
 
