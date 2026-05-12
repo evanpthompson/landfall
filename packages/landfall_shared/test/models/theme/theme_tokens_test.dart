@@ -142,7 +142,7 @@ void main() {
       expect(d.cardFill, equals('#1A1A1F'));
       expect(d.cardBorderColor, equals('#2C2C35'));
       expect(d.cardBorderWidth, equals(1.5));
-      expect(d.cardRadius, equals(8));
+      expect(d.cardRadius, equals(14));
       expect(d.colorTextPrimary, equals('#F2F2F7'));
       expect(d.colorTextSecondary, equals('#8E8E9A'));
       expect(d.colorTextTertiary, equals('#5A5A6A'));
