@@ -1,6 +1,6 @@
 # Landfall
 
-**The ambient display layer for the agentic era.**
+**Alpha** · The ambient display layer for the agentic era.
 
 Landfall is an open-source, self-hosted platform that makes your AI-assisted life visible. A beautiful ambient display for your home — calendar, weather, photos, clock — running on Fire TV or any Android device. And the place where agent output lands instead of disappearing into chat windows.
 
@@ -50,12 +50,18 @@ Generate API keys in Settings → Accounts. Rate limit: 500 pushes/day per key.
 ## Monorepo structure
 
 ```
-apps/display/             # Flutter client (Fire TV, Android)
+apps/display/             # Flutter client (Fire TV, Android, Pi, macOS)
 server/landfall_server/   # Serverpod backend
 server/landfall_client/   # Generated Serverpod client
+server/landfall_mcp/      # MCP server (Claude Desktop, Cursor)
+packages/agent_sdk/       # Published Dart SDK (landfall_agent_sdk)
 packages/landfall_shared/ # Shared Dart models
 packages/ui_kit/          # Design system
+themes/                   # Community and marketplace themes (YAML)
+deploy/                   # Docker Compose, Pi image build, Fire TV scripts
+site/                     # Static landing page
 infra/                    # OpenTofu infrastructure (DigitalOcean)
+tools/                    # Build and utility scripts
 docs/                     # Architecture decisions, guides
 ```
 
@@ -65,7 +71,7 @@ Landfall is self-host first for alpha. Start with the Docker server and a Fire T
 
 - [Self-hosting guide](docs/self_hosting_guide.md) - recommended server path
 - [Fire TV guide](docs/fire_tv_guide.md) - APK build/sideload path
-- [Raspberry Pi guide](docs/raspberry_pi_guide.md) - beta all-in-one appliance image and manual Pi setup
+- [Raspberry Pi guide](docs/raspberry_pi_guide.md) - alpha all-in-one appliance image and manual Pi setup
 - [Deployment validation](docs/deployment_validation.md) - checks to run before long image builds
 
 ## Agent integration

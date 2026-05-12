@@ -1,12 +1,12 @@
 # Raspberry Pi Guide
 
-This guide covers running Landfall on a Raspberry Pi. The all-in-one image is the beta appliance path: it produces a single `.img` file that runs the server and display on one Pi. For alpha, the most stable path is still the self-hosted Docker server plus Fire TV/Android display.
+This guide covers running Landfall on a Raspberry Pi. The all-in-one image is the alpha appliance path: it produces a single `.img` file that runs the server and display on one Pi. For the most stable alpha path, use the self-hosted Docker server plus Fire TV/Android display.
 
 **Supported hardware:** Raspberry Pi 4 (4 GB RAM recommended) or Pi 5. Pi 3 is not supported — it lacks the memory to run the server reliably.
 
 ---
 
-## Option A: All-in-one image (beta)
+## Option A: All-in-one image (alpha)
 
 One command builds everything. Flash, boot, done.
 
