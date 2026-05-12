@@ -134,9 +134,9 @@ fi
 # and the app can no longer write its SQLite database. Pre-creating it here
 # with correct ownership prevents that regardless of how the device was used.
 if [[ "$(id -u)" -eq 0 ]] && id landfall > /dev/null 2>&1; then
-  DATA_DIR="/home/landfall/.local/share/landfall"
+  DATA_DIR="${LANDFALL_DATA_DIR:-/home/landfall/.local/share/landfall}"
   mkdir -p "${DATA_DIR}"
-  chown -R landfall:landfall "/home/landfall/.local"
+  chown -R landfall:landfall "$(dirname "$(dirname "${DATA_DIR}")")"
   log "Data directory ownership set: ${DATA_DIR}"
 else
   log "Skipping data directory setup (not running as root with landfall user)"

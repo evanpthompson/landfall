@@ -66,6 +66,7 @@ LANDFALL_INTEGRATIONS_FILE="${integrations_file}" \
 LANDFALL_INITIALIZED_FLAG="${flag_file}" \
 LANDFALL_IMAGE_TARBALL="${image_tarball}" \
 LANDFALL_DOCKER_BIN="${docker_stub}" \
+LANDFALL_DATA_DIR="${tmp}/data/landfall" \
   bash "${FIRSTBOOT}"
 
 [[ -f "${env_file}" ]] || { echo ".env was not created" >&2; exit 1; }
@@ -102,6 +103,7 @@ LANDFALL_INTEGRATIONS_FILE="${tmp2}/missing-integrations.env" \
 LANDFALL_INITIALIZED_FLAG="${tmp2}/state/.initialized" \
 LANDFALL_IMAGE_TARBALL="${tmp2}/missing-server.tar.gz" \
 LANDFALL_DOCKER_BIN="${docker_stub}" \
+LANDFALL_DATA_DIR="${tmp2}/data/landfall" \
   bash "${FIRSTBOOT}"
 
 assert_contains "${tmp2}/deploy/.env" '^LANDFALL_DOMAIN=hallway\.local$'
