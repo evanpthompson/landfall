@@ -31,6 +31,7 @@ class DriftDisplaySettingsRepository implements DisplaySettingsRepository {
       serverUrl: entry.serverUrl,
       wizardComplete: entry.wizardComplete,
       displayId: entry.displayId ?? '',
+      photoSourceJson: entry.photoSourceJson,
     );
   }
 
@@ -47,6 +48,7 @@ class DriftDisplaySettingsRepository implements DisplaySettingsRepository {
             serverUrl: Value(settings.serverUrl),
             wizardComplete: Value(settings.wizardComplete),
             displayId: Value(settings.displayId.isEmpty ? null : settings.displayId),
+            photoSourceJson: Value(settings.photoSourceJson),
             updatedAt: Value(DateTime.now()),
           ),
         );

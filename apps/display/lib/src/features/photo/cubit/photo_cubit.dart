@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer' as dev;
 import 'dart:math';
 
@@ -17,9 +18,11 @@ export 'photo_state.dart';
 /// to move to the next photo. Both calls are driven externally by timers in
 /// [DisplayScreen] to keep the cubit side-effect-free.
 ///
-/// Call [setSource] to switch to a different photo source at runtime.
+/// Call [setSource] to switch to a different photo source at runtime. The
+/// chosen source is persisted via [DisplaySettingsRepository] and restored
+/// on the next app launch.
 class PhotoCubit extends Cubit<PhotoState> {
-  PhotoCubit(PhotoRepository repository)
+  PhotoCubit(PhotoRepository repository, this._settingsRepository)
       : _repository = repository,
         _serverpodRepository = repository,
         _activeSource = const PhotoSourceServerpod(),
@@ -30,15 +33,43 @@ class PhotoCubit extends Cubit<PhotoState> {
   /// The original serverpod repository, kept so switching back to it works.
   final PhotoRepository _serverpodRepository;
 
+  final DisplaySettingsRepository _settingsRepository;
+
   /// The currently configured source.
   PhotoSource _activeSource;
   PhotoSource get activeSource => _activeSource;
 
-  /// Switches to a new photo source and reloads.
+  /// Loads the persisted source from settings, then loads photos.
+  ///
+  /// Call once at startup before the first [loadPhotos] tick.
+  Future<void> initSource() async {
+    try {
+      final settings = await _settingsRepository.getSettings();
+      if (settings.photoSourceJson != null) {
+        final json = jsonDecode(settings.photoSourceJson!) as Map<String, dynamic>;
+        final source = PhotoSource.fromJson(json);
+        _activeSource = source;
+        _repository = _repositoryForSource(source);
+      }
+    } catch (e) {
+      dev.log('initSource: failed to restore source: $e', name: 'landfall.photo');
+    }
+    await loadPhotos();
+  }
+
+  /// Switches to a new photo source, persists it, and reloads.
   Future<void> setSource(PhotoSource source) async {
     _activeSource = source;
     _repository = _repositoryForSource(source);
     emit(const PhotoLoading());
+    try {
+      final settings = await _settingsRepository.getSettings();
+      await _settingsRepository.saveSettings(
+        settings.copyWith(photoSourceJson: jsonEncode(source.toJson())),
+      );
+    } catch (e) {
+      dev.log('setSource: failed to persist source: $e', name: 'landfall.photo');
+    }
     await loadPhotos();
   }
 

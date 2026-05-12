@@ -6,6 +6,9 @@ import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 
 class _MockPhotoRepository extends Mock implements PhotoRepository {}
 
+class _MockDisplaySettingsRepository extends Mock
+    implements DisplaySettingsRepository {}
+
 PhotoEntity _photo(int id, String url) => PhotoEntity(
       id: id,
       filename: '$id.jpg',
@@ -15,10 +18,20 @@ PhotoEntity _photo(int id, String url) => PhotoEntity(
     );
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(const DisplaySettings());
+  });
+
   late _MockPhotoRepository repository;
+  late _MockDisplaySettingsRepository settingsRepository;
 
   setUp(() {
     repository = _MockPhotoRepository();
+    settingsRepository = _MockDisplaySettingsRepository();
+    when(() => settingsRepository.getSettings())
+        .thenAnswer((_) async => const DisplaySettings());
+    when(() => settingsRepository.saveSettings(any()))
+        .thenAnswer((_) async {});
   });
 
   group('PhotoCubit', () {
@@ -28,7 +41,7 @@ void main() {
         when(() => repository.getPhotos()).thenAnswer(
           (_) async => [_photo(1, 'https://a.com/1.jpg')],
         );
-        return PhotoCubit(repository);
+        return PhotoCubit(repository, settingsRepository);
       },
       act: (c) => c.loadPhotos(),
       expect: () => [
@@ -40,7 +53,7 @@ void main() {
       'loadPhotos emits PhotoEmpty when list is empty',
       build: () {
         when(() => repository.getPhotos()).thenAnswer((_) async => []);
-        return PhotoCubit(repository);
+        return PhotoCubit(repository, settingsRepository);
       },
       act: (c) => c.loadPhotos(),
       expect: () => [isA<PhotoEmpty>()],
@@ -50,7 +63,7 @@ void main() {
       'loadPhotos emits PhotoError on exception',
       build: () {
         when(() => repository.getPhotos()).thenThrow(Exception('network error'));
-        return PhotoCubit(repository);
+        return PhotoCubit(repository, settingsRepository);
       },
       act: (c) => c.loadPhotos(),
       expect: () => [isA<PhotoError>()],
@@ -58,7 +71,7 @@ void main() {
 
     blocTest<PhotoCubit, PhotoState>(
       'advance moves to next photo',
-      build: () => PhotoCubit(repository),
+      build: () => PhotoCubit(repository, settingsRepository),
       seed: () => PhotoLoaded(
         photos: [_photo(1, 'https://a.com/1.jpg'), _photo(2, 'https://a.com/2.jpg')],
         currentIndex: 0,
@@ -71,7 +84,7 @@ void main() {
 
     blocTest<PhotoCubit, PhotoState>(
       'advance wraps around to index 0 after the last photo',
-      build: () => PhotoCubit(repository),
+      build: () => PhotoCubit(repository, settingsRepository),
       seed: () => PhotoLoaded(
         photos: [_photo(1, 'https://a.com/1.jpg'), _photo(2, 'https://a.com/2.jpg')],
         currentIndex: 1,
@@ -84,7 +97,7 @@ void main() {
 
     blocTest<PhotoCubit, PhotoState>(
       'advance on PhotoLoading state emits no new state',
-      build: () => PhotoCubit(repository),
+      build: () => PhotoCubit(repository, settingsRepository),
       seed: () => const PhotoLoading(),
       act: (c) => c.advance(),
       expect: () => [],
@@ -92,7 +105,7 @@ void main() {
 
     blocTest<PhotoCubit, PhotoState>(
       'advance on PhotoEmpty state emits no new state',
-      build: () => PhotoCubit(repository),
+      build: () => PhotoCubit(repository, settingsRepository),
       seed: () => const PhotoEmpty(),
       act: (c) => c.advance(),
       expect: () => [],
@@ -100,7 +113,7 @@ void main() {
 
     blocTest<PhotoCubit, PhotoState>(
       'advance on PhotoError state emits no new state',
-      build: () => PhotoCubit(repository),
+      build: () => PhotoCubit(repository, settingsRepository),
       seed: () => const PhotoError('some error'),
       act: (c) => c.advance(),
       expect: () => [],
@@ -112,7 +125,7 @@ void main() {
         when(() => repository.getPhotos()).thenAnswer(
           (_) async => [_photo(1, 'https://a.com/1.jpg'), _photo(2, 'https://a.com/2.jpg')],
         );
-        return PhotoCubit(repository);
+        return PhotoCubit(repository, settingsRepository);
       },
       seed: () => PhotoLoaded(
         photos: [_photo(1, 'https://a.com/1.jpg'), _photo(2, 'https://a.com/2.jpg')],
@@ -132,7 +145,7 @@ void main() {
         when(() => repository.getPhotos()).thenAnswer(
           (_) async => [_photo(1, 'https://b.com/photo.jpg')],
         );
-        return PhotoCubit(repository);
+        return PhotoCubit(repository, settingsRepository);
       },
       act: (c) async {
         await c.setSource(const PhotoSourceNetwork(urls: ['https://b.com/photo.jpg']));
@@ -151,7 +164,7 @@ void main() {
       'setSource with local directory source loads local files',
       build: () {
         when(() => repository.getPhotos()).thenAnswer((_) async => []);
-        return PhotoCubit(repository);
+        return PhotoCubit(repository, settingsRepository);
       },
       act: (c) async {
         await c.setSource(const PhotoSourceLocalDirectory(path: '/tmp/photos'));

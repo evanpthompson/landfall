@@ -1562,6 +1562,17 @@ class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _photoSourceJsonMeta = const VerificationMeta(
+    'photoSourceJson',
+  );
+  @override
+  late final GeneratedColumn<String> photoSourceJson = GeneratedColumn<String>(
+    'photo_source_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -1584,6 +1595,7 @@ class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
     serverUrl,
     wizardComplete,
     displayId,
+    photoSourceJson,
     updatedAt,
   ];
   @override
@@ -1661,6 +1673,15 @@ class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
         displayId.isAcceptableOrUnknown(data['display_id']!, _displayIdMeta),
       );
     }
+    if (data.containsKey('photo_source_json')) {
+      context.handle(
+        _photoSourceJsonMeta,
+        photoSourceJson.isAcceptableOrUnknown(
+          data['photo_source_json']!,
+          _photoSourceJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -1714,6 +1735,10 @@ class $DisplaySettingsEntriesTable extends DisplaySettingsEntries
         DriftSqlType.string,
         data['${effectivePrefix}display_id'],
       ),
+      photoSourceJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_source_json'],
+      ),
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -1738,6 +1763,7 @@ class DisplaySettingsEntry extends DataClass
   final String serverUrl;
   final bool wizardComplete;
   final String? displayId;
+  final String? photoSourceJson;
   final DateTime updatedAt;
   const DisplaySettingsEntry({
     required this.id,
@@ -1749,6 +1775,7 @@ class DisplaySettingsEntry extends DataClass
     required this.serverUrl,
     required this.wizardComplete,
     this.displayId,
+    this.photoSourceJson,
     required this.updatedAt,
   });
   @override
@@ -1764,6 +1791,9 @@ class DisplaySettingsEntry extends DataClass
     map['wizard_complete'] = Variable<bool>(wizardComplete);
     if (!nullToAbsent || displayId != null) {
       map['display_id'] = Variable<String>(displayId);
+    }
+    if (!nullToAbsent || photoSourceJson != null) {
+      map['photo_source_json'] = Variable<String>(photoSourceJson);
     }
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -1782,6 +1812,9 @@ class DisplaySettingsEntry extends DataClass
       displayId: displayId == null && nullToAbsent
           ? const Value.absent()
           : Value(displayId),
+      photoSourceJson: photoSourceJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(photoSourceJson),
       updatedAt: Value(updatedAt),
     );
   }
@@ -1801,6 +1834,7 @@ class DisplaySettingsEntry extends DataClass
       serverUrl: serializer.fromJson<String>(json['serverUrl']),
       wizardComplete: serializer.fromJson<bool>(json['wizardComplete']),
       displayId: serializer.fromJson<String?>(json['displayId']),
+      photoSourceJson: serializer.fromJson<String?>(json['photoSourceJson']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -1817,6 +1851,7 @@ class DisplaySettingsEntry extends DataClass
       'serverUrl': serializer.toJson<String>(serverUrl),
       'wizardComplete': serializer.toJson<bool>(wizardComplete),
       'displayId': serializer.toJson<String?>(displayId),
+      'photoSourceJson': serializer.toJson<String?>(photoSourceJson),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -1831,6 +1866,7 @@ class DisplaySettingsEntry extends DataClass
     String? serverUrl,
     bool? wizardComplete,
     Value<String?> displayId = const Value.absent(),
+    Value<String?> photoSourceJson = const Value.absent(),
     DateTime? updatedAt,
   }) => DisplaySettingsEntry(
     id: id ?? this.id,
@@ -1842,6 +1878,9 @@ class DisplaySettingsEntry extends DataClass
     serverUrl: serverUrl ?? this.serverUrl,
     wizardComplete: wizardComplete ?? this.wizardComplete,
     displayId: displayId.present ? displayId.value : this.displayId,
+    photoSourceJson: photoSourceJson.present
+        ? photoSourceJson.value
+        : this.photoSourceJson,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   DisplaySettingsEntry copyWithCompanion(DisplaySettingsEntriesCompanion data) {
@@ -1865,6 +1904,9 @@ class DisplaySettingsEntry extends DataClass
           ? data.wizardComplete.value
           : this.wizardComplete,
       displayId: data.displayId.present ? data.displayId.value : this.displayId,
+      photoSourceJson: data.photoSourceJson.present
+          ? data.photoSourceJson.value
+          : this.photoSourceJson,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -1881,6 +1923,7 @@ class DisplaySettingsEntry extends DataClass
           ..write('serverUrl: $serverUrl, ')
           ..write('wizardComplete: $wizardComplete, ')
           ..write('displayId: $displayId, ')
+          ..write('photoSourceJson: $photoSourceJson, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -1897,6 +1940,7 @@ class DisplaySettingsEntry extends DataClass
     serverUrl,
     wizardComplete,
     displayId,
+    photoSourceJson,
     updatedAt,
   );
   @override
@@ -1912,6 +1956,7 @@ class DisplaySettingsEntry extends DataClass
           other.serverUrl == this.serverUrl &&
           other.wizardComplete == this.wizardComplete &&
           other.displayId == this.displayId &&
+          other.photoSourceJson == this.photoSourceJson &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -1926,6 +1971,7 @@ class DisplaySettingsEntriesCompanion
   final Value<String> serverUrl;
   final Value<bool> wizardComplete;
   final Value<String?> displayId;
+  final Value<String?> photoSourceJson;
   final Value<DateTime> updatedAt;
   const DisplaySettingsEntriesCompanion({
     this.id = const Value.absent(),
@@ -1937,6 +1983,7 @@ class DisplaySettingsEntriesCompanion
     this.serverUrl = const Value.absent(),
     this.wizardComplete = const Value.absent(),
     this.displayId = const Value.absent(),
+    this.photoSourceJson = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
   DisplaySettingsEntriesCompanion.insert({
@@ -1949,6 +1996,7 @@ class DisplaySettingsEntriesCompanion
     this.serverUrl = const Value.absent(),
     this.wizardComplete = const Value.absent(),
     this.displayId = const Value.absent(),
+    this.photoSourceJson = const Value.absent(),
     required DateTime updatedAt,
   }) : updatedAt = Value(updatedAt);
   static Insertable<DisplaySettingsEntry> custom({
@@ -1961,6 +2009,7 @@ class DisplaySettingsEntriesCompanion
     Expression<String>? serverUrl,
     Expression<bool>? wizardComplete,
     Expression<String>? displayId,
+    Expression<String>? photoSourceJson,
     Expression<DateTime>? updatedAt,
   }) {
     return RawValuesInsertable({
@@ -1973,6 +2022,7 @@ class DisplaySettingsEntriesCompanion
       if (serverUrl != null) 'server_url': serverUrl,
       if (wizardComplete != null) 'wizard_complete': wizardComplete,
       if (displayId != null) 'display_id': displayId,
+      if (photoSourceJson != null) 'photo_source_json': photoSourceJson,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
   }
@@ -1987,6 +2037,7 @@ class DisplaySettingsEntriesCompanion
     Value<String>? serverUrl,
     Value<bool>? wizardComplete,
     Value<String?>? displayId,
+    Value<String?>? photoSourceJson,
     Value<DateTime>? updatedAt,
   }) {
     return DisplaySettingsEntriesCompanion(
@@ -1999,6 +2050,7 @@ class DisplaySettingsEntriesCompanion
       serverUrl: serverUrl ?? this.serverUrl,
       wizardComplete: wizardComplete ?? this.wizardComplete,
       displayId: displayId ?? this.displayId,
+      photoSourceJson: photoSourceJson ?? this.photoSourceJson,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -2033,6 +2085,9 @@ class DisplaySettingsEntriesCompanion
     if (displayId.present) {
       map['display_id'] = Variable<String>(displayId.value);
     }
+    if (photoSourceJson.present) {
+      map['photo_source_json'] = Variable<String>(photoSourceJson.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -2051,6 +2106,7 @@ class DisplaySettingsEntriesCompanion
           ..write('serverUrl: $serverUrl, ')
           ..write('wizardComplete: $wizardComplete, ')
           ..write('displayId: $displayId, ')
+          ..write('photoSourceJson: $photoSourceJson, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -2855,6 +2911,7 @@ typedef $$DisplaySettingsEntriesTableCreateCompanionBuilder =
       Value<String> serverUrl,
       Value<bool> wizardComplete,
       Value<String?> displayId,
+      Value<String?> photoSourceJson,
       required DateTime updatedAt,
     });
 typedef $$DisplaySettingsEntriesTableUpdateCompanionBuilder =
@@ -2868,6 +2925,7 @@ typedef $$DisplaySettingsEntriesTableUpdateCompanionBuilder =
       Value<String> serverUrl,
       Value<bool> wizardComplete,
       Value<String?> displayId,
+      Value<String?> photoSourceJson,
       Value<DateTime> updatedAt,
     });
 
@@ -2922,6 +2980,11 @@ class $$DisplaySettingsEntriesTableFilterComposer
 
   ColumnFilters<String> get displayId => $composableBuilder(
     column: $table.displayId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get photoSourceJson => $composableBuilder(
+    column: $table.photoSourceJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2985,6 +3048,11 @@ class $$DisplaySettingsEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get photoSourceJson => $composableBuilder(
+    column: $table.photoSourceJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -3036,6 +3104,11 @@ class $$DisplaySettingsEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get displayId =>
       $composableBuilder(column: $table.displayId, builder: (column) => column);
+
+  GeneratedColumn<String> get photoSourceJson => $composableBuilder(
+    column: $table.photoSourceJson,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -3096,6 +3169,7 @@ class $$DisplaySettingsEntriesTableTableManager
                 Value<String> serverUrl = const Value.absent(),
                 Value<bool> wizardComplete = const Value.absent(),
                 Value<String?> displayId = const Value.absent(),
+                Value<String?> photoSourceJson = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => DisplaySettingsEntriesCompanion(
                 id: id,
@@ -3107,6 +3181,7 @@ class $$DisplaySettingsEntriesTableTableManager
                 serverUrl: serverUrl,
                 wizardComplete: wizardComplete,
                 displayId: displayId,
+                photoSourceJson: photoSourceJson,
                 updatedAt: updatedAt,
               ),
           createCompanionCallback:
@@ -3120,6 +3195,7 @@ class $$DisplaySettingsEntriesTableTableManager
                 Value<String> serverUrl = const Value.absent(),
                 Value<bool> wizardComplete = const Value.absent(),
                 Value<String?> displayId = const Value.absent(),
+                Value<String?> photoSourceJson = const Value.absent(),
                 required DateTime updatedAt,
               }) => DisplaySettingsEntriesCompanion.insert(
                 id: id,
@@ -3131,6 +3207,7 @@ class $$DisplaySettingsEntriesTableTableManager
                 serverUrl: serverUrl,
                 wizardComplete: wizardComplete,
                 displayId: displayId,
+                photoSourceJson: photoSourceJson,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0

@@ -14,6 +14,7 @@ class DisplaySettingsEntries extends Table {
   BoolColumn get wizardComplete =>
       boolean().withDefault(const Constant(false))();
   TextColumn get displayId => text().nullable()();
+  TextColumn get photoSourceJson => text().nullable()();
   DateTimeColumn get updatedAt => dateTime()();
 
   @override

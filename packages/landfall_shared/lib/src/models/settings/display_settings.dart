@@ -12,6 +12,7 @@ class DisplaySettings {
     this.serverUrl = '',
     this.wizardComplete = false,
     this.displayId = '',
+    this.photoSourceJson,
   });
 
   /// Whether the scheduled dim mode is active.
@@ -52,6 +53,9 @@ class DisplaySettings {
   /// Empty string means not yet generated — check at startup and populate.
   final String displayId;
 
+  /// JSON-encoded [PhotoSource], or null to use the default (Serverpod).
+  final String? photoSourceJson;
+
   DisplaySettings copyWith({
     bool? dimEnabled,
     int? dimStartHour,
@@ -61,6 +65,7 @@ class DisplaySettings {
     String? serverUrl,
     bool? wizardComplete,
     String? displayId,
+    String? photoSourceJson,
   }) {
     return DisplaySettings(
       dimEnabled: dimEnabled ?? this.dimEnabled,
@@ -71,6 +76,7 @@ class DisplaySettings {
       serverUrl: serverUrl ?? this.serverUrl,
       wizardComplete: wizardComplete ?? this.wizardComplete,
       displayId: displayId ?? this.displayId,
+      photoSourceJson: photoSourceJson ?? this.photoSourceJson,
     );
   }
 
@@ -85,7 +91,8 @@ class DisplaySettings {
           locationName == other.locationName &&
           serverUrl == other.serverUrl &&
           wizardComplete == other.wizardComplete &&
-          displayId == other.displayId;
+          displayId == other.displayId &&
+          photoSourceJson == other.photoSourceJson;
 
   @override
   int get hashCode => Object.hash(
@@ -97,5 +104,6 @@ class DisplaySettings {
         serverUrl,
         wizardComplete,
         displayId,
+        photoSourceJson,
       );
 }

@@ -140,7 +140,10 @@ class LandfallApp extends StatelessWidget {
             create: (ctx) => CalendarCubit(ctx.read<CalendarRepository>()),
           ),
           BlocProvider(
-            create: (ctx) => PhotoCubit(ctx.read<PhotoRepository>()),
+            create: (ctx) => PhotoCubit(
+              ctx.read<PhotoRepository>(),
+              ctx.read<DisplaySettingsRepository>(),
+            ),
           ),
           BlocProvider(
             create: (ctx) =>

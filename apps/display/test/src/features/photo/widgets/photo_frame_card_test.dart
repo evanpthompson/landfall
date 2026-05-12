@@ -40,7 +40,7 @@ Widget _wrapWithState(
 }
 
 class _FakePhotoCubit extends PhotoCubit {
-  _FakePhotoCubit(PhotoState initial) : super(_NullRepo()) {
+  _FakePhotoCubit(PhotoState initial) : super(_NullRepo(), _NullSettingsRepo()) {
     emit(initial);
   }
 }
@@ -48,6 +48,14 @@ class _FakePhotoCubit extends PhotoCubit {
 class _NullRepo implements PhotoRepository {
   @override
   Future<List<PhotoEntity>> getPhotos() async => [];
+}
+
+class _NullSettingsRepo implements DisplaySettingsRepository {
+  @override
+  Future<DisplaySettings> getSettings() async => const DisplaySettings();
+
+  @override
+  Future<void> saveSettings(DisplaySettings settings) async {}
 }
 
 void main() {
