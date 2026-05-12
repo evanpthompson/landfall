@@ -92,6 +92,11 @@ class _CompanionCardState extends State<CompanionCard>
       _polling = true;
       _startPollLoop();
     }
+    // TODO: multiple poll loops can accumulate if the widget is deactivated and
+    // reactivated without dispose() being called (e.g. layout reordering). The
+    // _polling flag only guards the first start; investigate whether
+    // deactivate() + reactivate() can bypass it and add a guard or cancel the
+    // previous loop future before starting a new one.
     _scheduleLookAtViewer();
   }
 
