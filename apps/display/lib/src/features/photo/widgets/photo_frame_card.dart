@@ -28,7 +28,7 @@ class PhotoFrameCard extends StatelessWidget {
     return BlocBuilder<PhotoCubit, PhotoState>(
       builder: (context, state) {
         return ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(tokens.cardRadius.toDouble()),
           child: switch (state) {
             PhotoLoaded() => _PhotoDisplay(state: state, style: style),
             PhotoLoading() => const _Placeholder(label: null),

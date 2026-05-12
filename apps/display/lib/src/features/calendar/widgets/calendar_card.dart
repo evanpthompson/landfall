@@ -40,6 +40,22 @@ class CalendarCard extends StatelessWidget {
   }
 }
 
+// Shared section label used across all calendar views.
+class _CalendarLabel extends StatelessWidget {
+  const _CalendarLabel({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = LandfallActiveTheme.of(context);
+    return Text(
+      text,
+      style: LandfallTypography.cardLabel
+          .copyWith(color: tokenColor(tokens.colorTextTertiary)),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Daily view (original list layout)
 // ---------------------------------------------------------------------------
@@ -56,7 +72,7 @@ class _DailyView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('UPCOMING', style: LandfallTypography.widgetHeading),
+        const _CalendarLabel(text: 'CALENDAR — TODAY'),
         const SizedBox(height: 12),
         Expanded(
           child: ListView.builder(
@@ -150,7 +166,6 @@ class _EventRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = LandfallActiveTheme.of(context);
     final textPrimary = tokenColor(tokens.colorTextPrimary);
-    final textSecondary = tokenColor(tokens.colorTextSecondary);
     final textTertiary = tokenColor(tokens.colorTextTertiary);
 
     return Padding(
@@ -161,8 +176,10 @@ class _EventRow extends StatelessWidget {
           SizedBox(
             width: 72,
             child: Text(_timeLabel,
-                style: LandfallTypography.eventTime
-                    .copyWith(color: textSecondary)),
+                style: LandfallTypography.eventTime.copyWith(
+                  color: tokenColor(tokens.colorAccent),
+                  fontWeight: FontWeight.w500,
+                )),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -241,9 +258,7 @@ class _WeeklyView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('THIS WEEK',
-            style: LandfallTypography.widgetHeading
-                .copyWith(color: textTertiary)),
+        const _CalendarLabel(text: 'CALENDAR — THIS WEEK'),
         const SizedBox(height: 12),
         // Day headers
         Row(
@@ -377,9 +392,7 @@ class _MonthlyView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(_monthNames[now.month - 1],
-            style: LandfallTypography.widgetHeading
-                .copyWith(color: textTertiary)),
+        _CalendarLabel(text: _monthNames[now.month - 1]),
         const SizedBox(height: 8),
         // Day-of-week header
         Row(

@@ -52,6 +52,10 @@ class WeatherCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text('WEATHER',
+                style: LandfallTypography.cardLabel
+                    .copyWith(color: textTertiary)),
+            const SizedBox(height: 10),
             // Current conditions — FittedBox scales down width if slot is narrow.
             Flexible(
               flex: 3,
@@ -62,12 +66,6 @@ class WeatherCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      current.locationName,
-                      style: LandfallTypography.widgetHeading
-                          .copyWith(color: textTertiary),
-                    ),
-                    const SizedBox(height: 4),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -76,19 +74,19 @@ class WeatherCard extends StatelessWidget {
                           style: LandfallTypography.weatherTemp
                               .copyWith(color: textPrimary),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 14),
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.only(bottom: 12),
                           child: Icon(
                             weatherIconData(current.iconCode),
-                            size: 36,
+                            size: 40,
                             color: textSecondary,
                           ),
                         ),
                       ],
                     ),
                     Text(
-                      current.condition,
+                      '${current.condition} · ${current.locationName}',
                       style: LandfallTypography.weatherCondition
                           .copyWith(color: textSecondary),
                     ),

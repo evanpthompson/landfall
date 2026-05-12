@@ -268,7 +268,7 @@ class LandfallThemeTokens {
         cardBorderColor: '#2C2C35',
         cardBorderWidth: 1.5,
         cardBorderStyle: 'solid',
-        cardRadius: 8,
+        cardRadius: 14,
         cardBlur: 0,
         cardShadow: 'none',
         fontFamily: 'Inter',

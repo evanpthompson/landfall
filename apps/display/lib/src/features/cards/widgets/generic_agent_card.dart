@@ -42,16 +42,13 @@ class GenericAgentCard extends StatelessWidget {
         border: Border.all(color: borderColor, width: borderWidth),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              card.source,
-              style: LandfallTypography.cardSource.copyWith(color: secondaryColor),
-            ),
-            const SizedBox(height: 8),
+            _SourceBadge(source: card.source, borderColor: borderColor),
+            const SizedBox(height: 10),
             Text(
               card.title,
               style: LandfallTypography.cardTitle.copyWith(color: titleColor),
@@ -88,5 +85,48 @@ class GenericAgentCard extends StatelessWidget {
       radix: 16,
     );
     return value == null ? null : Color(value);
+  }
+}
+
+class _SourceBadge extends StatelessWidget {
+  const _SourceBadge({required this.source, required this.borderColor});
+
+  final String source;
+  final Color borderColor;
+
+  static Color _badgeColor(String source) {
+    if (source.startsWith('agent.')) {
+      final name = source.substring(6).toLowerCase();
+      return switch (name) {
+        'claude' => const Color(0xFF3DD68C),
+        'ci' || 'github' => const Color(0xFFF5A623),
+        'slack' => const Color(0xFF4A154B),
+        _ => const Color(0xFF6C9EFF),
+      };
+    }
+    return const Color(0xFF6C9EFF);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _badgeColor(source);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Text(
+        source,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+          color: color,
+          height: 1.2,
+        ),
+      ),
+    );
   }
 }

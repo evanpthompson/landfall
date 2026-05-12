@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
 import 'package:ui_kit/src/theme/landfall_active_theme.dart';
@@ -21,6 +22,8 @@ extension LandfallThemeTokensMaterialX on LandfallThemeTokens {
       onSurfaceVariant: secondary,
     );
 
+    final resolvedFont = _resolveFont(fontFamily);
+
     return ThemeData(
       brightness: Brightness.dark,
       colorScheme: scheme,
@@ -29,6 +32,23 @@ extension LandfallThemeTokensMaterialX on LandfallThemeTokens {
       cardColor: surface,
       dividerColor: tokenColor(colorDivider),
       useMaterial3: true,
+      textTheme: resolvedFont != null
+          ? GoogleFonts.getTextTheme(resolvedFont)
+          : null,
+      fontFamily: resolvedFont != null
+          ? GoogleFonts.getFont(resolvedFont).fontFamily
+          : null,
     );
   }
+
+  /// Returns a google_fonts-registered name for the token value, or null to
+  /// fall back to the system font.
+  static String? _resolveFont(String token) => switch (token.toLowerCase()) {
+        'inter' => 'Inter',
+        'roboto' => 'Roboto',
+        'dm sans' || 'dm_sans' => 'DM Sans',
+        'space grotesk' || 'space_grotesk' => 'Space Grotesk',
+        'system' || '' => null,
+        _ => null,
+      };
 }

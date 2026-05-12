@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:ui_kit/src/theme/landfall_colors.dart';
 import 'package:ui_kit/src/theme/landfall_spacing.dart';
 import 'package:ui_kit/src/theme/landfall_typography.dart';
@@ -14,9 +15,11 @@ import 'package:ui_kit/src/theme/landfall_typography.dart';
 abstract final class LandfallTheme {
   /// The primary dark theme for all Landfall display screens.
   static ThemeData get dark {
+    final interFamily = GoogleFonts.inter().fontFamily;
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      fontFamily: interFamily,
       scaffoldBackgroundColor: LandfallColors.background,
       colorScheme: const ColorScheme.dark(
         primary: LandfallColors.accent,

@@ -13,7 +13,7 @@ abstract final class LandfallTypography {
   /// Used for the clock widget hour:minute.
   static const TextStyle timeDisplay = TextStyle(
     fontSize: 144,
-    fontWeight: FontWeight.w200,
+    fontWeight: FontWeight.w300,
     letterSpacing: -4,
     color: LandfallColors.textPrimary,
     height: 1.0,
@@ -41,6 +41,16 @@ abstract final class LandfallTypography {
   );
 
   // ── Card ────────────────────────────────────────────────────────────────────
+
+  /// Card section label. Small ALL-CAPS eyebrow above card content.
+  /// e.g. "CLOCK", "WEATHER", "CALENDAR — TODAY"
+  static const TextStyle cardLabel = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 1.5,
+    color: LandfallColors.textTertiary,
+    height: 1.0,
+  );
 
   /// Card title. The primary heading of a content card.
   static const TextStyle cardTitle = TextStyle(
