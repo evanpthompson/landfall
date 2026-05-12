@@ -229,7 +229,7 @@ fi
 # ── Stage: Flutter display bundle ─────────────────────────────────────────────
 BUNDLE_DEST="${STAGE_FILES}/bundle"
 rm -rf "${BUNDLE_DEST}"
-cp -r "${LINUX_BUNDLE}/." "${BUNDLE_DEST}/"
+cp -rp "${LINUX_BUNDLE}/." "${BUNDLE_DEST}/"
 ok "Display bundle staged ($(du -sh "${BUNDLE_DEST}" | cut -f1))"
 
 # ── Step 2: Server Docker image for arm64 ────────────────────────────────────

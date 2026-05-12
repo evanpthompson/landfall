@@ -61,14 +61,12 @@ rm -f /etc/ssh/sshd_config.d/rename_user.conf
 # and the rpi-first-boot-wizard system user that would hijack autologin.
 systemctl disable piwiz 2>/dev/null || true
 apt-get remove -y --purge piwiz 2>/dev/null || true
-# Remove ALL conf.d files that could set an unintended autologin user.
-# lightdm-autologin-greeter.conf ships with lightdm-autologin-greeter and
-# sets autologin-user=AUTOLOGIN-USER-NOT-CONFIGURED, which sorts after
-# 99-landfall.conf alphabetically and therefore overrides it, causing
-# rpi-first-boot-wizard to get the session instead of landfall.
+# Remove ALL conf.d files that could set an unintended autologin user before
+# writing zz-landfall.conf (zz sorts after lightdm-*, so ours always wins).
 rm -f /etc/lightdm/lightdm.conf.d/*piwiz* \
       /etc/lightdm/lightdm.conf.d/*wizard* \
       /etc/lightdm/lightdm.conf.d/lightdm-autologin-greeter.conf \
+      /etc/lightdm/lightdm.conf.d/99-landfall.conf \
       2>/dev/null || true
 userdel rpi-first-boot-wizard 2>/dev/null || true
 
@@ -84,7 +82,7 @@ autologin-user-timeout=0
 user-session=openbox
 xserver-command=X
 LIGHTDM
-cat > /etc/lightdm/lightdm.conf.d/99-landfall.conf << 'LIGHTDM'
+cat > /etc/lightdm/lightdm.conf.d/zz-landfall.conf << 'LIGHTDM'
 [Seat:*]
 autologin-user=landfall
 autologin-user-timeout=0
@@ -120,8 +118,9 @@ install -m 640 "${STAGE_FILES}/integrations.env" \
 
 # ── Flutter display binary ────────────────────────────────────────────────────
 install -d "${ROOTFS_DIR}/home/landfall/landfall/display"
-cp -r "${STAGE_FILES}/bundle/." \
-      "${ROOTFS_DIR}/home/landfall/landfall/display/"
+cp -rp "${STAGE_FILES}/bundle/." \
+       "${ROOTFS_DIR}/home/landfall/landfall/display/"
+chmod +x "${ROOTFS_DIR}/home/landfall/landfall/display/display"
 
 # ── Server Docker image tarball ───────────────────────────────────────────────
 # Pre-built for arm64 by build.sh. firstboot.sh loads it into Docker on first
