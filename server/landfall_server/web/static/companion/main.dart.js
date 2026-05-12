@@ -39217,7 +39217,7 @@ r===$&&A.a()
 return r.a.zR("companion","pushAction",A.ac(["displayId",s.c,"kind",a],t.N,t.z),t.H)},
 $S:130}
 A.abq.prototype={
-$0(){return window.location.reload()},
+$0(){return v.G.window.location.reload()},
 $S:0}
 A.a83.prototype={}
 A.a3f.prototype={}

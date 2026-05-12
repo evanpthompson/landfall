@@ -435,7 +435,7 @@ class _GridView extends StatelessWidget {
             displayConfig: config.displayConfig,
           ),
           CalendarLoading() => const _PlaceholderTile(source: 'system.calendar'),
-          _ => const SizedBox.shrink(),
+          _ => CalendarCard(events: const [], displayConfig: config.displayConfig),
         },
       ),
       'system.photos' => const PhotoFrameCard(),
