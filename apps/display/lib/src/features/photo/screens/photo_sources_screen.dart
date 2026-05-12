@@ -107,6 +107,16 @@ class PhotoSourcesScreen extends StatelessWidget {
     );
   }
 
+  static String _sanitizePath(String raw) {
+    var s = raw.trim();
+    if (s.length >= 2 &&
+        ((s.startsWith('"') && s.endsWith('"')) ||
+            (s.startsWith("'") && s.endsWith("'")))) {
+      s = s.substring(1, s.length - 1).trim();
+    }
+    return s;
+  }
+
   void _showFeedback(BuildContext context, PhotoState state) {
     final message = switch (state) {
       PhotoLoaded(:final photos) => '${photos.length} photo(s) loaded',
@@ -217,7 +227,7 @@ class PhotoSourcesScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
-              final path = controller.text.trim();
+              final path = _sanitizePath(controller.text);
               Navigator.of(dialogContext).pop();
               if (path.isNotEmpty) {
                 await cubit.setSource(PhotoSourceLocalDirectory(path: path));
