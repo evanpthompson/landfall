@@ -5,7 +5,6 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import 'package:display/src/app/app_config.dart';
 import 'package:display/src/data/local/tables/display_settings_table.dart';
 import 'package:display/src/data/local/tables/layout_entries.dart';
 import 'package:display/src/data/local/tables/weather_cache.dart';
@@ -70,21 +69,8 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final dbFolder = kLandfallFlutterPi
-        ? await _flutterPiDataDirectory()
-        : await getApplicationDocumentsDirectory();
+    final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'landfall.db'));
     return NativeDatabase.createInBackground(file);
   });
-}
-
-Future<Directory> _flutterPiDataDirectory() async {
-  final home = Platform.environment['HOME'];
-  final base = home == null || home.isEmpty
-      ? Directory('/tmp/landfall')
-      : Directory(p.join(home, '.local', 'share', 'landfall'));
-  if (!await base.exists()) {
-    await base.create(recursive: true);
-  }
-  return base;
 }

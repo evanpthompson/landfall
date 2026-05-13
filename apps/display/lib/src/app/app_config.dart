@@ -50,14 +50,3 @@ const kLandfallWebServerUrl = String.fromEnvironment(
   'LANDFALL_WEB_SERVER_URL',
   defaultValue: '',
 );
-
-/// Runs under the `flutter-pi` embedder instead of Flutter's GTK desktop
-/// embedder.
-///
-/// `flutter-pi` intentionally has no X11/Wayland window manager integration
-/// and does not load Flutter desktop plugins, so desktop-only initialization
-/// must be skipped.
-const kLandfallFlutterPi = bool.fromEnvironment(
-  'LANDFALL_FLUTTER_PI',
-  defaultValue: false,
-);
