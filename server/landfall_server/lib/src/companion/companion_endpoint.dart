@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:serverpod/serverpod.dart';
 
@@ -127,6 +128,62 @@ class CompanionEndpoint extends Endpoint {
     while (state.queue.length > _maxQueuePerDisplay) {
       state.queue.removeAt(0);
     }
+  }
+
+  /// Returns the base URL a phone should hit to load `/c/{displayId}`.
+  ///
+  /// Resolution order:
+  ///   1. `LANDFALL_DOMAIN` env var (set by `firstboot.sh` on Pi images) →
+  ///      `https://$LANDFALL_DOMAIN`. This is the Caddy-fronted hostname
+  ///      that mDNS resolves on the household LAN.
+  ///   2. The host's first non-loopback, non-link-local RFC1918 IPv4 address
+  ///      with the default web port (`:8082`). Covers macOS / Fire TV
+  ///      development where no Caddy is in front.
+  ///   3. Empty string — the client falls back to its build-time
+  ///      `LANDFALL_WEB_SERVER_URL` define.
+  ///
+  /// The phone scanning the QR must be on the same LAN as the host for
+  /// either branch to work; the URL is not designed to be internet-reachable.
+  Future<String> getCompanionBaseUrl(Session session) async {
+    final domain = Platform.environment['LANDFALL_DOMAIN'];
+    if (domain != null && domain.isNotEmpty) {
+      return 'https://$domain';
+    }
+    final lan = await _firstLanIpv4();
+    if (lan != null) {
+      return 'http://$lan:8082';
+    }
+    return '';
+  }
+
+  static Future<String?> _firstLanIpv4() async {
+    try {
+      final ifaces = await NetworkInterface.list(
+        includeLoopback: false,
+        includeLinkLocal: false,
+        type: InternetAddressType.IPv4,
+      );
+      for (final iface in ifaces) {
+        for (final addr in iface.addresses) {
+          if (_isPrivateLanIpv4(addr.address)) {
+            return addr.address;
+          }
+        }
+      }
+    } on SocketException {
+      // No interfaces — degrade to fallback URL.
+    }
+    return null;
+  }
+
+  static bool _isPrivateLanIpv4(String address) {
+    final parts = address.split('.').map(int.tryParse).toList();
+    if (parts.length != 4 || parts.any((p) => p == null)) return false;
+    final a = parts[0]!, b = parts[1]!;
+    if (a == 10) return true;
+    if (a == 172 && b >= 16 && b <= 31) return true;
+    if (a == 192 && b == 168) return true;
+    return false;
   }
 
   /// Test-only: clears the in-memory waiter/queue state. Lets unit tests

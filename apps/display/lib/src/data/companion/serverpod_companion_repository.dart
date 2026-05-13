@@ -14,6 +14,10 @@ class ServerpodCompanionRepository implements CompanionRepository {
     return _toShared(raw);
   }
 
+  @override
+  Future<String> getCompanionBaseUrl() =>
+      _client.companion.getCompanionBaseUrl();
+
   static CompanionEntity _toShared(lf.CompanionEntity raw) {
     return CompanionEntity(
       id: raw.id?.toString() ?? raw.displayId,

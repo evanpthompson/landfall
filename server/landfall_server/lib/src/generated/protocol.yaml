@@ -29,6 +29,7 @@ companion:
   - getOrCreateForDisplay:
   - pollForEvents:
   - pushAction:
+  - getCompanionBaseUrl:
 greeting:
   - hello:
 layout:

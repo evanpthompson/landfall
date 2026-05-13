@@ -166,19 +166,32 @@ class _CompanionCardState extends State<CompanionCard>
         if (state is! CompanionLoaded) {
           return const _LoadingShell();
         }
-        return _buildCard(context, state.entity);
+        return _buildCard(context, state.entity, state.companionBaseUrl);
       },
     );
   }
 
-  Widget _buildCard(BuildContext context, CompanionEntity entity) {
+  Widget _buildCard(
+    BuildContext context,
+    CompanionEntity entity,
+    String serverReportedBaseUrl,
+  ) {
     final tokens = LandfallActiveTheme.of(context);
     const bgColor = Color(0xFF111318);
     final borderColor = tokenColor(tokens.cardBorderColor);
     final radius = tokens.cardRadius.toDouble();
 
     final cubit = context.read<CompanionCubit>();
-    final qrUrl = '${CompanionCard._webServerUrl(cubit.serverUrl)}c/${entity.displayId}';
+    // Prefer the server-reported LAN URL (Caddy domain on Pi, RFC1918 IP on
+    // macOS/Fire-TV dev). Only fall back to the API-URL-derived web port if
+    // the server returned an empty string — that path produces a loopback
+    // URL on Pi which is useless for phones, but it keeps the QR rendering
+    // when something has misconfigured the deployment.
+    final baseUrl = serverReportedBaseUrl.isNotEmpty
+        ? serverReportedBaseUrl
+        : CompanionCard._webServerUrl(cubit.serverUrl);
+    final separator = baseUrl.endsWith('/') ? '' : '/';
+    final qrUrl = '$baseUrl${separator}c/${entity.displayId}';
 
     final displayName = entity.customName ?? entity.name;
     final rarityColor = _rarityColors[entity.rarityTier] ?? const Color(0xFF9E9E9E);

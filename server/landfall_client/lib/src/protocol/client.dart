@@ -480,6 +480,26 @@ class EndpointCompanion extends _i1.EndpointRef {
       'kind': kind,
     },
   );
+
+  /// Returns the base URL a phone should hit to load `/c/{displayId}`.
+  ///
+  /// Resolution order:
+  ///   1. `LANDFALL_DOMAIN` env var (set by `firstboot.sh` on Pi images) →
+  ///      `https://$LANDFALL_DOMAIN`. This is the Caddy-fronted hostname
+  ///      that mDNS resolves on the household LAN.
+  ///   2. The host's first non-loopback, non-link-local RFC1918 IPv4 address
+  ///      with the default web port (`:8082`). Covers macOS / Fire TV
+  ///      development where no Caddy is in front.
+  ///   3. Empty string — the client falls back to its build-time
+  ///      `LANDFALL_WEB_SERVER_URL` define.
+  ///
+  /// The phone scanning the QR must be on the same LAN as the host for
+  /// either branch to work; the URL is not designed to be internet-reachable.
+  _i2.Future<String> getCompanionBaseUrl() => caller.callServerEndpoint<String>(
+    'companion',
+    'getCompanionBaseUrl',
+    {},
+  );
 }
 
 /// This is an example endpoint that returns a greeting message through

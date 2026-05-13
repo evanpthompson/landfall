@@ -24,7 +24,11 @@ CompanionEntity _testEntity({String displayId = 'test-display'}) =>
 void main() {
   late MockCompanionRepository repository;
 
-  setUp(() => repository = MockCompanionRepository());
+  setUp(() {
+    repository = MockCompanionRepository();
+    // Default stub — overridden per-test where the URL value matters.
+    when(() => repository.getCompanionBaseUrl()).thenAnswer((_) async => '');
+  });
 
   test('initial state is CompanionLoading', () {
     final cubit = CompanionCubit(
@@ -105,6 +109,54 @@ void main() {
         isA<CompanionLoading>(),
         isA<CompanionLoaded>()
             .having((s) => s.entity.displayId, 'displayId', 'd-99'),
+      ],
+    );
+
+    blocTest<CompanionCubit, CompanionState>(
+      'CompanionLoaded carries the server-reported companion base URL',
+      build: () {
+        when(() => repository.getOrCreateForDisplay('test-display'))
+            .thenAnswer((_) async => _testEntity());
+        when(() => repository.getCompanionBaseUrl())
+            .thenAnswer((_) async => 'https://landfall.local');
+        return CompanionCubit(
+          displayId: 'test-display',
+          serverUrl: 'http://127.0.0.1:8080/',
+          repository: repository,
+        );
+      },
+      act: (cubit) => cubit.load(),
+      expect: () => [
+        isA<CompanionLoading>(),
+        isA<CompanionLoaded>().having(
+          (s) => s.companionBaseUrl,
+          'companionBaseUrl',
+          'https://landfall.local',
+        ),
+      ],
+    );
+
+    blocTest<CompanionCubit, CompanionState>(
+      'CompanionLoaded base URL is empty when server-side resolution throws',
+      build: () {
+        when(() => repository.getOrCreateForDisplay('test-display'))
+            .thenAnswer((_) async => _testEntity());
+        when(() => repository.getCompanionBaseUrl())
+            .thenThrow(Exception('rpc down'));
+        return CompanionCubit(
+          displayId: 'test-display',
+          serverUrl: 'http://127.0.0.1:8080/',
+          repository: repository,
+        );
+      },
+      act: (cubit) => cubit.load(),
+      expect: () => [
+        isA<CompanionLoading>(),
+        isA<CompanionLoaded>().having(
+          (s) => s.companionBaseUrl,
+          'companionBaseUrl',
+          '',
+        ),
       ],
     );
   });

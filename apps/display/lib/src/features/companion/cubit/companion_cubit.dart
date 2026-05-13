@@ -21,7 +21,16 @@ class CompanionCubit extends Cubit<CompanionState> {
     emit(CompanionLoading());
     try {
       final entity = await repository.getOrCreateForDisplay(displayId);
-      emit(CompanionLoaded(entity));
+      // Don't block the loaded state on the URL — fetch it best-effort and
+      // emit a refined state if it resolves. If the call fails we keep the
+      // empty default and the QR widget falls back to its configured URL.
+      var baseUrl = '';
+      try {
+        baseUrl = await repository.getCompanionBaseUrl();
+      } catch (_) {
+        baseUrl = '';
+      }
+      emit(CompanionLoaded(entity, companionBaseUrl: baseUrl));
     } catch (_) {
       emit(
         CompanionLoaded(
@@ -43,5 +52,6 @@ class CompanionCubit extends Cubit<CompanionState> {
   }
 
   /// Directly injects a loaded entity — for use in widget tests only.
-  void loadEntity(CompanionEntity entity) => emit(CompanionLoaded(entity));
+  void loadEntity(CompanionEntity entity, {String companionBaseUrl = ''}) =>
+      emit(CompanionLoaded(entity, companionBaseUrl: companionBaseUrl));
 }
