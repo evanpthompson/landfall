@@ -352,21 +352,20 @@ class _DisplayBody extends StatelessWidget {
 
   final DashboardLayout layout;
 
-  // Fixed width reserved for the agent card feed panel.
-  static const double _feedPanelWidth = 416.0;
-
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // Grid takes all remaining space so no card slot is ever obscured by
-        // the feed panel.
+        // Grid: 5/6 of screen width.
         Expanded(
+          flex: 5,
           child: _GridView(key: const Key('dashboard_grid'), layout: layout),
         ),
-        // Feed panel: fixed width, always present so the grid width is stable
-        // regardless of whether there are active agent cards.
-        const SizedBox(width: _feedPanelWidth, child: _AgentCardFeed()),
+        // Feed panel: 1/6 of screen width — scales with resolution.
+        const Expanded(
+          flex: 1,
+          child: _AgentCardFeed(),
+        ),
       ],
     );
   }
