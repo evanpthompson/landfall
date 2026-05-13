@@ -292,26 +292,20 @@ sudo systemctl start lightdm
 
 ## Updating
 
-To update the server on the Pi:
+For the beta phase, the default update path is **build a new image, flash,
+restore data on first boot**. The data-preservation procedure (backing up
+and restoring Postgres/Redis/Caddy volumes plus the per-device secrets in
+`.env`) is documented in detail in [`docs/updating.md`](updating.md).
 
-```bash
-ssh landfall@landfall.local
-cd ~/landfall
-git pull
-cd deploy
-docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml up -d
-```
+Two in-place procedures exist as edge cases for when you have a healthy
+running Pi and want to avoid a reflash:
 
-To update the display binary, rebuild on a machine with Docker and copy it over:
+- Server-only update (Landfall server changed, nothing else)
+- Display-only update (Flutter binary changed, nothing else)
 
-```bash
-# On build machine:
-bash deploy/pi-gen/build.sh       # rebuilds the Flutter binary
-rsync -av apps/display/build/linux/arm64/release/bundle/ \
-  landfall@landfall.local:/home/landfall/landfall/display/
-# The display restarts automatically via the openbox autostart loop
-```
+Both are documented in the same file. Use them only when you know exactly
+what changed in the new build — otherwise reflash, which is the path that's
+actually exercised every release.
 
 ---
 
