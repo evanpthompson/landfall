@@ -1,20 +1,32 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:serverpod_client/serverpod_client.dart';
 
 import 'auth_key_provider.dart';
 
-/// File-based JWT storage for Linux kiosk deployments.
+/// File-based JWT storage for kiosk deployments.
 ///
-/// On a single-user Pi there is no meaningful threat from other local users,
-/// so storing the JWT in a plain file is acceptable and avoids the D-Bus
-/// Secret Service dependency that flutter_secure_storage requires on Linux.
+/// On a single-user ambient display there is no meaningful threat from other
+/// local users, so storing the JWT in a plain file is acceptable and avoids
+/// the D-Bus Secret Service dependency that flutter_secure_storage requires
+/// on Linux.
+///
+/// Uses [getApplicationDocumentsDirectory] so the path is correct on all
+/// platforms (Linux, macOS, Android/Fire TV) without hardcoding HOME.
 class FileAuthKeyProvider implements AuthKeyProvider {
-  FileAuthKeyProvider({String? path})
-      : _path = path ??
-            '${Platform.environment['HOME'] ?? '/home/landfall'}/.landfall_token';
+  FileAuthKeyProvider({String? overridePath})
+      : _pathFuture = overridePath != null
+            ? Future.value(overridePath)
+            : _resolvePath();
 
-  final String _path;
+  final Future<String> _pathFuture;
+
+  static Future<String> _resolvePath() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return p.join(dir.path, 'landfall_token');
+  }
 
   @override
   Future<String?> get authHeaderValue async {
@@ -26,7 +38,8 @@ class FileAuthKeyProvider implements AuthKeyProvider {
   @override
   Future<String?> readToken() async {
     try {
-      final file = File(_path);
+      final path = await _pathFuture;
+      final file = File(path);
       if (!await file.exists()) return null;
       final value = (await file.readAsString()).trim();
       return value.isEmpty ? null : value;
@@ -36,13 +49,16 @@ class FileAuthKeyProvider implements AuthKeyProvider {
   }
 
   @override
-  Future<void> saveToken(String token) =>
-      File(_path).writeAsString(token);
+  Future<void> saveToken(String token) async {
+    final path = await _pathFuture;
+    await File(path).writeAsString(token);
+  }
 
   @override
   Future<void> deleteToken() async {
     try {
-      await File(_path).delete();
+      final path = await _pathFuture;
+      await File(path).delete();
     } catch (_) {}
   }
 }
