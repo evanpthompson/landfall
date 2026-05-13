@@ -134,10 +134,15 @@ class ApiKeyService {
     }
 
     if (count > key.dailyLimit) {
+      final hits = _recordRateLimitHit(key.id ?? 0, now);
+      final level = hits >= _abuseThreshold
+          ? LogLevel.error
+          : LogLevel.warning;
       session.log(
         'api_key.rate_limited prefix=${key.prefix} '
-        'limit=${key.dailyLimit} resets=${key.usageResetAt.toIso8601String()}',
-        level: LogLevel.warning,
+        'limit=${key.dailyLimit} resets=${key.usageResetAt.toIso8601String()} '
+        'recent_hits=$hits abuse=${level == LogLevel.error}',
+        level: level,
       );
       throw LandfallException(message: rateLimitExceededMessage);
     }
@@ -156,5 +161,27 @@ class ApiKeyService {
 
   DateTime _nextMidnightUtc(DateTime from) {
     return DateTime.utc(from.year, from.month, from.day + 1);
+  }
+
+  // OWASP A09:2025 — alert on rate-limit abuse. A key that trips the daily
+  // limit a handful of times an hour is normal; a key trying repeatedly is
+  // a sign of credential theft or an attack. We keep a sliding window of
+  // hit timestamps per key id in memory and escalate to LogLevel.error
+  // once the window reaches [_abuseThreshold]. Process-local state is fine
+  // for alpha — restart resets the window.
+  static const Duration _abuseWindow = Duration(minutes: 10);
+  static const int _abuseThreshold = 10;
+  final Map<int, List<DateTime>> _rateLimitHits = {};
+
+  int _recordRateLimitHit(int keyId, DateTime now) {
+    final cutoff = now.subtract(_abuseWindow);
+    final hits = _rateLimitHits.putIfAbsent(keyId, () => <DateTime>[])
+      ..removeWhere((t) => t.isBefore(cutoff))
+      ..add(now);
+    // Cap retained timestamps so the map cannot grow unbounded under attack.
+    if (hits.length > _abuseThreshold * 4) {
+      hits.removeRange(0, hits.length - _abuseThreshold * 4);
+    }
+    return hits.length;
   }
 }
