@@ -19,6 +19,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GoogleFonts.config.allowRuntimeFetching = false;
 
+  // Desktop window setup. On Linux the pi-gen image bypasses this path —
+  // GTK fullscreen is set in native C++ (linux/runner/my_application.cc)
+  // so the kiosk hits its target dimensions before Dart starts and any
+  // window_manager calls become redundant. The block remains for desktop
+  // dev (macOS + Linux outside the kiosk image) and Windows.
   if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
     await windowManager.ensureInitialized();
     await windowManager.setMinimumSize(const Size(900, 560));
