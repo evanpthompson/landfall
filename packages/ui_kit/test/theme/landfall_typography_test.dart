@@ -50,10 +50,10 @@ void main() {
     });
 
     test('timeDisplay uses light weight for ambient legibility', () {
-      // FontWeight.w200 = index 1
+      // FontWeight.w300 = FontWeight.light — thin enough to look elegant at large sizes
       expect(
         LandfallTypography.timeDisplay.fontWeight,
-        equals(FontWeight.w200),
+        equals(FontWeight.w300),
       );
     });
 
