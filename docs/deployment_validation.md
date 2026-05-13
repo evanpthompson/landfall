@@ -47,7 +47,9 @@ Run these only after the cheap checks pass:
 - ARM64 server image build through Docker buildx
 - full pi-gen image build
 - QEMU boot smoke test when available
-- physical Pi 4, Pi 5, and Fire TV validation
+- physical Pi 4, Pi 5, and Fire TV validation per
+  [`manual_smoke_test.md`](manual_smoke_test.md) — the user-visible
+  end-to-end pass
 
 ## Release Checklist
 
