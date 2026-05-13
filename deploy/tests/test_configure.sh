@@ -11,7 +11,10 @@ trap 'rm -rf "${tmp}"' EXIT
 run_configure() {
   local output="$1"
   local input="$2"
-  printf "%b" "${input}" | LANDFALL_CONFIG_OUTPUT="${output}" bash "${CONFIGURE}" > /dev/null
+  # Use a clean HOME so the wizard's default SSH key path doesn't pick up the
+  # developer's id_ed25519.pub (or id_rsa.pub) and turn this into an interactive
+  # test that varies between machines. Tests cover SSH via --from-env / --from-yaml.
+  printf "%b" "${input}" | HOME="${tmp}/clean-home" LANDFALL_CONFIG_OUTPUT="${output}" bash "${CONFIGURE}" > /dev/null
 }
 
 run_configure_from_env() {
@@ -27,11 +30,12 @@ run_configure_from_yaml() {
   LANDFALL_CONFIG_OUTPUT="${output}" env "$@" bash "${CONFIGURE}" --from-yaml "${yaml_file}" > /dev/null
 }
 
-# ── Default (all blanks): no WiFi, no SMTP, no integrations ──────────────────
+# ── Default (all blanks): no WiFi, no SSH, no static IP, no SMTP, no integrations
 # Prompts (blank → default): country, SSID (skip), hostname, timezone (skip),
+# ssh-key-path (skip), ssh-password (skip), static-ip-cidr (skip),
 # SMTP host (skip), weather, Google client ID (skip), Microsoft client ID (skip).
 default_conf="${tmp}/default.conf"
-run_configure "${default_conf}" '\n\n\n\n\n\n\n\n\n\n'
+run_configure "${default_conf}" '\n\n\n\n\n\n\n\n\n\n\n\n\n'
 
 bash -n "${default_conf}"
 source "${default_conf}"
@@ -40,6 +44,11 @@ source "${default_conf}"
 [[ "${WIFI_PASSWORD}" == "" ]]
 [[ "${PI_HOSTNAME}" == "landfall" ]]
 [[ "${PI_TIMEZONE}" == "Etc/UTC" ]]
+[[ "${SSH_AUTHORIZED_KEY}" == "" ]]
+[[ "${SSH_PASSWORD}" == "" ]]
+[[ "${STATIC_IP_CIDR}" == "" ]]
+[[ "${STATIC_GATEWAY}" == "" ]]
+[[ "${STATIC_INTERFACE}" == "eth0" ]]
 [[ "${SMTP_HOST}" == "" ]]
 [[ "${OWM_API_KEY}" == "" ]]
 [[ "${WEATHER_LATITUDE}" == "" ]]
@@ -56,7 +65,9 @@ source "${default_conf}"
 #   Google client ID, Google client secret, Google Drive folder,
 #   Microsoft client ID, Microsoft client secret.
 configured_conf="${tmp}/configured.conf"
-run_configure "${configured_conf}" 'GB\nKitchen WiFi\npa ss $word\nkitchen-pi\nEurope/London\nsmtp.example.com\n\nuser@example.com\nsmtppass\nnoreply@example.com\n\n\nweather key\n51.5074\n-0.1278\nLondon\nclient id\ngoogle secret\ndrive folder\nms client\nms secret\n'
+# After timezone the new prompts are: ssh-key-path (skip), ssh-password (skip),
+# static-ip-cidr (skip). Three blank lines.
+run_configure "${configured_conf}" 'GB\nKitchen WiFi\npa ss $word\nkitchen-pi\nEurope/London\n\n\n\nsmtp.example.com\n\nuser@example.com\nsmtppass\nnoreply@example.com\n\n\nweather key\n51.5074\n-0.1278\nLondon\nclient id\ngoogle secret\ndrive folder\nms client\nms secret\n'
 
 bash -n "${configured_conf}"
 source "${configured_conf}"
@@ -94,6 +105,12 @@ WIFI_SSID=Backyard
 WIFI_PASSWORD=hunter2
 PI_HOSTNAME=outdoor-frame
 PI_TIMEZONE=Australia/Sydney
+SSH_AUTHORIZED_KEY='ssh-ed25519 AAAATEST user@host'
+SSH_PASSWORD=envpass
+STATIC_IP_CIDR=10.0.0.50/24
+STATIC_GATEWAY=10.0.0.1
+STATIC_DNS=1.1.1.1,8.8.8.8
+STATIC_INTERFACE=eth0
 SMTP_HOST=smtp.fastmail.com
 SMTP_PORT=465
 SMTP_USERNAME=me@example.com
@@ -122,6 +139,12 @@ source "${from_env_conf}"
 [[ "${WIFI_PASSWORD}" == "hunter2" ]]
 [[ "${PI_HOSTNAME}" == "outdoor-frame" ]]
 [[ "${PI_TIMEZONE}" == "Australia/Sydney" ]]
+[[ "${SSH_AUTHORIZED_KEY}" == "ssh-ed25519 AAAATEST user@host" ]]
+[[ "${SSH_PASSWORD}" == "envpass" ]]
+[[ "${STATIC_IP_CIDR}" == "10.0.0.50/24" ]]
+[[ "${STATIC_GATEWAY}" == "10.0.0.1" ]]
+[[ "${STATIC_DNS}" == "1.1.1.1,8.8.8.8" ]]
+[[ "${STATIC_INTERFACE}" == "eth0" ]]
 [[ "${SMTP_HOST}" == "smtp.fastmail.com" ]]
 [[ "${SMTP_PORT}" == "465" ]]
 [[ "${SMTP_USERNAME}" == "me@example.com" ]]
@@ -161,6 +184,12 @@ source "${minimal_conf}"
 yaml_input="${tmp}/passwords.yaml"
 cat > "${yaml_input}" <<'EOF'
 production:
+  sshAuthorizedKey: 'ssh-rsa AAAAYAML user@yaml'
+  sshPassword: 'yamlpass'
+  staticIpCidr: '172.16.0.42/24'
+  staticGateway: '172.16.0.1'
+  staticDns: '9.9.9.9,8.8.4.4'
+  staticInterface: 'eth0'
   smtpHost: 'smtp.sendgrid.net'
   smtpPort: '587'
   smtpUsername: 'apikey'
@@ -192,6 +221,12 @@ source "${yaml_conf}"
 [[ "${WIFI_COUNTRY}" == "CA" ]]
 [[ "${WIFI_SSID}" == "YamlNet" ]]
 [[ "${WIFI_PASSWORD}" == "yamlpass" ]]
+[[ "${SSH_AUTHORIZED_KEY}" == "ssh-rsa AAAAYAML user@yaml" ]]
+[[ "${SSH_PASSWORD}" == "yamlpass" ]]
+[[ "${STATIC_IP_CIDR}" == "172.16.0.42/24" ]]
+[[ "${STATIC_GATEWAY}" == "172.16.0.1" ]]
+[[ "${STATIC_DNS}" == "9.9.9.9,8.8.4.4" ]]
+[[ "${STATIC_INTERFACE}" == "eth0" ]]
 [[ "${SMTP_HOST}" == "smtp.sendgrid.net" ]]
 [[ "${SMTP_USERNAME}" == "apikey" ]]
 [[ "${SMTP_PASSWORD}" == "SG.testkey" ]]
@@ -216,3 +251,18 @@ source "${yaml_defaults_conf}"
 [[ "${PI_TIMEZONE}" == "Etc/UTC" ]]
 [[ "${WIFI_COUNTRY}" == "US" ]]
 [[ "${WIFI_SSID}" == "" ]]
+
+# ── --from-yaml: env-var override beats YAML value for SSH/static IP ─────────
+override_conf="${tmp}/from_yaml_override.conf"
+run_configure_from_yaml "${override_conf}" "${yaml_input}" \
+  STATIC_IP_CIDR=192.168.50.50/24 STATIC_GATEWAY=192.168.50.1 \
+  SSH_PASSWORD=override-pass
+
+bash -n "${override_conf}"
+source "${override_conf}"
+[[ "${STATIC_IP_CIDR}" == "192.168.50.50/24" ]]
+[[ "${STATIC_GATEWAY}" == "192.168.50.1" ]]
+[[ "${SSH_PASSWORD}" == "override-pass" ]]
+# Untouched values still come from YAML
+[[ "${SSH_AUTHORIZED_KEY}" == "ssh-rsa AAAAYAML user@yaml" ]]
+[[ "${STATIC_DNS}" == "9.9.9.9,8.8.4.4" ]]

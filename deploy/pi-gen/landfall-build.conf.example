@@ -27,6 +27,20 @@ PI_HOSTNAME=landfall
 #           Europe/London  Europe/Berlin  Asia/Tokyo  Australia/Sydney
 PI_TIMEZONE=Etc/UTC
 
+# ── SSH access ───────────────────────────────────────────────────────────────
+# Set at least one — without these the landfall user is unreachable.
+# Public-key contents (entire single line). Values with spaces must be quoted.
+SSH_AUTHORIZED_KEY=''   # e.g. 'ssh-ed25519 AAAAC3Nz... user@host'
+# Password for the landfall user. Quote if it contains shell metachars.
+SSH_PASSWORD=''
+
+# ── Static IP (optional — blank STATIC_IP_CIDR uses DHCP) ────────────────────
+# Useful when your router cannot reserve DHCP leases or for headless setups.
+STATIC_IP_CIDR=          # e.g. 192.168.1.129/24
+STATIC_GATEWAY=          # e.g. 192.168.1.1
+STATIC_DNS=              # comma-separated, e.g. 1.1.1.1,8.8.8.8
+STATIC_INTERFACE=eth0    # eth0 for wired, wlan0 for WiFi static
+
 # ── Email / OTP sign-in ───────────────────────────────────────────────────────
 # Required for emailing OTP codes. Leave blank and codes are logged to server logs.
 # Gmail: use an App Password — myaccount.google.com > Security > 2-Step > App passwords

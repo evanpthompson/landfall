@@ -82,6 +82,15 @@ if [[ -n "${FROM_YAML_FILE}" ]]; then
   WIFI_PASSWORD="${WIFI_PASSWORD:-}"
   PI_HOSTNAME="${PI_HOSTNAME:-landfall}"
   PI_TIMEZONE="${PI_TIMEZONE:-Etc/UTC}"
+  # SSH: at least one of these should be set so the operator can recover the device.
+  SSH_AUTHORIZED_KEY="${SSH_AUTHORIZED_KEY:-$(yaml_get sshAuthorizedKey "${FROM_YAML_FILE}")}"
+  SSH_PASSWORD="${SSH_PASSWORD:-$(yaml_get sshPassword "${FROM_YAML_FILE}")}"
+  # Static IP (all optional — if STATIC_IP_CIDR is blank, DHCP is used).
+  STATIC_IP_CIDR="${STATIC_IP_CIDR:-$(yaml_get staticIpCidr "${FROM_YAML_FILE}")}"
+  STATIC_GATEWAY="${STATIC_GATEWAY:-$(yaml_get staticGateway "${FROM_YAML_FILE}")}"
+  STATIC_DNS="${STATIC_DNS:-$(yaml_get staticDns "${FROM_YAML_FILE}")}"
+  STATIC_INTERFACE="${STATIC_INTERFACE:-$(yaml_get staticInterface "${FROM_YAML_FILE}")}"
+  STATIC_INTERFACE="${STATIC_INTERFACE:-eth0}"
 
   # Integration credentials from passwords.yaml (production section keys)
   SMTP_HOST="$(yaml_get smtpHost "${FROM_YAML_FILE}")"
@@ -129,6 +138,12 @@ elif [[ -n "${FROM_ENV_FILE}" ]]; then
   WIFI_PASSWORD=""
   PI_HOSTNAME=""
   PI_TIMEZONE=""
+  SSH_AUTHORIZED_KEY=""
+  SSH_PASSWORD=""
+  STATIC_IP_CIDR=""
+  STATIC_GATEWAY=""
+  STATIC_DNS=""
+  STATIC_INTERFACE=""
   SMTP_HOST=""
   SMTP_PORT=""
   SMTP_USERNAME=""
@@ -155,6 +170,7 @@ elif [[ -n "${FROM_ENV_FILE}" ]]; then
   WIFI_COUNTRY="${WIFI_COUNTRY:-US}"
   PI_HOSTNAME="${PI_HOSTNAME:-landfall}"
   PI_TIMEZONE="${PI_TIMEZONE:-Etc/UTC}"
+  STATIC_INTERFACE="${STATIC_INTERFACE:-eth0}"
   SMTP_PORT="${SMTP_PORT:-587}"
   SMTP_FROM_NAME="${SMTP_FROM_NAME:-Landfall}"
   SMTP_SSL="${SMTP_SSL:-false}"
@@ -212,6 +228,67 @@ else
   read -r PI_TIMEZONE
   PI_TIMEZONE="${PI_TIMEZONE:-Etc/UTC}"
   ok "Timezone: ${PI_TIMEZONE}"
+
+  # ── SSH access ───────────────────────────────────────────────────────────────
+  section "SSH access (strongly recommended)"
+  dim "Without SSH, the only way to recover the device is to attach a keyboard."
+  dim "Provide a public key (preferred) OR a password — at least one is required."
+  echo ""
+  SSH_AUTHORIZED_KEY=""
+  SSH_PASSWORD=""
+  default_key="${HOME}/.ssh/id_ed25519.pub"
+  [[ -f "${default_key}" ]] || default_key="${HOME}/.ssh/id_rsa.pub"
+  if [[ -f "${default_key}" ]]; then
+    ask "Path to SSH public key [${default_key} — blank to skip]:"
+  else
+    ask "Path to SSH public key [blank to skip]:"
+  fi
+  read -r ssh_key_path
+  if [[ -z "${ssh_key_path}" && -f "${default_key}" ]]; then
+    ssh_key_path="${default_key}"
+  fi
+  if [[ -n "${ssh_key_path}" ]]; then
+    if [[ -f "${ssh_key_path}" ]]; then
+      SSH_AUTHORIZED_KEY="$(cat "${ssh_key_path}")"
+      ok "SSH key loaded from ${ssh_key_path}"
+    else
+      warn "SSH key file not found: ${ssh_key_path}"
+    fi
+  fi
+  echo ""
+  ask "SSH password for 'landfall' user [blank to skip]:"
+  read -rs SSH_PASSWORD
+  echo ""
+  if [[ -n "${SSH_PASSWORD}" ]]; then
+    ok "SSH password set (key auth still preferred if key is loaded)"
+  elif [[ -z "${SSH_AUTHORIZED_KEY}" ]]; then
+    warn "No SSH key AND no password — landfall user will be locked out."
+    warn "You will only be able to reach the device by attaching a keyboard."
+  fi
+
+  # ── Static IP (optional) ─────────────────────────────────────────────────────
+  section "Static IP  (optional)"
+  dim "Configure a fixed IP for this device. Leave blank to use DHCP (default)."
+  dim "Useful for routers that don't support DHCP reservations or running headless."
+  echo ""
+  ask "Static IP address with CIDR (e.g. 192.168.1.129/24) [blank for DHCP]:"
+  read -r STATIC_IP_CIDR
+  STATIC_GATEWAY=""
+  STATIC_DNS=""
+  STATIC_INTERFACE="eth0"
+  if [[ -n "${STATIC_IP_CIDR}" ]]; then
+    ask "Default gateway (e.g. 192.168.1.1):"
+    read -r STATIC_GATEWAY
+    ask "DNS servers, comma separated [1.1.1.1,8.8.8.8]:"
+    read -r STATIC_DNS
+    STATIC_DNS="${STATIC_DNS:-1.1.1.1,8.8.8.8}"
+    ask "Interface [eth0 — use wlan0 for WiFi]:"
+    read -r STATIC_INTERFACE
+    STATIC_INTERFACE="${STATIC_INTERFACE:-eth0}"
+    ok "Static IP: ${STATIC_IP_CIDR} via ${STATIC_GATEWAY} on ${STATIC_INTERFACE}"
+  else
+    skip
+  fi
 
   # ── Email / OTP ──────────────────────────────────────────────────────────────
   section "Email — required for OTP sign-in"
@@ -333,6 +410,16 @@ fi
   printf "PI_HOSTNAME=%q\n"    "${PI_HOSTNAME}"
   printf "PI_TIMEZONE=%q\n"    "${PI_TIMEZONE}"
   echo ""
+  echo "# ── SSH access ───────────────────────────────────────────────────────────────"
+  printf "SSH_AUTHORIZED_KEY=%q\n" "${SSH_AUTHORIZED_KEY:-}"
+  printf "SSH_PASSWORD=%q\n"       "${SSH_PASSWORD:-}"
+  echo ""
+  echo "# ── Static IP (blank STATIC_IP_CIDR = use DHCP) ──────────────────────────────"
+  printf "STATIC_IP_CIDR=%q\n"   "${STATIC_IP_CIDR:-}"
+  printf "STATIC_GATEWAY=%q\n"   "${STATIC_GATEWAY:-}"
+  printf "STATIC_DNS=%q\n"       "${STATIC_DNS:-}"
+  printf "STATIC_INTERFACE=%q\n" "${STATIC_INTERFACE:-eth0}"
+  echo ""
   echo "# ── Email / OTP ──────────────────────────────────────────────────────────────"
   printf "SMTP_HOST=%q\n"           "${SMTP_HOST:-}"
   printf "SMTP_PORT=%q\n"           "${SMTP_PORT:-587}"
@@ -367,6 +454,17 @@ info "Hostname:  ${PI_HOSTNAME}  →  ${PI_HOSTNAME}.local"
 info "Timezone:  ${PI_TIMEZONE}"
 [[ -n "${WIFI_SSID}" ]] && info "WiFi:      ${WIFI_SSID} (${WIFI_COUNTRY})" \
                         || info "WiFi:      ethernet only"
+[[ -n "${STATIC_IP_CIDR:-}" ]] && info "Static IP: ${STATIC_IP_CIDR} via ${STATIC_GATEWAY} on ${STATIC_INTERFACE:-eth0}" \
+                               || info "Static IP: not configured (DHCP)"
+if [[ -n "${SSH_AUTHORIZED_KEY:-}" && -n "${SSH_PASSWORD:-}" ]]; then
+  info "SSH:       key + password configured"
+elif [[ -n "${SSH_AUTHORIZED_KEY:-}" ]]; then
+  info "SSH:       key configured (no password)"
+elif [[ -n "${SSH_PASSWORD:-}" ]]; then
+  info "SSH:       password configured (no key)"
+else
+  info "SSH:       NONE — landfall user will be unreachable over network"
+fi
 [[ -n "${SMTP_HOST:-}" ]]           && info "Email:     ${SMTP_HOST}:${SMTP_PORT:-587} (OTP sign-in enabled)" \
                                      || info "Email:     not configured — OTP codes logged to server logs"
 [[ -n "${OWM_API_KEY:-}" ]]         && info "Weather:   ${WEATHER_LOCATION_NAME:-unknown location} (${WEATHER_LATITUDE:-?}, ${WEATHER_LONGITUDE:-?})" \

@@ -20,11 +20,29 @@ This interactive wizard asks for:
 - **WiFi SSID and password** — baked into the image; the Pi connects automatically on first boot
 - **Hostname** — default `landfall` (Pi appears as `landfall.local` on your network)
 - **Timezone** — default `Etc/UTC`; set to e.g. `America/Chicago` so the clock card reflects local time on first boot (the Pi has no RTC, so without this the kiosk shows UTC until you SSH in to fix it)
+- **SSH access** — auto-suggests `~/.ssh/id_ed25519.pub` (or `id_rsa.pub`) so you can SSH in without a password. Optionally set a `landfall` user password. **At least one of these is strongly recommended** — without them the device is unreachable over the network.
+- **Static IP** — optional. Leave blank for DHCP. Useful if your router can't reserve leases.
 - **OpenWeatherMap API key** — optional; skip to configure later
 
 Runtime secrets such as the database password, JWT keys, API-key HMAC secret, OAuth token encryption key, and photo signing secret are not baked into the image. `landfall-firstboot.service` generates them on the Pi during first boot and writes `/home/landfall/landfall/deploy/.env`.
 
 Answers are saved to `deploy/pi-gen/landfall-build.conf` (gitignored — contains secrets).
+
+#### Non-interactive (CI / scripted)
+
+Skip the wizard by pre-populating the answers — see [`deploy/pi-gen/landfall-build.conf.example`](../deploy/pi-gen/landfall-build.conf.example) for the format:
+
+```bash
+# From .env-style file
+bash deploy/pi-gen/configure.sh --from-env my-pi.conf
+
+# Or pull integration credentials directly from a passwords.yaml
+PI_HOSTNAME=kitchen-pi PI_TIMEZONE=America/Chicago \
+  bash deploy/pi-gen/configure.sh \
+    --from-yaml server/landfall_server/config/passwords.yaml
+```
+
+The YAML reader looks for `sshAuthorizedKey`, `sshPassword`, `staticIpCidr`, `staticGateway`, `staticDns`, `staticInterface` keys at any depth.
 
 ### 2. Build
 
@@ -84,7 +102,7 @@ bash deploy/tests/run_deploy_tests.sh
 bash deploy/pi-gen/build.sh --stage-only
 ```
 
-> **Default SSH credentials:** user `landfall`, password `landfall`. Change it after first boot with `passwd`.
+> **SSH credentials:** user `landfall`. Password/authorized-key whatever you configured in `configure.sh`. Change with `passwd` after first boot if you used a default.
 
 ### 5. Optional: add integrations after first boot
 

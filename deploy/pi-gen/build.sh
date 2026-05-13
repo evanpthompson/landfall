@@ -69,6 +69,12 @@ WIFI_SSID=""
 WIFI_PASSWORD=""
 PI_HOSTNAME="landfall"
 PI_TIMEZONE="Etc/UTC"
+SSH_AUTHORIZED_KEY=""
+SSH_PASSWORD=""
+STATIC_IP_CIDR=""
+STATIC_GATEWAY=""
+STATIC_DNS=""
+STATIC_INTERFACE="eth0"
 SMTP_HOST=""
 SMTP_PORT="587"
 SMTP_USERNAME=""
@@ -220,8 +226,96 @@ echo "${WIFI_COUNTRY}" > "${STAGE_FILES}/wifi-country"
 # ── Stage: timezone (consumed by 00-run.sh to seed /etc/timezone) ────────────
 echo "${PI_TIMEZONE}" > "${STAGE_FILES}/timezone"
 
+# ── Stage: SSH authorized_keys for landfall user ─────────────────────────────
+if [[ -n "${SSH_AUTHORIZED_KEY}" ]]; then
+  printf "%s\n" "${SSH_AUTHORIZED_KEY}" > "${STAGE_FILES}/authorized_keys"
+  chmod 600 "${STAGE_FILES}/authorized_keys"
+  ok "SSH authorized_keys staged"
+else
+  rm -f "${STAGE_FILES}/authorized_keys"
+fi
+
+# ── Stage: SSH password (will be set via chpasswd in 00-run.sh) ──────────────
+# Stored in a chmod 600 file inside the build only — never copied into the
+# rootfs as plaintext; 00-run.sh consumes it and removes it before chroot exits.
+if [[ -n "${SSH_PASSWORD}" ]]; then
+  printf "%s" "${SSH_PASSWORD}" > "${STAGE_FILES}/ssh-password"
+  chmod 600 "${STAGE_FILES}/ssh-password"
+  ok "SSH password staged"
+else
+  rm -f "${STAGE_FILES}/ssh-password"
+fi
+
+# ── Stage: static IP NetworkManager connection ───────────────────────────────
+if [[ -n "${STATIC_IP_CIDR}" ]]; then
+  STATIC_TYPE="ethernet"
+  STATIC_ID="landfall-eth-static"
+  if [[ "${STATIC_INTERFACE}" == wlan* ]]; then
+    STATIC_TYPE="wifi"
+    STATIC_ID="landfall-wifi-static"
+  fi
+  # NetworkManager wants semicolon-terminated DNS list
+  STATIC_DNS_NM="$(printf '%s' "${STATIC_DNS}" | tr ',' ';')"
+  [[ -z "${STATIC_DNS_NM}" || "${STATIC_DNS_NM: -1}" != ";" ]] && STATIC_DNS_NM="${STATIC_DNS_NM};"
+
+  if [[ "${STATIC_TYPE}" == "wifi" && -n "${WIFI_SSID}" ]]; then
+    # Replace the WiFi connection file with one that uses manual IPv4
+    cat > "${STAGE_FILES}/wifi.nmconnection" << WIFICONF
+[connection]
+id=${STATIC_ID}
+type=wifi
+interface-name=${STATIC_INTERFACE}
+autoconnect=true
+autoconnect-priority=700
+
+[wifi]
+mode=infrastructure
+ssid=${WIFI_SSID}
+
+[wifi-security]
+auth-alg=open
+key-mgmt=wpa-psk
+psk=${WIFI_PASSWORD}
+
+[ipv4]
+method=manual
+address1=${STATIC_IP_CIDR},${STATIC_GATEWAY}
+dns=${STATIC_DNS_NM}
+
+[ipv6]
+method=auto
+addr-gen-mode=default
+WIFICONF
+    chmod 600 "${STAGE_FILES}/wifi.nmconnection"
+    ok "Static IP (WiFi): ${STATIC_IP_CIDR} via ${STATIC_GATEWAY} on ${STATIC_INTERFACE}"
+    WIFI_STATIC_ALREADY_WRITTEN=1
+  else
+    cat > "${STAGE_FILES}/static-ip.nmconnection" << ETHCONF
+[connection]
+id=${STATIC_ID}
+type=ethernet
+interface-name=${STATIC_INTERFACE}
+autoconnect=true
+autoconnect-priority=700
+
+[ipv4]
+method=manual
+address1=${STATIC_IP_CIDR},${STATIC_GATEWAY}
+dns=${STATIC_DNS_NM}
+
+[ipv6]
+method=auto
+addr-gen-mode=default
+ETHCONF
+    chmod 600 "${STAGE_FILES}/static-ip.nmconnection"
+    ok "Static IP (${STATIC_INTERFACE}): ${STATIC_IP_CIDR} via ${STATIC_GATEWAY}"
+  fi
+else
+  rm -f "${STAGE_FILES}/static-ip.nmconnection"
+fi
+
 # ── Stage: WiFi NetworkManager connection ────────────────────────────────────
-if [[ -n "${WIFI_SSID}" ]]; then
+if [[ -n "${WIFI_SSID}" && -z "${WIFI_STATIC_ALREADY_WRITTEN:-}" ]]; then
   cat > "${STAGE_FILES}/wifi.nmconnection" << WIFICONF
 [connection]
 id=landfall-wifi
