@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:serverpod/serverpod.dart';
@@ -8,6 +10,7 @@ import '../generated/theme/landfall_theme.dart';
 import '../generated/theme/theme_upload_result.dart';
 import '../generated/theme/theme_validation_error.dart';
 import '../profile/profile_endpoint.dart';
+import 'ssrf_guard.dart';
 import 'theme_seeder.dart';
 import 'theme_validator.dart';
 
@@ -51,35 +54,67 @@ class ThemeEndpoint extends Endpoint {
     Session session,
     String url,
   ) async {
-    if (!url.startsWith('https://')) {
+    final classification = SsrfGuard.classifyUrl(url);
+    if (!classification.accepted) {
       return ThemeUploadResult(
         theme: null,
         errors: [
           ThemeValidationError(
             tokenPath: 'url',
-            message: 'Only HTTPS URLs are accepted.',
+            message: classification.reason!,
           ),
         ],
       );
     }
 
-    final uri = Uri.tryParse(url);
-    if (uri != null && _isRestrictedHost(uri.host.toLowerCase())) {
-      return ThemeUploadResult(
-        theme: null,
-        errors: [
-          ThemeValidationError(
-            tokenPath: 'url',
-            message: 'URL refers to a restricted host.',
-          ),
-        ],
-      );
+    final uri = Uri.parse(url);
+
+    // Resolve the hostname and reject if any A/AAAA points at a private/
+    // loopback/link-local range. Defeats DNS rebinding where a public-looking
+    // hostname is an alias for an internal address. Skips for bracketed IPv6
+    // literals and dotted IPv4 (already validated synchronously).
+    if (!_isNumericHost(uri.host)) {
+      try {
+        final addrs = await InternetAddress.lookup(uri.host)
+            .timeout(const Duration(seconds: 3));
+        if (addrs.isEmpty ||
+            addrs.any((a) => SsrfGuard.isPrivateAddress(a.address))) {
+          return ThemeUploadResult(
+            theme: null,
+            errors: [
+              ThemeValidationError(
+                tokenPath: 'url',
+                message: 'URL refers to a restricted host.',
+              ),
+            ],
+          );
+        }
+      } on SocketException {
+        return ThemeUploadResult(
+          theme: null,
+          errors: [
+            ThemeValidationError(
+              tokenPath: 'url',
+              message: 'Failed to resolve theme host.',
+            ),
+          ],
+        );
+      } on TimeoutException {
+        return ThemeUploadResult(
+          theme: null,
+          errors: [
+            ThemeValidationError(
+              tokenPath: 'url',
+              message: 'Theme host resolution timed out.',
+            ),
+          ],
+        );
+      }
     }
 
     late final http.Response response;
     try {
-      response = await http
-          .get(Uri.parse(url))
+      response = await _fetchNoRedirect(uri)
           .timeout(const Duration(seconds: 10));
     } catch (e) {
       return ThemeUploadResult(
@@ -339,18 +374,38 @@ class ThemeEndpoint extends Endpoint {
     }
   }
 
-  // Blocks loopback, link-local, and RFC-1918 private ranges to prevent SSRF.
-  static bool _isRestrictedHost(String host) {
-    if (host == 'localhost' || host == '127.0.0.1' || host == '::1') return true;
-    if (host == '169.254.169.254') return true;
-    if (host.startsWith('192.168.')) return true;
-    if (host.startsWith('10.')) return true;
-    // RFC-1918: 172.16.0.0/12 covers 172.16.x.x – 172.31.x.x
+  // Returns true if [host] is a literal IP (v4 or v6) rather than a name
+  // that needs DNS resolution.
+  static bool _isNumericHost(String host) {
+    if (host.contains(':')) return true; // IPv6 literal
     final parts = host.split('.');
-    if (parts.length == 4 && parts[0] == '172') {
-      final second = int.tryParse(parts[1]) ?? -1;
-      if (second >= 16 && second <= 31) return true;
+    if (parts.length == 4 && parts.every((p) => int.tryParse(p) != null)) {
+      return true;
     }
     return false;
+  }
+
+  // GET [uri] without following redirects. A 30x response is treated as a
+  // fetch failure — redirect targets are not re-validated and could lead to
+  // a private endpoint.
+  static Future<http.Response> _fetchNoRedirect(Uri uri) async {
+    final client = http.Client();
+    try {
+      final request = http.Request('GET', uri)..followRedirects = false;
+      final streamed = await client.send(request);
+      final body = await streamed.stream.bytesToString();
+      final response = http.Response(
+        body,
+        streamed.statusCode,
+        headers: streamed.headers,
+        reasonPhrase: streamed.reasonPhrase,
+      );
+      if (response.statusCode >= 300 && response.statusCode < 400) {
+        throw const HttpException('Redirects are not permitted.');
+      }
+      return response;
+    } finally {
+      client.close();
+    }
   }
 }
