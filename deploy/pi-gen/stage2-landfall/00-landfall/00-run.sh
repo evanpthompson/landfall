@@ -102,6 +102,30 @@ cp -r "${STAGE_FILES}/deploy/." \
 WIFI_COUNTRY="$(cat "${STAGE_FILES}/wifi-country" 2>/dev/null || echo US)"
 echo "REGDOMAIN=${WIFI_COUNTRY}" > "${ROOTFS_DIR}/etc/default/crda"
 
+# ── KMS GL driver enforcement ────────────────────────────────────────────────
+# Flutter falls back to llvmpipe software rendering if vc4-kms-v3d isn't
+# enabled, making the display unusably slow on Pi. Bookworm pi-gen normally
+# enables this by default, but older base images or custom config.txt
+# variants may not — make absolutely sure it's there.
+for cfg in "${ROOTFS_DIR}/boot/firmware/config.txt" "${ROOTFS_DIR}/boot/config.txt"; do
+  if [[ -f "${cfg}" ]]; then
+    if ! grep -q 'dtoverlay=vc4-kms-v3d' "${cfg}"; then
+      {
+        echo ""
+        echo "# Landfall: KMS GL required for accelerated Flutter rendering."
+        echo "# Without this the display falls back to llvmpipe (software) — unusably slow."
+        echo "dtoverlay=vc4-kms-v3d"
+      } >> "${cfg}"
+    fi
+    # Also need enough VRAM allocation for the desktop display. Default
+    # gpu_mem=76 on Pi 4 is fine for KMS, but call out the setting so
+    # operators investigating SW rendering see why it matters.
+    if ! grep -q '^max_framebuffers=' "${cfg}"; then
+      echo "max_framebuffers=2" >> "${cfg}"
+    fi
+  fi
+done
+
 # ── Timezone ─────────────────────────────────────────────────────────────────
 # Without an explicit timezone the kiosk clock shows UTC on first boot until
 # the user notices. Bake the configured zone into the image and seed
@@ -202,7 +226,7 @@ install -m 755 "${STAGE_FILES}/landfall-splash.py" \
 install -m 755 "${STAGE_FILES}/landfall-diagnostic.py" \
                "${ROOTFS_DIR}/opt/landfall/landfall-diagnostic.py"
 
-# ── Operator tooling: doctor + bug-report + watchdog + maintenance ───────────
+# ── Operator tooling: doctor + bug-report + watchdog + maintenance + repair ──
 install -m 755 "${STAGE_FILES}/landfall-doctor.sh" \
                "${ROOTFS_DIR}/opt/landfall/landfall-doctor.sh"
 install -m 755 "${STAGE_FILES}/landfall-bug-report.sh" \
@@ -211,6 +235,10 @@ install -m 755 "${STAGE_FILES}/landfall-display-watchdog.sh" \
                "${ROOTFS_DIR}/opt/landfall/landfall-display-watchdog.sh"
 install -m 755 "${STAGE_FILES}/landfall-maintenance.sh" \
                "${ROOTFS_DIR}/opt/landfall/landfall-maintenance.sh"
+install -m 755 "${STAGE_FILES}/landfall-repair.sh" \
+               "${ROOTFS_DIR}/opt/landfall/landfall-repair.sh"
+install -m 755 "${STAGE_FILES}/landfall-db-check.sh" \
+               "${ROOTFS_DIR}/opt/landfall/landfall-db-check.sh"
 
 # Symlink the operator CLIs into /usr/local/bin so they're on PATH for ssh.
 ln -sf /opt/landfall/landfall-doctor.sh     "${ROOTFS_DIR}/usr/local/bin/landfall-doctor"
@@ -239,11 +267,17 @@ install -m 644 "${STAGE_FILES}/landfall-maintenance.service" \
 install -m 644 "${STAGE_FILES}/landfall-maintenance.timer" \
                "${ROOTFS_DIR}/etc/systemd/system/landfall-maintenance.timer"
 
+install -m 644 "${STAGE_FILES}/landfall-repair.service" \
+               "${ROOTFS_DIR}/etc/systemd/system/landfall-repair.service"
+install -m 644 "${STAGE_FILES}/landfall-repair.timer" \
+               "${ROOTFS_DIR}/etc/systemd/system/landfall-repair.timer"
+
 on_chroot << 'EOF'
 systemctl enable landfall-firstboot
 systemctl enable landfall-server
 systemctl enable landfall-display-watchdog
 systemctl enable landfall-maintenance.timer
+systemctl enable landfall-repair.timer
 # Block boot until clock is synced — landfall-firstboot waits on this and
 # Pi hardware has no RTC, so without it the first boot writes a .env with
 # a date set to the kernel build time.
@@ -295,6 +329,11 @@ python3 /opt/landfall/landfall-splash.py || log "splash exited non-zero (continu
 (
   consecutive_fast_crashes=0
   while true; do
+    # Validate the display SQLite DB before each launch. A corrupted DB is
+    # one of the few crash causes that recurs forever — moving it aside lets
+    # the app create a fresh one and resync from server.
+    /opt/landfall/landfall-db-check.sh || log "db-check exited non-zero (continuing)"
+
     log "launching Flutter display"
     start_ts=$(date +%s)
     /home/landfall/landfall/display/display

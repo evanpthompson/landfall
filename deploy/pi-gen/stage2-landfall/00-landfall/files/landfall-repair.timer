@@ -1,0 +1,13 @@
+[Unit]
+Description=Run Landfall auto-repair every 5 minutes
+
+[Timer]
+# 2 minute after boot, then every 5 minutes. Persistent so missed runs
+# (poweroff during the window) fire on next boot.
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=true
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

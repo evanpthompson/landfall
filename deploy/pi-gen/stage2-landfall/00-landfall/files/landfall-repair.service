@@ -1,0 +1,11 @@
+[Unit]
+Description=Landfall auto-repair — heuristic recovery for common failure modes
+After=docker.service landfall-firstboot.service
+ConditionPathExists=/var/lib/landfall/.initialized
+
+[Service]
+Type=oneshot
+ExecStart=/opt/landfall/landfall-repair.sh
+TimeoutStartSec=300
+StandardOutput=journal
+StandardError=journal

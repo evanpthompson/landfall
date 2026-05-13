@@ -96,9 +96,16 @@ class CalendarRefreshCall extends FutureCall<SerializableModel> {
         '${credential.provider}:${credential.providerEmail}',
       );
     } catch (e, stackTrace) {
+      // Structured marker so landfall-doctor / log parsers can surface
+      // "this credential is broken" without inspecting Dart stack traces.
+      // Format: [LANDFALL_CREDENTIAL_REFRESH_FAILED] provider=... email=... error=...
+      final marker =
+          '[LANDFALL_CREDENTIAL_REFRESH_FAILED] '
+          'provider=${credential.provider} '
+          'email=${credential.providerEmail} '
+          'error=${e.toString().replaceAll('\n', ' ')}';
       session.log(
-        'Calendar refresh failed for '
-        '${credential.provider}:${credential.providerEmail}: $e',
+        marker,
         level: LogLevel.error,
         exception: e,
         stackTrace: stackTrace,

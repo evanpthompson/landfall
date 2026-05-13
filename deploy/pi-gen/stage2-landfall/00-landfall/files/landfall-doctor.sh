@@ -203,6 +203,32 @@ if [[ -f "${crash_log}" ]]; then
   fi
 fi
 
+# ── Integrations ─────────────────────────────────────────────────────────────
+# The server emits structured markers on every credential refresh failure.
+# We grep the last 24h of journal output and dedupe by provider+email so the
+# operator sees one line per broken credential, not one per attempted refresh.
+sect "Integrations"
+if command -v journalctl >/dev/null 2>&1 && [[ -f "${COMPOSE_FILE}" ]]; then
+  broken="$(
+    journalctl --since '24 hours ago' --no-pager 2>/dev/null \
+      | grep -oE 'LANDFALL_CREDENTIAL_REFRESH_FAILED\] provider=[^ ]+ email=[^ ]+' \
+      | sort -u
+  )"
+  if [[ -z "${broken}" ]]; then
+    pass "no failed credential refreshes in the last 24h"
+  else
+    while IFS= read -r line; do
+      [[ -z "${line}" ]] && continue
+      provider="$(echo "${line}" | sed -nE 's/.*provider=([^ ]+).*/\1/p')"
+      email="$(echo "${line}" | sed -nE 's/.*email=([^ ]+).*/\1/p')"
+      warn "credential needs re-link:  ${provider}  ${email}"
+    done <<< "${broken}"
+    echo "         Re-link via the Settings screen (Settings → Accounts → Reconnect)"
+  fi
+else
+  warn "cannot probe credential health (journalctl/compose missing)"
+fi
+
 # ── Graphics ─────────────────────────────────────────────────────────────────
 sect "Graphics"
 if command -v glxinfo >/dev/null 2>&1; then
@@ -211,12 +237,27 @@ if command -v glxinfo >/dev/null 2>&1; then
     warn "glxinfo: cannot query renderer (display not initialised?)"
   elif echo "${renderer}" | grep -Eqi 'llvmpipe|swrast|software'; then
     fail "GL renderer is SOFTWARE: ${renderer} — Flutter will be unusably slow"
-    echo "         Add 'dtoverlay=vc4-kms-v3d' to /boot/firmware/config.txt and reboot"
+    if [[ -f /boot/firmware/config.txt ]]; then
+      if grep -q 'dtoverlay=vc4-kms-v3d' /boot/firmware/config.txt; then
+        echo "         dtoverlay is set but not loaded — check 'dmesg | grep vc4' for driver errors"
+      else
+        echo "         Fix: sudo bash -c 'echo dtoverlay=vc4-kms-v3d >> /boot/firmware/config.txt' && sudo reboot"
+      fi
+    fi
   else
     pass "GL renderer: ${renderer}"
   fi
 else
   warn "glxinfo not installed — cannot probe GL renderer"
+fi
+
+# Confirm KMS overlay is in config.txt regardless of current renderer state.
+if [[ -f /boot/firmware/config.txt ]]; then
+  if grep -q 'dtoverlay=vc4-kms-v3d' /boot/firmware/config.txt; then
+    pass "/boot/firmware/config.txt: vc4-kms-v3d overlay present"
+  else
+    fail "/boot/firmware/config.txt missing 'dtoverlay=vc4-kms-v3d' — display will fall back to software rendering"
+  fi
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────

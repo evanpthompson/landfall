@@ -21,6 +21,10 @@ required=(
   "${FILES}/landfall-maintenance.sh"
   "${FILES}/landfall-maintenance.service"
   "${FILES}/landfall-maintenance.timer"
+  "${FILES}/landfall-repair.sh"
+  "${FILES}/landfall-repair.service"
+  "${FILES}/landfall-repair.timer"
+  "${FILES}/landfall-db-check.sh"
 )
 
 for path in "${required[@]}"; do
@@ -76,6 +80,36 @@ grep -q 'volumes=false' "${FILES}/landfall-maintenance.sh"
 # Watchdog must wait for firstboot and rate-limit its lightdm restarts.
 grep -q 'INITIALIZED_FLAG' "${FILES}/landfall-display-watchdog.sh"
 grep -q 'last_restart' "${FILES}/landfall-display-watchdog.sh"
+
+# Tier 2: auto-repair must be wired up and bounded.
+for tool in landfall-repair.sh landfall-db-check.sh; do
+  [[ -x "${FILES}/${tool}" ]] || { echo "${tool} must be executable" >&2; exit 1; }
+done
+
+grep -q 'systemctl enable landfall-repair.timer' "${STAGE}/00-run.sh"
+grep -q 'landfall-db-check.sh' "${STAGE}/00-run.sh"
+
+# Repair must have per-day caps so it can't restart-storm.
+grep -q 'MAX_DOCKER_RESTART_PER_DAY' "${FILES}/landfall-repair.sh"
+grep -q 'MAX_COMPOSE_UP_PER_DAY' "${FILES}/landfall-repair.sh"
+grep -q 'MAX_LIGHTDM_RESTART_PER_DAY' "${FILES}/landfall-repair.sh"
+
+# Repair must skip if firstboot hasn't completed (avoid racing the bootstrap).
+grep -q 'INITIALIZED_FLAG' "${FILES}/landfall-repair.sh"
+
+# DB check must move corrupted DBs aside, not delete them.
+grep -q 'corrupted-' "${FILES}/landfall-db-check.sh"
+grep -Eq 'PRAGMA integrity_check|integrity_check' "${FILES}/landfall-db-check.sh"
+# Must never exit non-zero — a check failure must not block the display launch.
+grep -q 'exit 0' "${FILES}/landfall-db-check.sh"
+
+# config.txt KMS overlay must be enforced at image build time.
+grep -q 'dtoverlay=vc4-kms-v3d' "${STAGE}/00-run.sh"
+
+# Server emits the structured marker the doctor parses for re-link prompts.
+grep -q 'LANDFALL_CREDENTIAL_REFRESH_FAILED' \
+  "${REPO_ROOT}/server/landfall_server/lib/src/calendar/calendar_refresh_call.dart"
+grep -q 'LANDFALL_CREDENTIAL_REFRESH_FAILED' "${FILES}/landfall-doctor.sh"
 
 grep -q '^Before=landfall-server.service' "${FILES}/landfall-firstboot.service"
 grep -q '^After=.*docker.service.*landfall-firstboot.service' "${FILES}/landfall-server.service"
