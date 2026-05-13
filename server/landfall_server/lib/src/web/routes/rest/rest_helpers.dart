@@ -5,11 +5,43 @@ import 'package:serverpod/serverpod.dart';
 import '../../../agent/api_key_service.dart';
 import '../../../generated/protocol.dart';
 
+/// CORS policy: the `/api/v1/*` surface is for agent-to-server integration,
+/// not for browser-based clients. We do not emit `Access-Control-Allow-*`
+/// headers, and we actively reject any request that carries a cross-origin
+/// `Origin` header — such a request can only originate from a browser, which
+/// should never call this API directly. OWASP A02:2025.
+///
+/// To opt a request out of the browser-origin check (e.g. for local browser
+/// dev tools against a localhost server), the request must have an `Origin`
+/// that resolves to a loopback host.
+bool _isBrowserOriginForbidden(Request request) {
+  final originHeader = request.headers['origin'];
+  if (originHeader == null || originHeader.isEmpty) return false;
+  final origin = originHeader.first;
+  final uri = Uri.tryParse(origin);
+  if (uri == null) return true;
+  final host = uri.host.toLowerCase();
+  if (host == 'localhost' || host == '127.0.0.1' || host == '::1') {
+    return false;
+  }
+  return true;
+}
+
 /// Extracts and validates the Bearer token from the Authorization header.
 ///
 /// Returns the authenticated [ApiKey], or null if the header is missing or
-/// the key is invalid/revoked.
+/// the key is invalid/revoked. Also returns null when the request carries a
+/// non-loopback `Origin` header — see the CORS policy above.
 Future<ApiKey?> authenticateRequest(Session session, Request request) async {
+  if (_isBrowserOriginForbidden(request)) {
+    final ip = session.request?.remoteInfo ?? 'unknown';
+    session.log(
+      'rest.cross_origin_rejected ip=$ip',
+      level: LogLevel.warning,
+    );
+    return null;
+  }
+
   final auth = request.headers.authorization;
   if (auth == null) return null;
 
