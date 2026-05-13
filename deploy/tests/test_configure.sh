@@ -20,6 +20,13 @@ run_configure_from_env() {
   LANDFALL_CONFIG_OUTPUT="${output}" bash "${CONFIGURE}" --from-env "${env_file}" > /dev/null
 }
 
+run_configure_from_yaml() {
+  local output="$1"
+  local yaml_file="$2"
+  shift 2
+  LANDFALL_CONFIG_OUTPUT="${output}" env "$@" bash "${CONFIGURE}" --from-yaml "${yaml_file}" > /dev/null
+}
+
 # ── Default (all blanks): no WiFi, no SMTP, no integrations ──────────────────
 # Prompts (blank → default): country, SSID (skip), hostname, timezone (skip),
 # SMTP host (skip), weather, Google client ID (skip), Microsoft client ID (skip).
@@ -149,3 +156,63 @@ source "${minimal_conf}"
 [[ "${SMTP_PORT}" == "587" ]]
 [[ "${SMTP_FROM_NAME}" == "Landfall" ]]
 [[ "${SMTP_SSL}" == "false" ]]
+
+# ── --from-yaml: credentials from passwords.yaml, pi fields from env vars ────
+yaml_input="${tmp}/passwords.yaml"
+cat > "${yaml_input}" <<'EOF'
+production:
+  smtpHost: 'smtp.sendgrid.net'
+  smtpPort: '587'
+  smtpUsername: 'apikey'
+  smtpPassword: 'SG.testkey'
+  smtpFromEmail: 'noreply@example.com'
+  smtpFromName: 'MyFrame'
+  smtpSsl: 'false'
+  smtpAllowInsecure: 'false'
+  openWeatherMapApiKey: 'owm-yaml-key'
+  weatherLatitude: '40.7128'
+  weatherLongitude: '-74.0060'
+  weatherLocationName: 'New York'
+  googleOAuthClientId: 'yaml-gcid'
+  googleOAuthClientSecret: 'yaml-gcsecret'
+  googleDriveFolderId: 'yaml-drivefolder'
+  microsoftClientId: 'yaml-msid'
+  microsoftClientSecret: 'yaml-mssecret'
+EOF
+
+yaml_conf="${tmp}/from_yaml.conf"
+run_configure_from_yaml "${yaml_conf}" "${yaml_input}" \
+  PI_HOSTNAME=yaml-frame PI_TIMEZONE=America/New_York \
+  WIFI_SSID=YamlNet WIFI_PASSWORD=yamlpass WIFI_COUNTRY=CA
+
+bash -n "${yaml_conf}"
+source "${yaml_conf}"
+[[ "${PI_HOSTNAME}" == "yaml-frame" ]]
+[[ "${PI_TIMEZONE}" == "America/New_York" ]]
+[[ "${WIFI_COUNTRY}" == "CA" ]]
+[[ "${WIFI_SSID}" == "YamlNet" ]]
+[[ "${WIFI_PASSWORD}" == "yamlpass" ]]
+[[ "${SMTP_HOST}" == "smtp.sendgrid.net" ]]
+[[ "${SMTP_USERNAME}" == "apikey" ]]
+[[ "${SMTP_PASSWORD}" == "SG.testkey" ]]
+[[ "${SMTP_FROM_NAME}" == "MyFrame" ]]
+[[ "${OWM_API_KEY}" == "owm-yaml-key" ]]
+[[ "${WEATHER_LATITUDE}" == "40.7128" ]]
+[[ "${WEATHER_LONGITUDE}" == "-74.0060" ]]
+[[ "${WEATHER_LOCATION_NAME}" == "New York" ]]
+[[ "${GOOGLE_CLIENT_ID}" == "yaml-gcid" ]]
+[[ "${GOOGLE_CLIENT_SECRET}" == "yaml-gcsecret" ]]
+[[ "${GOOGLE_DRIVE_FOLDER_ID}" == "yaml-drivefolder" ]]
+[[ "${MICROSOFT_CLIENT_ID}" == "yaml-msid" ]]
+[[ "${MICROSOFT_CLIENT_SECRET}" == "yaml-mssecret" ]]
+
+# ── --from-yaml: pi-specific defaults when env vars are absent ────────────────
+yaml_defaults_conf="${tmp}/from_yaml_defaults.conf"
+run_configure_from_yaml "${yaml_defaults_conf}" "${yaml_input}"
+
+bash -n "${yaml_defaults_conf}"
+source "${yaml_defaults_conf}"
+[[ "${PI_HOSTNAME}" == "landfall" ]]
+[[ "${PI_TIMEZONE}" == "Etc/UTC" ]]
+[[ "${WIFI_COUNTRY}" == "US" ]]
+[[ "${WIFI_SSID}" == "" ]]

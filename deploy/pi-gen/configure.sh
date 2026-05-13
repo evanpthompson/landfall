@@ -6,8 +6,18 @@
 # boot — nothing sensitive is stored here except integration API keys.
 #
 # Usage:
-#   bash deploy/pi-gen/configure.sh                     # interactive wizard
-#   bash deploy/pi-gen/configure.sh --from-env FILE     # non-interactive, load from file
+#   bash deploy/pi-gen/configure.sh                      # interactive wizard
+#   bash deploy/pi-gen/configure.sh --from-env FILE      # load from KEY=value file
+#   bash deploy/pi-gen/configure.sh --from-yaml FILE     # load from passwords.yaml
+#
+# --from-yaml reads integration credentials (SMTP, OWM, Google, Microsoft) from
+# the Serverpod passwords.yaml. Pi-specific fields that passwords.yaml does not
+# contain (hostname, WiFi, timezone) are taken from environment variables or
+# their defaults:
+#   PI_HOSTNAME=kitchen-pi PI_TIMEZONE=America/Chicago \
+#     bash deploy/pi-gen/configure.sh --from-yaml server/landfall_server/config/passwords.yaml
+#
+# See deploy/pi-gen/landfall-build.conf.example for a full --from-env template.
 
 set -euo pipefail
 
@@ -29,20 +39,85 @@ section() { echo ""; echo "${CYAN}${BOLD}$*${RESET}"; echo ""; }
 ask()     { printf "${BOLD}%s${RESET} " "$*"; }
 skip()    { echo "${YELLOW}   ↩  skipped — add via SSH later${RESET}"; }
 
-# ── Non-interactive mode ──────────────────────────────────────────────────────
-# --from-env FILE  sources the file to populate variables, then writes the conf
-# without prompting. Accepts .env format (KEY=value) or existing landfall-build.conf.
+# Extract a value from a passwords.yaml-style file.
+# Matches:  <whitespace>key: 'value'  or  key: "value"  or  key: bare_value
+yaml_get() {
+  local key="$1" file="$2"
+  sed -n "s/^[[:space:]]*${key}: *'\(.*\)'.*/\1/p;
+          s/^[[:space:]]*${key}: *\"\(.*\)\".*/\1/p;
+          s/^[[:space:]]*${key}: *\([^'\"#][^#]*\)/\1/p" "${file}" \
+    | head -1 | sed 's/[[:space:]]*$//'
+}
 
+# ── Argument parsing ──────────────────────────────────────────────────────────
 FROM_ENV_FILE=""
-if [[ "${1:-}" == "--from-env" ]]; then
-  if [[ -z "${2:-}" || ! -f "${2}" ]]; then
-    echo "Usage: $0 --from-env <path-to-env-file>" >&2
-    exit 1
-  fi
-  FROM_ENV_FILE="${2}"
-fi
+FROM_YAML_FILE=""
+case "${1:-}" in
+  --from-env)
+    if [[ -z "${2:-}" || ! -f "${2}" ]]; then
+      echo "Usage: $0 --from-env <path-to-env-file>" >&2; exit 1
+    fi
+    FROM_ENV_FILE="${2}"
+    ;;
+  --from-yaml)
+    if [[ -z "${2:-}" || ! -f "${2}" ]]; then
+      echo "Usage: $0 --from-yaml <path-to-passwords.yaml>" >&2; exit 1
+    fi
+    FROM_YAML_FILE="${2}"
+    ;;
+esac
 
-if [[ -n "${FROM_ENV_FILE}" ]]; then
+if [[ -n "${FROM_YAML_FILE}" ]]; then
+  echo ""
+  echo "${CYAN}${BOLD}Landfall — Pi image configuration (from passwords.yaml)${RESET}"
+  echo ""
+  info "Loading credentials from: ${FROM_YAML_FILE}"
+  info "Pi-specific fields (hostname, WiFi, timezone) use environment variable"
+  info "overrides or their defaults. Set them before calling this script, e.g.:"
+  info "  PI_HOSTNAME=kitchen-pi PI_TIMEZONE=America/Chicago bash configure.sh --from-yaml ..."
+
+  # Pi-specific fields — not in passwords.yaml, use env overrides or defaults
+  WIFI_COUNTRY="${WIFI_COUNTRY:-US}"
+  WIFI_SSID="${WIFI_SSID:-}"
+  WIFI_PASSWORD="${WIFI_PASSWORD:-}"
+  PI_HOSTNAME="${PI_HOSTNAME:-landfall}"
+  PI_TIMEZONE="${PI_TIMEZONE:-Etc/UTC}"
+
+  # Integration credentials from passwords.yaml (production section keys)
+  SMTP_HOST="$(yaml_get smtpHost "${FROM_YAML_FILE}")"
+  SMTP_PORT="$(yaml_get smtpPort "${FROM_YAML_FILE}")"
+  SMTP_PORT="${SMTP_PORT:-587}"
+  SMTP_USERNAME="$(yaml_get smtpUsername "${FROM_YAML_FILE}")"
+  SMTP_PASSWORD="$(yaml_get smtpPassword "${FROM_YAML_FILE}")"
+  SMTP_FROM_EMAIL="$(yaml_get smtpFromEmail "${FROM_YAML_FILE}")"
+  SMTP_FROM_NAME="$(yaml_get smtpFromName "${FROM_YAML_FILE}")"
+  SMTP_FROM_NAME="${SMTP_FROM_NAME:-Landfall}"
+  SMTP_SSL="$(yaml_get smtpSsl "${FROM_YAML_FILE}")"
+  SMTP_SSL="${SMTP_SSL:-false}"
+  SMTP_ALLOW_INSECURE="$(yaml_get smtpAllowInsecure "${FROM_YAML_FILE}")"
+  SMTP_ALLOW_INSECURE="${SMTP_ALLOW_INSECURE:-false}"
+
+  OWM_API_KEY="$(yaml_get openWeatherMapApiKey "${FROM_YAML_FILE}")"
+  WEATHER_LATITUDE="$(yaml_get weatherLatitude "${FROM_YAML_FILE}")"
+  WEATHER_LONGITUDE="$(yaml_get weatherLongitude "${FROM_YAML_FILE}")"
+  WEATHER_LOCATION_NAME="$(yaml_get weatherLocationName "${FROM_YAML_FILE}")"
+
+  GOOGLE_CLIENT_ID="$(yaml_get googleOAuthClientId "${FROM_YAML_FILE}")"
+  GOOGLE_CLIENT_SECRET="$(yaml_get googleOAuthClientSecret "${FROM_YAML_FILE}")"
+  GOOGLE_DRIVE_FOLDER_ID="$(yaml_get googleDriveFolderId "${FROM_YAML_FILE}")"
+
+  MICROSOFT_CLIENT_ID="$(yaml_get microsoftClientId "${FROM_YAML_FILE}")"
+  MICROSOFT_CLIENT_SECRET="$(yaml_get microsoftClientSecret "${FROM_YAML_FILE}")"
+
+  STRIPE_WEBHOOK_SECRET="$(yaml_get stripeWebhookSecret "${FROM_YAML_FILE}")"
+
+  if [[ -n "${OWM_API_KEY}" && -z "${WEATHER_LATITUDE}" ]]; then
+    warn "openWeatherMapApiKey set but weatherLatitude/weatherLocationName missing — weather cards will be blank."
+  fi
+
+  ok "Loaded"
+
+elif [[ -n "${FROM_ENV_FILE}" ]]; then
   echo ""
   echo "${CYAN}${BOLD}Landfall — Pi image configuration (non-interactive)${RESET}"
   echo ""

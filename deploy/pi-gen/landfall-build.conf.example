@@ -1,0 +1,68 @@
+# Landfall Pi build config — example / template for --from-env
+#
+# Copy this file, fill in your values, and pass it to configure.sh:
+#
+#   cp deploy/pi-gen/landfall-build.conf.example my-pi.conf
+#   # edit my-pi.conf
+#   bash deploy/pi-gen/configure.sh --from-env my-pi.conf
+#   bash deploy/pi-gen/build.sh
+#
+# Alternatively, use --from-yaml to load integration credentials directly
+# from your Serverpod passwords.yaml and set Pi-specific fields via env vars:
+#
+#   PI_HOSTNAME=kitchen-pi PI_TIMEZONE=America/Chicago \
+#     bash deploy/pi-gen/configure.sh \
+#       --from-yaml server/landfall_server/config/passwords.yaml
+#
+# Keep this file private if it contains real credentials.
+
+# ── Network ───────────────────────────────────────────────────────────────────
+WIFI_COUNTRY=US
+WIFI_SSID=
+WIFI_PASSWORD=
+PI_HOSTNAME=landfall
+# Timezone for the clock card and Serverpod schedulers.
+# Find your timezone name at: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+# Examples: America/New_York  America/Chicago  America/Los_Angeles
+#           Europe/London  Europe/Berlin  Asia/Tokyo  Australia/Sydney
+PI_TIMEZONE=Etc/UTC
+
+# ── Email / OTP sign-in ───────────────────────────────────────────────────────
+# Required for emailing OTP codes. Leave blank and codes are logged to server logs.
+# Gmail: use an App Password — myaccount.google.com > Security > 2-Step > App passwords
+# SendGrid / Mailgun / AWS SES also work on port 587.
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USERNAME=
+SMTP_PASSWORD=
+SMTP_FROM_EMAIL=
+SMTP_FROM_NAME=Landfall
+# false = STARTTLS on port 587 (most providers). true = implicit TLS on port 465.
+SMTP_SSL=false
+SMTP_ALLOW_INSECURE=false
+
+# ── Weather ───────────────────────────────────────────────────────────────────
+# Free API key at openweathermap.org/api — leave blank to disable weather cards.
+OWM_API_KEY=
+# Find coordinates at maps.google.com (right-click → What's here?)
+WEATHER_LATITUDE=
+WEATHER_LONGITUDE=
+WEATHER_LOCATION_NAME=
+
+# ── Google Calendar + Drive Photos ───────────────────────────────────────────
+# Requires a Google Cloud project with Calendar API and Drive API enabled.
+# OAuth 2.0 client ID (Web application) — console.cloud.google.com
+# Redirect URI: https://<PI_HOSTNAME>.local/calendar/oauth/callback
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+# Optional: restrict photo sync to one Drive folder (leave blank for all photos)
+GOOGLE_DRIVE_FOLDER_ID=
+
+# ── Microsoft Calendar ────────────────────────────────────────────────────────
+# App registration at portal.azure.com — Calendars.Read delegated permission.
+# Redirect URI: https://<PI_HOSTNAME>.local/calendar/microsoft/oauth/callback
+MICROSOFT_CLIENT_ID=
+MICROSOFT_CLIENT_SECRET=
+
+# ── Advanced ─────────────────────────────────────────────────────────────────
+# STRIPE_WEBHOOK_SECRET=  # only needed if using Stripe for pack purchases
