@@ -17,7 +17,7 @@ import 'package:display/setup_wizard_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  GoogleFonts.config.allowRuntimeFetching = true;
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
     await windowManager.ensureInitialized();

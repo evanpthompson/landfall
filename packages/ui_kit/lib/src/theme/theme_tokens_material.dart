@@ -33,16 +33,16 @@ extension LandfallThemeTokensMaterialX on LandfallThemeTokens {
       dividerColor: tokenColor(colorDivider),
       useMaterial3: true,
       textTheme: resolvedFont != null
-          ? GoogleFonts.getTextTheme(resolvedFont)
+          ? _isBundled(resolvedFont)
+              ? null
+              : GoogleFonts.getTextTheme(resolvedFont)
           : null,
-      fontFamily: resolvedFont != null
-          ? GoogleFonts.getFont(resolvedFont).fontFamily
-          : null,
+      fontFamily: resolvedFont,
     );
   }
 
-  /// Returns a google_fonts-registered name for the token value, or null to
-  /// fall back to the system font.
+  /// Returns a font family name for the token value, or null to fall back to
+  /// the system font.
   static String? _resolveFont(String token) => switch (token.toLowerCase()) {
         'inter' => 'Inter',
         'roboto' => 'Roboto',
@@ -50,5 +50,11 @@ extension LandfallThemeTokensMaterialX on LandfallThemeTokens {
         'space grotesk' || 'space_grotesk' => 'Space Grotesk',
         'system' || '' => null,
         _ => null,
+      };
+
+  /// True for font families bundled as assets (not fetched via google_fonts).
+  static bool _isBundled(String family) => switch (family) {
+        'Inter' => true,
+        _ => false,
       };
 }
