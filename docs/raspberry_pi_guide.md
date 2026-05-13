@@ -132,13 +132,18 @@ The Pi image does not log OTP codes by default. Without SMTP, email sign-in cann
 
 ### 6. Operator tooling
 
-The image ships with three commands the operator can run after `ssh`'ing in:
+The image ships with four commands the operator can run after `ssh`'ing in:
 
 | Command | What it does |
 |---|---|
-| `landfall-doctor` | Single-screen health report (~15 probes). Exit 0 if clean. |
+| `landfall-doctor` | Single-screen health report (~15 probes + 7-day health trends). Exit 0 if clean. |
 | `landfall-bug-report` | Bundles redacted logs, journals, configs, and `landfall-doctor` output into one `.tgz` to attach to a GitHub issue. |
+| `landfall-update` | Placeholder until OTA lands post-beta — prints the manual update procedures in [`docs/updating.md`](updating.md). |
 | `journalctl -t landfall-display -b --no-pager` | Last boot's display app stdout/stderr (openbox autostart tees here via `systemd-cat`). |
+
+> If you're flashing a Pi specifically to chase a bug, follow
+> [`docs/debugging_pi.md`](debugging_pi.md) to bake in SSH access + dev
+> telemetry so the next failure tells us *why* automatically.
 
 Self-healing services that run without operator action:
 

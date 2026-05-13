@@ -147,3 +147,34 @@ phone on the same WiFi:
 If the QR ends up pointing at `127.0.0.1`, the server could not find a
 LAN address; set `LANDFALL_DOMAIN=<your-mac-lan-ip>` in the server's
 environment as a workaround.
+
+## Dev-build self-hosted telemetry
+
+The display includes a compile-time-gated `Telemetry` class
+(`apps/display/lib/src/app/telemetry.dart`). Production builds leave the
+endpoint constant empty, so the class is a no-op that emits zero network
+traffic. Dev builds can opt in by passing `--dart-define` flags pointing at
+your local server.
+
+```bash
+# Mint an API key first (see docs/agent_integration_guide.md). Then:
+flutter run -d macos \
+  --dart-define=LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/ \
+  --dart-define=LANDFALL_WEB_SERVER_URL=http://127.0.0.1:8082/ \
+  --dart-define=LANDFALL_TELEMETRY_ENDPOINT=http://127.0.0.1:8080/api/v1/telemetry/event \
+  --dart-define=LANDFALL_TELEMETRY_API_KEY=lf_dev_xxxxx
+```
+
+Verify events are arriving:
+
+```bash
+tail -f /tmp/landfall-server.log | grep LANDFALL_TELEMETRY
+```
+
+You should see `[LANDFALL_TELEMETRY] event=app_launched ...` on every
+launch. Events fire fire-and-forget — failures only `debugPrint` to the
+Flutter terminal and never block UI work.
+
+See [`docs/build_defines.md`](build_defines.md) for the full list of
+build-time constants and [`docs/roadmap.md`](roadmap.md) for what telemetry
+work is still ahead (crash-bundle auto-ship, event aggregation).
