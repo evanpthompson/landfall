@@ -64,6 +64,7 @@ echo ""
 
 # ── Load build configuration ──────────────────────────────────────────────────
 CONF_FILE="${SCRIPT_DIR}/landfall-build.conf"
+LANDFALL_BUILD_TYPE="production"
 LANDFALL_TELEMETRY_ENDPOINT=""
 LANDFALL_TELEMETRY_API_KEY=""
 WIFI_COUNTRY="US"
@@ -105,6 +106,16 @@ else
   warn "Continuing with defaults: no WiFi, hostname=landfall."
 fi
 
+# Debug builds default to local-loopback telemetry on the Pi's own server.
+# Operator can still override with an explicit endpoint in the conf for fleet
+# telemetry. Production builds leave the endpoint empty — display Telemetry
+# class compiles to a no-op (see apps/display/lib/src/app/telemetry.dart).
+if [[ "${LANDFALL_BUILD_TYPE}" == "debug" && -z "${LANDFALL_TELEMETRY_ENDPOINT}" ]]; then
+  LANDFALL_TELEMETRY_ENDPOINT="http://127.0.0.1:8080/api/v1/telemetry/event"
+  info "Debug build: telemetry will post to local loopback (no API key required)"
+fi
+export LANDFALL_TELEMETRY_ENDPOINT LANDFALL_TELEMETRY_API_KEY
+
 # ── Preflight ─────────────────────────────────────────────────────────────────
 if (( STAGE_ONLY == 0 )); then
   command -v docker > /dev/null || die "Docker is not installed"
@@ -139,6 +150,10 @@ else
   docker run --rm --platform linux/arm64 \
     -v "${REPO_ROOT}":/app \
     -v "${SCRIPT_DIR}/build-display-docker.sh":/lf-build.sh \
+    -e LANDFALL_DEFAULT_SERVER_URL \
+    -e LANDFALL_WEB_SERVER_URL \
+    -e LANDFALL_TELEMETRY_ENDPOINT \
+    -e LANDFALL_TELEMETRY_API_KEY \
     -w /app/apps/display \
     ghcr.io/cirruslabs/flutter:stable \
     bash /lf-build.sh

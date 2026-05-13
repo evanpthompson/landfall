@@ -1,241 +1,154 @@
-# Building a Maximally Debuggable Pi Image
+# Building a Debug Pi Image
 
-This doc is the **fastest path to a Pi image that gives a maintainer all the
-information needed to diagnose a problem remotely.** Use it when:
+A **debug Pi image** is a build with the diagnostic safety nets fully on so a
+maintainer can recover and inspect the device remotely. Compared to a normal
+production image, it has:
 
-- The previous Pi image had an unexplained failure (display didn't start,
-  crash-looping, something else weird)
-- You want every diagnostic safety net turned on so the next failure tells
-  us why instead of leaving us guessing
+1. **SSH access guaranteed** — your public key is baked in, optional password.
+2. **Local-loopback telemetry on** — the Pi posts events to its **own** server
+   (`http://127.0.0.1:8080/api/v1/telemetry/event`). No separate dev server,
+   no API key, no minting.
+3. **All Tier 1–3 self-healing** — identical to production.
 
-The image you produce here has **two differences** from a normal production
-image:
-
-1. **SSH access is guaranteed** — public key baked in, optional password.
-2. **Dev-build telemetry is enabled** — the Pi posts structured events to
-   a Landfall server you also control, so failures phone home automatically.
-
-Everything else (Tier 1–3 self-healing) is identical to a production image.
+That's it. The Pi is self-contained. You SSH in, run `landfall-doctor`, and
+read the events from the Pi's own journal.
 
 ---
 
-## Pre-flight checklist
+## What goes in `passwords.yaml`
 
-Before running `configure.sh`, gather:
+Add these keys under the existing `production:` block. **Just these** — the
+SSH key plus optional static IP. No telemetry endpoint, no API key. The
+debug flag does the rest.
 
-- [ ] **Your SSH public key.** Default: `~/.ssh/id_ed25519.pub` or `~/.ssh/id_rsa.pub`.
-      If you don't have one, generate now: `ssh-keygen -t ed25519 -C "you@host"`.
-- [ ] **A reachable Landfall server with an API key.** This is where telemetry
-      posts will land. Easiest option: your existing dev macOS instance
-      (`bash tools/scripts/start_mac.sh --server`) plus an API key.
+```yaml
+production:
+  # ...all your existing keys (database, jwtHmacSha512PrivateKey, etc.)...
 
-      Mint a key once and reuse it across every debug image:
+  # ── SSH (required so a maintainer can recover the device) ─────────────────
+  sshAuthorizedKey: 'PASTE_OUTPUT_OF_cat_~/.ssh/id_ed25519.pub_HERE'
+  sshPassword: 'pick-something-or-leave-out'   # optional, key auth alone works
 
-      ```bash
-      bash tools/scripts/start_mac.sh --server    # in one terminal
-      bash tools/scripts/mint_api_key.sh --name pi-debug   # in another
-      ```
+  # ── Static IP (optional but recommended for headless setups) ──────────────
+  staticIpCidr: '192.168.1.129/24'
+  staticGateway: '192.168.1.1'
+  staticDns: '1.1.1.1,8.8.8.8'
+  staticInterface: 'eth0'
+```
 
-      Copy the printed `plainTextKey` into `passwords.yaml` as
-      `landfallTelemetryApiKey` (under the `production:` block). **That file
-      is the persistent home for the key** — it's gitignored, it lives in
-      your repo on disk, and `--from-yaml` will pick it up on every
-      subsequent `configure.sh` run. You never need to mint it again unless
-      you deliberately wipe the dev server's Postgres volume (which would
-      also invalidate the hash on the server side and break the old key).
-- [ ] **The Pi's intended LAN address** (static IP), or accept whatever DHCP
-      hands out — a static IP just makes "SSH to this specific Pi" deterministic.
-- [ ] **A WiFi SSID + password** if not using ethernet.
+Get your SSH public key with:
 
-Optional:
+```bash
+cat ~/.ssh/id_ed25519.pub   # or ~/.ssh/id_rsa.pub
+```
 
-- [ ] Timezone (e.g. `America/Chicago`) — without this, the clock card shows
-      UTC until you SSH in to fix it.
-- [ ] OpenWeatherMap key + coordinates if you want weather cards on first boot.
+> **No telemetry endpoint or API key in passwords.yaml.** They were required
+> in an earlier design that posted telemetry to a separate dev server. With
+> `LANDFALL_BUILD_TYPE=debug` (set on the command line below), the build
+> wires telemetry to the Pi's own loopback interface and the server
+> auth-bypasses loopback requests. The Pi is fully self-contained.
 
 ---
 
 ## Build the image
 
-### Path A — interactive
-
 ```bash
-bash deploy/pi-gen/configure.sh
-```
+cd /Users/ethompson/files/landfall
 
-When the wizard asks for **SSH public key**, accept the default path (your
-key auto-loads). Set a password too if you want belt-and-suspenders.
-
-When it asks for **Static IP**, enter your chosen address (e.g.
-`192.168.1.129/24`), gateway, and DNS.
-
-When the wizard finishes, **manually add the telemetry settings** to the
-output file (the wizard doesn't prompt for them — they're advanced-mode
-only). Open `deploy/pi-gen/landfall-build.conf` and set:
-
-```ini
-LANDFALL_TELEMETRY_ENDPOINT='http://<your-dev-server>:8080/api/v1/telemetry/event'
-LANDFALL_TELEMETRY_API_KEY='lf_xxxxxxxxxxxxxxxx'
-```
-
-Then build:
-
-```bash
-bash deploy/pi-gen/build.sh
-```
-
-### Path B — fully scripted (recommended for repeat debug images)
-
-Create a `debug-pi.conf` once, reuse forever:
-
-```ini
-WIFI_COUNTRY=US
-WIFI_SSID=YourWiFi
-WIFI_PASSWORD='your-wifi-password'
-PI_HOSTNAME=landfall-debug
-PI_TIMEZONE=America/Chicago
-
-SSH_AUTHORIZED_KEY='ssh-ed25519 AAAA... you@host'
-SSH_PASSWORD='strong-password-you-actually-want'
-
-STATIC_IP_CIDR=192.168.1.129/24
-STATIC_GATEWAY=192.168.1.1
-STATIC_DNS=1.1.1.1,8.8.8.8
-STATIC_INTERFACE=eth0
-
-# DEV ONLY — never set these on a production image
-LANDFALL_TELEMETRY_ENDPOINT='http://192.168.1.42:8080/api/v1/telemetry/event'
-LANDFALL_TELEMETRY_API_KEY='lf_xxxxxxxxxxxxxxxx'
-
-# Optional integrations
-OWM_API_KEY=''
-WEATHER_LATITUDE=''
-WEATHER_LONGITUDE=''
-WEATHER_LOCATION_NAME=''
-GOOGLE_CLIENT_ID=''
-GOOGLE_CLIENT_SECRET=''
-GOOGLE_DRIVE_FOLDER_ID=''
-MICROSOFT_CLIENT_ID=''
-MICROSOFT_CLIENT_SECRET=''
-
-# Email — leave blank if not testing OTP sign-in this round
-SMTP_HOST=''
-SMTP_PORT=587
-SMTP_USERNAME=''
-SMTP_PASSWORD=''
-SMTP_FROM_EMAIL=''
-SMTP_FROM_NAME=Landfall
-SMTP_SSL=false
-SMTP_ALLOW_INSECURE=false
-```
-
-Then:
-
-```bash
-bash deploy/pi-gen/configure.sh --from-env debug-pi.conf
-bash deploy/pi-gen/build.sh
-```
-
-If you already have a `passwords.yaml` for your dev server, the credentials
-are pulled in automatically; only the Pi-specific fields need to be set as
-environment overrides:
-
-```bash
+LANDFALL_BUILD_TYPE=debug \
 PI_HOSTNAME=landfall-debug \
 PI_TIMEZONE=America/Chicago \
-STATIC_IP_CIDR=192.168.1.129/24 \
-STATIC_GATEWAY=192.168.1.1 \
-SSH_AUTHORIZED_KEY="$(cat ~/.ssh/id_ed25519.pub)" \
-LANDFALL_TELEMETRY_ENDPOINT='http://192.168.1.42:8080/api/v1/telemetry/event' \
-LANDFALL_TELEMETRY_API_KEY='lf_xxxx' \
+WIFI_SSID='YourWiFi' \
+WIFI_PASSWORD='YourPassword' \
+WIFI_COUNTRY=US \
   bash deploy/pi-gen/configure.sh \
     --from-yaml server/landfall_server/config/passwords.yaml
+
 bash deploy/pi-gen/build.sh
 ```
+
+Drop the `WIFI_*` vars if you're using ethernet.
+
+Takes 1–2 hours. Output:
+
+```
+deploy/pi-gen/work/pi-gen/deploy/<date>-landfall.img
+```
+
+You should see `Debug build: telemetry will post to local loopback (no API
+key required)` early in the build output — that confirms the flag took
+effect.
 
 ---
 
 ## Flash
 
-Use Raspberry Pi Imager → **Use custom** → select the `.img` produced under
-`deploy/pi-gen/work/pi-gen/deploy/`.
+Raspberry Pi Imager → **Use custom** → select the `.img` → choose your SD card.
 
-> **Critical:** when Pi Imager asks "would you like to apply OS customisation
-> settings?", choose **No (clear)**. Our image bakes in everything via
-> `configure.sh`. Pi Imager's settings (hostname, WiFi, user, SSH) would
-> overwrite the wrong things and break SSH authentication.
-
-Insert the SD card, power on the Pi.
+When asked about customization settings, choose **"No, clear settings."**
+Our image bakes everything in via `configure.sh`. Pi Imager's fields would
+overwrite SSH/user/WiFi/hostname and break authentication.
 
 ---
 
-## Verify everything is wired
-
-First boot takes ~2 minutes for the kiosk to render the splash + start the
-server stack. As soon as the network is up:
+## After first boot (~2 minutes)
 
 ```bash
-# 1. SSH should work without a password prompt (key auth)
-ssh landfall@<static-ip-or-hostname.local>
+ssh landfall@192.168.1.129       # or landfall-debug.local
+landfall-doctor                  # should be all-green
 
-# 2. Doctor should be all-green (or near it)
-landfall-doctor
-
-# 3. Telemetry should already have posted an `app_launched` event.
-#    Verify by tailing the journal on your dev server:
-ssh dev-server 'journalctl -t landfall-server -f | grep LANDFALL_TELEMETRY'
+# Telemetry events land in the Pi's own journal:
+journalctl -t landfall-server -b | grep LANDFALL_TELEMETRY
 ```
 
-If `landfall-doctor` reports any failures: that's the actual problem to
-debug. Run:
+If anything's wrong:
 
 ```bash
 landfall-bug-report
-# wait for the bundle to finish, then pull it off:
 exit
-scp landfall@<pi>:landfall-bug-report-*.tgz .
+scp landfall@192.168.1.129:landfall-bug-report-*.tgz .
 ```
 
-Send the resulting `.tgz` to a maintainer (or attach to a GitHub issue).
-That single file has everything we need to diagnose: redacted .env, journal
-tails for every relevant unit, docker compose state and per-service logs,
-network state, disk, package versions, openbox autostart, lightdm config,
-and the full `landfall-doctor` output as a snapshot.
+That `.tgz` has the redacted `.env`, every relevant journal tail, compose
+state, per-service logs, network/disk state, package versions, and a full
+`landfall-doctor` snapshot. One file, everything needed to diagnose.
 
 ---
 
-## What to expect
+## Production vs debug comparison
 
-With the maximally-debuggable image, here's the full picture of what you
-get vs. a production image:
-
-|  | Production image | This debug image |
+|  | Production | Debug |
 |---|---|---|
-| SSH key auth | optional | **required** (you set it) |
-| SSH password | optional | optional |
-| Static IP | optional | **enabled** |
-| Telemetry endpoint baked in `.env` | blank | **set to your dev server** |
-| `app_launched` event on every display launch | no | **yes** |
-| `display_crash_loop` event after 3 fast crashes | no | **yes** |
+| `LANDFALL_BUILD_TYPE` | `production` (default) | `debug` |
+| SSH key required | optional | **required** |
+| Static IP | optional | recommended |
+| Telemetry endpoint | empty | `http://127.0.0.1:8080/api/v1/telemetry/event` |
+| Telemetry API key | n/a | **none — loopback auth-bypass** |
+| `app_launched` events on every display launch | no | yes |
+| `display_crash_loop` events after fast-crash threshold | no | yes |
 | `landfall-doctor`, `landfall-bug-report` | yes | yes |
 | Self-healing (`landfall-repair.timer`, watchdog, maintenance) | yes | yes |
 | On-screen diagnostic on crash-loop | yes | yes |
-| Display app binary | release | release |
+| Display binary | release | release |
 
-The binary is identical to production. The only differences are the
-operator-side affordances (SSH, telemetry endpoint, static IP) that let
-us figure out what went wrong.
+The display binary is functionally identical — only the build-time telemetry
+endpoint differs. Everything else is operator-side affordances.
 
 ---
 
-## Future: this will get easier
+## Advanced: fleet telemetry to a remote aggregator
 
-Today telemetry-enabled images and SSH-key images still require you to fill
-in a config file. Future work (see [`docs/roadmap.md`](roadmap.md)):
+The default loopback model gives one Pi a way to phone home **to itself**,
+which is what you want for one-off debugging. If you're running a fleet of
+Pis and want them all posting to a central aggregator (for trend analysis,
+crash sampling, etc.), set the endpoint explicitly:
 
-- **Crash bundle auto-ship** — when a fast-crash trips telemetry, the Pi
-  will also auto-POST the bundle so you don't have to SCP it manually.
-- **Health admin card** — a card on the display itself that shows what
-  `landfall-doctor` currently reports, for non-SSH operators.
-- **OTA updates** — once shipping, debug images won't need to be re-flashed
-  for every issue.
+```yaml
+production:
+  landfallTelemetryEndpoint: 'http://your-aggregator.local:8080/api/v1/telemetry/event'
+  landfallTelemetryApiKey: 'lf_xxxx'   # mint once via tools/scripts/mint_api_key.sh
+```
+
+For this path you do need the API key (the aggregator isn't on the Pi's
+loopback). See `tools/scripts/mint_api_key.sh`. Fleet aggregation is
+otherwise undocumented post-beta work — see [`docs/roadmap.md`](roadmap.md).

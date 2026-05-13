@@ -82,6 +82,10 @@ if [[ -n "${FROM_YAML_FILE}" ]]; then
   WIFI_PASSWORD="${WIFI_PASSWORD:-}"
   PI_HOSTNAME="${PI_HOSTNAME:-landfall}"
   PI_TIMEZONE="${PI_TIMEZONE:-Etc/UTC}"
+  # debug | production. Debug images enable local-loopback telemetry,
+  # bake the SSH key into authorized_keys, and assume an operator wants
+  # full diagnostic visibility. Production = ship-ready.
+  LANDFALL_BUILD_TYPE="${LANDFALL_BUILD_TYPE:-production}"
   # SSH: at least one of these should be set so the operator can recover the device.
   SSH_AUTHORIZED_KEY="${SSH_AUTHORIZED_KEY:-$(yaml_get sshAuthorizedKey "${FROM_YAML_FILE}")}"
   SSH_PASSWORD="${SSH_PASSWORD:-$(yaml_get sshPassword "${FROM_YAML_FILE}")}"
@@ -142,6 +146,7 @@ elif [[ -n "${FROM_ENV_FILE}" ]]; then
   WIFI_PASSWORD=""
   PI_HOSTNAME=""
   PI_TIMEZONE=""
+  LANDFALL_BUILD_TYPE=""
   SSH_AUTHORIZED_KEY=""
   SSH_PASSWORD=""
   STATIC_IP_CIDR=""
@@ -174,6 +179,7 @@ elif [[ -n "${FROM_ENV_FILE}" ]]; then
   WIFI_COUNTRY="${WIFI_COUNTRY:-US}"
   PI_HOSTNAME="${PI_HOSTNAME:-landfall}"
   PI_TIMEZONE="${PI_TIMEZONE:-Etc/UTC}"
+  LANDFALL_BUILD_TYPE="${LANDFALL_BUILD_TYPE:-production}"
   STATIC_INTERFACE="${STATIC_INTERFACE:-eth0}"
   SMTP_PORT="${SMTP_PORT:-587}"
   SMTP_FROM_NAME="${SMTP_FROM_NAME:-Landfall}"
@@ -400,6 +406,7 @@ else
   fi
 
   STRIPE_WEBHOOK_SECRET=""
+  LANDFALL_BUILD_TYPE="${LANDFALL_BUILD_TYPE:-production}"
 fi
 
 # ── Write config ──────────────────────────────────────────────────────────────
@@ -413,6 +420,7 @@ fi
   printf "WIFI_PASSWORD=%q\n"  "${WIFI_PASSWORD}"
   printf "PI_HOSTNAME=%q\n"    "${PI_HOSTNAME}"
   printf "PI_TIMEZONE=%q\n"    "${PI_TIMEZONE}"
+  printf "LANDFALL_BUILD_TYPE=%q\n" "${LANDFALL_BUILD_TYPE}"
   echo ""
   echo "# ── SSH access ───────────────────────────────────────────────────────────────"
   printf "SSH_AUTHORIZED_KEY=%q\n" "${SSH_AUTHORIZED_KEY:-}"

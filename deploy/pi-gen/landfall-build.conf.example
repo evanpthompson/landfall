@@ -21,6 +21,10 @@ WIFI_COUNTRY=US
 WIFI_SSID=
 WIFI_PASSWORD=
 PI_HOSTNAME=landfall
+# 'debug' enables local-loopback telemetry on the Pi's own server (no separate
+# server needed, no API key) so a maintainer can diagnose remotely via SSH.
+# 'production' = ship-ready, telemetry off.
+LANDFALL_BUILD_TYPE=production
 # Timezone for the clock card and Serverpod schedulers.
 # Find your timezone name at: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 # Examples: America/New_York  America/Chicago  America/Los_Angeles

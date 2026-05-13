@@ -157,13 +157,16 @@ traffic. Dev builds can opt in by passing `--dart-define` flags pointing at
 your local server.
 
 ```bash
-# Mint an API key first (see docs/agent_integration_guide.md). Then:
+# Loopback bypass — no API key needed when posting to 127.0.0.1.
 flutter run -d macos \
   --dart-define=LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/ \
   --dart-define=LANDFALL_WEB_SERVER_URL=http://127.0.0.1:8082/ \
-  --dart-define=LANDFALL_TELEMETRY_ENDPOINT=http://127.0.0.1:8080/api/v1/telemetry/event \
-  --dart-define=LANDFALL_TELEMETRY_API_KEY=lf_dev_xxxxx
+  --dart-define=LANDFALL_TELEMETRY_ENDPOINT=http://127.0.0.1:8080/api/v1/telemetry/event
 ```
+
+(For non-loopback telemetry endpoints — fleet aggregators, telemetry from
+the Mac to a different host — mint an API key via
+`tools/scripts/mint_api_key.sh` and add `--dart-define=LANDFALL_TELEMETRY_API_KEY=...`.)
 
 Verify events are arriving:
 

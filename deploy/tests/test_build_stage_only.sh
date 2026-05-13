@@ -145,3 +145,34 @@ grep -q 'ssh-ed25519 AAAATESTKEY' "${stage}/authorized_keys"
 grep -q 'address1=192.168.1.129/24,192.168.1.1' "${stage}/static-ip.nmconnection"
 grep -q 'interface-name=eth0' "${stage}/static-ip.nmconnection"
 grep -q 'dns=1.1.1.1;8.8.8.8;' "${stage}/static-ip.nmconnection"
+
+# ── Debug build type → loopback telemetry without API key ────────────────────
+# A debug image must wire up telemetry to the Pi's own server. No separate
+# dev host. No API key needed (telemetry route auth-bypasses loopback).
+cat > "${conf}" <<'CONF'
+WIFI_COUNTRY=US
+WIFI_SSID=''
+WIFI_PASSWORD=''
+PI_HOSTNAME=debug-pi
+PI_TIMEZONE=America/New_York
+LANDFALL_BUILD_TYPE=debug
+SSH_AUTHORIZED_KEY='ssh-ed25519 AAAATESTKEY user@host'
+OWM_API_KEY=''
+GOOGLE_CLIENT_ID=''
+GOOGLE_CLIENT_SECRET=''
+MICROSOFT_CLIENT_ID=''
+MICROSOFT_CLIENT_SECRET=''
+STRIPE_WEBHOOK_SECRET=''
+CONF
+
+rm -rf "${pi_gen}/stage2-landfall"
+LANDFALL_PI_GEN_DIR="${pi_gen}" \
+LANDFALL_LINUX_BUNDLE="${bundle}" \
+LANDFALL_SERVER_TARBALL_SOURCE="${server_tarball}" \
+  bash "${BUILD}" --stage-only > "${tmp}/build-debug.log"
+
+stage="${pi_gen}/stage2-landfall/00-landfall/files"
+source "${stage}/integrations.env"
+[[ "${LANDFALL_TELEMETRY_ENDPOINT}" == "http://127.0.0.1:8080/api/v1/telemetry/event" ]]
+# No API key required for loopback telemetry.
+[[ "${LANDFALL_TELEMETRY_API_KEY}" == "" ]]
