@@ -71,18 +71,13 @@ rm -f /etc/lightdm/lightdm.conf.d/*piwiz* \
 userdel rpi-first-boot-wizard 2>/dev/null || true
 
 # ── lightdm: auto-login the landfall user into an openbox session ─────────
-# Overwrite both lightdm.conf and a conf.d drop-in — the ARM64 pi-gen build
-# writes rpi-first-boot-wizard into lightdm.conf after our stage, so we need
-# both to ensure the correct user wins regardless of load order.
-mkdir -p /etc/lightdm/lightdm.conf.d
+# Best-effort build-time write. Upstream pi-gen stages run after this stage
+# and re-create rpi-first-boot-wizard plus rewrite /etc/lightdm/lightdm.conf
+# to auto-login that user. lightdm loads /etc/lightdm/lightdm.conf *after*
+# conf.d/*.conf, so a drop-in cannot override it. The authoritative fix is
+# landfall-display-prep.service, installed below, which re-enforces the
+# correct state on every boot before lightdm starts.
 cat > /etc/lightdm/lightdm.conf << 'LIGHTDM'
-[Seat:*]
-autologin-user=landfall
-autologin-user-timeout=0
-user-session=openbox
-xserver-command=X
-LIGHTDM
-cat > /etc/lightdm/lightdm.conf.d/zz-landfall.conf << 'LIGHTDM'
 [Seat:*]
 autologin-user=landfall
 autologin-user-timeout=0
@@ -231,6 +226,8 @@ install -m 755 "${STAGE_FILES}/landfall-doctor.sh" \
                "${ROOTFS_DIR}/opt/landfall/landfall-doctor.sh"
 install -m 755 "${STAGE_FILES}/landfall-bug-report.sh" \
                "${ROOTFS_DIR}/opt/landfall/landfall-bug-report.sh"
+install -m 755 "${STAGE_FILES}/landfall-display-prep.sh" \
+               "${ROOTFS_DIR}/opt/landfall/landfall-display-prep.sh"
 install -m 755 "${STAGE_FILES}/landfall-display-watchdog.sh" \
                "${ROOTFS_DIR}/opt/landfall/landfall-display-watchdog.sh"
 install -m 755 "${STAGE_FILES}/landfall-maintenance.sh" \
@@ -262,6 +259,9 @@ install -m 644 "${STAGE_FILES}/landfall-firstboot.service" \
 install -m 644 "${STAGE_FILES}/landfall-server.service" \
                "${ROOTFS_DIR}/etc/systemd/system/landfall-server.service"
 
+install -m 644 "${STAGE_FILES}/landfall-display-prep.service" \
+               "${ROOTFS_DIR}/etc/systemd/system/landfall-display-prep.service"
+
 install -m 644 "${STAGE_FILES}/landfall-display-watchdog.service" \
                "${ROOTFS_DIR}/etc/systemd/system/landfall-display-watchdog.service"
 
@@ -278,6 +278,7 @@ install -m 644 "${STAGE_FILES}/landfall-repair.timer" \
 on_chroot << 'EOF'
 systemctl enable landfall-firstboot
 systemctl enable landfall-server
+systemctl enable landfall-display-prep
 systemctl enable landfall-display-watchdog
 systemctl enable landfall-maintenance.timer
 systemctl enable landfall-repair.timer

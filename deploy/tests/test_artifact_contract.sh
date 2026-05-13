@@ -16,6 +16,8 @@ required=(
   "${FILES}/landfall-diagnostic.py"
   "${FILES}/landfall-doctor.sh"
   "${FILES}/landfall-bug-report.sh"
+  "${FILES}/landfall-display-prep.sh"
+  "${FILES}/landfall-display-prep.service"
   "${FILES}/landfall-display-watchdog.sh"
   "${FILES}/landfall-display-watchdog.service"
   "${FILES}/landfall-maintenance.sh"
@@ -69,7 +71,18 @@ grep -q 'landfall-doctor.sh' "${STAGE}/00-run.sh"
 grep -q 'landfall-bug-report.sh' "${STAGE}/00-run.sh"
 grep -q '/usr/local/bin/landfall-doctor' "${STAGE}/00-run.sh"
 grep -q '/usr/local/bin/landfall-bug-report' "${STAGE}/00-run.sh"
+grep -q 'systemctl enable landfall-display-prep' "${STAGE}/00-run.sh"
 grep -q 'systemctl enable landfall-display-watchdog' "${STAGE}/00-run.sh"
+
+# Display prep must run before lightdm and enforce the correct autologin user
+# and remove the rpi-first-boot-wizard user that pi-gen re-creates after our
+# stage. Without this the Pi boots to a black screen with mouse cursor because
+# lightdm auto-logs-in the wrong user and the openbox autostart never runs.
+grep -q '^Before=.*lightdm.service' "${FILES}/landfall-display-prep.service"
+grep -q 'autologin-user=landfall' "${FILES}/landfall-display-prep.sh"
+grep -q 'rpi-first-boot-wizard' "${FILES}/landfall-display-prep.sh"
+[[ -x "${FILES}/landfall-display-prep.sh" ]] \
+  || { echo "landfall-display-prep.sh must be executable" >&2; exit 1; }
 grep -q 'systemctl enable landfall-maintenance.timer' "${STAGE}/00-run.sh"
 
 # Bug-report must redact secret-shaped values.

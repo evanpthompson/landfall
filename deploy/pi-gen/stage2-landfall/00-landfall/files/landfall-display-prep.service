@@ -1,0 +1,16 @@
+[Unit]
+Description=Landfall display prep — enforce lightdm autologin user before lightdm starts
+DefaultDependencies=no
+After=local-fs.target
+Before=lightdm.service display-manager.service graphical.target
+ConditionPathExists=/opt/landfall/landfall-display-prep.sh
+
+[Service]
+Type=oneshot
+ExecStart=/opt/landfall/landfall-display-prep.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
