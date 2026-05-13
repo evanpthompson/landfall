@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
-import 'package:uuid/uuid.dart';
 
 import 'package:display/src/data/auth/file_client_auth_success_storage.dart';
 
