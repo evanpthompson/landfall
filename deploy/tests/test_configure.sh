@@ -15,10 +15,10 @@ run_configure() {
 }
 
 # ── Default (all blanks): no WiFi, no SMTP, no integrations ──────────────────
-# Prompts (blank → default): country, SSID (skip), hostname, SMTP host (skip),
-# weather, Google client ID (skip), Microsoft client ID (skip), Stripe.
+# Prompts (blank → default): country, SSID (skip), hostname, timezone (skip),
+# SMTP host (skip), weather, Google client ID (skip), Microsoft client ID (skip), Stripe.
 default_conf="${tmp}/default.conf"
-run_configure "${default_conf}" '\n\n\n\n\n\n\n\n\n'
+run_configure "${default_conf}" '\n\n\n\n\n\n\n\n\n\n'
 
 bash -n "${default_conf}"
 source "${default_conf}"
@@ -26,6 +26,7 @@ source "${default_conf}"
 [[ "${WIFI_SSID}" == "" ]]
 [[ "${WIFI_PASSWORD}" == "" ]]
 [[ "${PI_HOSTNAME}" == "landfall" ]]
+[[ "${PI_TIMEZONE}" == "Etc/UTC" ]]
 [[ "${SMTP_HOST}" == "" ]]
 [[ "${OWM_API_KEY}" == "" ]]
 [[ "${WEATHER_LATITUDE}" == "" ]]
@@ -37,14 +38,14 @@ source "${default_conf}"
 
 # ── Configured (all fields, including SMTP) ───────────────────────────────────
 # Input order mirrors configure.sh's prompt sequence:
-#   country, SSID, WiFi password, hostname,
+#   country, SSID, WiFi password, hostname, timezone,
 #   SMTP host, port (default), username, password, from email, from name (default), SSL (default),
 #   weather key,
 #   Google client ID, Google client secret, Google Drive folder,
 #   Microsoft client ID, Microsoft client secret,
 #   Stripe secret.
 configured_conf="${tmp}/configured.conf"
-run_configure "${configured_conf}" 'GB\nKitchen WiFi\npa ss $word\nkitchen-pi\nsmtp.example.com\n\nuser@example.com\nsmtppass\nnoreply@example.com\n\n\nweather key\n51.5074\n-0.1278\nLondon\nclient id\ngoogle secret\ndrive folder\nms client\nms secret\nstripe secret\n'
+run_configure "${configured_conf}" 'GB\nKitchen WiFi\npa ss $word\nkitchen-pi\nEurope/London\nsmtp.example.com\n\nuser@example.com\nsmtppass\nnoreply@example.com\n\n\nweather key\n51.5074\n-0.1278\nLondon\nclient id\ngoogle secret\ndrive folder\nms client\nms secret\nstripe secret\n'
 
 bash -n "${configured_conf}"
 source "${configured_conf}"
@@ -52,6 +53,7 @@ source "${configured_conf}"
 [[ "${WIFI_SSID}" == "Kitchen WiFi" ]]
 [[ "${WIFI_PASSWORD}" == 'pa ss $word' ]]
 [[ "${PI_HOSTNAME}" == "kitchen-pi" ]]
+[[ "${PI_TIMEZONE}" == "Europe/London" ]]
 [[ "${SMTP_HOST}" == "smtp.example.com" ]]
 [[ "${SMTP_PORT}" == "587" ]]
 [[ "${SMTP_USERNAME}" == "user@example.com" ]]
