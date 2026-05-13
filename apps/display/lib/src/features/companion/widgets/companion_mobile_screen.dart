@@ -119,7 +119,7 @@ class _CompanionMobileScreenState extends State<CompanionMobileScreen>
                 alignment: Alignment.center,
                 children: [
                   if (_loaded)
-                    _renderer.buildView()
+                    _renderer.buildView(maxSize: kCompanionSpriteMaxSize)
                   else
                     const Center(
                       child: CircularProgressIndicator(

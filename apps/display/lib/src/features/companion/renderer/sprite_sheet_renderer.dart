@@ -5,6 +5,13 @@ import 'package:landfall_shared/landfall_shared.dart';
 
 import '../provider/companion_provider.dart';
 
+/// Companion sprite ceiling per `docs/companion_card_design.md` — 192×208
+/// source frame at ×1.5–2× upscale → ~353×384 logical px on 1080p. Every
+/// surface that renders the companion (dashboard, mobile companion page,
+/// future variants) caps to this so the creature never over-magnifies and
+/// always leaves room for the QR + meta around it.
+const Size kCompanionSpriteMaxSize = Size(353, 384);
+
 class SpriteSheetCompanionRenderer {
   SpriteSheetCompanionRenderer({
     required this.provider,
@@ -57,9 +64,12 @@ class SpriteSheetCompanionRenderer {
     }
   }
 
-  // Returns an animating Widget. Call inside an AnimatedBuilder or let the
-  // SpriteSheetAnimationView handle it.
-  Widget buildView() => _SpriteView(renderer: this);
+  // Returns an animating Widget. Pass [maxSize] to cap the sprite at design
+  // spec dimensions inside larger card slots — the sprite then aspect-fits to
+  // min(slot, maxSize) and centres within the slot. Omitting maxSize keeps
+  // the previous behaviour of filling the slot.
+  Widget buildView({Size? maxSize}) =>
+      _SpriteView(renderer: this, maxSize: maxSize);
 
   void dispose() {
     _disposed = true;
@@ -76,9 +86,10 @@ class SpriteSheetCompanionRenderer {
 // ---------------------------------------------------------------------------
 
 class _SpriteView extends StatelessWidget {
-  const _SpriteView({required this.renderer});
+  const _SpriteView({required this.renderer, this.maxSize});
 
   final SpriteSheetCompanionRenderer renderer;
+  final Size? maxSize;
 
   @override
   Widget build(BuildContext context) {
@@ -94,12 +105,13 @@ class _SpriteView extends StatelessWidget {
         final t = renderer._animationController.value;
         final frame = (t * spec.frameCount).floor().clamp(0, spec.frameCount - 1);
         return CustomPaint(
-          painter: _SpritePainter(
+          painter: SpritePainter(
             image: image,
             stateRow: spec.row,
             frame: frame,
             frameWidth: renderer.provider.frameWidth,
             frameHeight: renderer.provider.frameHeight,
+            maxSize: maxSize,
           ),
           size: Size.infinite,
         );
@@ -108,13 +120,14 @@ class _SpriteView extends StatelessWidget {
   }
 }
 
-class _SpritePainter extends CustomPainter {
-  const _SpritePainter({
+class SpritePainter extends CustomPainter {
+  const SpritePainter({
     required this.image,
     required this.stateRow,
     required this.frame,
     required this.frameWidth,
     required this.frameHeight,
+    this.maxSize,
   });
 
   final ui.Image image;
@@ -122,6 +135,36 @@ class _SpritePainter extends CustomPainter {
   final int frame;
   final double frameWidth;
   final double frameHeight;
+
+  /// Caps the painted sprite at this size. When set, the sprite aspect-fits
+  /// to `min(canvasSize, maxSize)` and is centred in the canvas — leaving
+  /// empty space around the sprite that the parent widget can use.
+  final Size? maxSize;
+
+  /// Aspect-fits the source frame inside `min(canvasSize, maxSize)` and
+  /// centres the result within `canvasSize`. Pure function — exposed for
+  /// unit tests; the painter's `paint()` delegates here.
+  static Rect computeDestRect({
+    required Size canvasSize,
+    required double frameWidth,
+    required double frameHeight,
+    Size? maxSize,
+  }) {
+    final effectiveW = maxSize == null
+        ? canvasSize.width
+        : (canvasSize.width < maxSize.width ? canvasSize.width : maxSize.width);
+    final effectiveH = maxSize == null
+        ? canvasSize.height
+        : (canvasSize.height < maxSize.height ? canvasSize.height : maxSize.height);
+    final scaleX = effectiveW / frameWidth;
+    final scaleY = effectiveH / frameHeight;
+    final scale = scaleX < scaleY ? scaleX : scaleY;
+    final dstW = frameWidth * scale;
+    final dstH = frameHeight * scale;
+    final dx = (canvasSize.width - dstW) / 2;
+    final dy = (canvasSize.height - dstH) / 2;
+    return Rect.fromLTWH(dx, dy, dstW, dstH);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -131,17 +174,12 @@ class _SpritePainter extends CustomPainter {
       frameWidth,
       frameHeight,
     );
-
-    // Aspect-fit: scale uniformly so the frame fills as much of the card as
-    // possible without cropping, then center the result.
-    final scaleX = size.width / frameWidth;
-    final scaleY = size.height / frameHeight;
-    final scale = scaleX < scaleY ? scaleX : scaleY;
-    final dstW = frameWidth * scale;
-    final dstH = frameHeight * scale;
-    final dx = (size.width - dstW) / 2;
-    final dy = (size.height - dstH) / 2;
-    final dst = Rect.fromLTWH(dx, dy, dstW, dstH);
+    final dst = computeDestRect(
+      canvasSize: size,
+      frameWidth: frameWidth,
+      frameHeight: frameHeight,
+      maxSize: maxSize,
+    );
 
     canvas.drawImageRect(
       image,
@@ -152,6 +190,9 @@ class _SpritePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_SpritePainter old) =>
-      old.frame != frame || old.stateRow != stateRow || old.image != image;
+  bool shouldRepaint(SpritePainter old) =>
+      old.frame != frame ||
+      old.stateRow != stateRow ||
+      old.image != image ||
+      old.maxSize != maxSize;
 }

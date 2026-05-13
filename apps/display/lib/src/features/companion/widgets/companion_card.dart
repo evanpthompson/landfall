@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import 'package:display/src/data/companion/companion_poll_service.dart';
@@ -13,6 +12,7 @@ import '../companion_event_bus.dart';
 import '../cubit/companion_cubit.dart';
 import '../provider/petdex_provider.dart';
 import '../renderer/sprite_sheet_renderer.dart';
+import 'companion_qr_code.dart';
 
 const _kLumenAsset = 'assets/companions/lumen.webp';
 
@@ -203,28 +203,99 @@ class _CompanionCardState extends State<CompanionCard>
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: borderColor, width: tokens.cardBorderWidth),
       ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(radius - 1),
-              child: _renderer.buildView(),
-            ),
-          ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius - 1),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= _kWideBreakpoint;
+            return wide
+                ? _WideCompanionLayout(
+                    renderer: _renderer,
+                    displayName: displayName,
+                    rarityLabel: rarityLabel,
+                    rarityColor: rarityColor,
+                    evolutionStage: entity.evolutionStage,
+                    assetCredit: entity.assetCredit,
+                    qrUrl: qrUrl,
+                  )
+                : _StackedCompanionLayout(
+                    renderer: _renderer,
+                    displayName: displayName,
+                    rarityLabel: rarityLabel,
+                    rarityColor: rarityColor,
+                    evolutionStage: entity.evolutionStage,
+                    assetCredit: entity.assetCredit,
+                    qrUrl: qrUrl,
+                    radius: radius,
+                  );
+          },
+        ),
+      ),
+    );
+  }
+}
 
-          // Bottom metadata strip — QR lives inside it now
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _MetaStrip(
-              displayName: displayName,
-              rarityLabel: rarityLabel,
-              rarityColor: rarityColor,
-              evolutionStage: entity.evolutionStage,
-              assetCredit: entity.assetCredit,
-              qrUrl: qrUrl,
-              radius: radius,
+// Wide layout threshold. Below this the card stacks vertically because there
+// isn't room to host sprite + QR + meta side by side. The sprite size cap
+// itself lives next to the renderer as kCompanionSpriteMaxSize so every
+// surface that renders the companion picks up the same value.
+const double _kWideBreakpoint = 560;
+
+// ---------------------------------------------------------------------------
+
+/// Side-by-side composition: sprite (capped at spec size) on the left, QR +
+/// meta column on the right. Used when the card slot is wide enough to host
+/// both at spec sizes without crowding.
+class _WideCompanionLayout extends StatelessWidget {
+  const _WideCompanionLayout({
+    required this.renderer,
+    required this.displayName,
+    required this.rarityLabel,
+    required this.rarityColor,
+    required this.evolutionStage,
+    required this.assetCredit,
+    required this.qrUrl,
+  });
+
+  final SpriteSheetCompanionRenderer renderer;
+  final String displayName;
+  final String rarityLabel;
+  final Color rarityColor;
+  final int evolutionStage;
+  final String? assetCredit;
+  final String qrUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Sprite — fills its column, but the painter clamps to spec size.
+          Expanded(
+            flex: 3,
+            child: renderer.buildView(maxSize: kCompanionSpriteMaxSize),
+          ),
+          const SizedBox(width: 16),
+          // Right column: QR over meta block.
+          Expanded(
+            flex: 2,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CompanionQrCode(url: qrUrl),
+                const SizedBox(height: 12),
+                _CompanionMetaBlock(
+                  displayName: displayName,
+                  rarityLabel: rarityLabel,
+                  rarityColor: rarityColor,
+                  evolutionStage: evolutionStage,
+                  assetCredit: assetCredit,
+                  alignment: CrossAxisAlignment.center,
+                ),
+              ],
             ),
           ),
         ],
@@ -235,50 +306,12 @@ class _CompanionCardState extends State<CompanionCard>
 
 // ---------------------------------------------------------------------------
 
-class _QrWidget extends StatelessWidget {
-  const _QrWidget({required this.url});
-
-  final String url;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Size the QR to the available height, clamped to a readable range.
-        final size = constraints.maxHeight.isFinite
-            ? constraints.maxHeight.clamp(48.0, 96.0)
-            : 64.0;
-        return Container(
-          width: size,
-          height: size,
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(5),
-          ),
-          child: QrImageView(
-            data: url,
-            semanticsLabel: url,
-            version: QrVersions.auto,
-            eyeStyle: const QrEyeStyle(
-              eyeShape: QrEyeShape.square,
-              color: Color(0xFF111318),
-            ),
-            dataModuleStyle: const QrDataModuleStyle(
-              dataModuleShape: QrDataModuleShape.square,
-              color: Color(0xFF111318),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-
-class _MetaStrip extends StatelessWidget {
-  const _MetaStrip({
+/// Vertical composition for narrow slots: sprite on top, then QR centered,
+/// then a meta block. Used when the card can't fit a wide side-by-side
+/// layout without crowding (slot width < _kWideBreakpoint).
+class _StackedCompanionLayout extends StatelessWidget {
+  const _StackedCompanionLayout({
+    required this.renderer,
     required this.displayName,
     required this.rarityLabel,
     required this.rarityColor,
@@ -288,6 +321,7 @@ class _MetaStrip extends StatelessWidget {
     required this.radius,
   });
 
+  final SpriteSheetCompanionRenderer renderer;
   final String displayName;
   final String rarityLabel;
   final Color rarityColor;
@@ -296,86 +330,112 @@ class _MetaStrip extends StatelessWidget {
   final String qrUrl;
   final double radius;
 
-  static const _bg = Color(0xCC0D0D0F);
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: renderer.buildView(maxSize: kCompanionSpriteMaxSize),
+          ),
+          const SizedBox(height: 8),
+          CompanionQrCode(url: qrUrl),
+          const SizedBox(height: 8),
+          _CompanionMetaBlock(
+            displayName: displayName,
+            rarityLabel: rarityLabel,
+            rarityColor: rarityColor,
+            evolutionStage: evolutionStage,
+            assetCredit: assetCredit,
+            alignment: CrossAxisAlignment.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+class _CompanionMetaBlock extends StatelessWidget {
+  const _CompanionMetaBlock({
+    required this.displayName,
+    required this.rarityLabel,
+    required this.rarityColor,
+    required this.evolutionStage,
+    required this.assetCredit,
+    required this.alignment,
+  });
+
+  final String displayName;
+  final String rarityLabel;
+  final Color rarityColor;
+  final int evolutionStage;
+  final String? assetCredit;
+  final CrossAxisAlignment alignment;
+
   static const _nameColor = Colors.white;
   static const _creditColor = Color(0x99FFFFFF);
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: _bg,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(radius),
-          bottomRight: Radius.circular(radius),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 8, 10, 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+    final headerAlignment = alignment == CrossAxisAlignment.center
+        ? MainAxisAlignment.center
+        : MainAxisAlignment.start;
+    return Column(
+      crossAxisAlignment: alignment,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: headerAlignment,
           children: [
-            // Left: name, rarity, credit.
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          displayName,
-                          style: LandfallTypography.cardTitle.copyWith(color: _nameColor),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: rarityColor.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: rarityColor.withValues(alpha: 0.5)),
-                        ),
-                        child: Text(
-                          rarityLabel,
-                          style: LandfallTypography.caption.copyWith(
-                            color: rarityColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      if (evolutionStage > 0) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          'Stage $evolutionStage',
-                          style: LandfallTypography.caption.copyWith(color: _creditColor),
-                        ),
-                      ],
-                    ],
-                  ),
-                  if (assetCredit != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      assetCredit!,
-                      style: LandfallTypography.caption.copyWith(color: _creditColor),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
+            Flexible(
+              child: Text(
+                displayName,
+                style: LandfallTypography.cardTitle.copyWith(color: _nameColor),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-
-            const SizedBox(width: 10),
-
-            // Right: QR code, sized to match strip height naturally.
-            _QrWidget(url: qrUrl),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: rarityColor.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: rarityColor.withValues(alpha: 0.5)),
+              ),
+              child: Text(
+                rarityLabel,
+                style: LandfallTypography.caption.copyWith(
+                  color: rarityColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (evolutionStage > 0) ...[
+              const SizedBox(width: 8),
+              Text(
+                'Stage $evolutionStage',
+                style: LandfallTypography.caption.copyWith(color: _creditColor),
+              ),
+            ],
           ],
         ),
-      ),
+        if (assetCredit != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            assetCredit!,
+            style: LandfallTypography.caption.copyWith(color: _creditColor),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ],
     );
   }
 }

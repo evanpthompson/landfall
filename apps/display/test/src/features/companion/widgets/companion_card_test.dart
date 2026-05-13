@@ -12,6 +12,7 @@ import 'package:display/src/data/companion/companion_poll_service.dart';
 import 'package:display/src/data/companion/companion_repository.dart';
 import 'package:display/src/features/companion/cubit/companion_cubit.dart';
 import 'package:display/src/features/companion/widgets/companion_card.dart';
+import 'package:display/src/features/companion/widgets/companion_qr_code.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -42,6 +43,7 @@ Widget _wrap({
   String displayId = 'display-abc',
   String serverUrl = 'http://localhost:8080/',
   CompanionPollService? pollService,
+  Size slotSize = const Size(400, 600),
 }) {
   final poll = pollService ?? MockCompanionPollService();
 
@@ -61,9 +63,15 @@ Widget _wrap({
     create: (_) => poll,
     child: BlocProvider<CompanionCubit>.value(
       value: cubit,
-      child: const MaterialApp(
+      child: MaterialApp(
         home: Scaffold(
-          body: SizedBox(width: 400, height: 600, child: CompanionCard()),
+          body: Center(
+            child: SizedBox(
+              width: slotSize.width,
+              height: slotSize.height,
+              child: const CompanionCard(),
+            ),
+          ),
         ),
       ),
     ),
@@ -139,6 +147,33 @@ void main() {
         CompanionCard.kindToState('unknown'),
         CompanionAnimationState.idle,
       );
+    });
+
+    testWidgets('QR is rendered at a scannable size in a wide slot',
+        (tester) async {
+      tester.view.physicalSize = const Size(1000, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(_wrap(slotSize: const Size(960, 540)));
+      await tester.pump();
+
+      // The white-padded Container inside CompanionQrCode is the QR badge.
+      final qrBadge = find.descendant(
+        of: find.byType(CompanionQrCode),
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is Container &&
+              w.decoration is BoxDecoration &&
+              (w.decoration as BoxDecoration).color == Colors.white,
+        ),
+      );
+      expect(qrBadge, findsOneWidget);
+      final size = tester.renderObject<RenderBox>(qrBadge).size;
+      // The old hard cap was 96. The new behaviour must render the QR much
+      // larger in a 960×540 slot — anywhere above the old cap proves it.
+      expect(size.width, greaterThan(96),
+          reason: 'QR must scale with the slot, not stay at the 96 px cap');
     });
   });
 }
