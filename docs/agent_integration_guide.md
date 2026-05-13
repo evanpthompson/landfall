@@ -16,10 +16,24 @@ That's it. No SDK required. Any language, any automation platform, any agent tha
 
 ### 1. Generate an API key
 
+Easiest path — use the helper script (reads the setup token from
+passwords.yaml for you):
+
 ```bash
+bash tools/scripts/mint_api_key.sh --name my-first-key
+```
+
+Manual equivalent:
+
+```bash
+# Pull the setup token (added in the OWASP A01 hardening) from passwords.yaml.
+SETUP_TOKEN=$(awk "/development:/,0" server/landfall_server/config/passwords.yaml \
+              | grep apiKeyManagementToken | head -1 \
+              | sed -E "s/.*'([^']+)'.*/\\1/")
+
 curl -s -X POST http://localhost:8080/apiKey/generateKey \
   -H "Content-Type: application/json" \
-  -d '{"name": "my-first-key"}' \
+  -d "{\"name\": \"my-first-key\", \"setupToken\": \"${SETUP_TOKEN}\"}" \
   | python3 -m json.tool
 ```
 

@@ -31,6 +31,7 @@ syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-db-check.s
 syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-update.sh
 syntax_check tools/scripts/build_apk.sh
 syntax_check tools/scripts/build_linux.sh
+syntax_check tools/scripts/mint_api_key.sh
 
 run python3 -m py_compile "${REPO_ROOT}/deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-splash.py"
 run python3 -m py_compile "${REPO_ROOT}/deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-diagnostic.py"

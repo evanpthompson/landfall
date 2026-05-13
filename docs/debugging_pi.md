@@ -27,8 +27,22 @@ Before running `configure.sh`, gather:
       If you don't have one, generate now: `ssh-keygen -t ed25519 -C "you@host"`.
 - [ ] **A reachable Landfall server with an API key.** This is where telemetry
       posts will land. Easiest option: your existing dev macOS instance
-      (`bash tools/scripts/start_mac.sh --server`) plus an API key minted via
-      the management endpoint.
+      (`bash tools/scripts/start_mac.sh --server`) plus an API key.
+
+      Mint a key once and reuse it across every debug image:
+
+      ```bash
+      bash tools/scripts/start_mac.sh --server    # in one terminal
+      bash tools/scripts/mint_api_key.sh --name pi-debug   # in another
+      ```
+
+      Copy the printed `plainTextKey` into `passwords.yaml` as
+      `landfallTelemetryApiKey` (under the `production:` block). **That file
+      is the persistent home for the key** — it's gitignored, it lives in
+      your repo on disk, and `--from-yaml` will pick it up on every
+      subsequent `configure.sh` run. You never need to mint it again unless
+      you deliberately wipe the dev server's Postgres volume (which would
+      also invalidate the hash on the server side and break the old key).
 - [ ] **The Pi's intended LAN address** (static IP), or accept whatever DHCP
       hands out — a static IP just makes "SSH to this specific Pi" deterministic.
 - [ ] **A WiFi SSID + password** if not using ethernet.
