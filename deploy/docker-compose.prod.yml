@@ -14,10 +14,20 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "8080:8080"
       - "127.0.0.1:8082:8082"
+    # Serverpod ships a TCP health endpoint on the main API port. We exec
+    # `nc` (busybox in the runtime image) rather than curl to avoid pulling
+    # in an extra package, and the test only verifies the listener — full
+    # health is implied by the absence of restart-on-crash bursts above.
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 30s
 
   postgres:
     image: pgvector/pgvector:pg16
@@ -40,6 +50,17 @@ services:
     command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
+    # AUTH-aware ping. Without the password redis-cli responds NOAUTH and
+    # the healthcheck would never go green even when the server is fine.
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
   caddy:
     image: caddy:2-alpine
@@ -54,7 +75,16 @@ services:
       - caddy_config:/config
     env_file: .env
     depends_on:
-      - server
+      server:
+        condition: service_healthy
+    # Caddy's admin API on :2019 always answers locally; we hit /config/
+    # which returns the current config tree only when Caddy is healthy.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:2019/config/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   backup:
     image: pgvector/pgvector:pg16
@@ -78,6 +108,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    # `pgrep cron` succeeds only while the cron supervisor is alive — if
+    # the entrypoint script ever dies, the container is marked unhealthy
+    # and `restart: unless-stopped` brings it back. Combined, this means
+    # nightly backups recover from any single-process failure.
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep cron > /dev/null || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
 
 volumes:
   postgres_data:
