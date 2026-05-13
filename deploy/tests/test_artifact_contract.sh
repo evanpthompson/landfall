@@ -14,6 +14,13 @@ required=(
   "${FILES}/landfall-display.service"
   "${FILES}/landfall-splash.py"
   "${FILES}/landfall-diagnostic.py"
+  "${FILES}/landfall-doctor.sh"
+  "${FILES}/landfall-bug-report.sh"
+  "${FILES}/landfall-display-watchdog.sh"
+  "${FILES}/landfall-display-watchdog.service"
+  "${FILES}/landfall-maintenance.sh"
+  "${FILES}/landfall-maintenance.service"
+  "${FILES}/landfall-maintenance.timer"
 )
 
 for path in "${required[@]}"; do
@@ -46,6 +53,29 @@ grep -q 'rename_user.conf' "${STAGE}/00-run.sh"
 # Static IP + SSH key/password staging must run in build.sh
 grep -q 'static-ip.nmconnection' "${REPO_ROOT}/deploy/pi-gen/build.sh"
 grep -q 'authorized_keys' "${REPO_ROOT}/deploy/pi-gen/build.sh"
+
+# Operator tooling must be executable and wired up in 00-run.sh.
+for tool in landfall-doctor.sh landfall-bug-report.sh \
+            landfall-display-watchdog.sh landfall-maintenance.sh; do
+  [[ -x "${FILES}/${tool}" ]] || { echo "${tool} must be executable" >&2; exit 1; }
+done
+
+grep -q 'landfall-doctor.sh' "${STAGE}/00-run.sh"
+grep -q 'landfall-bug-report.sh' "${STAGE}/00-run.sh"
+grep -q '/usr/local/bin/landfall-doctor' "${STAGE}/00-run.sh"
+grep -q '/usr/local/bin/landfall-bug-report' "${STAGE}/00-run.sh"
+grep -q 'systemctl enable landfall-display-watchdog' "${STAGE}/00-run.sh"
+grep -q 'systemctl enable landfall-maintenance.timer' "${STAGE}/00-run.sh"
+
+# Bug-report must redact secret-shaped values.
+grep -q 'PASSWORD|SECRET|KEY|TOKEN|HMAC|PEPPER' "${FILES}/landfall-bug-report.sh"
+
+# Maintenance preserves Docker volumes (Postgres/Redis data must not be wiped).
+grep -q 'volumes=false' "${FILES}/landfall-maintenance.sh"
+
+# Watchdog must wait for firstboot and rate-limit its lightdm restarts.
+grep -q 'INITIALIZED_FLAG' "${FILES}/landfall-display-watchdog.sh"
+grep -q 'last_restart' "${FILES}/landfall-display-watchdog.sh"
 
 grep -q '^Before=landfall-server.service' "${FILES}/landfall-firstboot.service"
 grep -q '^After=.*docker.service.*landfall-firstboot.service' "${FILES}/landfall-server.service"

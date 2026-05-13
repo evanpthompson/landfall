@@ -130,6 +130,22 @@ OTP_LOG_CODES=false
 
 The Pi image does not log OTP codes by default. Without SMTP, email sign-in cannot deliver a code.
 
+### 6. Operator tooling
+
+The image ships with three commands the operator can run after `ssh`'ing in:
+
+| Command | What it does |
+|---|---|
+| `landfall-doctor` | Single-screen health report (~15 probes). Exit 0 if clean. |
+| `landfall-bug-report` | Bundles redacted logs, journals, configs, and `landfall-doctor` output into one `.tgz` to attach to a GitHub issue. |
+| `journalctl -t landfall-display -b --no-pager` | Last boot's display app stdout/stderr (openbox autostart tees here via `systemd-cat`). |
+
+Self-healing services that run without operator action:
+
+- **`landfall-display-watchdog.service`** — sleeps 60s, restarts `lightdm` if the display process is absent for 3 consecutive checks (~3 min). Rate-limited to one restart per 5 minutes to avoid storms.
+- **`landfall-maintenance.timer`** — Sunday 03:30 (±30 min jitter). Truncates Docker JSON logs past 100 MB, vacuums journal to 200 MB, vacuums the display app SQLite DB, and prunes unused Docker images. **Volumes are preserved** so Postgres/Redis data is never wiped.
+- **Diagnostic fallback screen** — if the display binary fast-crashes 3× in a row, the Pi shows hostname, LAN IP, SSH command, and live subsystem probes on screen so the operator knows where to look without needing a separate monitor.
+
 ---
 
 ## Option B: Manual setup on existing Pi OS

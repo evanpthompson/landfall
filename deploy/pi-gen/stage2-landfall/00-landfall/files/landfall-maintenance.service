@@ -1,0 +1,11 @@
+[Unit]
+Description=Landfall weekly maintenance — docker log + journal + SQLite cleanup
+After=docker.service
+ConditionPathExists=/var/lib/landfall/.initialized
+
+[Service]
+Type=oneshot
+ExecStart=/opt/landfall/landfall-maintenance.sh
+TimeoutStartSec=600
+StandardOutput=journal
+StandardError=journal

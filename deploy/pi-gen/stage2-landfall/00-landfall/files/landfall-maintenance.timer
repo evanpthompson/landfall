@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Landfall maintenance weekly
+
+[Timer]
+# Sunday 03:30 local time, with up to 30 minutes of jitter to avoid every Pi
+# in a fleet vacuuming at the same instant.
+OnCalendar=Sun 03:30
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

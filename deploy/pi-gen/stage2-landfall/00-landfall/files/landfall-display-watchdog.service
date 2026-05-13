@@ -1,0 +1,15 @@
+[Unit]
+Description=Landfall display watchdog — restarts lightdm if the display process disappears
+After=landfall-firstboot.service lightdm.service
+Wants=landfall-firstboot.service
+
+[Service]
+Type=simple
+ExecStart=/opt/landfall/landfall-display-watchdog.sh
+Restart=always
+RestartSec=30s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

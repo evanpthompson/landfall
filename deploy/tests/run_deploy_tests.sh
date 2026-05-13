@@ -22,8 +22,15 @@ syntax_check deploy/pi-gen/build.sh
 syntax_check deploy/pi-gen/build-display-docker.sh
 syntax_check deploy/pi-gen/stage2-landfall/00-landfall/00-run.sh
 syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/firstboot.sh
+syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-doctor.sh
+syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-bug-report.sh
+syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-display-watchdog.sh
+syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-maintenance.sh
 syntax_check tools/scripts/build_apk.sh
 syntax_check tools/scripts/build_linux.sh
+
+run python3 -m py_compile "${REPO_ROOT}/deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-splash.py"
+run python3 -m py_compile "${REPO_ROOT}/deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-diagnostic.py"
 
 run bash "${REPO_ROOT}/deploy/scripts/test_setup.sh"
 run bash "${SCRIPT_DIR}/test_firstboot.sh"

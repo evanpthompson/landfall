@@ -202,6 +202,28 @@ install -m 755 "${STAGE_FILES}/landfall-splash.py" \
 install -m 755 "${STAGE_FILES}/landfall-diagnostic.py" \
                "${ROOTFS_DIR}/opt/landfall/landfall-diagnostic.py"
 
+# ── Operator tooling: doctor + bug-report + watchdog + maintenance ───────────
+install -m 755 "${STAGE_FILES}/landfall-doctor.sh" \
+               "${ROOTFS_DIR}/opt/landfall/landfall-doctor.sh"
+install -m 755 "${STAGE_FILES}/landfall-bug-report.sh" \
+               "${ROOTFS_DIR}/opt/landfall/landfall-bug-report.sh"
+install -m 755 "${STAGE_FILES}/landfall-display-watchdog.sh" \
+               "${ROOTFS_DIR}/opt/landfall/landfall-display-watchdog.sh"
+install -m 755 "${STAGE_FILES}/landfall-maintenance.sh" \
+               "${ROOTFS_DIR}/opt/landfall/landfall-maintenance.sh"
+
+# Symlink the operator CLIs into /usr/local/bin so they're on PATH for ssh.
+ln -sf /opt/landfall/landfall-doctor.sh     "${ROOTFS_DIR}/usr/local/bin/landfall-doctor"
+ln -sf /opt/landfall/landfall-bug-report.sh "${ROOTFS_DIR}/usr/local/bin/landfall-bug-report"
+
+# Install the runtime helpers the operator tooling depends on. Failures here
+# must not break the image build — apt resolves on the Pi at first boot if
+# needed, but baking them in saves a network round-trip.
+on_chroot << 'EOF'
+apt-get install -y --no-install-recommends \
+  curl jq sqlite3 wmctrl mesa-utils 2>/dev/null || true
+EOF
+
 # ── Systemd services ──────────────────────────────────────────────────────────
 install -m 644 "${STAGE_FILES}/landfall-firstboot.service" \
                "${ROOTFS_DIR}/etc/systemd/system/landfall-firstboot.service"
@@ -209,9 +231,19 @@ install -m 644 "${STAGE_FILES}/landfall-firstboot.service" \
 install -m 644 "${STAGE_FILES}/landfall-server.service" \
                "${ROOTFS_DIR}/etc/systemd/system/landfall-server.service"
 
+install -m 644 "${STAGE_FILES}/landfall-display-watchdog.service" \
+               "${ROOTFS_DIR}/etc/systemd/system/landfall-display-watchdog.service"
+
+install -m 644 "${STAGE_FILES}/landfall-maintenance.service" \
+               "${ROOTFS_DIR}/etc/systemd/system/landfall-maintenance.service"
+install -m 644 "${STAGE_FILES}/landfall-maintenance.timer" \
+               "${ROOTFS_DIR}/etc/systemd/system/landfall-maintenance.timer"
+
 on_chroot << 'EOF'
 systemctl enable landfall-firstboot
 systemctl enable landfall-server
+systemctl enable landfall-display-watchdog
+systemctl enable landfall-maintenance.timer
 # Block boot until clock is synced — landfall-firstboot waits on this and
 # Pi hardware has no RTC, so without it the first boot writes a .env with
 # a date set to the kernel build time.
