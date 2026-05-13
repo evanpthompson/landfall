@@ -20,6 +20,7 @@ DIM=$'\033[2m'
 RESET=$'\033[0m'
 
 ok()      { echo "${GREEN}✓  $*${RESET}"; }
+warn()    { echo "${YELLOW}⚠  $*${RESET}"; }
 info()    { echo "   $*"; }
 dim()     { echo "${DIM}   $*${RESET}"; }
 section() { echo ""; echo "${CYAN}${BOLD}$*${RESET}"; echo ""; }
