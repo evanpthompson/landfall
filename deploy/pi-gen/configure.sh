@@ -64,6 +64,14 @@ read -r PI_HOSTNAME
 PI_HOSTNAME="${PI_HOSTNAME:-landfall}"
 ok "Hostname: ${PI_HOSTNAME}  (reachable at ${PI_HOSTNAME}.local on your network)"
 
+echo ""
+dim "Timezone — used for the clock card and Serverpod schedulers."
+dim "Examples: America/Chicago, America/Los_Angeles, Europe/London, Asia/Tokyo."
+ask "Timezone [Etc/UTC]:"
+read -r PI_TIMEZONE
+PI_TIMEZONE="${PI_TIMEZONE:-Etc/UTC}"
+ok "Timezone: ${PI_TIMEZONE}"
+
 # ── Email / OTP ───────────────────────────────────────────────────────────────
 section "Email — required for OTP sign-in"
 dim "Users sign in with a one-time code emailed to them. Configure any SMTP provider."
@@ -186,6 +194,7 @@ read -r STRIPE_WEBHOOK_SECRET
   printf "WIFI_SSID=%q\n"      "${WIFI_SSID}"
   printf "WIFI_PASSWORD=%q\n"  "${WIFI_PASSWORD}"
   printf "PI_HOSTNAME=%q\n"    "${PI_HOSTNAME}"
+  printf "PI_TIMEZONE=%q\n"    "${PI_TIMEZONE}"
   echo ""
   echo "# ── Email / OTP ──────────────────────────────────────────────────────────────"
   printf "SMTP_HOST=%q\n"           "${SMTP_HOST:-}"
@@ -215,6 +224,7 @@ echo ""
 echo "${CYAN}${BOLD}Summary${RESET}"
 echo ""
 info "Hostname:  ${PI_HOSTNAME}  →  ${PI_HOSTNAME}.local"
+info "Timezone:  ${PI_TIMEZONE}"
 [[ -n "${WIFI_SSID}" ]] && info "WiFi:      ${WIFI_SSID} (${WIFI_COUNTRY})" \
                         || info "WiFi:      ethernet only"
 [[ -n "${SMTP_HOST:-}" ]]           && info "Email:     ${SMTP_HOST}:${SMTP_PORT:-587} (OTP sign-in enabled)" \

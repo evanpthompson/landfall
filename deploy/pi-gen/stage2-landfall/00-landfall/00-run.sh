@@ -102,6 +102,20 @@ cp -r "${STAGE_FILES}/deploy/." \
 WIFI_COUNTRY="$(cat "${STAGE_FILES}/wifi-country" 2>/dev/null || echo US)"
 echo "REGDOMAIN=${WIFI_COUNTRY}" > "${ROOTFS_DIR}/etc/default/crda"
 
+# ── Timezone ─────────────────────────────────────────────────────────────────
+# Without an explicit timezone the kiosk clock shows UTC on first boot until
+# the user notices. Bake the configured zone into the image and seed
+# /etc/timezone so the displayed time matches the wall clock immediately.
+PI_TIMEZONE="$(cat "${STAGE_FILES}/timezone" 2>/dev/null || echo Etc/UTC)"
+if [[ -f "${ROOTFS_DIR}/usr/share/zoneinfo/${PI_TIMEZONE}" ]]; then
+  echo "${PI_TIMEZONE}" > "${ROOTFS_DIR}/etc/timezone"
+  ln -sf "/usr/share/zoneinfo/${PI_TIMEZONE}" "${ROOTFS_DIR}/etc/localtime"
+else
+  echo "WARNING: timezone ${PI_TIMEZONE} not found in zoneinfo; defaulting to UTC"
+  echo "Etc/UTC" > "${ROOTFS_DIR}/etc/timezone"
+  ln -sf "/usr/share/zoneinfo/Etc/UTC" "${ROOTFS_DIR}/etc/localtime"
+fi
+
 # ── WiFi NetworkManager connection ───────────────────────────────────────────
 if [[ -f "${STAGE_FILES}/wifi.nmconnection" ]]; then
   install -d "${ROOTFS_DIR}/etc/NetworkManager/system-connections"
@@ -150,6 +164,10 @@ install -m 644 "${STAGE_FILES}/landfall-server.service" \
 on_chroot << 'EOF'
 systemctl enable landfall-firstboot
 systemctl enable landfall-server
+# Block boot until clock is synced — landfall-firstboot waits on this and
+# Pi hardware has no RTC, so without it the first boot writes a .env with
+# a date set to the kernel build time.
+systemctl enable systemd-time-wait-sync.service
 EOF
 
 # ── Openbox autostart: launch and auto-restart the display app ────────────────

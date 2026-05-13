@@ -1,7 +1,12 @@
 [Unit]
 Description=Landfall first-boot setup (secrets + Docker image load)
-After=docker.service
+# Block until time is synced — Serverpod, Caddy ACME, and OAuth token
+# refresh all break in subtle ways when the system clock is wrong, and
+# raspberry pi has no RTC so the clock starts at the kernel build date
+# until systemd-timesyncd catches up.
+After=docker.service systemd-time-wait-sync.service
 Requires=docker.service
+Wants=systemd-time-wait-sync.service
 Before=landfall-server.service
 ConditionPathExists=!/var/lib/landfall/.initialized
 

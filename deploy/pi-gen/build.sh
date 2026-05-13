@@ -68,6 +68,7 @@ WIFI_COUNTRY="US"
 WIFI_SSID=""
 WIFI_PASSWORD=""
 PI_HOSTNAME="landfall"
+PI_TIMEZONE="Etc/UTC"
 SMTP_HOST=""
 SMTP_PORT="587"
 SMTP_USERNAME=""
@@ -215,6 +216,9 @@ ok "Integration credentials staged"
 
 # ── Stage: WiFi country (for /etc/default/crda in rootfs) ────────────────────
 echo "${WIFI_COUNTRY}" > "${STAGE_FILES}/wifi-country"
+
+# ── Stage: timezone (consumed by 00-run.sh to seed /etc/timezone) ────────────
+echo "${PI_TIMEZONE}" > "${STAGE_FILES}/timezone"
 
 # ── Stage: WiFi NetworkManager connection ────────────────────────────────────
 if [[ -n "${WIFI_SSID}" ]]; then
