@@ -2,7 +2,9 @@
 
 **Alpha** · The ambient display layer for the agentic era.
 
-Landfall is an open-source, self-hosted platform that makes your AI-assisted life visible. A beautiful ambient display for your home — calendar, weather, photos, clock — running on Fire TV or any Android device. And the place where agent output lands instead of disappearing into chat windows.
+Landfall is an open-source, self-hosted platform that makes your AI-assisted life visible. A beautiful ambient display for your home — calendar, weather, photos, clock — running on macOS, Raspberry Pi, or Fire TV. And the place where agent output lands instead of disappearing into chat windows.
+
+> **Project status:** Alpha. Expect breaking changes between commits. Run for fun, file bugs, hold off on production deployments.
 
 ## What it does
 
@@ -77,6 +79,11 @@ Landfall is self-host first for alpha. Start with the Docker server and a Fire T
 ## Agent integration
 
 See [docs/agent_integration_guide.md](docs/agent_integration_guide.md) for pushing cards from any agent or automation.
+
+## Contributing
+
+PRs and bug reports welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+For security issues, please follow the private disclosure process in [SECURITY.md](SECURITY.md).
 
 ## License
 
