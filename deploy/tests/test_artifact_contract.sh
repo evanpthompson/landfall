@@ -25,6 +25,7 @@ required=(
   "${FILES}/landfall-repair.service"
   "${FILES}/landfall-repair.timer"
   "${FILES}/landfall-db-check.sh"
+  "${FILES}/landfall-update.sh"
 )
 
 for path in "${required[@]}"; do
@@ -110,6 +111,24 @@ grep -q 'dtoverlay=vc4-kms-v3d' "${STAGE}/00-run.sh"
 grep -q 'LANDFALL_CREDENTIAL_REFRESH_FAILED' \
   "${REPO_ROOT}/server/landfall_server/lib/src/calendar/calendar_refresh_call.dart"
 grep -q 'LANDFALL_CREDENTIAL_REFRESH_FAILED' "${FILES}/landfall-doctor.sh"
+
+# Tier 3:
+# - Telemetry must be a compile-time no-op (build constants empty by default).
+# - Server route must require auth (same authenticateRequest as cards).
+# - OTA stub must reference docs/updating.md.
+grep -q "defaultValue: ''" \
+  "${REPO_ROOT}/apps/display/lib/src/app/app_config.dart"
+grep -q 'kLandfallTelemetryEndpoint' \
+  "${REPO_ROOT}/apps/display/lib/src/app/telemetry.dart"
+grep -q 'authenticateRequest' \
+  "${REPO_ROOT}/server/landfall_server/lib/src/web/routes/rest/telemetry_route.dart"
+grep -q 'TelemetryRoute()' "${REPO_ROOT}/server/landfall_server/lib/server.dart"
+grep -q 'docs/updating.md' "${FILES}/landfall-update.sh"
+
+# Telemetry passthrough from configure → build → firstboot → runtime .env.
+grep -q 'LANDFALL_TELEMETRY_ENDPOINT' "${REPO_ROOT}/deploy/pi-gen/configure.sh"
+grep -q 'LANDFALL_TELEMETRY_ENDPOINT' "${REPO_ROOT}/deploy/pi-gen/build.sh"
+grep -q 'LANDFALL_TELEMETRY_ENDPOINT' "${FILES}/firstboot.sh"
 
 grep -q '^Before=landfall-server.service' "${FILES}/landfall-firstboot.service"
 grep -q '^After=.*docker.service.*landfall-firstboot.service' "${FILES}/landfall-server.service"

@@ -28,6 +28,7 @@ syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-display-wa
 syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-maintenance.sh
 syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-repair.sh
 syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-db-check.sh
+syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-update.sh
 syntax_check tools/scripts/build_apk.sh
 syntax_check tools/scripts/build_linux.sh
 

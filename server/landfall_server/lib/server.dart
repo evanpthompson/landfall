@@ -15,6 +15,7 @@ import 'src/profile/profile_schedule_call.dart';
 import 'src/web/routes/app_config_route.dart';
 import 'src/web/routes/rest/card_detail_route.dart';
 import 'src/web/routes/rest/cards_route.dart';
+import 'src/web/routes/rest/telemetry_route.dart';
 import 'src/web/routes/rest/ticker_route.dart';
 import 'src/web/routes/calendar_oauth_route.dart';
 import 'src/web/routes/microsoft_calendar_oauth_route.dart';
@@ -125,6 +126,12 @@ void run(List<String> args) async {
   pod.webServer.addRoute(CardsRoute(), '/api/v1/cards');
   pod.webServer.addRoute(CardDetailRoute(), '/api/v1/cards/**');
   pod.webServer.addRoute(TickerRoute(), '/api/v1/ticker');
+
+  // Dev-build-only self-hosted telemetry. Production builds (Pi appliance
+  // image, public Fire TV APK, public macOS dmg) are built WITHOUT
+  // LANDFALL_TELEMETRY_ENDPOINT and therefore never POST to this route.
+  // See docs/build_defines.md.
+  pod.webServer.addRoute(TelemetryRoute(), '/api/v1/telemetry/event');
 
   // Start the server.
   await pod.start();

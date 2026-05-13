@@ -12,6 +12,8 @@ platform — keep it in sync when adding new ones.
 |--------|---------|---------|---------------------------|
 | `LANDFALL_DEFAULT_SERVER_URL` | The API server URL. When non-empty the setup wizard is skipped. | empty | `apps/display/lib/src/app/app_config.dart` |
 | `LANDFALL_WEB_SERVER_URL` | Override for the Serverpod web server (port 8082) when not behind a reverse proxy. Falls back to `LANDFALL_DEFAULT_SERVER_URL`. | empty | same |
+| `LANDFALL_TELEMETRY_ENDPOINT` | **Dev builds only.** Self-hosted telemetry URL (e.g. `http://192.168.1.42:8080/api/v1/telemetry/event`). Empty in every production build — `Telemetry` is a compile-time no-op. | empty | same |
+| `LANDFALL_TELEMETRY_API_KEY` | API key used to authenticate telemetry POSTs (must be paired with `LANDFALL_TELEMETRY_ENDPOINT`). | empty | same |
 | `INTEGRATION_TEST_SERVER_URL` | Test-only — bypasses the wizard for integration runs. | empty | same |
 | `INTEGRATION_TEST_WIZARD_MODE` | Test-only — runs the wizard against an in-memory DB. | `false` | same |
 
@@ -65,6 +67,32 @@ flutter build apk --release
 To bake a fixed server in (kiosk fleets, dev test builds), add the
 defines the same way as macOS — point them at your reachable Landfall
 server (Pi hostname, VPS domain, etc.).
+
+## Dev-build-only telemetry
+
+Production builds (the shipping Pi appliance image, public Fire TV APK, public
+macOS dmg) must **not** be built with `LANDFALL_TELEMETRY_ENDPOINT` set.
+Leaving it empty makes the `Telemetry` class a no-op that emits zero network
+traffic — see `apps/display/lib/src/app/telemetry.dart`.
+
+For dev / self-hosted instrumentation, point it at your own Landfall server:
+
+```bash
+# Local dev — server running on the same Mac
+flutter run -d macos \
+  --dart-define=LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/ \
+  --dart-define=LANDFALL_TELEMETRY_ENDPOINT=http://127.0.0.1:8080/api/v1/telemetry/event \
+  --dart-define=LANDFALL_TELEMETRY_API_KEY=lf_dev_xxxxx
+
+# Pi dev image — set in configure.sh's landfall-build.conf:
+#   LANDFALL_TELEMETRY_ENDPOINT=http://your-dev-server:8080/api/v1/telemetry/event
+#   LANDFALL_TELEMETRY_API_KEY=lf_dev_xxxxx
+# These get baked into /home/landfall/landfall/deploy/.env at firstboot, NOT
+# into the binary itself — so a dev Pi image can be re-pointed without rebuilding.
+```
+
+The server route logs each event as a single-line `[LANDFALL_TELEMETRY]`
+marker; `landfall-doctor` and ad-hoc `grep` consume them without parsing JSON.
 
 ## Platform divergences worth remembering
 

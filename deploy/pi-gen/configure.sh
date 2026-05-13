@@ -444,6 +444,13 @@ fi
   echo "# ── Advanced (set manually if needed) ───────────────────────────────────────"
   echo "# STRIPE_WEBHOOK_SECRET=  # add if using Stripe for pack purchases"
   printf "STRIPE_WEBHOOK_SECRET=%q\n"    "${STRIPE_WEBHOOK_SECRET:-}"
+  echo ""
+  echo "# ── Telemetry (DEV BUILDS ONLY — leave blank for production) ─────────────────"
+  echo "# Self-hosted telemetry endpoint. When set, the Pi posts crash-loop and"
+  echo "# app_launched events to your own Landfall server. NEVER set on shipping"
+  echo "# images. See docs/build_defines.md."
+  printf "LANDFALL_TELEMETRY_ENDPOINT=%q\n" "${LANDFALL_TELEMETRY_ENDPOINT:-}"
+  printf "LANDFALL_TELEMETRY_API_KEY=%q\n"  "${LANDFALL_TELEMETRY_API_KEY:-}"
 } > "${CONF_FILE}"
 
 # ── Summary ───────────────────────────────────────────────────────────────────

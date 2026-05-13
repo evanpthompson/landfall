@@ -10,6 +10,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'package:display/src/app/app_config.dart';
 import 'package:display/src/app/startup_decision.dart';
+import 'package:display/src/app/telemetry.dart';
 import 'package:display/src/data/local/app_database.dart';
 import 'package:display/src/data/settings/drift_display_settings_repository.dart';
 import 'package:display/app.dart';
@@ -18,6 +19,9 @@ import 'package:display/setup_wizard_app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GoogleFonts.config.allowRuntimeFetching = false;
+
+  // Dev-build-only: fires only when LANDFALL_TELEMETRY_ENDPOINT was baked in.
+  Telemetry.event('app_launched');
 
   // Desktop window setup. On Linux the pi-gen image bypasses this path —
   // GTK fullscreen is set in native C++ (linux/runner/my_application.cc)

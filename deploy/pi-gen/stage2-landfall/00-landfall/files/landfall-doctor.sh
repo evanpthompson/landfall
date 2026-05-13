@@ -203,6 +203,83 @@ if [[ -f "${crash_log}" ]]; then
   fi
 fi
 
+# ── Health trends ────────────────────────────────────────────────────────────
+# Parse the existing autostart log for display launches/exits over a 7-day
+# window. The log lines look like:
+#   [2026-05-13T01:24:55-05:00] Flutter display exited status=0 uptime=1893s
+# Average uptime and fast-crash rate are the most useful long-run health signals.
+sect "Health trends (last 7 days)"
+if [[ -f "${crash_log}" ]]; then
+  cutoff="$(date -d '7 days ago' +%Y-%m-%d 2>/dev/null || echo '')"
+  if [[ -n "${cutoff}" ]]; then
+    launches=$(awk -v c="${cutoff}" '
+      /launching Flutter display/ {
+        # Extract YYYY-MM-DD from the leading [ISO timestamp]
+        match($0, /\[([0-9]{4}-[0-9]{2}-[0-9]{2})/, m)
+        if (m[1] >= c) count++
+      }
+      END { print count + 0 }
+    ' "${crash_log}")
+    # Sum uptimes for averaging + count fast crashes (<5s).
+    read -r total_uptime exits fast_crashes <<< "$(awk -v c="${cutoff}" '
+      /Flutter display exited/ {
+        match($0, /\[([0-9]{4}-[0-9]{2}-[0-9]{2})/, m)
+        if (m[1] < c) next
+        match($0, /uptime=([0-9]+)s/, u)
+        if (u[1] == "") next
+        total += u[1] + 0
+        count++
+        if (u[1] + 0 < 5) fast++
+      }
+      END { print (total+0), (count+0), (fast+0) }
+    ' "${crash_log}")"
+
+    if [[ ${exits:-0} -gt 0 ]]; then
+      avg_uptime=$((total_uptime / exits))
+      avg_h=$((avg_uptime / 3600))
+      avg_m=$(((avg_uptime % 3600) / 60))
+      pct_fast=$((fast_crashes * 100 / exits))
+      pass "launches: ${launches}    exits: ${exits}    avg uptime: ${avg_h}h ${avg_m}m"
+      if [[ ${pct_fast} -ge 20 ]]; then
+        fail "${fast_crashes}/${exits} exits (${pct_fast}%) were fast crashes (<5s) — display is unstable"
+      elif [[ ${pct_fast} -ge 5 ]]; then
+        warn "${fast_crashes}/${exits} exits (${pct_fast}%) were fast crashes (<5s)"
+      else
+        pass "fast-crash rate: ${pct_fast}% (${fast_crashes}/${exits})"
+      fi
+    else
+      pass "no exit events in the last 7 days (steady-state operation)"
+    fi
+  fi
+fi
+
+# Repair attempts last 7 days — if these are non-zero something's been broken.
+repair_state="/var/lib/landfall/repair-state"
+if [[ -f "${repair_state}" ]]; then
+  cutoff="$(date -d '7 days ago' +%Y-%m-%d 2>/dev/null || echo '')"
+  if [[ -n "${cutoff}" ]]; then
+    while IFS= read -r line; do
+      [[ -z "${line}" ]] && continue
+      condition="$(echo "${line}" | awk '{print $1}')"
+      count="$(echo "${line}" | awk '{print $2}')"
+      if [[ ${count:-0} -eq 0 ]]; then
+        pass "repair ${condition}: 0 attempts last 7 days"
+      else
+        warn "repair ${condition}: ${count} attempt(s) last 7 days"
+      fi
+    done < <(
+      awk -v c="${cutoff}" '$1 >= c {
+        n = split($2, parts, "=")
+        cond = parts[1]; val = parts[2] + 0
+        sums[cond] += val
+      }
+      END {
+        for (c in sums) print c, sums[c]
+      }' "${repair_state}"
+    )
+  fi
+fi
+
 # ── Integrations ─────────────────────────────────────────────────────────────
 # The server emits structured markers on every credential refresh failure.
 # We grep the last 24h of journal output and dedupe by provider+email so the

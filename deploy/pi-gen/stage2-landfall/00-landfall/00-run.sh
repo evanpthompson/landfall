@@ -239,10 +239,13 @@ install -m 755 "${STAGE_FILES}/landfall-repair.sh" \
                "${ROOTFS_DIR}/opt/landfall/landfall-repair.sh"
 install -m 755 "${STAGE_FILES}/landfall-db-check.sh" \
                "${ROOTFS_DIR}/opt/landfall/landfall-db-check.sh"
+install -m 755 "${STAGE_FILES}/landfall-update.sh" \
+               "${ROOTFS_DIR}/opt/landfall/landfall-update.sh"
 
 # Symlink the operator CLIs into /usr/local/bin so they're on PATH for ssh.
 ln -sf /opt/landfall/landfall-doctor.sh     "${ROOTFS_DIR}/usr/local/bin/landfall-doctor"
 ln -sf /opt/landfall/landfall-bug-report.sh "${ROOTFS_DIR}/usr/local/bin/landfall-bug-report"
+ln -sf /opt/landfall/landfall-update.sh     "${ROOTFS_DIR}/usr/local/bin/landfall-update"
 
 # Install the runtime helpers the operator tooling depends on. Failures here
 # must not break the image build — apt resolves on the Pi at first boot if
@@ -351,6 +354,24 @@ python3 /opt/landfall/landfall-splash.py || log "splash exited non-zero (continu
 
     if [[ ${consecutive_fast_crashes} -ge 3 ]]; then
       log "display crashed ${consecutive_fast_crashes}x — showing diagnostic screen"
+      # Dev-build-only telemetry: when the operator built this image with a
+      # telemetry endpoint baked into .env, fire a crash_loop event so the
+      # self-hosted telemetry server sees the incident. Reads endpoint from
+      # the runtime .env to avoid baking a URL into the image.
+      if [[ -f /home/landfall/landfall/deploy/.env ]]; then
+        # shellcheck disable=SC1091
+        tel_url="$(grep -E '^LANDFALL_TELEMETRY_ENDPOINT=' /home/landfall/landfall/deploy/.env 2>/dev/null | head -1 | cut -d= -f2-)"
+        tel_key="$(grep -E '^LANDFALL_TELEMETRY_API_KEY=' /home/landfall/landfall/deploy/.env 2>/dev/null | head -1 | cut -d= -f2-)"
+        if [[ -n "${tel_url}" ]]; then
+          curl -sS -m 5 -X POST "${tel_url}" \
+            -H "Content-Type: application/json" \
+            ${tel_key:+-H "Authorization: Bearer ${tel_key}"} \
+            -d "{\"event\":\"display_crash_loop\",\"platform\":\"linux\",\"app_version\":\"pi-image\",\"timestamp\":\"$(date --iso-8601=seconds)\",\"props\":{\"consecutive_fast_crashes\":${consecutive_fast_crashes},\"last_status\":${status},\"hostname\":\"$(hostname)\"}}" \
+            > /dev/null 2>&1 \
+            && log "telemetry: posted display_crash_loop event" \
+            || log "telemetry: post failed (continuing)"
+        fi
+      fi
       python3 /opt/landfall/landfall-diagnostic.py || true
       # Reset counter and retry — operator may have fixed something via ssh.
       consecutive_fast_crashes=0

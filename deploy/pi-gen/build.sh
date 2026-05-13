@@ -64,6 +64,8 @@ echo ""
 
 # ── Load build configuration ──────────────────────────────────────────────────
 CONF_FILE="${SCRIPT_DIR}/landfall-build.conf"
+LANDFALL_TELEMETRY_ENDPOINT=""
+LANDFALL_TELEMETRY_API_KEY=""
 WIFI_COUNTRY="US"
 WIFI_SSID=""
 WIFI_PASSWORD=""
@@ -217,6 +219,9 @@ rsync -a --exclude='pi-gen/' "${REPO_ROOT}/deploy/" "${DEPLOY_DEST}/"
   printf "MICROSOFT_CLIENT_ID=%q\n"      "${MICROSOFT_CLIENT_ID}"
   printf "MICROSOFT_CLIENT_SECRET=%q\n"  "${MICROSOFT_CLIENT_SECRET}"
   printf "STRIPE_WEBHOOK_SECRET=%q\n"    "${STRIPE_WEBHOOK_SECRET}"
+  # Dev-only telemetry passthrough. Blank in production builds.
+  printf "LANDFALL_TELEMETRY_ENDPOINT=%q\n" "${LANDFALL_TELEMETRY_ENDPOINT:-}"
+  printf "LANDFALL_TELEMETRY_API_KEY=%q\n"  "${LANDFALL_TELEMETRY_API_KEY:-}"
 } > "${STAGE_FILES}/integrations.env"
 ok "Integration credentials staged"
 

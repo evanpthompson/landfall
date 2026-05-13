@@ -50,3 +50,29 @@ const kLandfallWebServerUrl = String.fromEnvironment(
   'LANDFALL_WEB_SERVER_URL',
   defaultValue: '',
 );
+
+/// Telemetry endpoint URL injected via `--dart-define`.
+///
+/// **DEV BUILDS ONLY.** When empty (the default — and the value used by every
+/// production build path: Pi appliance image, Fire TV APK, macOS dmg) the
+/// [Telemetry] class is a no-op and emits zero network traffic. When set,
+/// the display POSTs JSON-encoded events here. Self-hosted only — point at
+/// your own Landfall server's `/api/v1/telemetry/event` endpoint:
+///
+/// ```
+/// flutter build linux --release \
+///   --dart-define=LANDFALL_TELEMETRY_ENDPOINT=http://192.168.1.42:8080/api/v1/telemetry/event \
+///   --dart-define=LANDFALL_TELEMETRY_API_KEY=lf_dev_xxxxx
+/// ```
+const kLandfallTelemetryEndpoint = String.fromEnvironment(
+  'LANDFALL_TELEMETRY_ENDPOINT',
+  defaultValue: '',
+);
+
+/// API key used to authenticate telemetry POSTs against the self-hosted
+/// server. Required alongside [kLandfallTelemetryEndpoint] — the route uses
+/// the same `authenticateRequest` flow as the rest of `/api/v1/*`.
+const kLandfallTelemetryApiKey = String.fromEnvironment(
+  'LANDFALL_TELEMETRY_API_KEY',
+  defaultValue: '',
+);
