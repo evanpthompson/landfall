@@ -51,5 +51,80 @@ void main() {
       expect(config.allowInsecure, isFalse);
       expect(config.logCodes, isFalse);
     });
+
+    test('otpLogCodes password key forces logging even in production', () {
+      final config = OtpEmailConfig.fromPasswords(
+        const {'otpLogCodes': 'true'},
+        runMode: ServerpodRunMode.production,
+      );
+
+      expect(config.logCodes, isTrue);
+    });
+
+    test('isConfigured requires both host and fromEmail', () {
+      final hostOnly = OtpEmailConfig.fromPasswords(
+        const {'smtpHost': 'smtp.example.com'},
+        runMode: ServerpodRunMode.production,
+      );
+      expect(hostOnly.isConfigured, isFalse);
+
+      final emailOnly = OtpEmailConfig.fromPasswords(
+        const {'smtpFromEmail': 'noreply@example.com'},
+        runMode: ServerpodRunMode.production,
+      );
+      expect(emailOnly.isConfigured, isFalse);
+    });
+
+    test('port defaults to 587 when not set', () {
+      final config = OtpEmailConfig.fromPasswords(
+        const {},
+        runMode: ServerpodRunMode.production,
+      );
+      expect(config.port, equals(587));
+    });
+
+    test('port defaults to 587 for unparseable value', () {
+      final config = OtpEmailConfig.fromPasswords(
+        const {'smtpPort': 'not-a-number'},
+        runMode: ServerpodRunMode.production,
+      );
+      expect(config.port, equals(587));
+    });
+
+    test('fromName defaults to Landfall when not set', () {
+      final config = OtpEmailConfig.fromPasswords(
+        const {},
+        runMode: ServerpodRunMode.production,
+      );
+      expect(config.fromName, equals('Landfall'));
+    });
+
+    test('parseBool accepts 1 and yes in addition to true', () {
+      final withOne = OtpEmailConfig.fromPasswords(
+        const {
+          'smtpHost': 'h',
+          'smtpFromEmail': 'e@e.com',
+          'smtpSsl': '1',
+          'smtpAllowInsecure': 'yes',
+        },
+        runMode: ServerpodRunMode.production,
+      );
+      expect(withOne.ssl, isTrue);
+      expect(withOne.allowInsecure, isTrue);
+    });
+
+    test('parseBool rejects false, no, and empty string', () {
+      final config = OtpEmailConfig.fromPasswords(
+        const {
+          'smtpSsl': 'false',
+          'smtpAllowInsecure': 'no',
+          'otpLogCodes': '',
+        },
+        runMode: ServerpodRunMode.production,
+      );
+      expect(config.ssl, isFalse);
+      expect(config.allowInsecure, isFalse);
+      expect(config.logCodes, isFalse);
+    });
   });
 }

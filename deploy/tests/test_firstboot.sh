@@ -113,3 +113,36 @@ assert_not_contains "${tmp2}/deploy/.env" '^GOOGLE_REDIRECT_URI=.+'
 assert_not_contains "${tmp2}/deploy/.env" '^MICROSOFT_REDIRECT_URI=.+'
 [[ -f "${tmp2}/state/.initialized" ]] || { echo "initialized flag missing without tarball" >&2; exit 1; }
 rm -rf "${tmp2}"
+
+# ── OTP_LOG_CODES: true when no SMTP host (already covered above), ─────────────
+# and false when SMTP_HOST is configured.
+tmp3="$(mktemp -d)"
+printf 'smtp-host-test\n' > "${tmp3}/hostname"
+cat > "${tmp3}/integrations.env" <<'ENV'
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=user@example.com
+SMTP_PASSWORD=secretpass
+SMTP_FROM_EMAIL=noreply@example.com
+SMTP_FROM_NAME=Landfall
+SMTP_SSL=false
+SMTP_ALLOW_INSECURE=false
+ENV
+
+printf 'fake image\n' > "${tmp3}/landfall-server.tar.gz"
+
+LANDFALL_HOSTNAME_FILE="${tmp3}/hostname" \
+LANDFALL_ENV_FILE="${tmp3}/deploy/.env" \
+LANDFALL_INTEGRATIONS_FILE="${tmp3}/integrations.env" \
+LANDFALL_INITIALIZED_FLAG="${tmp3}/state/.initialized" \
+LANDFALL_IMAGE_TARBALL="${tmp3}/landfall-server.tar.gz" \
+LANDFALL_DOCKER_BIN="${docker_stub}" \
+LANDFALL_DATA_DIR="${tmp3}/data/landfall" \
+  bash "${FIRSTBOOT}"
+
+assert_contains "${tmp3}/deploy/.env" '^SMTP_HOST=smtp\.example\.com$'
+assert_contains "${tmp3}/deploy/.env" '^SMTP_PORT=587$'
+assert_contains "${tmp3}/deploy/.env" '^SMTP_USERNAME=user@example\.com$'
+assert_contains "${tmp3}/deploy/.env" '^SMTP_FROM_EMAIL=noreply@example\.com$'
+assert_contains "${tmp3}/deploy/.env" '^OTP_LOG_CODES=false$'
+rm -rf "${tmp3}"
