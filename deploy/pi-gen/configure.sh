@@ -120,6 +120,10 @@ if [[ -n "${FROM_YAML_FILE}" ]]; then
 
   STRIPE_WEBHOOK_SECRET="$(yaml_get stripeWebhookSecret "${FROM_YAML_FILE}")"
 
+  # Dev-build-only telemetry — empty in production passwords.yaml.
+  LANDFALL_TELEMETRY_ENDPOINT="${LANDFALL_TELEMETRY_ENDPOINT:-$(yaml_get landfallTelemetryEndpoint "${FROM_YAML_FILE}")}"
+  LANDFALL_TELEMETRY_API_KEY="${LANDFALL_TELEMETRY_API_KEY:-$(yaml_get landfallTelemetryApiKey "${FROM_YAML_FILE}")}"
+
   if [[ -n "${OWM_API_KEY}" && -z "${WEATHER_LATITUDE}" ]]; then
     warn "openWeatherMapApiKey set but weatherLatitude/weatherLocationName missing — weather cards will be blank."
   fi
