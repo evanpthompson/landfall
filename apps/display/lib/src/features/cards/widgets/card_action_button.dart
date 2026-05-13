@@ -54,11 +54,27 @@ class CardActionButton extends StatelessWidget {
 
   void _fireWebhook(String url) {
     // Intentionally not awaited — webhook delivery is best-effort from client.
-    // Agent is responsible for any retry / confirmation logic.
+    // Agent is responsible for any retry / confirmation logic. Errors are
+    // logged so failed deliveries are debuggable rather than silently dropped
+    // (OWASP A10:2025 — Mishandling of Exceptional Conditions).
     final uri = Uri.tryParse(url);
-    if (uri == null) return;
-    launchUrl(uri, mode: LaunchMode.externalNonBrowserApplication)
-        .catchError((_) => false);
+    if (uri == null) {
+      debugPrint('CardActionButton: webhook URL failed to parse: $url');
+      return;
+    }
+    Future<void>(() async {
+      try {
+        final ok = await launchUrl(
+          uri,
+          mode: LaunchMode.externalNonBrowserApplication,
+        );
+        if (!ok) {
+          debugPrint('CardActionButton: webhook launch returned false: $url');
+        }
+      } catch (error) {
+        debugPrint('CardActionButton: webhook launch failed: $url — $error');
+      }
+    });
   }
 
   void _handleTap(BuildContext context) {
