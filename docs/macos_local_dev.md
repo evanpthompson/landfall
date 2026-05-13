@@ -109,11 +109,11 @@ Most commonly the Docker containers aren't ready yet — wait a few seconds and 
 **App shows a blank screen / connection refused**
 The server URL stored in the app's local database should be `http://localhost:8080/`. Verify and correct it:
 ```bash
-sqlite3 ~/Library/Containers/com.example.display/Data/Documents/landfall.db \
+sqlite3 ~/Library/Containers/io.landfall.display/Data/Documents/landfall.db \
   "SELECT server_url FROM display_settings_entries;"
 
 # If it shows a Pi IP or anything other than http://localhost:8080/, fix it:
-sqlite3 ~/Library/Containers/com.example.display/Data/Documents/landfall.db \
+sqlite3 ~/Library/Containers/io.landfall.display/Data/Documents/landfall.db \
   "UPDATE display_settings_entries SET server_url='http://localhost:8080/';"
 ```
 
@@ -123,3 +123,27 @@ A previous server process may still be running:
 kill $(lsof -ti :8080)
 ```
 Then re-run the launcher.
+
+## Testing the Companion QR from your phone
+
+The Companion QR encodes a URL the server resolves at runtime: if
+`LANDFALL_DOMAIN` is set in the environment the server returns
+`https://$LANDFALL_DOMAIN`; otherwise it picks the first RFC1918 IPv4
+address on the host (typically `192.168.x.x` on home WiFi) and serves
+on `:8082`.
+
+For local dev that usually means the QR points at
+`http://<your-mac-lan-ip>:8082/c/<uuid>`. To make this reachable from a
+phone on the same WiFi:
+
+1. Confirm the Serverpod web server is bound to the LAN, not just
+   loopback. The dev compose file binds `:8082` to all interfaces by
+   default.
+2. macOS firewall: System Settings → Network → Firewall → allow
+   incoming connections to `dart`, or temporarily turn the firewall
+   off while testing.
+3. Scan the QR — your phone should load the companion page directly.
+
+If the QR ends up pointing at `127.0.0.1`, the server could not find a
+LAN address; set `LANDFALL_DOMAIN=<your-mac-lan-ip>` in the server's
+environment as a workaround.

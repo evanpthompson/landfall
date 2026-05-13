@@ -38,8 +38,16 @@ Never declare a feature complete without confirming all three levels (unit, widg
 
 ## Architecture
 
-See `docs/architecture_decisions.md` for rationale on all major decisions.
-See `docs/project_plan_v1.md` for the phased delivery plan.
+The full architecture-decisions record and the phased delivery plan live in
+the maintainer's private notes (`~/files/automation/landfall/`) and are not
+in this repo. The public-facing equivalents are:
+
+- [`docs/card-schema.md`](docs/card-schema.md) — the Card model
+- [`docs/theme-schema.md`](docs/theme-schema.md) — Theme tokens
+- [`docs/layout-schema.md`](docs/layout-schema.md) — Layout schema
+- [`docs/companion_card_design.md`](docs/companion_card_design.md) — Companion design
+- [`docs/build_defines.md`](docs/build_defines.md) — `--dart-define` reference
+- [`docs/dependency_policy.md`](docs/dependency_policy.md) — pubspec / lock-file policy
 
 ## Commit discipline
 

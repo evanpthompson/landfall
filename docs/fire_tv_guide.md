@@ -43,7 +43,7 @@ Use HTTPS only when the server is configured with a real certificate that the Fi
 
 ```bash
 adb devices
-adb shell monkey -p <application_id> 1
+adb shell monkey -p io.landfall.display 1
 adb logcat
 ```
 

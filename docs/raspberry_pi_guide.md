@@ -19,6 +19,7 @@ bash deploy/pi-gen/configure.sh
 This interactive wizard asks for:
 - **WiFi SSID and password** — baked into the image; the Pi connects automatically on first boot
 - **Hostname** — default `landfall` (Pi appears as `landfall.local` on your network)
+- **Timezone** — default `Etc/UTC`; set to e.g. `America/Chicago` so the clock card reflects local time on first boot (the Pi has no RTC, so without this the kiosk shows UTC until you SSH in to fix it)
 - **OpenWeatherMap API key** — optional; skip to configure later
 
 Runtime secrets such as the database password, JWT keys, API-key HMAC secret, OAuth token encryption key, and photo signing secret are not baked into the image. `landfall-firstboot.service` generates them on the Pi during first boot and writes `/home/landfall/landfall/deploy/.env`.
@@ -67,11 +68,12 @@ Use `/dev/rdisk4` (raw device) not `/dev/disk4` — it's significantly faster.
 Plug in the SD card and power on the Pi. First boot takes about **2 minutes**:
 
 1. The Pi connects to WiFi (or ethernet)
-2. `landfall-firstboot.service` derives `LANDFALL_DOMAIN` from `/etc/hostname`, generates runtime secrets, writes `.env`, and loads the server Docker image into Docker's storage
-3. `landfall-server.service` starts Postgres, Redis, Caddy, and the Landfall server
-4. lightdm auto-logs in the `landfall` user and starts an Openbox session
-5. Openbox autostart waits for the local server health check, then launches the Flutter Linux display binary fullscreen with `LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/`
-6. The display app saves that local server URL as completed setup on first launch and connects to the server
+2. `systemd-time-wait-sync.service` blocks until the clock is sync'd to NTP — the Pi has no RTC, so without this barrier `.env` would be written with a date months in the past and downstream OAuth flows would reject every token as "not yet valid"
+3. `landfall-firstboot.service` derives `LANDFALL_DOMAIN` from `/etc/hostname`, generates runtime secrets, writes `.env`, and loads the server Docker image into Docker's storage
+4. `landfall-server.service` starts Postgres, Redis, Caddy, and the Landfall server. Each container has a healthcheck and `restart: unless-stopped` so a single crashed service recovers automatically
+5. lightdm auto-logs in the `landfall` user and starts an Openbox session
+6. Openbox autostart waits for the local server health check, then launches the Flutter Linux display binary fullscreen with `LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/`
+7. The display app saves that local server URL as completed setup on first launch and connects to the server
 
 No keyboard or manual steps required.
 

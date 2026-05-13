@@ -100,12 +100,15 @@ docker compose -f docker-compose.prod.yml up -d
 
 First run builds the server image from source (~5–15 minutes depending on hardware). Subsequent starts are instant.
 
-Check that it's running:
+Each container has a healthcheck and `restart: unless-stopped`, so a single service crash recovers automatically. `docker compose ps` reports `healthy` or `unhealthy` per service:
+
 ```bash
 docker compose -f docker-compose.prod.yml ps
 curl http://localhost:8080/card/getCards -X POST -H 'Content-Type: application/json' -d '{}'
 # Should return: []
 ```
+
+If a service shows `unhealthy` for more than a minute after startup, inspect its logs (`docker compose logs <service>`) — startup grace periods are 30 s for the server and 90 s for the backup container; longer than that points at a real problem.
 
 ---
 
