@@ -49,6 +49,53 @@ yaml_get() {
     | head -1 | sed 's/[[:space:]]*$//'
 }
 
+# Compare the user's passwords.yaml against passwords.yaml.template and warn
+# on drift (e.g. a template key was renamed but the user's yaml still uses the
+# old name). Caught this scenario in the wild: googleClientId was renamed to
+# googleOAuthClientId in the template + server code, but the local yaml kept
+# the old name, so --from-yaml silently produced empty values and Google
+# integrations stayed dark on the resulting Pi image. Warning-only — empty
+# values are sometimes intentional (skipping optional integrations).
+yaml_keys() {
+  grep -E "^[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*:" "$1" \
+    | sed -E "s/^[[:space:]]*([a-zA-Z_][a-zA-Z0-9_]*):.*/\1/" \
+    | sort -u
+}
+
+validate_yaml_keys() {
+  local yaml="$1"
+  local template="${SCRIPT_DIR}/../../server/landfall_server/config/passwords.yaml.template"
+  [[ -f "${template}" ]] || return 0
+
+  local tpl_keys user_keys missing extras
+  tpl_keys=$(yaml_keys "${template}")
+  user_keys=$(yaml_keys "${yaml}")
+  missing=$(comm -23 <(printf '%s\n' "${tpl_keys}") <(printf '%s\n' "${user_keys}"))
+  extras=$(comm -13 <(printf '%s\n' "${tpl_keys}") <(printf '%s\n' "${user_keys}"))
+
+  [[ -z "${missing}" ]] && return 0
+
+  warn "passwords.yaml is missing keys expected by passwords.yaml.template:"
+  local k k_tail e
+  while IFS= read -r k; do
+    [[ -z "${k}" ]] && continue
+    local hint=""
+    if (( ${#k} >= 8 )); then
+      k_tail="${k: -8}"
+      while IFS= read -r e; do
+        [[ -z "${e}" ]] && continue
+        if (( ${#e} >= 8 )) && [[ "${e: -8}" == "${k_tail}" ]]; then
+          hint=" (your yaml has ${BOLD}${e}${RESET} — likely renamed)"
+          break
+        fi
+      done <<< "${extras}"
+    fi
+    info "  - ${k}${hint}"
+  done <<< "${missing}"
+  info "Compare against: ${template}"
+  echo ""
+}
+
 # ── Argument parsing ──────────────────────────────────────────────────────────
 FROM_ENV_FILE=""
 FROM_YAML_FILE=""
@@ -75,6 +122,9 @@ if [[ -n "${FROM_YAML_FILE}" ]]; then
   info "Pi-specific fields (hostname, WiFi, timezone) use environment variable"
   info "overrides or their defaults. Set them before calling this script, e.g.:"
   info "  PI_HOSTNAME=kitchen-pi PI_TIMEZONE=America/Chicago bash configure.sh --from-yaml ..."
+  echo ""
+
+  validate_yaml_keys "${FROM_YAML_FILE}"
 
   # Pi-specific fields — not in passwords.yaml, use env overrides or defaults
   WIFI_COUNTRY="${WIFI_COUNTRY:-US}"

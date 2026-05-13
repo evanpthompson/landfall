@@ -39,6 +39,7 @@ run python3 -m py_compile "${REPO_ROOT}/deploy/pi-gen/stage2-landfall/00-landfal
 run bash "${REPO_ROOT}/deploy/scripts/test_setup.sh"
 run bash "${SCRIPT_DIR}/test_firstboot.sh"
 run bash "${SCRIPT_DIR}/test_configure.sh"
+run bash "${SCRIPT_DIR}/test_configure_yaml_drift.sh"
 run bash "${SCRIPT_DIR}/test_build_stage_only.sh"
 run bash "${SCRIPT_DIR}/test_artifact_contract.sh"
 run bash "${SCRIPT_DIR}/test_fire_tv_android.sh"
