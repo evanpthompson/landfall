@@ -30,11 +30,28 @@ def poll_server(on_ready):
 
 def main():
     root = tk.Tk()
-    root.attributes("-fullscreen", True)
+    # Force the window to cover the whole screen using detected geometry.
+    # `attributes('-fullscreen', True)` alone is unreliable on first boot
+    # because the WM may not be fully initialised when the window is mapped;
+    # `overrideredirect(True)` strips decorations but causes the WM to ignore
+    # the fullscreen hint entirely, so the window keeps Tk's default 200x200
+    # size and ends up in the corner. Setting explicit screen-sized geometry
+    # before fullscreen request avoids both failure modes.
+    root.update_idletasks()
+    sw = root.winfo_screenwidth()
+    sh = root.winfo_screenheight()
+    root.geometry(f"{sw}x{sh}+0+0")
     root.configure(bg=BG)
-    root.overrideredirect(True)
+    root.attributes("-fullscreen", True)
+    root.attributes("-topmost", True)
+    root.config(cursor="none")
 
-    frame = tk.Frame(root, bg=BG)
+    # Cover the root with a frame matching screen size so layout is centered
+    # regardless of any residual WM decoration.
+    canvas = tk.Frame(root, bg=BG, width=sw, height=sh)
+    canvas.place(x=0, y=0, relwidth=1, relheight=1)
+
+    frame = tk.Frame(canvas, bg=BG)
     frame.place(relx=0.5, rely=0.5, anchor="center")
 
     tk.Label(
