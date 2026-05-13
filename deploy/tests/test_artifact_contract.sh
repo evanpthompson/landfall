@@ -18,6 +18,7 @@ required=(
   "${FILES}/landfall-bug-report.sh"
   "${FILES}/landfall-display-prep.sh"
   "${FILES}/landfall-display-prep.service"
+  "${FILES}/landfall-display-session.sh"
   "${FILES}/landfall-display-watchdog.sh"
   "${FILES}/landfall-display-watchdog.service"
   "${FILES}/landfall-maintenance.sh"
@@ -49,8 +50,8 @@ fi
 
 # Diagnostic fallback must be wired up in the openbox autostart so a repeated
 # display crash escapes the black-screen-with-cursor state.
-grep -q 'landfall-diagnostic.py' "${STAGE}/00-run.sh"
-grep -q 'consecutive_fast_crashes' "${STAGE}/00-run.sh"
+grep -q 'landfall-diagnostic.py' "${FILES}/landfall-display-session.sh"
+grep -q 'consecutive_fast_crashes' "${FILES}/landfall-display-session.sh"
 
 # SSH must be force-enabled and the rename_user banner removed in the rootfs
 # so the operator can reach the device even before a wizard runs.
@@ -81,8 +82,21 @@ grep -q 'systemctl enable landfall-display-watchdog' "${STAGE}/00-run.sh"
 grep -q '^Before=.*lightdm.service' "${FILES}/landfall-display-prep.service"
 grep -q 'autologin-user=landfall' "${FILES}/landfall-display-prep.sh"
 grep -q 'rpi-first-boot-wizard' "${FILES}/landfall-display-prep.sh"
+grep -q 'piwiz.desktop' "${FILES}/landfall-display-prep.sh"
 [[ -x "${FILES}/landfall-display-prep.sh" ]] \
   || { echo "landfall-display-prep.sh must be executable" >&2; exit 1; }
+
+# Openbox sources /etc/xdg/openbox/autostart with /bin/sh (dash), so the
+# autostart heredoc in 00-run.sh MUST be POSIX-compatible. The bash-only
+# session logic lives in landfall-display-session.sh and is invoked from the
+# stub via `bash`. Reject any reintroduction of process substitution (>(...))
+# in the autostart heredoc.
+grep -q '/bin/bash /opt/landfall/landfall-display-session.sh' "${STAGE}/00-run.sh"
+# Process-substitution check: search the 00-run.sh AUTOSTART heredoc only.
+awk '/<<.*AUTOSTART/{f=1;next} /^AUTOSTART$/{f=0} f' "${STAGE}/00-run.sh" \
+  | grep -q '>(' \
+  && { echo "00-run.sh autostart heredoc uses bash process substitution >(...) — must stay POSIX-shell-compatible" >&2; exit 1; } \
+  || true
 grep -q 'systemctl enable landfall-maintenance.timer' "${STAGE}/00-run.sh"
 
 # Bug-report must redact secret-shaped values.

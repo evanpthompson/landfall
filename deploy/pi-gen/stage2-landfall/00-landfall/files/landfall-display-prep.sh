@@ -39,16 +39,38 @@ for f in /etc/lightdm/lightdm.conf.d/*piwiz* \
   fi
 done
 
+# 2b. Remove XDG autostart entries for the first-boot wizard. piwiz.desktop
+# tries to exec a `piwiz` binary that we've already purged, leaving an
+# `exec: piwiz: not found` error in every session.
+for f in /etc/xdg/autostart/piwiz.desktop \
+         /etc/xdg/autostart/*wizard*.desktop; do
+  if [[ -e "${f}" ]]; then
+    log "removing wizard XDG autostart: ${f}"
+    rm -f "${f}"
+  fi
+done
+
 # 3. Remove the rpi-first-boot-wizard user if present.
 if getent passwd rpi-first-boot-wizard >/dev/null 2>&1; then
   log "removing rpi-first-boot-wizard user"
-  # --remove-home cleans up /home/rpi-first-boot-wizard; ignore failure if
-  # any process still has files open — the user account itself is what
-  # matters for the autologin lookup.
+  # If a lingering user-session is holding the account open (systemd --user,
+  # dbus-daemon), userdel refuses with exit 8. Terminate the session and
+  # kill any remaining processes before retrying. At boot time none of this
+  # will be running yet; this path matters only for manual / post-update runs.
+  loginctl terminate-user rpi-first-boot-wizard 2>/dev/null || true
+  pkill -KILL -u rpi-first-boot-wizard 2>/dev/null || true
+  # Brief grace period for systemd to reap the user manager.
+  for _ in 1 2 3 4 5; do
+    pgrep -u rpi-first-boot-wizard >/dev/null 2>&1 || break
+    sleep 1
+  done
+  # --remove-home cleans up /home/rpi-first-boot-wizard. If removal still
+  # fails the system will keep booting; the autologin user is what matters
+  # for the black-screen symptom.
   deluser --remove-home rpi-first-boot-wizard 2>/dev/null \
     || userdel -r rpi-first-boot-wizard 2>/dev/null \
     || userdel rpi-first-boot-wizard 2>/dev/null \
-    || log "WARNING: could not remove rpi-first-boot-wizard user"
+    || log "WARNING: could not remove rpi-first-boot-wizard user (still in use)"
 fi
 
 # 4. Purge the wizard package if it crept back in.
