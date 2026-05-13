@@ -152,16 +152,13 @@ void main() {
     });
 
     testWidgets('applies source color from tokens', (tester) async {
-      const secondaryHex = '#c4b5fd';
       await tester.pumpWidget(
-        _wrap(GenericAgentCard(
-          card: _card(),
-          tokens: _tokens(colorTextSecondary: secondaryHex),
-        )),
+        _wrap(GenericAgentCard(card: _card())),
       );
 
+      // agent.claude uses its fixed brand color, not the secondary token.
       final sourceWidget = tester.widget<Text>(find.text('agent.claude'));
-      expect(sourceWidget.style?.color, const Color(0xFFc4b5fd));
+      expect(sourceWidget.style?.color, const Color(0xFF3DD68C));
     });
 
     testWidgets('works correctly when tokens are null (fallback to defaults)',

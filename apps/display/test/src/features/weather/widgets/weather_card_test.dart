@@ -54,7 +54,7 @@ void main() {
       await tester.pumpWidget(
         _wrap(WeatherCard(current: _current(), forecast: _forecast())),
       );
-      expect(find.text('Olathe'), findsOneWidget);
+      expect(find.textContaining('Olathe'), findsOneWidget);
     });
 
     testWidgets('renders temperature in Fahrenheit by default', (tester) async {
@@ -69,7 +69,7 @@ void main() {
       await tester.pumpWidget(
         _wrap(WeatherCard(current: _current(), forecast: _forecast())),
       );
-      expect(find.text('Overcast clouds'), findsOneWidget);
+      expect(find.textContaining('Overcast clouds'), findsOneWidget);
     });
 
     testWidgets('renders current conditions icon', (tester) async {

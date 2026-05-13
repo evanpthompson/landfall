@@ -54,7 +54,10 @@ class ClockCard extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: Column(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.topLeft,
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -95,6 +98,7 @@ class ClockCard extends StatelessWidget {
                       .copyWith(color: textSecondary)),
             ],
           ],
+        ),
         ),
       ),
     );

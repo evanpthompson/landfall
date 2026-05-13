@@ -79,7 +79,7 @@ void main() {
   group('CalendarCard — daily view (default)', () {
     testWidgets('shows UPCOMING heading', (tester) async {
       await tester.pumpWidget(_wrap(CalendarCard(events: const [])));
-      expect(find.text('UPCOMING'), findsOneWidget);
+      expect(find.text('CALENDAR — TODAY'), findsOneWidget);
     });
 
     testWidgets('renders event title in daily list', (tester) async {
@@ -96,7 +96,7 @@ void main() {
         events: const [],
         displayConfig: const {},
       )));
-      expect(find.text('UPCOMING'), findsOneWidget);
+      expect(find.text('CALENDAR — TODAY'), findsOneWidget);
     });
   });
 
@@ -138,17 +138,17 @@ void main() {
       )));
       await tester.pump();
 
-      expect(find.text('THIS WEEK'), findsOneWidget);
+      expect(find.text('CALENDAR — THIS WEEK'), findsOneWidget);
     });
 
-    testWidgets('does not show UPCOMING heading in weekly mode', (tester) async {
+    testWidgets('does not show daily heading in weekly mode', (tester) async {
       await tester.pumpWidget(_wrap(CalendarCard(
         events: const [],
         displayConfig: const {'view': 'weekly'},
       )));
       await tester.pump();
 
-      expect(find.text('UPCOMING'), findsNothing);
+      expect(find.text('CALENDAR — TODAY'), findsNothing);
     });
 
     testWidgets('golden — weekly view', (tester) async {
