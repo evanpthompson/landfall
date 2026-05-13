@@ -64,6 +64,45 @@ read -r PI_HOSTNAME
 PI_HOSTNAME="${PI_HOSTNAME:-landfall}"
 ok "Hostname: ${PI_HOSTNAME}  (reachable at ${PI_HOSTNAME}.local on your network)"
 
+# ── Email / OTP ───────────────────────────────────────────────────────────────
+section "Email — required for OTP sign-in"
+dim "Users sign in with a one-time code emailed to them. Configure any SMTP provider."
+dim "Gmail: use an App Password (myaccount.google.com > Security > 2-Step > App passwords)"
+dim "SendGrid / Mailgun / AWS SES also work with port 587 and TLS."
+echo ""
+ask "SMTP host (e.g. smtp.gmail.com) [blank to skip — codes logged to server logs]:"
+read -r SMTP_HOST
+SMTP_PORT="587"
+SMTP_USERNAME=""
+SMTP_PASSWORD=""
+SMTP_FROM_EMAIL=""
+SMTP_FROM_NAME="Landfall"
+SMTP_SSL="false"
+SMTP_ALLOW_INSECURE="false"
+if [[ -n "${SMTP_HOST}" ]]; then
+  ask "SMTP port [587]:"
+  read -r SMTP_PORT
+  SMTP_PORT="${SMTP_PORT:-587}"
+  ask "SMTP username:"
+  read -r SMTP_USERNAME
+  ask "SMTP password:"
+  read -rs SMTP_PASSWORD
+  echo ""
+  ask "From email address (e.g. noreply@yourdomain.com):"
+  read -r SMTP_FROM_EMAIL
+  ask "From name [Landfall]:"
+  read -r SMTP_FROM_NAME
+  SMTP_FROM_NAME="${SMTP_FROM_NAME:-Landfall}"
+  ask "Use SSL/TLS? (true/false) [false — most providers use STARTTLS on 587]:"
+  read -r SMTP_SSL
+  SMTP_SSL="${SMTP_SSL:-false}"
+  ok "SMTP configured: ${SMTP_HOST}:${SMTP_PORT} (from: ${SMTP_FROM_EMAIL})"
+else
+  dim "Skipped — OTP codes will be written to server logs. Add SMTP later:"
+  dim "  nano /home/landfall/landfall/deploy/.env"
+  dim "  sudo systemctl restart landfall-server"
+fi
+
 # ── Weather ───────────────────────────────────────────────────────────────────
 section "Weather  (optional)"
 dim "Free API key at openweathermap.org/api"
@@ -130,6 +169,16 @@ read -r STRIPE_WEBHOOK_SECRET
   printf "WIFI_PASSWORD=%q\n"  "${WIFI_PASSWORD}"
   printf "PI_HOSTNAME=%q\n"    "${PI_HOSTNAME}"
   echo ""
+  echo "# ── Email / OTP ──────────────────────────────────────────────────────────────"
+  printf "SMTP_HOST=%q\n"           "${SMTP_HOST:-}"
+  printf "SMTP_PORT=%q\n"           "${SMTP_PORT:-587}"
+  printf "SMTP_USERNAME=%q\n"       "${SMTP_USERNAME:-}"
+  printf "SMTP_PASSWORD=%q\n"       "${SMTP_PASSWORD:-}"
+  printf "SMTP_FROM_EMAIL=%q\n"     "${SMTP_FROM_EMAIL:-}"
+  printf "SMTP_FROM_NAME=%q\n"      "${SMTP_FROM_NAME:-Landfall}"
+  printf "SMTP_SSL=%q\n"            "${SMTP_SSL:-false}"
+  printf "SMTP_ALLOW_INSECURE=%q\n" "${SMTP_ALLOW_INSECURE:-false}"
+  echo ""
   echo "# ── Optional integrations ────────────────────────────────────────────────────"
   printf "OWM_API_KEY=%q\n"              "${OWM_API_KEY:-}"
   printf "GOOGLE_CLIENT_ID=%q\n"         "${GOOGLE_CLIENT_ID:-}"
@@ -147,6 +196,8 @@ echo ""
 info "Hostname:  ${PI_HOSTNAME}  →  ${PI_HOSTNAME}.local"
 [[ -n "${WIFI_SSID}" ]] && info "WiFi:      ${WIFI_SSID} (${WIFI_COUNTRY})" \
                         || info "WiFi:      ethernet only"
+[[ -n "${SMTP_HOST:-}" ]]           && info "Email:     ${SMTP_HOST}:${SMTP_PORT:-587} (OTP sign-in enabled)" \
+                                     || info "Email:     not configured — OTP codes logged to server logs"
 [[ -n "${OWM_API_KEY:-}" ]]         && info "Weather:   enabled" \
                                      || info "Weather:   not configured"
 [[ -n "${GOOGLE_CLIENT_ID:-}" ]]    && info "Google:    enabled (Calendar + Drive)" \
