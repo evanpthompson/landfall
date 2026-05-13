@@ -71,21 +71,54 @@ List<String> validateCardPushRequest(CardPushRequest request) {
   // Agents can push arbitrary actionsJson, so we enforce a size cap, a type
   // allowlist, label bounds, and URL scheme restrictions here — before any
   // client ever receives or renders the data. See OWASP A05:2025.
+  //
+  // Schema versioning (OWASP A08:2025). Two accepted shapes:
+  //   1. Bare JSON array — implicit `schemaVersion: 1` (legacy compatibility).
+  //   2. Object: `{ "schemaVersion": int, "actions": [...] }` — explicit.
+  // Unknown schemaVersion values are rejected so future renderers can
+  // distinguish format generations without crashing on data they cannot read.
   if (request.actionsJson != null) {
     const maxActionsJsonBytes = 8192;
     const maxActions = 5;
     const maxLabelLength = 80;
     const allowedTypes = {'dismiss', 'openUrl', 'webhook', 'openSettings'};
     const allowedSchemes = {'https', 'http'};
+    const supportedSchemaVersions = {1};
 
     if (request.actionsJson!.length > maxActionsJsonBytes) {
       errors.add('actionsJson must be at most $maxActionsJsonBytes bytes.');
     } else {
       try {
-        final list = jsonDecode(request.actionsJson!);
-        if (list is! List) {
-          errors.add('actionsJson must be a JSON array.');
+        final decoded = jsonDecode(request.actionsJson!);
+        List<dynamic>? list;
+        if (decoded is List) {
+          list = decoded;
+        } else if (decoded is Map) {
+          final schemaVersion = decoded['schemaVersion'];
+          if (schemaVersion is! int) {
+            errors.add(
+              'actionsJson.schemaVersion must be an integer.',
+            );
+          } else if (!supportedSchemaVersions.contains(schemaVersion)) {
+            errors.add(
+              'actionsJson.schemaVersion=$schemaVersion is not supported. '
+              'Supported: ${supportedSchemaVersions.join(", ")}.',
+            );
+          } else {
+            final actions = decoded['actions'];
+            if (actions is! List) {
+              errors.add('actionsJson.actions must be a JSON array.');
+            } else {
+              list = actions;
+            }
+          }
         } else {
+          errors.add(
+            'actionsJson must be a JSON array or '
+            '{schemaVersion, actions} object.',
+          );
+        }
+        if (list != null) {
           if (list.length > maxActions) {
             errors.add(
               'actionsJson must contain at most $maxActions actions.',

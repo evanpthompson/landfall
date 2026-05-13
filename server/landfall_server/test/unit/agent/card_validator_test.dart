@@ -282,11 +282,57 @@ void main() {
         expect(errors.any((e) => e.contains('actionsJson')), isTrue);
       });
 
-      test('actionsJson that is not a JSON array is rejected', () {
+      test('actionsJson that is neither an array nor a {schemaVersion,actions} '
+          'object is rejected', () {
         final errors = validateCardPushRequest(
           _valid(actionsJson: '{"type":"dismiss","label":"x"}'),
         );
-        expect(errors.any((e) => e.contains('array')), isTrue);
+        // The object has no schemaVersion field, so it cannot be treated as
+        // a versioned wrapper — and it is not a bare array either.
+        expect(
+          errors.any((e) =>
+              e.contains('schemaVersion') ||
+              e.contains('array')),
+          isTrue,
+          reason: 'expected wrapper-shape or array rejection, got $errors',
+        );
+      });
+
+      test('actionsJson wrapper with explicit schemaVersion=1 accepted', () {
+        final errors = validateCardPushRequest(
+          _valid(
+            actionsJson:
+                '{"schemaVersion":1,"actions":[{"type":"dismiss","label":"Go"}]}',
+          ),
+        );
+        expect(errors, isEmpty);
+      });
+
+      test('actionsJson wrapper with unknown schemaVersion rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(
+            actionsJson:
+                '{"schemaVersion":99,"actions":[{"type":"dismiss","label":"Go"}]}',
+          ),
+        );
+        expect(
+          errors.any((e) => e.contains('schemaVersion=99')),
+          isTrue,
+          reason: 'expected schemaVersion rejection, got $errors',
+        );
+      });
+
+      test('actionsJson wrapper with non-int schemaVersion rejected', () {
+        final errors = validateCardPushRequest(
+          _valid(
+            actionsJson:
+                '{"schemaVersion":"v1","actions":[{"type":"dismiss","label":"Go"}]}',
+          ),
+        );
+        expect(
+          errors.any((e) => e.contains('schemaVersion')),
+          isTrue,
+        );
       });
 
       test('actionsJson with invalid JSON is rejected', () {
