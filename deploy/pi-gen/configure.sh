@@ -108,7 +108,25 @@ section "Weather  (optional)"
 dim "Free API key at openweathermap.org/api"
 ask "OpenWeatherMap API key [blank to skip]:"
 read -r OWM_API_KEY
-[[ -z "${OWM_API_KEY}" ]] && skip
+WEATHER_LATITUDE=""
+WEATHER_LONGITUDE=""
+WEATHER_LOCATION_NAME=""
+if [[ -n "${OWM_API_KEY}" ]]; then
+  dim "Enter your location coordinates. Find lat/lon at maps.google.com (right-click → What's here?)."
+  ask "Latitude (e.g. 38.89):"
+  read -r WEATHER_LATITUDE
+  ask "Longitude (e.g. -94.88):"
+  read -r WEATHER_LONGITUDE
+  ask "Location display name (e.g. Kansas City):"
+  read -r WEATHER_LOCATION_NAME
+  if [[ -n "${WEATHER_LATITUDE}" && -n "${WEATHER_LOCATION_NAME}" ]]; then
+    ok "Weather: ${WEATHER_LOCATION_NAME} (${WEATHER_LATITUDE}, ${WEATHER_LONGITUDE})"
+  else
+    warn "Weather API key set but location not configured — weather cards will be blank."
+  fi
+else
+  skip
+fi
 
 # ── Google Calendar + Drive Photos ───────────────────────────────────────────
 section "Google Calendar + Drive Photos  (optional)"
@@ -181,6 +199,9 @@ read -r STRIPE_WEBHOOK_SECRET
   echo ""
   echo "# ── Optional integrations ────────────────────────────────────────────────────"
   printf "OWM_API_KEY=%q\n"              "${OWM_API_KEY:-}"
+  printf "WEATHER_LATITUDE=%q\n"         "${WEATHER_LATITUDE:-}"
+  printf "WEATHER_LONGITUDE=%q\n"        "${WEATHER_LONGITUDE:-}"
+  printf "WEATHER_LOCATION_NAME=%q\n"    "${WEATHER_LOCATION_NAME:-}"
   printf "GOOGLE_CLIENT_ID=%q\n"         "${GOOGLE_CLIENT_ID:-}"
   printf "GOOGLE_CLIENT_SECRET=%q\n"     "${GOOGLE_CLIENT_SECRET:-}"
   printf "GOOGLE_DRIVE_FOLDER_ID=%q\n"   "${GOOGLE_DRIVE_FOLDER_ID:-}"
@@ -198,7 +219,7 @@ info "Hostname:  ${PI_HOSTNAME}  →  ${PI_HOSTNAME}.local"
                         || info "WiFi:      ethernet only"
 [[ -n "${SMTP_HOST:-}" ]]           && info "Email:     ${SMTP_HOST}:${SMTP_PORT:-587} (OTP sign-in enabled)" \
                                      || info "Email:     not configured — OTP codes logged to server logs"
-[[ -n "${OWM_API_KEY:-}" ]]         && info "Weather:   enabled" \
+[[ -n "${OWM_API_KEY:-}" ]]         && info "Weather:   ${WEATHER_LOCATION_NAME:-unknown location} (${WEATHER_LATITUDE:-?}, ${WEATHER_LONGITUDE:-?})" \
                                      || info "Weather:   not configured"
 [[ -n "${GOOGLE_CLIENT_ID:-}" ]]    && info "Google:    enabled (Calendar + Drive)" \
                                      || info "Google:    not configured"

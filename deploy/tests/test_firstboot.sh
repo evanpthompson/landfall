@@ -57,6 +57,9 @@ GOOGLE_CLIENT_SECRET='google secret'
 MICROSOFT_CLIENT_ID=microsoft-client
 MICROSOFT_CLIENT_SECRET='microsoft secret'
 OWM_API_KEY=weather-key
+WEATHER_LATITUDE=51.5074
+WEATHER_LONGITUDE=-0.1278
+WEATHER_LOCATION_NAME=London
 STRIPE_WEBHOOK_SECRET=stripe-key
 ENV
 
@@ -87,7 +90,10 @@ for key in \
   SMTP_FROM_NAME \
   SMTP_SSL \
   SMTP_ALLOW_INSECURE \
-  OTP_LOG_CODES; do
+  OTP_LOG_CODES \
+  WEATHER_LATITUDE \
+  WEATHER_LONGITUDE \
+  WEATHER_LOCATION_NAME; do
   assert_contains "${env_file}" "^${key}=.+"
 done
 

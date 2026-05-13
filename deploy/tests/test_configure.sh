@@ -18,7 +18,7 @@ run_configure() {
 # Prompts (blank → default): country, SSID (skip), hostname, SMTP host (skip),
 # weather, Google client ID (skip), Microsoft client ID (skip), Stripe.
 default_conf="${tmp}/default.conf"
-run_configure "${default_conf}" '\n\n\n\n\n\n\n\n'
+run_configure "${default_conf}" '\n\n\n\n\n\n\n\n\n'
 
 bash -n "${default_conf}"
 source "${default_conf}"
@@ -28,6 +28,9 @@ source "${default_conf}"
 [[ "${PI_HOSTNAME}" == "landfall" ]]
 [[ "${SMTP_HOST}" == "" ]]
 [[ "${OWM_API_KEY}" == "" ]]
+[[ "${WEATHER_LATITUDE}" == "" ]]
+[[ "${WEATHER_LONGITUDE}" == "" ]]
+[[ "${WEATHER_LOCATION_NAME}" == "" ]]
 [[ "${GOOGLE_CLIENT_ID}" == "" ]]
 [[ "${MICROSOFT_CLIENT_ID}" == "" ]]
 [[ "${STRIPE_WEBHOOK_SECRET}" == "" ]]
@@ -41,7 +44,7 @@ source "${default_conf}"
 #   Microsoft client ID, Microsoft client secret,
 #   Stripe secret.
 configured_conf="${tmp}/configured.conf"
-run_configure "${configured_conf}" 'GB\nKitchen WiFi\npa ss $word\nkitchen-pi\nsmtp.example.com\n\nuser@example.com\nsmtppass\nnoreply@example.com\n\n\nweather key\nclient id\ngoogle secret\ndrive folder\nms client\nms secret\nstripe secret\n'
+run_configure "${configured_conf}" 'GB\nKitchen WiFi\npa ss $word\nkitchen-pi\nsmtp.example.com\n\nuser@example.com\nsmtppass\nnoreply@example.com\n\n\nweather key\n51.5074\n-0.1278\nLondon\nclient id\ngoogle secret\ndrive folder\nms client\nms secret\nstripe secret\n'
 
 bash -n "${configured_conf}"
 source "${configured_conf}"
@@ -57,6 +60,9 @@ source "${configured_conf}"
 [[ "${SMTP_FROM_NAME}" == "Landfall" ]]
 [[ "${SMTP_SSL}" == "false" ]]
 [[ "${OWM_API_KEY}" == "weather key" ]]
+[[ "${WEATHER_LATITUDE}" == "51.5074" ]]
+[[ "${WEATHER_LONGITUDE}" == "-0.1278" ]]
+[[ "${WEATHER_LOCATION_NAME}" == "London" ]]
 [[ "${GOOGLE_CLIENT_ID}" == "client id" ]]
 [[ "${GOOGLE_CLIENT_SECRET}" == "google secret" ]]
 [[ "${GOOGLE_DRIVE_FOLDER_ID}" == "drive folder" ]]
