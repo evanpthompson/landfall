@@ -226,7 +226,8 @@ source "${yaml_conf}"
 [[ "${STATIC_IP_CIDR}" == "172.16.0.42/24" ]]
 [[ "${STATIC_GATEWAY}" == "172.16.0.1" ]]
 [[ "${STATIC_DNS}" == "9.9.9.9,8.8.4.4" ]]
-[[ "${STATIC_INTERFACE}" == "eth0" ]]
+# WiFi is set and no explicit STATIC_INTERFACE env var → must auto-select wlan0.
+[[ "${STATIC_INTERFACE}" == "wlan0" ]]
 [[ "${SMTP_HOST}" == "smtp.sendgrid.net" ]]
 [[ "${SMTP_USERNAME}" == "apikey" ]]
 [[ "${SMTP_PASSWORD}" == "SG.testkey" ]]
@@ -251,6 +252,35 @@ source "${yaml_defaults_conf}"
 [[ "${PI_TIMEZONE}" == "Etc/UTC" ]]
 [[ "${WIFI_COUNTRY}" == "US" ]]
 [[ "${WIFI_SSID}" == "" ]]
+
+# ── yaml_get: quoted value with inline comment must not capture the comment ───
+# Reproduces the real-world bug where staticInterface: 'eth0'  # 'eth0' for
+# wired was parsed as eth0'  # 'eth0' for wired (greedy quote match).
+comment_yaml="${tmp}/comment_test.yaml"
+cat > "${comment_yaml}" <<'EOF'
+production:
+  staticInterface: 'eth0'           # 'eth0' for wired, 'wlan0' for WiFi
+  smtpHost: 'smtp.example.com'
+  smtpPort: '587'
+  smtpUsername: 'user'
+  smtpPassword: 'pass'
+  smtpFromEmail: 'a@b.com'
+  smtpSsl: 'false'
+  smtpAllowInsecure: 'false'
+EOF
+comment_conf="${tmp}/comment_test.conf"
+run_configure_from_yaml "${comment_conf}" "${comment_yaml}"
+source "${comment_conf}"
+[[ "${STATIC_INTERFACE}" == "eth0" ]] \
+  || { echo "FAIL: yaml_get captured comment: STATIC_INTERFACE=${STATIC_INTERFACE}"; exit 1; }
+
+# ── --from-yaml: explicit STATIC_INTERFACE env var beats WiFi auto-wlan0 ──────
+explicit_if_conf="${tmp}/explicit_if.conf"
+run_configure_from_yaml "${explicit_if_conf}" "${yaml_input}" \
+  WIFI_SSID=MyNet WIFI_PASSWORD=pass STATIC_INTERFACE=eth0
+source "${explicit_if_conf}"
+[[ "${STATIC_INTERFACE}" == "eth0" ]] \
+  || { echo "FAIL: explicit STATIC_INTERFACE=eth0 was overridden to ${STATIC_INTERFACE}"; exit 1; }
 
 # ── --from-yaml: env-var override beats YAML value for SSH/static IP ─────────
 override_conf="${tmp}/from_yaml_override.conf"

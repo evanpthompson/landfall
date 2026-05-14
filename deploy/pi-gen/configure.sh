@@ -43,8 +43,8 @@ skip()    { echo "${YELLOW}   ↩  skipped — add via SSH later${RESET}"; }
 # Matches:  <whitespace>key: 'value'  or  key: "value"  or  key: bare_value
 yaml_get() {
   local key="$1" file="$2"
-  sed -n "s/^[[:space:]]*${key}: *'\(.*\)'.*/\1/p;
-          s/^[[:space:]]*${key}: *\"\(.*\)\".*/\1/p;
+  sed -n "s/^[[:space:]]*${key}: *'\([^']*\)'.*/\1/p;
+          s/^[[:space:]]*${key}: *\"\([^\"]*\)\".*/\1/p;
           s/^[[:space:]]*${key}: *\([^'\"#][^#]*\)/\1/p" "${file}" \
     | head -1 | sed 's/[[:space:]]*$//'
 }
@@ -143,8 +143,16 @@ if [[ -n "${FROM_YAML_FILE}" ]]; then
   STATIC_IP_CIDR="${STATIC_IP_CIDR:-$(yaml_get staticIpCidr "${FROM_YAML_FILE}")}"
   STATIC_GATEWAY="${STATIC_GATEWAY:-$(yaml_get staticGateway "${FROM_YAML_FILE}")}"
   STATIC_DNS="${STATIC_DNS:-$(yaml_get staticDns "${FROM_YAML_FILE}")}"
+  _STATIC_INTERFACE_EXPLICIT="${STATIC_INTERFACE:-}"
   STATIC_INTERFACE="${STATIC_INTERFACE:-$(yaml_get staticInterface "${FROM_YAML_FILE}")}"
-  STATIC_INTERFACE="${STATIC_INTERFACE:-eth0}"
+  # When WiFi is configured and the operator did not explicitly pass
+  # STATIC_INTERFACE, force wlan0 — keeping eth0 would leave the Pi with no
+  # network on a WiFi-only setup even if the credentials were baked correctly.
+  if [[ -n "${WIFI_SSID}" && -z "${_STATIC_INTERFACE_EXPLICIT}" ]]; then
+    STATIC_INTERFACE="wlan0"
+  else
+    STATIC_INTERFACE="${STATIC_INTERFACE:-eth0}"
+  fi
 
   # Integration credentials from passwords.yaml (production section keys)
   SMTP_HOST="$(yaml_get smtpHost "${FROM_YAML_FILE}")"

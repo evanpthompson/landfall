@@ -36,8 +36,10 @@ Skip the wizard by pre-populating the answers — see [`deploy/pi-gen/landfall-b
 # From .env-style file
 bash deploy/pi-gen/configure.sh --from-env my-pi.conf
 
-# Or pull integration credentials directly from a passwords.yaml
-PI_HOSTNAME=kitchen-pi PI_TIMEZONE=America/Chicago \
+# Or pull integration credentials directly from a passwords.yaml.
+# Pass WiFi credentials as env vars — they are not stored in passwords.yaml.
+WIFI_SSID='YourNetwork' WIFI_PASSWORD='yourpassword' \
+  PI_HOSTNAME=kitchen-pi PI_TIMEZONE=America/Chicago \
   bash deploy/pi-gen/configure.sh \
     --from-yaml server/landfall_server/config/passwords.yaml
 ```
