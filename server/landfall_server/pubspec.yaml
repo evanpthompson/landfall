@@ -31,15 +31,31 @@ serverpod:
     # Starts the server and applies migrations
     start: dart bin/main.dart --apply-migrations
 
-    # Build the Flutter web app and copy it to the server's web directory.
+    # Build the companion Flutter web app and copy it to the server's web
+    # directory. The companion shares the display package source tree but
+    # uses a separate entrypoint (lib/companion_web_main.dart).
+    #
+    # --no-web-resources-cdn ships CanvasKit locally (no www.gstatic.com
+    # fetch) so the companion works on the LAN even without WAN access —
+    # required by the self-hosted, offline-first architecture and the strict
+    # CSP in deploy/Caddyfile.
+    #
+    # dart2js (no --wasm): flutter_secure_storage_web 1.2.1, which the kiosk
+    # depends on, still imports dart:html and cannot be compiled by dart2wasm.
+    # The companion is a phone-side page where dart2js is sufficient.
+    #
     # Windows uses xcopy since flutter's --output flag doesn't work there.
     # See: https://github.com/flutter/flutter/issues/157886
     flutter_build:
       windows: >-
         (if exist web\app rmdir /S /Q web\app)
-        & cd /D ..\landfall_flutter
-        && flutter build web --base-href /app/ --wasm
-        && xcopy /E /I /Y build\web ..\landfall_server\web\app
+        & cd /D ..\..\apps\display
+        && flutter build web --target lib/companion_web_main.dart --base-href /app/ --no-web-resources-cdn
+        && xcopy /E /I /Y build\web ..\..\server\landfall_server\web\app
       posix: |
-        cd ../landfall_flutter
-        flutter build web --base-href /app/ --wasm --output ../landfall_server/web/app
+        cd ../../apps/display
+        flutter build web \
+          --target lib/companion_web_main.dart \
+          --base-href /app/ \
+          --no-web-resources-cdn \
+          --output ../../server/landfall_server/web/app

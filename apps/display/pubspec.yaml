@@ -53,6 +53,13 @@ flutter:
   uses-material-design: true
   assets:
     - assets/companions/
+    # Landfall font registry (architecture_decisions.md §22). Bundled at
+    # build time so theme.fontFamily references resolve offline — no
+    # fonts.gstatic.com fetches at runtime. Populated by
+    # scripts/fetch_font_registry.sh. The google_fonts package finds files
+    # under assets/google_fonts/ automatically when allowRuntimeFetching=false
+    # (set in lib/main.dart).
+    - assets/google_fonts/
   fonts:
     - family: Inter
       fonts:

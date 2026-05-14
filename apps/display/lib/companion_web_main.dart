@@ -3,6 +3,7 @@ import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:landfall_client/landfall_client.dart' as lf;
 
 import 'src/features/companion/widgets/companion_mobile_screen.dart';
@@ -13,6 +14,10 @@ import 'src/features/companion/widgets/companion_mobile_screen.dart';
 external JSString? get _rawDisplayId;
 
 void main() {
+  // Architecture pin: fonts are bundled at build time, never fetched from
+  // fonts.gstatic.com at runtime. The Caddyfile CSP also blocks that origin.
+  GoogleFonts.config.allowRuntimeFetching = false;
+
   final displayId = _rawDisplayId?.toDart ?? '';
 
   // The page is served from the Serverpod web server (API port + 2, e.g. 8082).
@@ -90,10 +95,19 @@ class _CompanionWebAppState extends State<_CompanionWebApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Inter is bundled at build time (see pubspec.yaml). Setting it as the
+    // theme's fontFamily prevents Material from falling back to Roboto, which
+    // Flutter Web would otherwise fetch from fonts.gstatic.com at runtime —
+    // a third-party request the strict CSP and the offline-first architecture
+    // both reject.
+    final base = ThemeData.dark(useMaterial3: true);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Landfall Companion',
-      theme: ThemeData.dark(useMaterial3: true),
+      theme: base.copyWith(
+        textTheme: base.textTheme.apply(fontFamily: 'Inter'),
+        primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Inter'),
+      ),
       home: Stack(
         children: [
           CompanionMobileScreen(
