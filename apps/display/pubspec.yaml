@@ -73,3 +73,21 @@ flutter:
           weight: 600
         - asset: assets/fonts/Inter-Bold.ttf
           weight: 700
+    # Roboto is declared but backed by Inter glyphs. Flutter Web's Material
+    # library hard-references "Roboto" at the engine level (independent of the
+    # google_fonts package or theme.fontFamily), and will fetch it from
+    # fonts.gstatic.com unless a local asset claims the family. Mapping it to
+    # Inter satisfies the lookup, avoids the CSP-blocked fetch, and produces a
+    # visually consistent result since the companion already uses Inter.
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Inter-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
