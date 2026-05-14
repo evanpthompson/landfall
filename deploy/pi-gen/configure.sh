@@ -143,16 +143,17 @@ if [[ -n "${FROM_YAML_FILE}" ]]; then
   STATIC_IP_CIDR="${STATIC_IP_CIDR:-$(yaml_get staticIpCidr "${FROM_YAML_FILE}")}"
   STATIC_GATEWAY="${STATIC_GATEWAY:-$(yaml_get staticGateway "${FROM_YAML_FILE}")}"
   STATIC_DNS="${STATIC_DNS:-$(yaml_get staticDns "${FROM_YAML_FILE}")}"
-  _STATIC_INTERFACE_EXPLICIT="${STATIC_INTERFACE:-}"
-  STATIC_INTERFACE="${STATIC_INTERFACE:-$(yaml_get staticInterface "${FROM_YAML_FILE}")}"
-  # When WiFi is configured and the operator did not explicitly pass
-  # STATIC_INTERFACE, force wlan0 — keeping eth0 would leave the Pi with no
-  # network on a WiFi-only setup even if the credentials were baked correctly.
-  if [[ -n "${WIFI_SSID}" && -z "${_STATIC_INTERFACE_EXPLICIT}" ]]; then
+  # staticInterface is "explicit" if the operator provided it via env OR yaml.
+  # Auto-pick wlan0 ONLY when WiFi is configured and neither source specified
+  # an interface — otherwise we'd silently override a yaml `staticInterface: eth0`
+  # entry (which means "static IP is for ethernet; WiFi is DHCP") and produce
+  # a manual-IP WiFi connection the operator never asked for.
+  _STATIC_INTERFACE_YAML="$(yaml_get staticInterface "${FROM_YAML_FILE}")"
+  STATIC_INTERFACE="${STATIC_INTERFACE:-${_STATIC_INTERFACE_YAML}}"
+  if [[ -z "${STATIC_INTERFACE}" && -n "${WIFI_SSID}" ]]; then
     STATIC_INTERFACE="wlan0"
-  else
-    STATIC_INTERFACE="${STATIC_INTERFACE:-eth0}"
   fi
+  STATIC_INTERFACE="${STATIC_INTERFACE:-eth0}"
 
   # Integration credentials from passwords.yaml (production section keys)
   SMTP_HOST="$(yaml_get smtpHost "${FROM_YAML_FILE}")"

@@ -226,8 +226,12 @@ source "${yaml_conf}"
 [[ "${STATIC_IP_CIDR}" == "172.16.0.42/24" ]]
 [[ "${STATIC_GATEWAY}" == "172.16.0.1" ]]
 [[ "${STATIC_DNS}" == "9.9.9.9,8.8.4.4" ]]
-# WiFi is set and no explicit STATIC_INTERFACE env var → must auto-select wlan0.
-[[ "${STATIC_INTERFACE}" == "wlan0" ]]
+# yaml `staticInterface: 'eth0'` is honored even when WiFi is set. Auto-wlan0
+# only kicks in when neither env nor yaml supplied an interface — otherwise
+# we'd silently produce a manual-IP WiFi connection the operator never asked
+# for (static IP belongs to ethernet here; WiFi gets a separate DHCP profile).
+[[ "${STATIC_INTERFACE}" == "eth0" ]] \
+  || { echo "FAIL: yaml staticInterface=eth0 overridden to ${STATIC_INTERFACE}"; exit 1; }
 [[ "${SMTP_HOST}" == "smtp.sendgrid.net" ]]
 [[ "${SMTP_USERNAME}" == "apikey" ]]
 [[ "${SMTP_PASSWORD}" == "SG.testkey" ]]
@@ -281,6 +285,25 @@ run_configure_from_yaml "${explicit_if_conf}" "${yaml_input}" \
 source "${explicit_if_conf}"
 [[ "${STATIC_INTERFACE}" == "eth0" ]] \
   || { echo "FAIL: explicit STATIC_INTERFACE=eth0 was overridden to ${STATIC_INTERFACE}"; exit 1; }
+
+# ── --from-yaml: auto-wlan0 when WiFi set and NO interface in env or yaml ─────
+no_if_yaml="${tmp}/no_iface.yaml"
+cat > "${no_if_yaml}" <<'EOF'
+production:
+  smtpHost: 'smtp.example.com'
+  smtpPort: '587'
+  smtpUsername: 'user'
+  smtpPassword: 'pass'
+  smtpFromEmail: 'a@b.com'
+  smtpSsl: 'false'
+  smtpAllowInsecure: 'false'
+EOF
+auto_wlan_conf="${tmp}/auto_wlan.conf"
+run_configure_from_yaml "${auto_wlan_conf}" "${no_if_yaml}" \
+  WIFI_SSID=MyNet WIFI_PASSWORD=pass
+source "${auto_wlan_conf}"
+[[ "${STATIC_INTERFACE}" == "wlan0" ]] \
+  || { echo "FAIL: auto-wlan0 fallback broke: STATIC_INTERFACE=${STATIC_INTERFACE}"; exit 1; }
 
 # ── --from-yaml: env-var override beats YAML value for SSH/static IP ─────────
 override_conf="${tmp}/from_yaml_override.conf"
