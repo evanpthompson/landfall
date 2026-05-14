@@ -62,4 +62,9 @@ lcov.info
 
 # Pi image build artifacts (cloned at runtime by deploy/pi-gen/build.sh)
 deploy/pi-gen/work/
+deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-server.tar.gz
+deploy/pi-gen/stage2-landfall/00-landfall/files/__pycache__/
 deploy/pi-gen/landfall-build.conf
+
+# Build manifest emitted by deploy/pi-gen/build.sh; baked into image at build time
+server/landfall_server/build-manifest.json

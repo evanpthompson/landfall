@@ -1,0 +1,65 @@
+# Landfall — expected-components contract
+#
+# Prescriptive declaration of what MUST be present in the shipped artifact.
+# `deploy/pi-gen/verify-artifact.sh` reads this file and fails the build if any
+# expectation is unmet. Update this file with intent before changing the build —
+# each entry is a contract reviewed like any other code change.
+#
+# Schema:
+#   companion_web:        files and properties inside the server tarball at
+#                         /app/web/app/ (the companion Flutter web build)
+#   server_tarball:       hygiene checks on the tarball itself
+#   stage:                files and properties in the pi-gen stage tree
+#                         (deploy/pi-gen/work/pi-gen/stage2-landfall/00-landfall/files)
+#   caddy:                CSP / connect-src expectations
+
+companion_web:
+  # flutter_bootstrap.js must declare local CanvasKit; otherwise Flutter fetches
+  # canvaskit.wasm from gstatic.com at runtime and the CSP connect-src blocks it.
+  bootstrap_must_contain:
+    - '"useLocalCanvasKit":true'
+
+  # CanvasKit wasm must ship inside the build so the local-canvaskit reference
+  # actually resolves. Empty / missing means the bundle is half-built.
+  canvaskit_wasm_min_bytes: 1000000  # >1 MB; real file is ~6 MB
+
+  # FontManifest.json must list every family that main.dart.js references.
+  # The verify script greps font families out of the compiled JS and asserts
+  # each one has a FontManifest entry. Roboto must map locally (we back it
+  # with Inter glyphs in apps/display/pubspec.yaml) so Flutter does not fetch
+  # from fonts.gstatic.com at runtime.
+  font_manifest_must_include:
+    - MaterialIcons
+    - Inter
+    - Roboto
+
+  # Service-worker policy: companion loads from a fresh QR scan; there is no
+  # offline use case and the SW keeps masking build changes across deploys.
+  # Build pipeline strips flutter_service_worker.js post-build.
+  service_worker_present: false
+
+  # Cache-busting: index.html must have ?v=<sha> on the bootstrap/main script
+  # tags. The verify script confirms the marker is present (any non-empty
+  # version string) — the build script writes the actual git SHA.
+  script_tags_must_have_version_query: true
+
+server_tarball:
+  # No host secrets in the artifact. firstboot.sh writes a per-Pi .env on
+  # first boot; baking a dev .env into the image leaks DB password + JWT keys.
+  forbidden_paths:
+    - .env
+    - __pycache__
+
+stage:
+  # Same hygiene at the pi-gen stage tree (rsync stage, before pi-gen runs).
+  forbidden_paths:
+    - .env
+    - __pycache__
+
+caddy:
+  # Every host referenced from compiled JS that the browser will try to reach
+  # over the network must be in CSP connect-src. 'self' covers the Pi's own
+  # origin (websocket + REST). Add hosts here only when intentional.
+  csp_connect_src_allowed_hosts:
+    - "'self'"
+    - "wss://{$LANDFALL_DOMAIN}"

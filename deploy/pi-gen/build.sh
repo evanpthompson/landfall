@@ -62,6 +62,21 @@ echo ""
 echo "${CYAN}${BOLD}Landfall — Raspberry Pi image builder${RESET}"
 echo ""
 
+# ── Build identity (git SHA + dirty flag) ─────────────────────────────────────
+# Captured up front so the same identity is stamped into binaries, the build
+# manifest, and the output filename. A dirty tree builds — we just record it.
+GIT_SHA="$(git -C "${REPO_ROOT}" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+if git -C "${REPO_ROOT}" diff --quiet 2>/dev/null \
+   && git -C "${REPO_ROOT}" diff --cached --quiet 2>/dev/null; then
+  GIT_DIRTY=false
+else
+  GIT_DIRTY=true
+fi
+GIT_BRANCH="$(git -C "${REPO_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+BUILD_TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+export LANDFALL_BUILD_SHA="${GIT_SHA}"
+info "Build SHA: ${GIT_SHA} (dirty=${GIT_DIRTY}, branch=${GIT_BRANCH})"
+
 # ── Load build configuration ──────────────────────────────────────────────────
 CONF_FILE="${SCRIPT_DIR}/landfall-build.conf"
 LANDFALL_BUILD_TYPE="production"
@@ -154,6 +169,7 @@ else
     -e LANDFALL_WEB_SERVER_URL \
     -e LANDFALL_TELEMETRY_ENDPOINT \
     -e LANDFALL_TELEMETRY_API_KEY \
+    -e LANDFALL_BUILD_SHA \
     -w /app/apps/display \
     ghcr.io/cirruslabs/flutter:stable \
     bash /lf-build.sh
@@ -161,6 +177,57 @@ else
   [[ -d "${LINUX_BUNDLE}" ]] \
     || die "Flutter build finished but bundle not found at ${LINUX_BUNDLE}"
   ok "Flutter arm64 binary built"
+fi
+
+# ── Step 1.5: Companion web app (host-side) ──────────────────────────────────
+# Must run on the host, not inside the arm64 Docker container. The container's
+# Flutter version produces a flutter_bootstrap.js without useLocalCanvasKit:true,
+# causing runtime fetches to gstatic.com that the CSP blocks. Web output is
+# platform-independent so there is no need to cross-compile.
+COMPANION_OUT="${REPO_ROOT}/server/landfall_server/web/app"
+if (( STAGE_ONLY == 0 )); then
+  command -v flutter > /dev/null || die "flutter not found on host (needed for companion web build)"
+  info "Building companion web app on host (~1 min)..."
+  (
+    cd "${REPO_ROOT}/apps/display"
+    flutter build web \
+      --target lib/companion_web_main.dart \
+      --base-href /app/ \
+      --no-web-resources-cdn \
+      --dart-define=LANDFALL_BUILD_SHA="${GIT_SHA}" \
+      --output "${COMPANION_OUT}"
+  )
+  grep -q '"useLocalCanvasKit":true' "${COMPANION_OUT}/flutter_bootstrap.js" \
+    || die "Companion build did not produce useLocalCanvasKit:true — check host Flutter version"
+
+  # ── Strip Flutter service worker for the companion ──────────────────────────
+  # The companion loads from a fresh QR scan; no offline use case. The SW
+  # masked build changes during the CanvasKit/Roboto debugging cycle. Policy:
+  # absent. Enforced by verify-artifact.sh.
+  rm -f "${COMPANION_OUT}/flutter_service_worker.js"
+  python3 - "${COMPANION_OUT}/index.html" "${GIT_SHA}" <<'PY'
+import re, sys
+path, sha = sys.argv[1], sys.argv[2]
+html = open(path).read()
+# Remove the SW registration block (Flutter emits a navigator.serviceWorker call).
+html = re.sub(
+    r'<script[^>]*>[^<]*serviceWorker[^<]*</script>\s*',
+    '',
+    html, flags=re.IGNORECASE)
+html = re.sub(
+    r'navigator\.serviceWorker\.register\([^)]*\);?', '', html)
+# Cache-bust the two script tags Flutter emits.
+def add_v(m):
+    tag = m.group(0)
+    if '?v=' in tag: return tag
+    return tag.replace('.js"', f'.js?v={sha}"')
+html = re.sub(r'<script[^>]*src="[^"]*flutter_bootstrap\.js"[^>]*>',
+              add_v, html)
+html = re.sub(r'<script[^>]*src="[^"]*main\.dart\.js"[^>]*>',
+              add_v, html)
+open(path, 'w').write(html)
+PY
+  ok "Companion web built (SW stripped, cache-bust ?v=${GIT_SHA})"
 fi
 
 # ── Fix permissions from previous Docker run ──────────────────────────────────
@@ -204,13 +271,14 @@ fi
 
 rm -rf "${PI_GEN_DIR}/stage2-landfall"
 cp -r "${SCRIPT_DIR}/stage2-landfall" "${PI_GEN_DIR}/stage2-landfall"
+find "${PI_GEN_DIR}/stage2-landfall" -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
 
 STAGE_FILES="${PI_GEN_DIR}/stage2-landfall/00-landfall/files"
 
 # ── Stage: deploy directory ───────────────────────────────────────────────────
 DEPLOY_DEST="${STAGE_FILES}/deploy"
 mkdir -p "${DEPLOY_DEST}"
-rsync -a --exclude='pi-gen/' "${REPO_ROOT}/deploy/" "${DEPLOY_DEST}/"
+rsync -a --exclude='pi-gen/' --exclude='.env' "${REPO_ROOT}/deploy/" "${DEPLOY_DEST}/"
 
 # ── Stage: integration credentials for firstboot.sh ──────────────────────────
 # Secrets (DB password, JWT keys, etc.) are NOT staged here — firstboot.sh
@@ -374,6 +442,14 @@ ok "Display bundle staged ($(du -sh "${BUNDLE_DEST}" | cut -f1))"
 
 # ── Step 2: Server Docker image for arm64 ────────────────────────────────────
 SERVER_TARBALL="${STAGE_FILES}/landfall-server.tar.gz"
+# Invalidate a cached tarball when the companion web was just rebuilt — the tarball
+# would otherwise ship the old web/app even though step 1 produced a fresh one.
+COMPANION_BOOTSTRAP="${REPO_ROOT}/server/landfall_server/web/app/flutter_bootstrap.js"
+if [[ -f "${SERVER_TARBALL}" && -f "${COMPANION_BOOTSTRAP}" ]] \
+    && [[ "${COMPANION_BOOTSTRAP}" -nt "${SERVER_TARBALL}" ]]; then
+  warn "Companion web is newer than server tarball — deleting stale tarball to force rebuild"
+  rm -f "${SERVER_TARBALL}"
+fi
 if [[ -f "${SERVER_TARBALL}" ]]; then
   ok "Server image already staged ($(du -sh "${SERVER_TARBALL}" | cut -f1)) — delete to rebuild"
 elif [[ -n "${LANDFALL_SERVER_TARBALL_SOURCE:-}" ]]; then
@@ -382,6 +458,64 @@ elif [[ -n "${LANDFALL_SERVER_TARBALL_SOURCE:-}" ]]; then
 elif (( STAGE_ONLY == 1 )); then
   die "Server image tarball not staged and LANDFALL_SERVER_TARBALL_SOURCE is not set"
 else
+  # ── Build manifest: record what is about to be baked into the image ─────────
+  # Written to a path inside the Docker build context so the Dockerfile COPY
+  # finds it. Captures the inputs the server itself depends on; the outer
+  # summary (incl. server tarball SHA) is written after pi-gen finishes.
+  MANIFEST_PATH="${REPO_ROOT}/server/landfall_server/build-manifest.json"
+  info "Generating build manifest..."
+  GIT_DIRTY_FILES_JSON='[]'
+  if [[ "${GIT_DIRTY}" == "true" ]]; then
+    GIT_DIRTY_FILES_JSON="$(git -C "${REPO_ROOT}" status --porcelain \
+      | awk '{ printf "%s\"%s\"", (NR>1?",":""), $2 } END { print "" }' \
+      | sed 's/^/[/; s/$/]/')"
+  fi
+  HOST_FLUTTER="$(flutter --version 2>/dev/null | head -1 || echo unknown)"
+  bootstrap_sha="$(shasum -a 256 "${COMPANION_OUT}/flutter_bootstrap.js" 2>/dev/null | cut -d' ' -f1)"
+  main_js_sha="$(shasum -a 256 "${COMPANION_OUT}/main.dart.js" 2>/dev/null | cut -d' ' -f1)"
+  display_sha="$(shasum -a 256 "${LINUX_BUNDLE}/landfall_display" 2>/dev/null | cut -d' ' -f1)"
+  has_sw="false"
+  [[ -f "${COMPANION_OUT}/flutter_service_worker.js" ]] && has_sw="true"
+  has_csp_self_only="false"
+  grep -q "connect-src 'self'" "${REPO_ROOT}/deploy/Caddyfile" && has_csp_self_only="true"
+  python3 - <<PY > "${MANIFEST_PATH}"
+import json
+print(json.dumps({
+  "build": {
+    "timestamp": "${BUILD_TIMESTAMP}",
+    "git_sha": "${GIT_SHA}",
+    "git_dirty": ${GIT_DIRTY},
+    "git_dirty_files": ${GIT_DIRTY_FILES_JSON},
+    "git_branch": "${GIT_BRANCH}",
+    "host_flutter": "${HOST_FLUTTER}",
+    "host_os": "${HOST_OS}",
+    "build_type": "${LANDFALL_BUILD_TYPE}"
+  },
+  "components": {
+    "display_binary": {"sha256": "${display_sha}"},
+    "companion_web": {
+      "bootstrap_sha256": "${bootstrap_sha}",
+      "main_dart_js_sha256": "${main_js_sha}",
+      "use_local_canvaskit": True,
+      "service_worker_present": ${has_sw}
+    }
+  },
+  "integrations": {
+    "smtp": bool("${SMTP_HOST}"),
+    "google_oauth": bool("${GOOGLE_CLIENT_ID}"),
+    "microsoft_oauth": bool("${MICROSOFT_CLIENT_ID}"),
+    "stripe": bool("${STRIPE_WEBHOOK_SECRET}"),
+    "weather": bool("${OWM_API_KEY}")
+  },
+  "pi_config": {
+    "hostname": "${PI_HOSTNAME}",
+    "wifi_ssid_set": bool("${WIFI_SSID}"),
+    "static_ip": "${STATIC_IP_CIDR}" or None
+  }
+}, indent=2))
+PY
+  ok "Build manifest written: ${MANIFEST_PATH}"
+
   echo ""
   info "Cross-compiling server Docker image for arm64 (~20–40 min)..."
   echo ""
@@ -402,6 +536,17 @@ else
 
   docker save landfall-server:latest | gzip > "${SERVER_TARBALL}"
   ok "Server image built and staged ($(du -sh "${SERVER_TARBALL}" | cut -f1))"
+
+  # ── Verify the artifact against the prescriptive expected-components.yaml ────
+  echo ""
+  info "Verifying artifact against expected-components.yaml..."
+  bash "${SCRIPT_DIR}/verify-artifact.sh" \
+    --image landfall-server:latest \
+    --tarball "${SERVER_TARBALL}" \
+    --stage "${STAGE_FILES}" \
+    --caddyfile "${REPO_ROOT}/deploy/Caddyfile" \
+    --expected "${SCRIPT_DIR}/expected-components.yaml" \
+    || die "verify-artifact: build pipeline failed prescriptive checks (see above)"
 fi
 
 if (( STAGE_ONLY == 1 )); then
@@ -469,6 +614,37 @@ bash build-docker.sh
 # ── Done ─────────────────────────────────────────────────────────────────────
 IMAGE="$(ls "${PI_GEN_DIR}/deploy/"*.img 2>/dev/null | sort | tail -1)"
 if [[ -n "${IMAGE}" ]]; then
+  # Rename to include the build SHA for human traceability — "which image
+  # did I flash?" is answerable from the filename, and /health/build confirms
+  # it from the running Pi.
+  IMG_DIR="$(dirname "${IMAGE}")"
+  IMG_BASE="$(basename "${IMAGE}" .img)"
+  SHA_SHORT="${GIT_SHA:0:7}"
+  if [[ "${IMG_BASE}" != *"-${SHA_SHORT}" ]]; then
+    NEW_IMAGE="${IMG_DIR}/${IMG_BASE}-${SHA_SHORT}.img"
+    mv "${IMAGE}" "${NEW_IMAGE}"
+    IMAGE="${NEW_IMAGE}"
+  fi
+
+  # Outer build summary — incl. server tarball SHA, which the inner manifest
+  # cannot capture (the tarball did not exist when the inner manifest was written).
+  SUMMARY="${IMG_DIR}/$(basename "${IMAGE}" .img).build-summary.json"
+  tarball_sha="$(shasum -a 256 "${SERVER_TARBALL}" 2>/dev/null | cut -d' ' -f1)"
+  img_sha="$(shasum -a 256 "${IMAGE}" 2>/dev/null | cut -d' ' -f1)"
+  python3 - <<PY > "${SUMMARY}"
+import json
+print(json.dumps({
+  "image": "$(basename "${IMAGE}")",
+  "image_sha256": "${img_sha}",
+  "git_sha": "${GIT_SHA}",
+  "git_dirty": ${GIT_DIRTY},
+  "git_branch": "${GIT_BRANCH}",
+  "build_timestamp": "${BUILD_TIMESTAMP}",
+  "server_tarball_sha256": "${tarball_sha}"
+}, indent=2))
+PY
+  ok "Build summary written: ${SUMMARY}"
+
   echo ""
   ok "Image ready: ${IMAGE}"
   info ""
