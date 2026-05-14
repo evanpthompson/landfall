@@ -69,8 +69,10 @@ GIT_SHA="$(git -C "${REPO_ROOT}" rev-parse --short=12 HEAD 2>/dev/null || echo u
 if git -C "${REPO_ROOT}" diff --quiet 2>/dev/null \
    && git -C "${REPO_ROOT}" diff --cached --quiet 2>/dev/null; then
   GIT_DIRTY=false
+  GIT_DIRTY_PY=False
 else
   GIT_DIRTY=true
+  GIT_DIRTY_PY=True
 fi
 GIT_BRANCH="$(git -C "${REPO_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
 BUILD_TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -478,13 +480,15 @@ else
   [[ -f "${COMPANION_OUT}/flutter_service_worker.js" ]] && has_sw="true"
   has_csp_self_only="false"
   grep -q "connect-src 'self'" "${REPO_ROOT}/deploy/Caddyfile" && has_csp_self_only="true"
+  # Python-friendly boolean (the heredoc below is Python; bash 'true'/'false' are NameErrors)
+  HAS_SW_PY=$([[ "${has_sw}" == "true" ]] && echo True || echo False)
   python3 - <<PY > "${MANIFEST_PATH}"
 import json
 print(json.dumps({
   "build": {
     "timestamp": "${BUILD_TIMESTAMP}",
     "git_sha": "${GIT_SHA}",
-    "git_dirty": ${GIT_DIRTY},
+    "git_dirty": ${GIT_DIRTY_PY},
     "git_dirty_files": ${GIT_DIRTY_FILES_JSON},
     "git_branch": "${GIT_BRANCH}",
     "host_flutter": "${HOST_FLUTTER}",
@@ -497,7 +501,7 @@ print(json.dumps({
       "bootstrap_sha256": "${bootstrap_sha}",
       "main_dart_js_sha256": "${main_js_sha}",
       "use_local_canvaskit": True,
-      "service_worker_present": ${has_sw}
+      "service_worker_present": ${HAS_SW_PY}
     }
   },
   "integrations": {
@@ -637,7 +641,7 @@ print(json.dumps({
   "image": "$(basename "${IMAGE}")",
   "image_sha256": "${img_sha}",
   "git_sha": "${GIT_SHA}",
-  "git_dirty": ${GIT_DIRTY},
+  "git_dirty": ${GIT_DIRTY_PY},
   "git_branch": "${GIT_BRANCH}",
   "build_timestamp": "${BUILD_TIMESTAMP}",
   "server_tarball_sha256": "${tarball_sha}"
