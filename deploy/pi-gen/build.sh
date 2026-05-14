@@ -138,13 +138,13 @@ fi
 
 # ── Step 1: Flutter arm64 display binary ─────────────────────────────────────
 LINUX_BUNDLE="${LANDFALL_LINUX_BUNDLE:-${REPO_ROOT}/apps/display/build/linux/arm64/release/bundle}"
-if [[ -d "${LINUX_BUNDLE}" ]]; then
-  ok "Flutter arm64 binary found: ${LINUX_BUNDLE}"
-elif (( STAGE_ONLY == 1 )); then
-  die "Flutter arm64 binary not found at ${LINUX_BUNDLE}"
+if (( STAGE_ONLY == 1 )); then
+  [[ -d "${LINUX_BUNDLE}" ]] \
+    || die "Flutter arm64 binary not found at ${LINUX_BUNDLE}"
+  ok "Flutter arm64 binary found (stage-only): ${LINUX_BUNDLE}"
 else
   echo ""
-  info "Flutter arm64 binary not found — building via Docker + QEMU (~20 min)..."
+  info "Building Flutter arm64 binary via Docker + QEMU (~20 min)..."
   echo ""
 
   docker run --rm --platform linux/arm64 \
