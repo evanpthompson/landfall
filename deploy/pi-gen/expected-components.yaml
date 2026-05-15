@@ -18,6 +18,8 @@ companion_web:
   # canvaskit.wasm from gstatic.com at runtime and the CSP connect-src blocks it.
   bootstrap_must_contain:
     - '"useLocalCanvasKit":true'
+    - 'fontFallbackBaseUrl'
+    - 'assets/fonts/'
 
   # CanvasKit wasm must ship inside the build so the local-canvaskit reference
   # actually resolves. Empty / missing means the bundle is half-built.

@@ -196,6 +196,7 @@ if (( STAGE_ONLY == 0 )); then
       --target lib/companion_web_main.dart \
       --base-href /app/ \
       --no-web-resources-cdn \
+      --dart-define=FLUTTER_WEB_CANVASKIT_URL=canvaskit/ \
       --dart-define=LANDFALL_BUILD_SHA="${GIT_SHA}" \
       --output "${COMPANION_OUT}"
   )
