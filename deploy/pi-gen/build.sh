@@ -473,9 +473,23 @@ else
       | sed 's/^/[/; s/$/]/')"
   fi
   HOST_FLUTTER="$(flutter --version 2>/dev/null | head -1 || echo unknown)"
-  bootstrap_sha="$(shasum -a 256 "${COMPANION_OUT}/flutter_bootstrap.js" 2>/dev/null | cut -d' ' -f1)"
-  main_js_sha="$(shasum -a 256 "${COMPANION_OUT}/main.dart.js" 2>/dev/null | cut -d' ' -f1)"
-  display_sha="$(shasum -a 256 "${LINUX_BUNDLE}/landfall_display" 2>/dev/null | cut -d' ' -f1)"
+  bootstrap_sha=""
+  [[ -f "${COMPANION_OUT}/flutter_bootstrap.js" ]] && \
+    bootstrap_sha="$(shasum -a 256 "${COMPANION_OUT}/flutter_bootstrap.js" | cut -d' ' -f1)"
+  main_js_sha=""
+  [[ -f "${COMPANION_OUT}/main.dart.js" ]] && \
+    main_js_sha="$(shasum -a 256 "${COMPANION_OUT}/main.dart.js" | cut -d' ' -f1)"
+  # The Flutter Linux build emits a binary named after the pubspec `name:` (here, `display`),
+  # not the app/folder name. Tolerate either, and never let a missing-file shasum kill the build.
+  display_bin=""
+  for candidate in "${LINUX_BUNDLE}/display" "${LINUX_BUNDLE}/landfall_display"; do
+    [[ -f "${candidate}" ]] && { display_bin="${candidate}"; break; }
+  done
+  if [[ -n "${display_bin}" ]]; then
+    display_sha="$(shasum -a 256 "${display_bin}" | cut -d' ' -f1)"
+  else
+    display_sha=""
+  fi
   has_sw="false"
   [[ -f "${COMPANION_OUT}/flutter_service_worker.js" ]] && has_sw="true"
   has_csp_self_only="false"
