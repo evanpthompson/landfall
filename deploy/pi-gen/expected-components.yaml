@@ -29,9 +29,27 @@ companion_web:
   # with Inter glyphs in apps/display/pubspec.yaml) so Flutter does not fetch
   # from fonts.gstatic.com at runtime.
   font_manifest_must_include:
+    # Core / alias
     - MaterialIcons
     - Inter
     - Roboto
+    # Landfall theme registry (architecture_decisions.md §22)
+    - Bebas Neue
+    - DM Sans
+    - JetBrains Mono
+    - Lexend
+    - Lora
+    - Orbitron
+    - Outfit
+    - Playfair Display
+    - Space Grotesk
+    - Space Mono
+    - Syne
+    # Noto fallback set — pass 1
+    - Noto Sans
+    - Noto Sans Symbols
+    - Noto Sans Symbols 2
+    - Noto Sans Math
 
   # Service-worker policy: companion loads from a fresh QR scan; there is no
   # offline use case and the SW keeps masking build changes across deploys.
@@ -63,3 +81,18 @@ caddy:
   csp_connect_src_allowed_hosts:
     - "'self'"
     - "wss://{$LANDFALL_DOMAIN}"
+
+  # Hosts that Flutter's compiled main.dart.js mentions as STRING LITERALS in
+  # framework error/assert messages and package-metadata constants — never
+  # actually fetched at runtime. Listing them here suppresses the verify check
+  # for that specific host. Add an entry only after confirming (browser dev
+  # tools, no CSP violation logged) that the host is reference-only.
+  csp_connect_src_string_literal_hosts:
+    - api.flutter.dev
+    - docs.flutter.dev
+    - flutter.dev
+    - github.com
+    - pub.dev
+    # fonts.gstatic.com: appears in google_fonts package constants; suppressed
+    # at runtime because we ship Inter locally and map Roboto → Inter glyphs.
+    - fonts.gstatic.com

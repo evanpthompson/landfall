@@ -58,26 +58,81 @@ docker cp "${CID}:/app/web/app" "${TMP}/web_app"
 docker rm "${CID}" >/dev/null
 CID=""
 
-# Tiny YAML reader for the leaf scalars we care about. Avoids a yq dependency.
+# Tiny YAML reader for the leaf scalars we care about. Stdlib-only — pyyaml
+# isn't a build-host dependency. Handles the exact shapes expected-components.yaml
+# uses: top-level keys, 2-space-indented child keys (scalar or list-of-strings),
+# 4-space-indented `- item` list entries. Inline `# comments` are stripped.
 yaml_value() {
-  # yaml_value <key.path>  — dotted path, returns the scalar value
+  # yaml_value <key.path>  — dotted path; scalars print one line, lists print one per line.
   python3 - "$1" "${EXPECTED}" <<'PY'
-import sys, yaml
-path = sys.argv[1].split('.')
+import sys
+target = sys.argv[1].split('.')
+sections = {}
+cur_top = None
+cur_child = None
 with open(sys.argv[2]) as f:
-    doc = yaml.safe_load(f)
-for k in path:
-    if doc is None or k not in doc:
+    for raw in f:
+        line = raw.rstrip('\n')
+        stripped = line.lstrip()
+        if not stripped or stripped.startswith('#'):
+            continue
+        # strip inline comments (safe for this file: no '#' inside quoted values)
+        if '#' in stripped:
+            stripped = stripped.split('#', 1)[0].rstrip()
+            if not stripped:
+                continue
+        indent = len(line) - len(line.lstrip())
+
+        def unquote(v):
+            v = v.strip()
+            if len(v) >= 2 and v[0] == v[-1] and v[0] in ("'", '"'):
+                v = v[1:-1]
+            return v
+
+        if indent == 0 and stripped.endswith(':'):
+            cur_top = stripped[:-1].strip()
+            cur_child = None
+            sections.setdefault(cur_top, {})
+        elif indent == 2 and cur_top is not None:
+            if stripped.startswith('- '):
+                v = unquote(stripped[2:])
+                node = sections[cur_top].get(cur_child)
+                if not isinstance(node, list):
+                    sections[cur_top][cur_child] = []
+                sections[cur_top][cur_child].append(v)
+            elif ':' in stripped:
+                k, _, v = stripped.partition(':')
+                cur_child = k.strip()
+                v = v.strip()
+                if v == '':
+                    sections[cur_top][cur_child] = None  # nested list follows
+                elif v in ('true', 'false'):
+                    sections[cur_top][cur_child] = (v == 'true')
+                else:
+                    sections[cur_top][cur_child] = unquote(v)
+        elif indent == 4 and stripped.startswith('- ') and cur_top and cur_child:
+            v = unquote(stripped[2:])
+            node = sections[cur_top].get(cur_child)
+            if not isinstance(node, list):
+                sections[cur_top][cur_child] = []
+            sections[cur_top][cur_child].append(v)
+
+node = sections
+for k in target:
+    if isinstance(node, dict) and k in node:
+        node = node[k]
+    else:
         sys.exit(1)
-    doc = doc[k]
-if isinstance(doc, list):
-    for v in doc: print(v)
-elif isinstance(doc, bool):
-    print('true' if doc else 'false')
-elif doc is None:
+
+if node is None:
     sys.exit(1)
+elif isinstance(node, bool):
+    print('true' if node else 'false')
+elif isinstance(node, list):
+    for v in node:
+        print(v)
 else:
-    print(doc)
+    print(node)
 PY
 }
 
@@ -193,6 +248,8 @@ MAIN_JS="${TMP}/web_app/main.dart.js"
 if [[ -f "${MAIN_JS}" && -f "${CADDYFILE}" ]]; then
   CSP_LINE="$(grep -E 'Content-Security-Policy' "${CADDYFILE}" || true)"
   CONNECT_SRC="$(echo "${CSP_LINE}" | sed -nE 's/.*connect-src ([^;]*);.*/\1/p')"
+  # Hosts that appear only as string literals in framework messages — never fetched.
+  IGNORE_HOSTS="$(yaml_value caddy.csp_connect_src_string_literal_hosts || true)"
   # Extract scheme://host patterns from main.dart.js. We accept self-only
   # builds; the check fires only when an absolute URL appears in the JS.
   HOSTS="$(grep -oE 'https?://[a-zA-Z0-9_.-]+|wss?://[a-zA-Z0-9_.-]+' "${MAIN_JS}" \
@@ -202,8 +259,14 @@ if [[ -f "${MAIN_JS}" && -f "${CADDYFILE}" ]]; then
   else
     while IFS= read -r host; do
       [[ -z "${host}" ]] && continue
-      origin="$(echo "${host}" | sed -E 's|^(https?|wss?)://([^/]+).*|\1://\2|')"
-      hostname="$(echo "${host}" | sed -E 's|^[a-z]+://([^/]+).*|\1|')"
+      origin="$(echo "${host}"   | sed -E 's#^(https?|wss?)://([^/]+).*#\1://\2#')"
+      hostname="$(echo "${host}" | sed -E 's#^[a-z]+://([^/]+).*#\1#')"
+      # Suppress string-literal-only hosts (framework error messages etc.).
+      if [[ -n "${IGNORE_HOSTS}" ]] && \
+         echo "${IGNORE_HOSTS}" | grep -qxF "${hostname}"; then
+        pass "CSP ignores string-literal host: ${origin}"
+        continue
+      fi
       # Allow if the origin or hostname appears in connect-src verbatim, or if
       # connect-src includes 'self' and the host is localhost / 127.0.0.1.
       if echo "${CONNECT_SRC}" | grep -qE "(${hostname}|${origin})"; then

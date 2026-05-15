@@ -91,3 +91,102 @@ flutter:
           weight: 600
         - asset: assets/fonts/Inter-Bold.ttf
           weight: 700
+    # --- Landfall font registry (architecture_decisions.md §22) ---
+    # All families below are declared at the engine level so fontFamily: 'X'
+    # resolves from bundled assets without involving the google_fonts package or
+    # any network fetch. Populated by scripts/fetch_font_registry.sh.
+    - family: Bebas Neue
+      fonts:
+        - asset: assets/google_fonts/BebasNeue-Regular.ttf
+          weight: 400
+    - family: DM Sans
+      fonts:
+        - asset: assets/google_fonts/DMSans-Regular.ttf
+          weight: 400
+        - asset: assets/google_fonts/DMSans-Medium.ttf
+          weight: 500
+        - asset: assets/google_fonts/DMSans-Bold.ttf
+          weight: 700
+    - family: JetBrains Mono
+      fonts:
+        - asset: assets/google_fonts/JetBrainsMono-Regular.ttf
+          weight: 400
+        - asset: assets/google_fonts/JetBrainsMono-Bold.ttf
+          weight: 700
+    - family: Lexend
+      fonts:
+        - asset: assets/google_fonts/Lexend-Regular.ttf
+          weight: 400
+        - asset: assets/google_fonts/Lexend-Medium.ttf
+          weight: 500
+        - asset: assets/google_fonts/Lexend-Bold.ttf
+          weight: 700
+    - family: Lora
+      fonts:
+        - asset: assets/google_fonts/Lora-Regular.ttf
+          weight: 400
+        - asset: assets/google_fonts/Lora-Bold.ttf
+          weight: 700
+    - family: Orbitron
+      fonts:
+        - asset: assets/google_fonts/Orbitron-Regular.ttf
+          weight: 400
+        - asset: assets/google_fonts/Orbitron-Bold.ttf
+          weight: 700
+    - family: Outfit
+      fonts:
+        - asset: assets/google_fonts/Outfit-Regular.ttf
+          weight: 400
+        - asset: assets/google_fonts/Outfit-Medium.ttf
+          weight: 500
+        - asset: assets/google_fonts/Outfit-Bold.ttf
+          weight: 700
+    - family: Playfair Display
+      fonts:
+        - asset: assets/google_fonts/PlayfairDisplay-Regular.ttf
+          weight: 400
+        - asset: assets/google_fonts/PlayfairDisplay-Bold.ttf
+          weight: 700
+    - family: Space Grotesk
+      fonts:
+        - asset: assets/google_fonts/SpaceGrotesk-Regular.ttf
+          weight: 400
+        - asset: assets/google_fonts/SpaceGrotesk-Medium.ttf
+          weight: 500
+        - asset: assets/google_fonts/SpaceGrotesk-Bold.ttf
+          weight: 700
+    - family: Space Mono
+      fonts:
+        - asset: assets/google_fonts/SpaceMono-Regular.ttf
+          weight: 400
+        - asset: assets/google_fonts/SpaceMono-Bold.ttf
+          weight: 700
+    - family: Syne
+      fonts:
+        - asset: assets/google_fonts/Syne-Regular.ttf
+          weight: 400
+        - asset: assets/google_fonts/Syne-Bold.ttf
+          weight: 700
+    # --- Noto fallback families (pass 1 of 2) ---
+    # Covers Latin/Latin-Extended/common symbols so FontFallbackManager does not
+    # fetch from fonts.gstatic.com for typical companion content. Pass 2 (CJK +
+    # script-specific subsets) added after a live network capture confirms which
+    # families are actually still requested. Populated by fetch_font_registry.sh.
+    - family: Noto Sans
+      fonts:
+        - asset: assets/fonts/NotoSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSans-Bold.ttf
+          weight: 700
+    - family: Noto Sans Symbols
+      fonts:
+        - asset: assets/fonts/NotoSansSymbols-Regular.ttf
+          weight: 400
+    - family: Noto Sans Symbols 2
+      fonts:
+        - asset: assets/fonts/NotoSansSymbols2-Regular.ttf
+          weight: 400
+    - family: Noto Sans Math
+      fonts:
+        - asset: assets/fonts/NotoSansMath-Regular.ttf
+          weight: 400
