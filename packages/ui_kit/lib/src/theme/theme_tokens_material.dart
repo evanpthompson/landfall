@@ -41,20 +41,45 @@ extension LandfallThemeTokensMaterialX on LandfallThemeTokens {
     );
   }
 
-  /// Returns a font family name for the token value, or null to fall back to
-  /// the system font.
+  /// Returns the canonical font family name for the token value, or null for
+  /// system/unknown tokens. All returned names correspond to families declared
+  /// under flutter.fonts in pubspec.yaml (bundled assets, no runtime fetch).
   static String? _resolveFont(String token) => switch (token.toLowerCase()) {
         'inter' => 'Inter',
         'roboto' => 'Roboto',
         'dm sans' || 'dm_sans' => 'DM Sans',
         'space grotesk' || 'space_grotesk' => 'Space Grotesk',
+        'jetbrains mono' || 'jetbrains_mono' => 'JetBrains Mono',
+        'playfair display' || 'playfair_display' => 'Playfair Display',
+        'space mono' || 'space_mono' => 'Space Mono',
+        'bebas neue' || 'bebas_neue' => 'Bebas Neue',
+        'lexend' => 'Lexend',
+        'lora' => 'Lora',
+        'orbitron' => 'Orbitron',
+        'outfit' => 'Outfit',
+        'syne' => 'Syne',
         'system' || '' => null,
         _ => null,
       };
 
-  /// True for font families bundled as assets (not fetched via google_fonts).
+  /// True for every family in the Landfall font registry (architecture_decisions.md §22).
+  /// All registry families are declared under flutter.fonts in pubspec.yaml so the
+  /// engine resolves them from bundled assets — google_fonts network fetch never fires.
   static bool _isBundled(String family) => switch (family) {
-        'Inter' => true,
+        'Inter' ||
+        'Roboto' ||
+        'DM Sans' ||
+        'Space Grotesk' ||
+        'JetBrains Mono' ||
+        'Playfair Display' ||
+        'Space Mono' ||
+        'Bebas Neue' ||
+        'Lexend' ||
+        'Lora' ||
+        'Orbitron' ||
+        'Outfit' ||
+        'Syne' =>
+          true,
         _ => false,
       };
 }
