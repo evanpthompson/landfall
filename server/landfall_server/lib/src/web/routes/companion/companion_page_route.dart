@@ -14,12 +14,12 @@ import 'package:serverpod/serverpod.dart';
 /// URL-path-based endpoint calls as /endpoint/method, so /companion/** would
 /// be shadowed by the companion endpoint before the web route could handle it.
 ///
-/// The Flutter web build is expected at [webDir] (default: web/static/companion).
+/// The Flutter web build is expected at [webDir] (default: web/app).
 /// When the build is absent every request returns 404 so the TV still functions
 /// while the web page is not yet deployed.
 class CompanionPageRoute extends Route {
   CompanionPageRoute({String? webDir})
-      : _webDir = webDir ?? 'web/static/companion',
+      : _webDir = webDir ?? 'web/app',
         super(methods: {Method.get});
 
   final String _webDir;
