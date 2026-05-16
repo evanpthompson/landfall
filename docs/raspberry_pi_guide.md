@@ -157,6 +157,23 @@ Self-healing services that run without operator action:
 - **Credential refresh-failure surfacing** — the server emits a structured `LANDFALL_CREDENTIAL_REFRESH_FAILED` marker every time a Google/Microsoft token refresh fails. `landfall-doctor` parses the last 24 h of journals and shows one warning per broken credential (deduped by provider+email) with the path to reconnect in Settings.
 - **Diagnostic fallback screen** — if the display binary fast-crashes 3× in a row, the Pi shows hostname, LAN IP, SSH command, and live subsystem probes on screen so the operator knows where to look without needing a separate monitor.
 
+### 7. Companion page
+
+The Pi display shows a QR code that opens a companion web page on any phone on
+the same network. The page is served by the Landfall server at
+`http://<hostname>.local/c/<uuid>`.
+
+**Current state (unlicensed):** The companion page is served over HTTP.
+Browsers show a "Not Secure" indicator in the address bar. The page is fully
+functional — the indicator is cosmetic.
+
+**Licensed tier:** Licensed Pi builds will receive automatic HTTPS via a
+per-device subdomain (`{serial}.connect.landfall.app`) backed by a
+Let's Encrypt certificate issued and renewed by Landfall cloud infrastructure.
+No configuration required — the QR code URL updates automatically. See the
+[roadmap](roadmap.md#-companion-https--per-device-subdomain) for the full
+architecture.
+
 ---
 
 ## Option B: Manual setup on existing Pi OS

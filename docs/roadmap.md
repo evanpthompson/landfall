@@ -220,6 +220,64 @@ question relative to other infra work.
 
 ---
 
+## Licensed-tier features
+
+Features in this section require cloud infrastructure managed by Landfall and
+are therefore gated on the licensed (non-self-hosted) tier. Self-hosted and
+unlicensed Pi builds continue to work without them.
+
+### 🔴 Companion HTTPS — per-device subdomain
+
+**Tier:** Licensed  
+**Trigger:** Companion page confirmed stable; HTTPS wired up as part of the
+licensed onboarding flow.
+
+**Current state:** The companion page (scanned via QR code on the Pi display)
+is served over HTTP on the local network. Browsers show a "Not Secure"
+indicator. Functionally fine for LAN use; blocked for any future feature that
+requires a secure context (WebAuthn, camera, etc.).
+
+**Why not self-signed or mkcert:** Self-signed certs produce a blocking browser
+warning on every new device. `mkcert`-style local CAs require installing a root
+cert on every phone that scans the QR — unacceptable for a consumer product.
+
+**Architecture decision — per-device subdomain with dynamic DNS:**
+
+This is the standard approach used by Plex, Synology, and similar LAN-server
+products. Each Pi gets a stable HTTPS URL that resolves on the public internet
+but routes connections to the device's LAN IP. Data never leaves the network.
+
+1. **Subdomain:** `{serial}.connect.landfall.app` — `serial` is the Pi's
+   hardware serial number (or a UUID assigned at first boot).
+2. **DNS:** Landfall cloud infra maintains an A record for each serial,
+   updated whenever the Pi registers its current LAN IP.
+3. **Registration:** On boot and periodically, the Pi POSTs its LAN IP to
+   `api.landfall.app/devices/{serial}/ip`. Auth via a device secret baked into
+   the image at manufacture time (or generated at first boot and pinned on
+   first registration).
+4. **Certificate:** Issued per-device by Landfall cloud infra using DNS-01
+   ACME (Let's Encrypt). Pushed to the Pi as part of the registration
+   response. Renewed by the cloud infra on a schedule; the Pi receives the new
+   cert on its next registration heartbeat.
+5. **QR code:** Updated to contain
+   `https://{serial}.connect.landfall.app/c/{uuid}` instead of the current
+   `http://{hostname}.local/c/{uuid}`.
+6. **TTL:** DNS records use a short TTL (60 s) so IP changes propagate quickly
+   after the Pi re-registers.
+
+**Failure modes and mitigations:**
+
+| Failure | Behaviour | Mitigation |
+|---------|-----------|------------|
+| Pi IP changes (router reassigns) | Old DNS record cached until TTL expires | Short TTL (60 s); Pi re-registers on every boot and every 15 min |
+| Pi offline / no internet | Cannot reach companion page | Expected — companion requires LAN; no degradation in display function |
+| Cloud DNS infra down | Cannot update IP; cert renewal blocked | Cert has 90-day validity; short outage has no user impact |
+
+**Unlicensed path stays HTTP:** Self-hosted and unlicensed Pi builds serve the
+companion page over HTTP on the LAN. No change to that path.
+
+---
+
 ## How to use this list
 
 - When you pick up an item, **convert the entry into a phase plan** before
