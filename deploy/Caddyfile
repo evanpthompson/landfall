@@ -21,6 +21,7 @@
     reverse_proxy /card/* server:8080
     reverse_proxy /agent/* server:8080
     reverse_proxy /calendar/* server:8080
+    reverse_proxy /companion/* server:8080
     reverse_proxy /photos/* server:8082
 
     # WebSocket endpoint for real-time card push

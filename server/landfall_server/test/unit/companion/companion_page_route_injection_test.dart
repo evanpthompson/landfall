@@ -38,5 +38,22 @@ void main() {
       final result = CompanionPageRoute.injectDisplayId(html, 'any-id');
       expect(result, equals(html));
     });
+
+    test('patches Flutter base href from / to /c/{uuid}/', () {
+      const html =
+          '<html><head><base href="/"><title>T</title></head><body></body></html>';
+      final result =
+          CompanionPageRoute.injectDisplayId(html, 'test-uuid-123');
+      expect(result, contains('<base href="/c/test-uuid-123/">'));
+      expect(result, isNot(contains('<base href="/">')));
+    });
+
+    test('leaves base href unchanged when it is not the Flutter default /', () {
+      const html =
+          '<html><head><base href="/app/"><title>T</title></head><body></body></html>';
+      final result =
+          CompanionPageRoute.injectDisplayId(html, 'test-uuid-456');
+      expect(result, contains('<base href="/app/">'));
+    });
   });
 }

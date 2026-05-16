@@ -194,7 +194,7 @@ if (( STAGE_ONLY == 0 )); then
     cd "${REPO_ROOT}/apps/display"
     flutter build web \
       --target lib/companion_web_main.dart \
-      --base-href /app/ \
+      --base-href / \
       --no-web-resources-cdn \
       --dart-define=FLUTTER_WEB_CANVASKIT_URL=canvaskit/ \
       --dart-define=LANDFALL_BUILD_SHA="${GIT_SHA}" \

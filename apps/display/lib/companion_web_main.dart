@@ -20,11 +20,14 @@ void main() {
 
   final displayId = _rawDisplayId?.toDart ?? '';
 
-  // The page is served from the Serverpod web server (API port + 2, e.g. 8082).
-  // The API endpoint lives two ports lower (e.g. 8080). Subtract 2 to get it.
+  // When served through Caddy (standard port 80/443) the API is on the same
+  // origin — Caddy routes /companion/* to the API server. When accessed
+  // directly from the Serverpod web port (8082) the API is port - 2 (8080).
   final uri = Uri.base;
-  final apiPort = uri.port - 2;
-  final serverUrl = '${uri.scheme}://${uri.host}:$apiPort/';
+  final isDefaultPort = uri.port == 80 || uri.port == 443;
+  final serverUrl = isDefaultPort
+      ? '${uri.scheme}://${uri.host}/'
+      : '${uri.scheme}://${uri.host}:${uri.port - 2}/';
 
   final client = lf.Client(serverUrl);
 
