@@ -112,6 +112,10 @@ jobs:
             googleClientSecret: 'ci-google-client-secret'
             googleOAuthRedirectUri: 'http://localhost:8080/calendar/oauth/callback'
             calendarOauthSetupToken: 'test-setup-token'
+            # Service account keys are left blank in CI: photo unit tests stub
+            # the auth provider, and integration tests use the OAuth fallback.
+            googleServiceAccountEmail: ''
+            googleServiceAccountPrivateKey: ''
           YAML
 
       - name: Analyze

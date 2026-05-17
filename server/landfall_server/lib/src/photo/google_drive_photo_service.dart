@@ -29,10 +29,18 @@ class GoogleDrivePhotoService implements PhotoService {
 
   @override
   Future<List<Photo>> listPhotos(
-    Session session,
+    Session? session,
     LinkedCredential credential,
     String folderId,
   ) async {
+    if (session == null) {
+      throw ArgumentError(
+        'GoogleDrivePhotoService requires a non-null Session for OAuth '
+        'token refresh and password lookup. The service-account variant '
+        '(GoogleDriveServiceAccountPhotoService) is the one that allows '
+        'a null session.',
+      );
+    }
     final accessToken = await _accessToken(session, credential);
     final fetchedAt = DateTime.now().toUtc();
 
@@ -75,10 +83,15 @@ class GoogleDrivePhotoService implements PhotoService {
 
   @override
   Future<Uint8List> fetchPhotoBytes(
-    Session session,
+    Session? session,
     LinkedCredential credential,
     String providerFileId,
   ) async {
+    if (session == null) {
+      throw ArgumentError(
+        'GoogleDrivePhotoService requires a non-null Session.',
+      );
+    }
     final accessToken = await _accessToken(session, credential);
 
     final uri = Uri.parse(

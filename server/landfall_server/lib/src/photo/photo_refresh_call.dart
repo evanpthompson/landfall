@@ -1,10 +1,12 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../generated/protocol.dart';
-import 'google_drive_photo_service.dart';
-import 'photo_service.dart';
+import 'photo_service_factory.dart';
 
 const _refreshInterval = Duration(minutes: 30);
 
@@ -69,18 +71,19 @@ class PhotoRefreshCall extends FutureCall<SerializableModel> {
       return;
     }
 
-    final credential = await LinkedCredential.db.findFirstRow(
-      session,
-      where: (t) =>
-          t.provider.equals('google') & t.isActive.equals(true),
-    );
-
+    final credential = await _resolveCredential(session);
     if (credential == null) {
-      session.log('Photo refresh: no active Google credential found, skipping.');
+      session.log(
+        'Photo refresh: no Google credential or service account configured, '
+        'skipping.',
+      );
       return;
     }
 
-    final service = _serviceFor(credential);
+    final service = photoServiceFor(
+      credential: credential,
+      passwords: session.passwords,
+    );
     final drivePhotos = await service.listPhotos(session, credential, folderId);
 
     // Build a set of providerFileIds currently in Drive.
@@ -129,12 +132,73 @@ class PhotoRefreshCall extends FutureCall<SerializableModel> {
     );
   }
 
-  PhotoService _serviceFor(LinkedCredential credential) {
-    return switch (credential.provider) {
-      'google' => GoogleDrivePhotoService(),
-      _ => throw UnimplementedError(
-          'Photo provider "${credential.provider}" is not yet supported.',
-        ),
-    };
+  /// Picks the credential the next refresh should run against.
+  ///
+  /// Service account credentials take precedence over user OAuth. If service
+  /// account passwords are present we find-or-create a synthetic
+  /// `LinkedCredential` row (provider `"google-sa"`) so the existing
+  /// `Photo.credentialId` FK + `PhotoServeRoute` lookup pipelines keep
+  /// working unchanged.
+  Future<LinkedCredential?> _resolveCredential(Session session) async {
+    final saEmail = session.passwords['googleServiceAccountEmail'];
+    final saKey = session.passwords['googleServiceAccountPrivateKey'];
+    final hasServiceAccount = saEmail != null &&
+        saEmail.isNotEmpty &&
+        saKey != null &&
+        saKey.isNotEmpty;
+
+    if (hasServiceAccount) {
+      return _findOrCreateServiceAccountCredential(session, saEmail);
+    }
+
+    return LinkedCredential.db.findFirstRow(
+      session,
+      where: (t) => t.provider.equals('google') & t.isActive.equals(true),
+    );
+  }
+
+  Future<LinkedCredential> _findOrCreateServiceAccountCredential(
+    Session session,
+    String serviceAccountEmail,
+  ) async {
+    final existing = await LinkedCredential.db.findFirstRow(
+      session,
+      where: (t) =>
+          t.provider.equals('google-sa') &
+          t.providerEmail.equals(serviceAccountEmail),
+    );
+    if (existing != null) return existing;
+
+    // Synthesize a stable UUID from the service account email so re-creating
+    // the row after a DB rebuild gives the same authUserId. (Different SAs
+    // map to different UUIDs; the value is opaque — only used as the anchor
+    // for Photo.credentialId joins.)
+    final hash = sha256.convert(utf8.encode(serviceAccountEmail)).bytes;
+    final hex = hash
+        .take(16)
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+    final authUserId =
+        '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+        '4${hex.substring(13, 16)}-' // RFC 4122 v4
+        '8${hex.substring(17, 20)}-${hex.substring(20)}';
+
+    final now = DateTime.now().toUtc();
+    return LinkedCredential.db.insertRow(
+      session,
+      LinkedCredential(
+        authUserId: UuidValue.fromString(authUserId),
+        provider: 'google-sa',
+        providerEmail: serviceAccountEmail,
+        // accessToken/refreshToken are never read for service accounts.
+        accessToken: '',
+        refreshToken: null,
+        tokenExpiresAt: null,
+        scopes: 'https://www.googleapis.com/auth/drive.readonly',
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
   }
 }

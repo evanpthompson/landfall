@@ -14,8 +14,14 @@ abstract class PhotoService {
   ///
   /// Returns [Photo] objects without DB ids set — the caller is responsible
   /// for persisting them. Only image MIME types are returned.
+  ///
+  /// [session] is nullable: the OAuth-user-credential implementation needs
+  /// it for `session.passwords` and DB writes during token refresh, but the
+  /// service-account implementation does all auth out-of-band and ignores
+  /// the session entirely. Production callers pass a real session;
+  /// unit tests for the service-account path pass null.
   Future<List<Photo>> listPhotos(
-    Session session,
+    Session? session,
     LinkedCredential credential,
     String folderId,
   );
@@ -24,9 +30,9 @@ abstract class PhotoService {
   /// [providerFileId] using [credential].
   ///
   /// May refresh [credential]'s access token transparently if it is close
-  /// to expiry.
+  /// to expiry. See [listPhotos] for the nullability of [session].
   Future<Uint8List> fetchPhotoBytes(
-    Session session,
+    Session? session,
     LinkedCredential credential,
     String providerFileId,
   );

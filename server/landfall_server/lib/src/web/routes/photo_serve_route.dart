@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
-import '../../photo/google_drive_photo_service.dart';
-import '../../photo/photo_service.dart';
+import '../../photo/photo_service_factory.dart';
 import 'photo_signing_service.dart';
 
 class PhotoServeRoute extends Route {
@@ -43,7 +42,10 @@ class PhotoServeRoute extends Route {
     }
 
     try {
-      final service = _serviceFor(credential);
+      final service = photoServiceFor(
+        credential: credential,
+        passwords: session.passwords,
+      );
       final bytes = await service.fetchPhotoBytes(
         session,
         credential,
@@ -70,15 +72,6 @@ class PhotoServeRoute extends Route {
         body: Body.fromString('Failed to fetch photo'),
       );
     }
-  }
-
-  PhotoService _serviceFor(LinkedCredential credential) {
-    return switch (credential.provider) {
-      'google' => GoogleDrivePhotoService(),
-      _ => throw UnimplementedError(
-          'Photo provider "${credential.provider}" is not yet supported.',
-        ),
-    };
   }
 
   /// Returns a non-null [Response] error if the caller is not authorised.

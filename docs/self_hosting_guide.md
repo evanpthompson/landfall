@@ -75,12 +75,32 @@ For local development only, set `OTP_LOG_CODES=true` to write OTP codes to serve
 OWM_API_KEY=your_key_here
 ```
 
-**Google Calendar + Drive** — create an OAuth 2.0 client at [console.cloud.google.com](https://console.cloud.google.com). Before creating the client, enable both the **Google Calendar API** and the **Google Drive API** under "APIs & Services → Library" (without this step the OAuth consent will succeed but syncing will return permission errors). Set the redirect URI to `https://<your-domain>/calendar/oauth/callback`:
+**Google Calendar** — create an OAuth 2.0 client at [console.cloud.google.com](https://console.cloud.google.com). Enable the **Google Calendar API** under "APIs & Services → Library" before creating the client (without this step the OAuth consent will succeed but syncing will return permission errors). Set the redirect URI to `https://<your-domain>/calendar/oauth/callback`:
 ```
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 GOOGLE_REDIRECT_URI=https://landfall.local/calendar/oauth/callback
 ```
+
+**Google Drive photos** — *recommended path is a service account*, not OAuth. Service accounts skip the browser-consent dance entirely and never expire, so photos keep syncing even after a Pi reflash.
+
+1. In the same Google Cloud project, enable the **Google Drive API** under "APIs & Services → Library".
+2. Go to "IAM & Admin → Service Accounts" → **Create service account**. Name it whatever you like (e.g. `landfall-photos`). Skip the optional role/grants steps.
+3. Open the new service account, go to the **Keys** tab → **Add key → Create new key → JSON**. A `*.json` file downloads.
+4. Open the JSON. Two values matter:
+   - `client_email` — looks like `landfall-photos@your-project.iam.gserviceaccount.com`
+   - `private_key` — the PEM-encoded private key
+5. **Share your Drive photo folder with the service account email.** Right-click the folder in Drive → Share → paste the `client_email` → set to **Viewer** → Share. This is what gives the service account permission to read your photos.
+6. Get the folder ID from the URL (the part after `/folders/`).
+7. Fill these in `.env`:
+   ```
+   GOOGLE_DRIVE_FOLDER_ID=1AbCdEf...
+   GOOGLE_SERVICE_ACCOUNT_EMAIL=landfall-photos@your-project.iam.gserviceaccount.com
+   GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\n"
+   ```
+   The private key must be on one line with literal `\n` between PEM lines, wrapped in double quotes. Copy-paste from the JSON's `private_key` field — that's already the right format.
+
+*OAuth fallback* — if you'd rather use the same OAuth flow as Calendar, leave the two `GOOGLE_SERVICE_ACCOUNT_*` keys blank and just set `GOOGLE_DRIVE_FOLDER_ID`. The credential connected via the calendar OAuth start URL will also be used for Drive photos. This works but has the downsides described in [architecture decision §27](../automation/landfall/architecture_decisions.md#27-google-drive-photos--service-account-not-user-oauth): tokens silently expire, no re-link UI exists yet, the setup flow needs a browser. Use service accounts if you can.
 
 **Microsoft Calendar** — register an app at [portal.azure.com](https://portal.azure.com), add the `Calendars.Read` delegated permission under "API permissions" and click **Grant admin consent** (without the consent grant the permission is registered but not active). Set the redirect URI to `https://<your-domain>/calendar/microsoft/oauth/callback`:
 ```

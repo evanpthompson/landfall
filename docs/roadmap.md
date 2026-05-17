@@ -60,27 +60,20 @@ The `calendarOauthSetupToken` feature can stay in the codebase as a safety
 valve for `.local` / IP-only installs, but it should not be the documented
 primary path.
 
-### 🟢 Google Drive photos — service account (replace OAuth)
+### ✅ Google Drive photos — service account (replace OAuth) — DONE
 
-The current photo integration uses OAuth credentials (user-delegated access)
-which expire, require re-authorisation, and were painful to set up. Service
-accounts are the correct tool for unattended server-to-server access.
+Service account path shipped. `GoogleServiceAccountAuth` mints self-signed
+JWTs (RS256, pointycastle) and exchanges them for access tokens via the
+`urn:ietf:params:oauth:grant-type:jwt-bearer` grant.
+`GoogleDriveServiceAccountPhotoService` is a parallel `PhotoService`
+implementation; `photoServiceFor()` picks the right one based on
+`LinkedCredential.provider` (`google-sa` vs `google`). OAuth path is
+preserved as a fallback — see [architecture decision §27](../../files/automation/landfall/architecture_decisions.md#27-google-drive-photos--service-account-not-user-oauth)
+for the full rationale and migration story.
 
-**Plan**:
-1. Create a Google Cloud service account in the existing project; download the
-   JSON key file.
-2. Share the Drive photo folder with the service account email address.
-3. Add `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`
-   (the RSA private key, PEM-encoded) to `passwords.yaml.template` and
-   `.env.example`.
-4. Implement `GoogleDriveServiceAccountPhotoService` that generates a
-   self-signed JWT for the Drive API scope — no extra dependencies, ~30 lines
-   using Dart's `dart:convert` + `pointycastle`.
-5. Update `PhotoRefreshCall` and `PhotoServeRoute` to use the service account
-   credentials when configured; fall back to OAuth credentials if not.
-
-**Why this is better**: no browser flow, no redirect URIs, no expiring tokens,
-no re-link UI needed. One key file, shared folder — done.
+Backlog follow-up: "Re-link card UI for failed credentials" is now optional
+for Google Drive photos (service account credentials don't expire). Still
+useful for Microsoft Calendar OAuth.
 
 ### ✅ UUID format alignment (`authUserId`) — DONE
 

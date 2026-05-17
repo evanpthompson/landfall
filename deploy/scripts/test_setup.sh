@@ -66,6 +66,10 @@ assert_generated PHOTO_SIGNING_SECRET
 assert_generated OAUTH_TOKEN_ENCRYPTION_KEY
 assert_empty     STRIPE_WEBHOOK_SECRET
 assert_empty     OWM_API_KEY
+# Google Drive service account: external secrets, never auto-generated.
+# The user fills these in from a Google Cloud service account JSON key.
+assert_empty     GOOGLE_SERVICE_ACCOUNT_EMAIL
+assert_empty     GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
 
 echo ""
 echo "Results: ${PASS} passed, ${FAIL} failed"
