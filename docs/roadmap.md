@@ -18,21 +18,19 @@ Status legend:
 Items that must land before beta. Unlike the rest of this file these are not
 deferred — they are concrete work with known implementations.
 
-### 🟢 Fix `/app` base-href (web UI 404s)
+### ✅ Remove `/app` route (no real web UI yet) — DONE
 
-The display's web app (served at `/app/`) is built with `--base-href /` in
-`deploy/pi-gen/build.sh`, so `index.html` contains `<base href="/">`. All
-asset requests resolve to the root (`/flutter_bootstrap.js`, etc.) instead of
-`/app/flutter_bootstrap.js`, producing 404s when opening the web UI from a
-phone browser.
+The Serverpod scaffold registered `/app/*` and `/app/assets/assets/config.json`
+to serve a Flutter web admin UI that doesn't exist in this project. The only
+Flutter web build we produce is the companion bundle, which is served at
+`/c/<displayId>/` by `CompanionPageRoute` (with display-ID injection). Routing
+`/app/*` to the same bundle would serve a half-broken UI with no injected
+display ID and confuse anyone who opened the URL.
 
-**Fix**: change the build flag to `--base-href /app/` in `build.sh` and
-rebuild the server image. Verify by opening `https://<domain>/app` on a phone
-and confirming the Flutter app loads without console errors.
-
-**Why this matters**: the web UI is the primary way to connect new OAuth
-accounts (once the setup token path is retired) and for any browser-based
-admin flow.
+Resolution: removed the `/app/*` Serverpod routes, the matching Caddyfile
+reverse-proxy line, and `AppConfigRoute`. Regression guard at
+`deploy/tests/test_app_route_absent.sh`. The real web admin UI is a separate
+post-beta phase — see "Web admin UI" under "Bigger features" below.
 
 ### ✅ Push-server deploy script — DONE
 
@@ -324,6 +322,40 @@ can be joined across display + server.
 ---
 
 ## Bigger features (not beta-blockers)
+
+### 🟡 Web admin UI (`/app`)
+
+A browser-based admin surface for first-run sign-in, connecting OAuth
+accounts, and basic configuration without needing physical access to the
+display. Today every admin action requires either the on-Pi Flutter app,
+SSH, or the one-time setup-token bypass on the companion route.
+
+**Scope at MVP:**
+
+- Email/passkey sign-in mirroring the display app's flow
+- "Connect Google Calendar" button that triggers `/calendar/oauth/start`
+  with a real authenticated session (replaces the setup-token bypass)
+- "Connect Microsoft Calendar" — same shape
+- Linked-credentials list with re-link buttons when a credential has gone
+  stale (ties in with the credential-refresh follow-up below)
+- Photo source picker once the photo abstraction lands
+
+**Implementation notes:**
+
+- New Flutter web entry `apps/display/lib/web_admin_main.dart` (separate
+  from `companion_web_main.dart` — the companion is a device-pairing
+  surface, not an admin one)
+- Build target: `--base-href /app/`, output to a new
+  `server/landfall_server/web/admin/` directory so it doesn't collide with
+  the companion build
+- New `/app/*` Serverpod route + Caddyfile reverse-proxy (currently
+  deliberately absent — see the resolved blocker above)
+- CSP additions for the admin bundle's needs
+
+**Why deferred:** the setup-token bypass + the on-Pi display app cover the
+beta admin surface adequately. A real web UI is multi-session work
+(sign-in flow, OAuth wiring, link management screens, tests, end-to-end on
+hardware) and is not on the critical path to first beta.
 
 ### 🟡 Card Library UI (Phase 22 from the original plan)
 

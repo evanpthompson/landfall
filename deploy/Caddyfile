@@ -14,7 +14,10 @@
     reverse_proxy /calendar/oauth/* server:8082
     reverse_proxy /calendar/microsoft/oauth/* server:8082
     reverse_proxy /stripe/* server:8082
-    reverse_proxy /app/* server:8082
+    # /app/* is intentionally absent. The Serverpod scaffold's web UI is not
+    # used; the only Flutter web bundle is the companion, served at /c/<id>/
+    # by CompanionPageRoute (which injects the display ID). See the "Web
+    # admin UI" backlog item in docs/roadmap.md for the post-beta plan.
 
     # API server (HTTP + WebSocket)
     reverse_proxy /api/* server:8080
@@ -32,6 +35,7 @@
     # WebSocket endpoint for real-time card push
     reverse_proxy /websocket server:8080
 
-    # Catch-all: everything else goes to the web server (serves root page, /app)
+    # Catch-all: everything else goes to the web server (serves root page,
+    # photo redirects, OAuth callback pages, etc.).
     reverse_proxy server:8082
 }

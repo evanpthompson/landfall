@@ -12,7 +12,6 @@ import 'src/theme/theme_seeder.dart';
 import 'src/theme/marketplace_seeder.dart';
 import 'src/photo/photo_refresh_call.dart';
 import 'src/profile/profile_schedule_call.dart';
-import 'src/web/routes/app_config_route.dart';
 import 'src/web/routes/build_manifest_route.dart';
 import 'src/web/routes/rest/card_detail_route.dart';
 import 'src/web/routes/rest/cards_route.dart';
@@ -57,37 +56,13 @@ void run(List<String> args) async {
   final root = Directory(Uri(path: 'web/static').toFilePath());
   pod.webServer.addRoute(StaticRoute.directory(root));
 
-  // Setup the app config route.
-  // We build this configuration based on the servers api url and serve it to
-  // the flutter app.
-  pod.webServer.addRoute(
-    AppConfigRoute(apiConfig: pod.config.apiServer),
-    '/app/assets/assets/config.json',
-  );
-
-  // Checks if the flutter web app has been built and serves it if it has.
-  final appDir = Directory(Uri(path: 'web/app').toFilePath());
-  if (appDir.existsSync()) {
-    // Serve the flutter web app under the /app path.
-    pod.webServer.addRoute(
-      FlutterRoute(
-        Directory(
-          Uri(path: 'web/app').toFilePath(),
-        ),
-      ),
-      '/app',
-    );
-  } else {
-    // If the flutter web app has not been built, serve the build app page.
-    pod.webServer.addRoute(
-      StaticRoute.file(
-        File(
-          Uri(path: 'web/pages/build_flutter_app.html').toFilePath(),
-        ),
-      ),
-      '/app/**',
-    );
-  }
+  // Note on /app/*: the Serverpod scaffold registers a /app route to serve
+  // a Flutter web bundle. We don't ship a web admin UI yet, and the only
+  // Flutter web build we produce (web/app/) is the companion bundle served
+  // at /c/<displayId>/ by CompanionPageRoute (with display-ID injection).
+  // Routing /app/* to the same bundle would serve a half-broken UI with no
+  // injected display ID, so the route is intentionally absent. See the
+  // "Web admin UI" backlog item in docs/roadmap.md for the post-beta plan.
 
   // Register future calls.
   pod.registerFutureCall(WeatherRefreshCall(), 'weatherRefresh');
