@@ -92,11 +92,11 @@ class _CompanionCardState extends State<CompanionCard>
       _polling = true;
       _startPollLoop();
     }
-    // TODO: multiple poll loops can accumulate if the widget is deactivated and
-    // reactivated without dispose() being called (e.g. layout reordering). The
-    // _polling flag only guards the first start; investigate whether
-    // deactivate() + reactivate() can bypass it and add a guard or cancel the
-    // previous loop future before starting a new one.
+    // _polling is never reset while this State is alive: deactivate() does not
+    // clear it, so a deactivate+reactivate cycle (layout reorder) re-enters
+    // didChangeDependencies with _polling=true and skips a duplicate start.
+    // dispose() is never called on a reactivated State — a new State would get
+    // _polling=false, but the old loop is already dead (mounted=false).
     _scheduleLookAtViewer();
   }
 

@@ -15,6 +15,30 @@ import 'package:display/src/features/companion/widgets/companion_card.dart';
 import 'package:display/src/features/companion/widgets/companion_qr_code.dart';
 
 // ---------------------------------------------------------------------------
+// Poll-count tracker — lets tests assert exactly how many concurrent polls
+// are in flight at any given moment.
+// ---------------------------------------------------------------------------
+
+class _CountingPollService implements CompanionPollService {
+  int inFlight = 0;
+  int maxConcurrent = 0;
+
+  @override
+  Future<lf.CompanionAction?> pollForEvents(
+    String displayId, {
+    int timeoutSeconds = 30,
+  }) async {
+    inFlight++;
+    if (inFlight > maxConcurrent) maxConcurrent = inFlight;
+    try {
+      return await Completer<lf.CompanionAction?>().future;
+    } finally {
+      inFlight--;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
@@ -70,6 +94,45 @@ Widget _wrap({
               width: slotSize.width,
               height: slotSize.height,
               child: const CompanionCard(),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Wraps CompanionCard with a counting poll service.
+///
+/// [textScale] is injected via a MediaQuery override placed *inside*
+/// MaterialApp's own MediaQuery so it actually reaches CompanionCard and
+/// triggers didChangeDependencies when pumped with a different value.
+Widget _wrapCounting({
+  required _CountingPollService pollService,
+  double textScale = 1.0,
+}) {
+  final cubit = CompanionCubit(
+    displayId: 'display-abc',
+    serverUrl: 'http://localhost:8080/',
+    repository: MockCompanionRepository(),
+  )..loadEntity(_entity());
+
+  return RepositoryProvider<CompanionPollService>(
+    create: (_) => pollService,
+    child: BlocProvider<CompanionCubit>.value(
+      value: cubit,
+      child: MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (ctx) => MediaQuery(
+              data: MediaQuery.of(ctx).copyWith(
+                textScaler: TextScaler.linear(textScale),
+              ),
+              child: const SizedBox(
+                width: 400,
+                height: 600,
+                child: CompanionCard(),
+              ),
             ),
           ),
         ),
@@ -174,6 +237,33 @@ void main() {
       // larger in a 960×540 slot — anywhere above the old cap proves it.
       expect(size.width, greaterThan(96),
           reason: 'QR must scale with the slot, not stay at the 96 px cap');
+    });
+
+    testWidgets(
+        'never runs more than one poll loop concurrently across dependency changes',
+        (tester) async {
+      final poll = _CountingPollService();
+
+      // Initial mount — one poll should start.
+      await tester.pumpWidget(_wrapCounting(pollService: poll, textScale: 1.0));
+      await tester.pump();
+      expect(poll.inFlight, 1, reason: 'exactly one poll after initial mount');
+
+      // Force didChangeDependencies by changing the MediaQuery text scale.
+      // This keeps the same State object alive (no dispose/initState cycle).
+      await tester.pumpWidget(_wrapCounting(pollService: poll, textScale: 1.5));
+      await tester.pump();
+      expect(poll.inFlight, 1,
+          reason: 'dependency change must not start a second concurrent poll');
+
+      // A second dependency change — still only one loop.
+      await tester.pumpWidget(_wrapCounting(pollService: poll, textScale: 2.0));
+      await tester.pump();
+      expect(poll.inFlight, 1,
+          reason: 'repeated dependency changes must not accumulate poll loops');
+
+      expect(poll.maxConcurrent, 1,
+          reason: 'peak concurrency must never exceed 1');
     });
   });
 }

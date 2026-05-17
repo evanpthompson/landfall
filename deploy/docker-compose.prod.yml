@@ -79,8 +79,11 @@ services:
         condition: service_healthy
     # Caddy's admin API on :2019 always answers locally; we hit /config/
     # which returns the current config tree only when Caddy is healthy.
+    # Use 127.0.0.1 explicitly — Alpine's wget resolves "localhost" to ::1
+    # first, but Caddy's admin listener binds IPv4 only, causing a spurious
+    # "Connection refused" and an (unhealthy) status even when Caddy is fine.
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://localhost:2019/config/ > /dev/null || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:2019/config/ > /dev/null || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
