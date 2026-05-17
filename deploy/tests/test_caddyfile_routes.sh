@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
-# Verifies that the Caddyfile routes every API endpoint Serverpod's client
-# POSTs to as both the bare path and the /* glob.
+# Verifies that the Caddyfile routes every companion endpoint via a named
+# matcher that covers both the bare path and the /* glob.
 #
-# Regression guard: a previous Caddyfile listed only `/companion/*`, which
-# does not match `/companion` (no trailing slash). The Serverpod client POSTs
-# to the bare `/companion`, so the request fell to the catch-all webserver
-# and returned 405 Method Not Allowed, breaking the companion page.
+# Regression guard A (original): /companion/* alone does not match /companion
+# (no trailing slash). The Serverpod client POSTs to the bare path, so the
+# request fell to the catch-all webserver and returned 405.
+#
+# Regression guard B (this session): inline multi-path syntax
+# "reverse_proxy /companion /companion/* server:8080" is invalid — Caddy
+# treats the second path token as a second upstream address, causing intermittent
+# 502s via round-robin against an invalid dial target. The fix is a named
+# matcher: "@companion path /companion /companion/*"
 
 set -euo pipefail
 
@@ -23,13 +28,27 @@ required_endpoints=(
 
 fail=0
 for ep in "${required_endpoints[@]}"; do
-  # Match a reverse_proxy line that contains both /<ep> as a standalone token
-  # and the /<ep>/* glob. The bare path must appear with a trailing space or
-  # tab so we don't accidentally match /<ep>/* as fulfilling /<ep>.
-  if ! grep -E "reverse_proxy[[:space:]]+([^[:space:]]+[[:space:]]+)*/${ep}([[:space:]]|$)" "${CADDYFILE}" \
-        | grep -qE "/${ep}/\*"; then
-    echo "FAIL: Caddyfile does not route both /${ep} and /${ep}/* together" >&2
-    echo "      Serverpod POSTs to the bare /${ep} — the /* glob alone returns 405." >&2
+  # Find any named matcher declaration that includes both bare /<ep> and /<ep>/*.
+  # Pattern: "@<name> path ... /<ep> ... /<ep>/*" or "/<ep>/* ... /<ep>"
+  # We require both tokens to appear on the same matcher line.
+  matcher_line=$(grep -E "@[a-z_]+[[:space:]]+path[[:space:]]" "${CADDYFILE}" \
+    | grep -E "(^|[[:space:]])/${ep}([[:space:]]|$)" \
+    | grep -E "(^|[[:space:]])/${ep}/\*([[:space:]]|$)" || true)
+
+  if [[ -z "${matcher_line}" ]]; then
+    echo "FAIL: No named matcher covers both /${ep} and /${ep}/*" >&2
+    echo "      Use: @${ep} path /${ep} /${ep}/*" >&2
+    echo "      Then: reverse_proxy @${ep} server:8080" >&2
+    echo "      (Inline 'reverse_proxy /a /b upstream' is invalid — Caddy treats" >&2
+    echo "       extra path tokens as additional upstream addresses.)" >&2
+    fail=1
+    continue
+  fi
+
+  # Extract the matcher name (@foo) and verify a reverse_proxy uses it.
+  matcher_name=$(echo "${matcher_line}" | grep -oE "@[a-z_]+" | head -1)
+  if ! grep -qE "reverse_proxy[[:space:]]+${matcher_name}([[:space:]]|$)" "${CADDYFILE}"; then
+    echo "FAIL: Named matcher '${matcher_name}' declared but never used in reverse_proxy" >&2
     fail=1
   fi
 done
@@ -38,4 +57,4 @@ if (( fail == 1 )); then
   exit 1
 fi
 
-echo "OK: Caddyfile routes all required endpoints"
+echo "OK: Caddyfile routes all required endpoints via named matchers"

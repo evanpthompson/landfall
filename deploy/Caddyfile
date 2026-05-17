@@ -21,10 +21,12 @@
     reverse_proxy /card/* server:8080
     reverse_proxy /agent/* server:8080
     reverse_proxy /calendar/* server:8080
-    # Serverpod POSTs the endpoint call to /companion (no trailing slash).
-    # The /* glob alone does not match the bare path, so list both — otherwise
-    # the request falls through to the catch-all webserver and returns 405.
-    reverse_proxy /companion /companion/* server:8080
+    # Named matcher covers both the bare path (/companion) and all sub-paths
+    # (/companion/*). Inline multi-path syntax ("reverse_proxy /a /b upstream")
+    # is invalid — Caddy treats the second path as a second upstream address,
+    # causing intermittent 502s via round-robin against an invalid dial target.
+    @companion path /companion /companion/*
+    reverse_proxy @companion server:8080
     reverse_proxy /photos/* server:8082
 
     # WebSocket endpoint for real-time card push
