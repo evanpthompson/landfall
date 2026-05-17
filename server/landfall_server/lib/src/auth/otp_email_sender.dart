@@ -15,6 +15,20 @@ class OtpEmailSender {
   }) async {
     final config = OtpEmailConfig.fromSession(session);
 
+    // Never make outbound SMTP connections in test runs — even when
+    // passwords.yaml has live SMTP credentials. OTP integration tests use
+    // addresses like `user@example.com`, and a real send through Gmail
+    // produces bounce notifications back to the SMTP account owner. The
+    // tests don't assert on email side effects, so logging is sufficient.
+    final runMode = session.server.runMode;
+    if (runMode == ServerpodRunMode.test) {
+      session.log(
+        '[OTP] (test mode) skipping SMTP send for $email '
+        '(code suppressed; ${lifetime.inMinutes} min lifetime).',
+      );
+      return;
+    }
+
     if (!config.isConfigured) {
       if (config.logCodes) {
         session.log(
