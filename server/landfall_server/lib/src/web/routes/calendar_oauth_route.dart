@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:serverpod/serverpod.dart';
+import '../../auth/auth_user_id.dart';
 import '../../generated/protocol.dart';
 import 'oauth_token_encryptor.dart';
 
@@ -40,13 +41,6 @@ void injectCalendarOAuthStateForTest(String state, String authUserId) {
   );
 }
 
-/// Converts a Serverpod userIdentifier to a stable UUID-formatted string.
-String _userIdentifierToUuid(String userIdentifier) {
-  final padded = userIdentifier.padLeft(12, '0');
-  // RFC4122 v4 layout: version nibble = 4, variant nibble = 8.
-  return '00000000-0000-4000-8000-$padded';
-}
-
 /// GET /calendar/oauth/start — requires authentication, then redirects to
 /// Google's consent screen.
 class CalendarOAuthStartRoute extends Route {
@@ -67,7 +61,8 @@ class CalendarOAuthStartRoute extends Route {
     final String authUserId;
 
     if (session.authenticated != null) {
-      authUserId = _userIdentifierToUuid(session.authenticated!.userIdentifier);
+      authUserId =
+          authUserIdFromIdentifier(session.authenticated!.userIdentifier);
     } else {
       // Setup token path: allows OAuth configuration from a phone browser
       // before a full session exists on the display.  Only accepted when

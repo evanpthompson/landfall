@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:serverpod/serverpod.dart';
+import '../../auth/auth_user_id.dart';
 import '../../generated/protocol.dart';
 import 'oauth_token_encryptor.dart';
 
@@ -39,12 +40,6 @@ void injectMicrosoftOAuthStateForTest(String state, String authUserId) {
   );
 }
 
-String _userIdentifierToUuid(String userIdentifier) {
-  final padded = userIdentifier.padLeft(12, '0');
-  // RFC4122 v4 layout: version nibble = 4, variant nibble = 8.
-  return '00000000-0000-4000-8000-$padded';
-}
-
 /// GET /calendar/microsoft/oauth/start — requires authentication, then
 /// redirects to the Microsoft consent screen.
 class MicrosoftCalendarOAuthStartRoute extends Route {
@@ -78,7 +73,7 @@ class MicrosoftCalendarOAuthStartRoute extends Route {
     }
 
     final authUserId =
-        _userIdentifierToUuid(session.authenticated!.userIdentifier);
+        authUserIdFromIdentifier(session.authenticated!.userIdentifier);
 
     final now = DateTime.now().toUtc();
     _pendingStates.removeWhere((_, v) => v.expiresAt.isBefore(now));

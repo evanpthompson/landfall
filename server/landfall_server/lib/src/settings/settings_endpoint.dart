@@ -1,5 +1,6 @@
 import 'package:serverpod/serverpod.dart';
 
+import '../auth/auth_user_id.dart';
 import '../generated/protocol.dart';
 
 /// Provides settings data to the display client.
@@ -41,9 +42,6 @@ class SettingsEndpoint extends Endpoint {
     if (session.authenticated == null) {
       throw LandfallException(message: 'Authentication required.');
     }
-    final userIdentifier = session.authenticated!.userIdentifier;
-    // Stable UUID format: 00000000-0000-0000-0000-<userId padded to 12 digits>
-    final padded = userIdentifier.padLeft(12, '0');
-    return '00000000-0000-0000-0000-$padded';
+    return authUserIdFromIdentifier(session.authenticated!.userIdentifier);
   }
 }

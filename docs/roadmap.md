@@ -82,22 +82,15 @@ accounts are the correct tool for unattended server-to-server access.
 **Why this is better**: no browser flow, no redirect URIs, no expiring tokens,
 no re-link UI needed. One key file, shared folder — done.
 
-### 🟢 UUID format alignment (`authUserId`)
+### ✅ UUID format alignment (`authUserId`) — DONE
 
-Two separate functions derive a UUID from the Serverpod `userIdentifier`, and
-they produce different formats:
-
-- `settings_endpoint.dart` `getMyAuthUserId()` →
-  `00000000-0000-0000-0000-<padded>`
-- `calendar_oauth_route.dart` `_userIdentifierToUuid()` →
-  `00000000-0000-4000-8000-<padded>`
-
-Both are also written assuming a numeric `userIdentifier`, which breaks with
-Serverpod's newer UUID-based auth (where `userIdentifier` is already a UUID).
-
-**Fix**: audit all callers of both functions; pick one canonical format (or
-just pass the raw `userIdentifier` directly when it is already a valid UUID);
-add a test that fails when the two formats diverge.
+Three call sites (`settings_endpoint.dart`, `calendar_oauth_route.dart`,
+`microsoft_calendar_oauth_route.dart`) now all call a single canonical
+function `authUserIdFromIdentifier` in `lib/src/auth/auth_user_id.dart`.
+Canonical format is RFC 4122 v4 (`00000000-0000-4000-8000-<padded>`) —
+matches what's already in the database. Already-UUID inputs are returned
+verbatim, so Serverpod's newer UUID-based auth path also works. Unit tests
+at `test/unit/auth/auth_user_id_test.dart`.
 
 ---
 
