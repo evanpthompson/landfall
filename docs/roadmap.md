@@ -34,21 +34,11 @@ and confirming the Flutter app loads without console errors.
 accounts (once the setup token path is retired) and for any browser-based
 admin flow.
 
-### 🟢 Push-server deploy script
+### ✅ Push-server deploy script — DONE
 
-Every server code change currently requires: build image locally → save+gzip
-(~95 MB) → scp to Pi → docker load → restart. There is no script for this.
-
-**Fix**: add `deploy/scripts/push-server.sh` that does all of the above in
-one command:
-```
-bash deploy/scripts/push-server.sh [PI_IP]
-```
-Default PI_IP from `.env` or `LANDFALL_PI_IP` env var. Include `--platform
-linux/arm64` in the build step so the amd64/arm64 mismatch cannot recur.
-
-**Why this matters**: without it, code updates to the Pi are a multi-step
-manual process prone to the wrong-architecture mistake we hit tonight.
+Shipped as `deploy/scripts/push-server.sh` with `--platform linux/arm64`
+enforced. Tests in `deploy/scripts/test_push_server.sh`; documented in
+[`docs/updating.md`](updating.md#in-place-server-only-update-fast-path).
 
 ### 🟢 Google OAuth permanent setup (replace ngrok + setup token)
 

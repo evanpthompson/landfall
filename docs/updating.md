@@ -145,32 +145,78 @@ needs to diagnose remotely.
 
 ---
 
-## Advanced: in-place server-only update (edge case)
+## In-place server-only update (fast path)
 
 > **When to use this instead of a full reflash:** you have a healthy running
 > Pi, the only thing that changed is the Landfall server (no kernel/system
-> updates, no display binary changes), and you want to save the reflash time.
+> updates, no display binary changes), and you want to save the reflash
+> time.
 >
 > If anything else changed, **don't use this path** — reflash.
 
+The fast path is automated by `deploy/scripts/push-server.sh`. One command
+rebuilds the arm64 image, copies it to the Pi, loads it into Docker, and
+restarts the server service. Postgres, Redis, and Caddy stay up. The display
+reconnects within ~5 seconds once the server is back.
+
+### Configure the Pi target once
+
+Pick one of these:
+
+- Export `LANDFALL_PI_IP` in your shell (good for one-off pushes):
+  ```bash
+  export LANDFALL_PI_IP=192.168.1.130
+  ```
+- Or add it to `deploy/.env` (persists across sessions):
+  ```
+  LANDFALL_PI_IP=192.168.1.130
+  ```
+- Or pass it as the first argument every time.
+
+If your Pi user is not `landfall` or the deploy path differs, override:
+
 ```bash
-# On the dev host, rebuild only the server tarball
-bash deploy/pi-gen/build.sh --stage-only
-
-# Copy it over
-scp deploy/pi-gen/work/pi-gen/stage2-landfall/00-landfall/files/landfall-server.tar.gz \
-    landfall@<pi-hostname>.local:/tmp/
-
-# On the Pi: load + restart server only
-ssh landfall@<pi-hostname>.local
-sudo docker load < /tmp/landfall-server.tar.gz
-cd ~/landfall/deploy
-docker compose up -d server
-landfall-doctor   # verify
+export LANDFALL_PI_USER=ethompson
+export LANDFALL_PI_DEPLOY_PATH=/opt/landfall/deploy
 ```
 
-Postgres, Redis, Caddy are untouched. The display reconnects within ~5
-seconds once the server is back up.
+### Push
+
+```bash
+bash deploy/scripts/push-server.sh
+```
+
+Preview without executing anything:
+
+```bash
+bash deploy/scripts/push-server.sh --dry-run
+```
+
+### What the script does
+
+1. `docker buildx build --platform linux/arm64 -t landfall-server:latest server/landfall_server` — arm64 build (required; an amd64 binary loads but fails at runtime with `exec format error`).
+2. `docker save landfall-server:latest | gzip > /tmp/landfall-server-<ts>.tar.gz`
+3. `scp` to `landfall@<pi>:/tmp/landfall-server.tar.gz`
+4. Over SSH on the Pi: `gunzip -c ... | docker load`, then `docker compose -f docker-compose.prod.yml up -d --no-deps server`, then remove the staging tarball.
+5. Local cleanup of the dev-host tarball.
+
+### Verify
+
+```bash
+ssh landfall@<pi-hostname>.local landfall-doctor
+```
+
+All-green within ~10 seconds of the script completing means the new server
+binary is running and accepting traffic. If anything's red,
+`landfall-bug-report` produces the diagnostic bundle.
+
+### When to fall back to a full reflash
+
+Use the default reflash path (above) when:
+
+- Anything outside `server/landfall_server/` changed (display binary, Caddyfile, systemd units, openbox autostart, anything in `deploy/pi-gen/`)
+- The Pi kernel or base OS needs an update
+- `landfall-doctor` reports red on something unrelated to the server itself
 
 ---
 
