@@ -75,12 +75,27 @@ For local development only, set `OTP_LOG_CODES=true` to write OTP codes to serve
 OWM_API_KEY=your_key_here
 ```
 
-**Google Calendar** — create an OAuth 2.0 client at [console.cloud.google.com](https://console.cloud.google.com). Enable the **Google Calendar API** under "APIs & Services → Library" before creating the client (without this step the OAuth consent will succeed but syncing will return permission errors). Set the redirect URI to `https://<your-domain>/calendar/oauth/callback`:
-```
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-GOOGLE_REDIRECT_URI=https://landfall.local/calendar/oauth/callback
-```
+**Google Calendar** — uses OAuth 2.0. The user signs in once via a browser; the server holds an encrypted refresh token to keep events in sync.
+
+1. In Google Cloud Console (create a project first if you don't already have one), enable the **Google Calendar API** under "APIs & Services → Library". Without this step the OAuth consent will succeed but syncing returns permission errors.
+2. Go to "APIs & Services → Credentials" → **Create credentials → OAuth client ID**. Application type: **Web application**.
+3. Under "Authorised redirect URIs", add:
+   ```
+   https://<your-domain>/calendar/oauth/callback
+   ```
+   `<your-domain>` must be the `LANDFALL_DOMAIN` you set in `.env`. **Google rejects `.local` hostnames and bare IP addresses** — you need a real domain (or a public dynamic-DNS hostname). If you only have `.local` available, see [OAuth without a public domain](#oauth-without-a-public-domain) below.
+4. Click Create. Copy the `Client ID` and `Client secret`.
+5. Fill these in `.env`:
+   ```
+   GOOGLE_CLIENT_ID=<your client id>
+   GOOGLE_CLIENT_SECRET=<your client secret>
+   GOOGLE_REDIRECT_URI=https://<your-domain>/calendar/oauth/callback
+   ```
+6. After the server is running (next section), connect your account: sign in to the display, then open the OAuth start URL on any device:
+   ```
+   https://<your-domain>/calendar/oauth/start
+   ```
+   You'll be redirected to Google's consent screen. Sign in, grant access, and you'll land on a "Connected" confirmation page. The next calendar refresh job (within 15 minutes) pulls your events.
 
 **Google Drive photos** — *recommended path is a service account*, not OAuth. Service accounts skip the browser-consent dance entirely and never expire, so photos keep syncing even after a Pi reflash.
 
@@ -236,3 +251,55 @@ Ensure `DB_HOST=postgres` in your `.env` — the Postgres container is reachable
 
 **Calendar not syncing:**
 Check that your OAuth redirect URI in the `.env` exactly matches what you registered in the Google Cloud or Azure console, including the scheme (`https://` vs `http://`).
+
+---
+
+## OAuth without a public domain
+
+Google rejects OAuth redirect URIs that point at `.local` hostnames or bare IP addresses. If your Pi is only reachable at `landfall.local` (the default) or `192.168.x.x`, the normal calendar connect flow won't work — you'll hit "redirect_uri_mismatch" or "Access blocked" before Google's consent screen even loads.
+
+You have three options, ordered by recommendation:
+
+### Option A — Use a real domain (recommended for permanent installs)
+
+Get a domain you control (any TLD Google accepts — `.com`, `.net`, `.io`, `.dev`, etc.) and point an `A` record at your home IP. Forward HTTPS traffic from your router to the Pi. Caddy in the deploy stack will obtain a Let's Encrypt cert automatically when it sees the new `LANDFALL_DOMAIN`.
+
+Set `LANDFALL_DOMAIN=your-domain.example` in `.env`, register `https://your-domain.example/calendar/oauth/callback` in the Google Cloud Console, restart, and connect normally.
+
+### Option B — Use the setup-token bootstrap (one-time, advanced)
+
+The server has a fallback path that accepts a bearer-token-authenticated OAuth start request without requiring a display session. This is intended as a one-time bootstrap, not a permanent setup.
+
+1. Pick or generate a real, public-internet-resolvable domain. Even a free dynamic-DNS hostname works — the constraint is that Google can resolve it during the consent flow, not that traffic actually reaches your server from the public internet.
+
+2. Register `https://<that-domain>/calendar/oauth/callback` in your Google Cloud Console OAuth client.
+
+3. Add a temporary local DNS override so requests to that domain hit your Pi:
+   - On your phone: connect to the same WiFi; some routers let you add custom DNS entries.
+   - Simpler: use a tunnelling tool (e.g. `ngrok`) on your dev machine that points at the Pi.
+
+4. Generate a setup token, add it to `.env`, restart:
+   ```
+   CALENDAR_OAUTH_SETUP_TOKEN=$(openssl rand -base64 24)
+   ```
+
+5. On your phone, open the bootstrap URL:
+   ```
+   https://<that-domain>/calendar/oauth/start?setup_token=<token>&authUserId=<uuid>
+   ```
+   `<uuid>` is any well-formed UUID — it labels the credential row. If you've already signed in to the display once, get yours from `landfall-doctor` or by inspecting `calendar_linked_credentials`.
+
+6. Complete the consent flow. Google redirects back to your domain → your Pi → the credential is stored.
+
+7. **Immediately clear the setup token:**
+   ```
+   sed -i '/CALENDAR_OAUTH_SETUP_TOKEN/d' deploy/.env
+   docker compose -f docker-compose.prod.yml up -d --no-deps server
+   ```
+   The token is a bearer secret. Leaving it in production means anyone who knows the URL can link a Google account to your display.
+
+### Option C — Switch photos to a service account (skips OAuth entirely for Drive)
+
+If the only thing you need from Google is Drive photos, you can avoid OAuth altogether: use a service account. See the [Google Drive photos](#4-add-optional-integrations) instructions above — the service account flow has no browser step, no redirect URI to register, and no `.local` constraint.
+
+Calendar still needs OAuth (there's no service account flow for personal Calendar). If you want Calendar too, fall back to Option A or B.

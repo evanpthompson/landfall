@@ -38,27 +38,27 @@ Shipped as `deploy/scripts/push-server.sh` with `--platform linux/arm64`
 enforced. Tests in `deploy/scripts/test_push_server.sh`; documented in
 [`docs/updating.md`](updating.md#in-place-server-only-update-fast-path).
 
-### 🟢 Google OAuth permanent setup (replace ngrok + setup token)
+### ✅ Google OAuth permanent setup — DONE
 
-The setup token bypass added tonight was a one-time workaround. The permanent
-fix has two parts:
+Both halves of this resolved:
 
-1. **Real domain as redirect URI.** Register
-   `https://<real-domain>/calendar/oauth/callback` in Google Console (e.g.
-   `makefastlandfall.dev`). Update Pi `.env` `GOOGLE_REDIRECT_URI` to match.
-   With a real domain, the `/app` web UI (once the base-href is fixed) lets
-   users sign in normally — no setup token needed.
+1. **Real domain as primary path.** `docs/self_hosting_guide.md` now leads
+   with "register `https://<your-domain>/calendar/oauth/callback`" — the
+   normal self-hosted OAuth flow. `passwords.yaml.template` and
+   `.env.example` carry the same pattern in their comments. No ngrok in
+   the documented happy path.
 
-2. **Self-hoster documentation.** Write `docs/google-integration-setup.md`
-   covering: create a Google Cloud project, enable Calendar + Drive APIs,
-   create an OAuth client (Web application), register the redirect URI as
-   `https://<LANDFALL_DOMAIN>/calendar/oauth/callback`, set the three env
-   vars. This is the standard self-hosted pattern (Home Assistant, Nextcloud,
-   etc.) — each installer uses their own credentials.
+2. **Self-hoster documentation.** Consolidated into
+   `docs/self_hosting_guide.md` rather than a separate file: full
+   step-by-step for the Calendar OAuth client, full walk-through for
+   Drive photos (service account first, OAuth fallback), and an explicit
+   "OAuth without a public domain" troubleshooting section covering the
+   three options (real domain, setup-token bootstrap, or switching photos
+   to a service account to avoid OAuth entirely).
 
-The `calendarOauthSetupToken` feature can stay in the codebase as a safety
-valve for `.local` / IP-only installs, but it should not be the documented
-primary path.
+The `calendarOauthSetupToken` feature stays in the codebase as a
+documented fallback for `.local` / IP-only installs, framed as advanced
+and explicitly tagged as a bearer secret that must be cleared after use.
 
 ### ✅ Google Drive photos — service account (replace OAuth) — DONE
 
