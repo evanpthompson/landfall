@@ -218,6 +218,22 @@ APK, macOS dmg) happen locally. A matrix would catch platform-specific
 build breakage earlier. Cost (CI minutes) is low; mostly a sequencing
 question relative to other infra work.
 
+### 🟢 Flutter SDK upgrade — drop `Intl.v8BreakIterator` warning
+
+The companion page logs a Chrome deprecation warning sourced from
+`main.dart.js` (Dart's `Intl` runtime calls `Intl.v8BreakIterator`, which
+Chrome is removing in favour of `Intl.Segmenter`). It's a console warning
+only — rendering and text segmentation still work today. Fixed upstream in
+newer Flutter engine builds; pinned tracker is
+[flutter/flutter#147369](https://github.com/flutter/flutter/issues/147369).
+
+**Why deferred**: current Flutter is `3.41.6` (engine `5cdd3277...`,
+March 2026). A bump should be a dedicated change with a full test pass and
+Pi-image rebuild, not folded into unrelated debugging.
+
+**Trigger**: next planned dependency-policy bump (`docs/dependency_policy.md`)
+or when Chrome promotes the warning to an error.
+
 ---
 
 ## Licensed-tier features

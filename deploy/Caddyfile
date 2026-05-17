@@ -21,7 +21,10 @@
     reverse_proxy /card/* server:8080
     reverse_proxy /agent/* server:8080
     reverse_proxy /calendar/* server:8080
-    reverse_proxy /companion/* server:8080
+    # Serverpod POSTs the endpoint call to /companion (no trailing slash).
+    # The /* glob alone does not match the bare path, so list both — otherwise
+    # the request falls through to the catch-all webserver and returns 405.
+    reverse_proxy /companion /companion/* server:8080
     reverse_proxy /photos/* server:8082
 
     # WebSocket endpoint for real-time card push

@@ -42,6 +42,7 @@ run bash "${SCRIPT_DIR}/test_configure.sh"
 run bash "${SCRIPT_DIR}/test_configure_yaml_drift.sh"
 run bash "${SCRIPT_DIR}/test_build_stage_only.sh"
 run bash "${SCRIPT_DIR}/test_artifact_contract.sh"
+run bash "${SCRIPT_DIR}/test_caddyfile_routes.sh"
 run bash "${SCRIPT_DIR}/test_fire_tv_android.sh"
 
 echo "Deployment tests passed."
