@@ -15,8 +15,9 @@ Status legend:
 
 ## Pre-beta blockers
 
-Items that must land before beta. Unlike the rest of this file these are not
-deferred — they are concrete work with known implementations.
+All five originally-tracked items are done. See
+[`docs/beta_launch_checklist.md`](beta_launch_checklist.md) for the actual
+pre-flight steps before cutting the beta image.
 
 ### ✅ Remove `/app` route (no real web UI yet) — DONE
 
