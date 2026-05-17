@@ -111,6 +111,7 @@ jobs:
             googleClientId: 'ci-google-client-id'
             googleClientSecret: 'ci-google-client-secret'
             googleOAuthRedirectUri: 'http://localhost:8080/calendar/oauth/callback'
+            calendarOauthSetupToken: 'test-setup-token'
           YAML
 
       - name: Analyze
