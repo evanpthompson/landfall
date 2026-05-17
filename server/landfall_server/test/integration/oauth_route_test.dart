@@ -77,6 +77,91 @@ void main() {
           reason: 'Authenticated caller must be redirected to Google',
         );
       });
+
+      test('setup token with correct token + valid UUID is redirected (303)',
+          () async {
+        final session = sessionBuilder.build();
+        final request = RequestInternal.create(
+          Method.get,
+          Uri.parse(
+            'http://localhost/calendar/oauth/start'
+            '?setup_token=test-setup-token'
+            '&authUserId=00000000-0000-0000-0000-000000000042',
+          ),
+          Object(),
+        );
+
+        final result =
+            await CalendarOAuthStartRoute().handleCall(session, request);
+        expect(
+          (result as Response).statusCode,
+          equals(303),
+          reason: 'Valid setup token + UUID must be redirected to Google',
+        );
+      });
+
+      test('setup token is rejected when token value is wrong', () async {
+        final session = sessionBuilder.build();
+        final request = RequestInternal.create(
+          Method.get,
+          Uri.parse(
+            'http://localhost/calendar/oauth/start'
+            '?setup_token=wrong-token'
+            '&authUserId=00000000-0000-0000-0000-000000000042',
+          ),
+          Object(),
+        );
+
+        final result =
+            await CalendarOAuthStartRoute().handleCall(session, request);
+        expect(
+          (result as Response).statusCode,
+          equals(401),
+          reason: 'Wrong setup token must be rejected',
+        );
+      });
+
+      test('setup token is rejected when authUserId is missing', () async {
+        final session = sessionBuilder.build();
+        final request = RequestInternal.create(
+          Method.get,
+          Uri.parse(
+            'http://localhost/calendar/oauth/start'
+            '?setup_token=test-setup-token',
+          ),
+          Object(),
+        );
+
+        final result =
+            await CalendarOAuthStartRoute().handleCall(session, request);
+        expect(
+          (result as Response).statusCode,
+          equals(401),
+          reason: 'Setup token without authUserId must be rejected',
+        );
+      });
+
+      test('setup token is rejected when authUserId is not a valid UUID',
+          () async {
+        final session = sessionBuilder.build();
+        final request = RequestInternal.create(
+          Method.get,
+          Uri.parse(
+            'http://localhost/calendar/oauth/start'
+            '?setup_token=test-setup-token'
+            '&authUserId=not-a-valid-uuid',
+          ),
+          Object(),
+        );
+
+        final result =
+            await CalendarOAuthStartRoute().handleCall(session, request);
+        expect(
+          (result as Response).statusCode,
+          equals(401),
+          reason: 'Setup token with non-UUID authUserId must be rejected',
+        );
+      });
     });
 
     group('MicrosoftCalendarOAuthStartRoute', () {

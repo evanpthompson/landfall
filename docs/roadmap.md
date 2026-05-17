@@ -13,6 +13,150 @@ Status legend:
 
 ---
 
+## Pre-beta blockers
+
+Items that must land before beta. Unlike the rest of this file these are not
+deferred — they are concrete work with known implementations.
+
+### 🟢 Fix `/app` base-href (web UI 404s)
+
+The display's web app (served at `/app/`) is built with `--base-href /` in
+`deploy/pi-gen/build.sh`, so `index.html` contains `<base href="/">`. All
+asset requests resolve to the root (`/flutter_bootstrap.js`, etc.) instead of
+`/app/flutter_bootstrap.js`, producing 404s when opening the web UI from a
+phone browser.
+
+**Fix**: change the build flag to `--base-href /app/` in `build.sh` and
+rebuild the server image. Verify by opening `https://<domain>/app` on a phone
+and confirming the Flutter app loads without console errors.
+
+**Why this matters**: the web UI is the primary way to connect new OAuth
+accounts (once the setup token path is retired) and for any browser-based
+admin flow.
+
+### 🟢 Push-server deploy script
+
+Every server code change currently requires: build image locally → save+gzip
+(~95 MB) → scp to Pi → docker load → restart. There is no script for this.
+
+**Fix**: add `deploy/scripts/push-server.sh` that does all of the above in
+one command:
+```
+bash deploy/scripts/push-server.sh [PI_IP]
+```
+Default PI_IP from `.env` or `LANDFALL_PI_IP` env var. Include `--platform
+linux/arm64` in the build step so the amd64/arm64 mismatch cannot recur.
+
+**Why this matters**: without it, code updates to the Pi are a multi-step
+manual process prone to the wrong-architecture mistake we hit tonight.
+
+### 🟢 Google OAuth permanent setup (replace ngrok + setup token)
+
+The setup token bypass added tonight was a one-time workaround. The permanent
+fix has two parts:
+
+1. **Real domain as redirect URI.** Register
+   `https://<real-domain>/calendar/oauth/callback` in Google Console (e.g.
+   `makefastlandfall.dev`). Update Pi `.env` `GOOGLE_REDIRECT_URI` to match.
+   With a real domain, the `/app` web UI (once the base-href is fixed) lets
+   users sign in normally — no setup token needed.
+
+2. **Self-hoster documentation.** Write `docs/google-integration-setup.md`
+   covering: create a Google Cloud project, enable Calendar + Drive APIs,
+   create an OAuth client (Web application), register the redirect URI as
+   `https://<LANDFALL_DOMAIN>/calendar/oauth/callback`, set the three env
+   vars. This is the standard self-hosted pattern (Home Assistant, Nextcloud,
+   etc.) — each installer uses their own credentials.
+
+The `calendarOauthSetupToken` feature can stay in the codebase as a safety
+valve for `.local` / IP-only installs, but it should not be the documented
+primary path.
+
+### 🟢 Google Drive photos — service account (replace OAuth)
+
+The current photo integration uses OAuth credentials (user-delegated access)
+which expire, require re-authorisation, and were painful to set up. Service
+accounts are the correct tool for unattended server-to-server access.
+
+**Plan**:
+1. Create a Google Cloud service account in the existing project; download the
+   JSON key file.
+2. Share the Drive photo folder with the service account email address.
+3. Add `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`
+   (the RSA private key, PEM-encoded) to `passwords.yaml.template` and
+   `.env.example`.
+4. Implement `GoogleDriveServiceAccountPhotoService` that generates a
+   self-signed JWT for the Drive API scope — no extra dependencies, ~30 lines
+   using Dart's `dart:convert` + `pointycastle`.
+5. Update `PhotoRefreshCall` and `PhotoServeRoute` to use the service account
+   credentials when configured; fall back to OAuth credentials if not.
+
+**Why this is better**: no browser flow, no redirect URIs, no expiring tokens,
+no re-link UI needed. One key file, shared folder — done.
+
+### 🟢 UUID format alignment (`authUserId`)
+
+Two separate functions derive a UUID from the Serverpod `userIdentifier`, and
+they produce different formats:
+
+- `settings_endpoint.dart` `getMyAuthUserId()` →
+  `00000000-0000-0000-0000-<padded>`
+- `calendar_oauth_route.dart` `_userIdentifierToUuid()` →
+  `00000000-0000-4000-8000-<padded>`
+
+Both are also written assuming a numeric `userIdentifier`, which breaks with
+Serverpod's newer UUID-based auth (where `userIdentifier` is already a UUID).
+
+**Fix**: audit all callers of both functions; pick one canonical format (or
+just pass the raw `userIdentifier` directly when it is already a valid UUID);
+add a test that fails when the two formats diverge.
+
+---
+
+## Integration expansion (pre-beta planning)
+
+### 🔴 Evaluate and expand photo + calendar integrations
+
+Before locking the integration surface for beta, decide which additional
+providers to support and in what priority order. The goal is both broader
+coverage and higher-quality options than the current Google-only story.
+
+**Calendar candidates to evaluate**:
+
+| Provider | Protocol | Notes |
+|---|---|---|
+| Apple Calendar / iCloud | CalDAV | Self-hosted friendly; works without Apple ID if calendar is CalDAV-exported |
+| Nextcloud Calendar | CalDAV | Natural fit — many Landfall users may already self-host Nextcloud |
+| Exchange / Outlook (direct) | EWS or Graph API | Already have Microsoft OAuth stub; Graph is the clean path |
+| CalDAV (generic) | CalDAV | One implementation covers Nextcloud, Radicale, Baikal, Fastmail, Proton |
+| Local `.ics` file | iCal file | Zero-auth; user drops a file or provides a URL |
+
+A single CalDAV implementation would cover Nextcloud, iCloud, Fastmail,
+Proton, and any self-hosted CalDAV server — higher value-per-line-of-code
+than adding each provider individually.
+
+**Photo candidates to evaluate**:
+
+| Provider | Notes |
+|---|---|
+| Local folder / NAS (SMB/NFS) | Zero cloud dependency; natural for self-hosters with a NAS |
+| Immich | Self-hosted photo library, REST API, growing community |
+| Nextcloud Photos | Same credentials as Nextcloud Calendar; WebDAV or API |
+| Apple Photos (iCloud shared album) | Public shared album URLs are stable; no auth needed |
+| Flickr | Public album URL; API or RSS feed |
+| Local SD card / USB | Purely offline option for air-gapped installs |
+
+**Decisions to make before implementing**:
+- Which providers are in-scope for beta vs. post-beta?
+- Do we implement CalDAV as a generic provider and let users configure the
+  server URL, or do we have named presets (Nextcloud, iCloud, etc.)?
+- For local/NAS photos: does the Pi mount the share, or does the user point
+  to a folder that is already mounted?
+- For Immich: does it warrant a first-class integration (dedicated card type,
+  album picker UI) or a generic "photo feed URL" approach?
+
+---
+
 ## Reliability / self-healing follow-ups
 
 These are direct follow-ups to the Tier 1–3 operator tooling that shipped in

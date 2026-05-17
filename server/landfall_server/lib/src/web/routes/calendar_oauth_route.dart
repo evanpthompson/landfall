@@ -62,14 +62,38 @@ class CalendarOAuthStartRoute extends Route {
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
     // SEC-06: derive identity from the authenticated session, never from a
-    // caller-supplied query parameter.
-    if (session.authenticated == null) {
-      return Response(
-        401,
-        body: Body.fromString(
-          'Authentication required to connect a calendar.',
-        ),
-      );
+    // caller-supplied query parameter — unless the one-time setup token path
+    // is used (see below).
+    final String authUserId;
+
+    if (session.authenticated != null) {
+      authUserId = _userIdentifierToUuid(session.authenticated!.userIdentifier);
+    } else {
+      // Setup token path: allows OAuth configuration from a phone browser
+      // before a full session exists on the display.  Only accepted when
+      // calendarOauthSetupToken is configured, the caller supplies the
+      // matching token, and authUserId is a well-formed UUID.
+      final setupToken = _password(session, 'calendarOauthSetupToken');
+      final providedToken = request.url.queryParameters['setup_token'];
+      final providedUserId = request.url.queryParameters['authUserId'];
+
+      if (setupToken != null &&
+          providedToken == setupToken &&
+          providedUserId != null &&
+          _isValidUuid(providedUserId)) {
+        session.log(
+          'Calendar OAuth start via setup token for user $providedUserId',
+          level: LogLevel.warning,
+        );
+        authUserId = providedUserId;
+      } else {
+        return Response(
+          401,
+          body: Body.fromString(
+            'Authentication required to connect a calendar.',
+          ),
+        );
+      }
     }
 
     final clientId = _password(
@@ -86,10 +110,6 @@ class CalendarOAuthStartRoute extends Route {
         ),
       );
     }
-
-    final authUserId = _userIdentifierToUuid(
-      session.authenticated!.userIdentifier,
-    );
     final now = DateTime.now().toUtc();
     _pendingStates.removeWhere((_, v) => v.expiresAt.isBefore(now));
 
@@ -277,3 +297,10 @@ String? _password(Session session, String key, {String? legacyKey}) {
   final legacyValue = session.passwords[legacyKey];
   return legacyValue != null && legacyValue.isNotEmpty ? legacyValue : null;
 }
+
+final _uuidPattern = RegExp(
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+  caseSensitive: false,
+);
+
+bool _isValidUuid(String s) => _uuidPattern.hasMatch(s);
