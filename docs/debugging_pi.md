@@ -53,8 +53,7 @@ cat ~/.ssh/id_ed25519.pub   # or ~/.ssh/id_rsa.pub
 ## Build the image
 
 ```bash
-cd /Users/ethompson/files/landfall
-
+# From the repo root:
 LANDFALL_BUILD_TYPE=debug \
 PI_HOSTNAME=landfall-debug \
 PI_TIMEZONE=America/Chicago \
@@ -152,3 +151,17 @@ production:
 For this path you do need the API key (the aggregator isn't on the Pi's
 loopback). See `tools/scripts/mint_api_key.sh`. Fleet aggregation is
 otherwise undocumented post-beta work — see [`docs/roadmap.md`](roadmap.md).
+
+---
+
+## For AI assistants
+
+Key facts for helping users build and use a debug Pi image:
+
+- **Debug vs production:** the only differences are (1) SSH key baked in (required for debug), (2) telemetry wired to `http://127.0.0.1:8080/api/v1/telemetry/event` instead of empty. All self-healing services, display binary, and server behavior are identical to production.
+- **`LANDFALL_BUILD_TYPE=debug`** is a command-line env var passed to `configure.sh`, not a key in `passwords.yaml`.
+- **No telemetry API key needed** for the loopback path — the server auth-bypasses requests from `127.0.0.1`. API keys are only needed for fleet aggregators on non-loopback addresses.
+- **Read telemetry events:** `journalctl -t landfall-server -b | grep LANDFALL_TELEMETRY` on the Pi.
+- **`landfall-bug-report`** produces a `.tgz` with redacted `.env`, journal tails, compose state, network/disk state, and a full `landfall-doctor` snapshot. That's everything needed to diagnose remotely. Collect it with `scp landfall@<pi>:landfall-bug-report-*.tgz .`.
+- **Static IP** in `passwords.yaml` under `staticIpCidr`/`staticGateway`/`staticDns`/`staticInterface`. Recommended for debug images so the Pi is always at a known address.
+- **Build is from repo root** using `configure.sh --from-yaml` then `build.sh`. The `cd` in the example above is just to orient you — the scripts are self-locating from the repo root.

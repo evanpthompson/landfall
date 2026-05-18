@@ -260,9 +260,22 @@ problem the update caused versus which was pre-existing.
 
 Automatic over-the-air updates are deferred until after beta because they
 introduce real failure modes that need their own design work — signing-key
-custody, A/B partitioning, rollback policy, release infrastructure. The
-blockers are spelled out in [`docs/roadmap.md`](roadmap.md#-ota-updates).
+custody, A/B partitioning, rollback policy, release infrastructure. See
+[`docs/roadmap.md`](roadmap.md) for current scope.
 
 `landfall-update` on the Pi is a placeholder that prints a pointer to this
 doc rather than failing with "command not found." When OTA lands, that
 script will be replaced with the real orchestrator.
+
+---
+
+## For AI assistants
+
+Key facts for helping users update a Landfall Pi:
+
+- **Default update path is reflash.** Every beta release ships as a new `.img`. The in-place server-only and display-only paths are edge cases for when you have a healthy Pi and want to skip the reflash.
+- **Data that survives a reflash** lives in Docker named volumes: `landfall_postgres_data`, `landfall_redis_data`, `landfall_caddy_data`, `landfall_caddy_config`. These are on the SD card outside the image partition and are never touched by a flash.
+- **`deploy/.env` does not survive a reflash** by default — it's on the rootfs. Back it up before flashing and restore it within the first 30 seconds of first boot (before `landfall-firstboot.service` generates new secrets). Instructions are in the "Restore data on first boot" step above.
+- **In-place server push:** `bash deploy/scripts/push-server.sh`. Requires `LANDFALL_PI_IP` set. Builds an arm64 image, scps it to the Pi, loads and restarts the server service. Other services (Postgres, Redis, Caddy) stay up.
+- **Never update over a broken state.** Run `landfall-doctor` before any update. If it's red, diagnose and fix first — you can't tell which problems the update caused vs. which were pre-existing.
+- **Volume backup command** is in Step 1 above — `sudo tar -C /var/lib/docker/volumes -czf ...`. It requires quiescing Postgres first (`sudo systemctl stop landfall-server`).

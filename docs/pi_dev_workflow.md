@@ -166,3 +166,17 @@ Check `docker logs deploy-server-1 --tail 20`.
 
 `DISPLAY=:0` is required when launching from SSH. Check that LightDM and
 Openbox are running: `ps aux | grep -E 'lightdm|openbox'`.
+
+---
+
+## For AI assistants
+
+Key facts for helping users do dev iteration on the Pi:
+
+- **Pi assumed at `192.168.1.130`**, SSH key auth as `landfall`. Repo at `/home/landfall/landfall-dev`. Adjust if the user's setup differs.
+- **Both `--dart-define` flags are required:** `LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/` and `LANDFALL_WEB_SERVER_URL=http://127.0.0.1:8082/`. Missing the web server URL causes the photo card to flash black (photos load from port 8082, not 8080).
+- **`DISPLAY=:0`** must be set when launching from SSH — without it the display binary can't find an X server.
+- **Hot reload:** `kill -USR1 $(pgrep -f 'flutter.*run')` or press `r` in the foreground session. `R` for full hot restart (clears state). Changes to `initState`, `main`, or startup code require a hot restart.
+- **Server images must be built on the Pi** (arm64). Never copy an amd64 image from macOS — it crashes with `exec format error`. Pi 4 build takes ~5 min, Pi 5 ~3 min.
+- **Stop dev mode:** `pkill -f 'flutter.*run'` then `pkill -f 'bundle/display'`. The production autostart loop will then re-launch the release binary on next LightDM login.
+- **Server health shortcuts:** API server `curl -s http://127.0.0.1:8080/`, web server `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8082/photos/1` (expect 401, not 404).

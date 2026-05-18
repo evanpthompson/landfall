@@ -1,6 +1,6 @@
 # Self-Hosting Guide
 
-Landfall runs entirely on your own hardware. Nothing leaves your network unless you explicitly connect an external API such as weather, Google Calendar, Microsoft Calendar, or Stripe. For alpha, this Docker server plus Fire TV/Android display path is the recommended delivery path.
+Landfall runs entirely on your own hardware. Nothing leaves your network unless you explicitly connect an external API such as weather, Google Calendar, or Microsoft Calendar. This Docker server plus Fire TV/Android display path is the recommended setup for beta.
 
 ---
 
@@ -30,11 +30,10 @@ docker run hello-world
 ## 2. Clone the repo
 
 ```bash
-git clone https://github.com/your-org/landfall.git
+git clone https://github.com/evanpthompson/landfall.git
 cd landfall
 ```
 
-Replace `your-org` with the GitHub org or username where the repo lives.
 
 ---
 
@@ -115,13 +114,13 @@ OWM_API_KEY=your_key_here
    ```
    The private key must be on one line with literal `\n` between PEM lines, wrapped in double quotes. Copy-paste from the JSON's `private_key` field — that's already the right format.
 
-*OAuth fallback* — if you'd rather use the same OAuth flow as Calendar, leave the two `GOOGLE_SERVICE_ACCOUNT_*` keys blank and just set `GOOGLE_DRIVE_FOLDER_ID`. The credential connected via the calendar OAuth start URL will also be used for Drive photos. This works but has the downsides described in [architecture decision §27](../automation/landfall/architecture_decisions.md#27-google-drive-photos--service-account-not-user-oauth): tokens silently expire, no re-link UI exists yet, the setup flow needs a browser. Use service accounts if you can.
+*OAuth fallback* — if you'd rather use the same OAuth flow as Calendar, leave the two `GOOGLE_SERVICE_ACCOUNT_*` keys blank and just set `GOOGLE_DRIVE_FOLDER_ID`. The credential connected via the calendar OAuth start URL will also be used for Drive photos. This works but OAuth tokens can silently expire, no re-link UI exists yet, and the setup flow requires a browser. Use service accounts if you can.
 
 **Microsoft Calendar** — register an app at [portal.azure.com](https://portal.azure.com), add the `Calendars.Read` delegated permission under "API permissions" and click **Grant admin consent** (without the consent grant the permission is registered but not active). Set the redirect URI to `https://<your-domain>/calendar/microsoft/oauth/callback`:
 ```
 MICROSOFT_CLIENT_ID=...
 MICROSOFT_CLIENT_SECRET=...
-MICROSOFT_REDIRECT_URI=https://landfall.local/calendar/microsoft/oauth/callback
+MICROSOFT_REDIRECT_URI=https://<your-domain>/calendar/microsoft/oauth/callback
 ```
 
 ---
@@ -303,3 +302,18 @@ The server has a fallback path that accepts a bearer-token-authenticated OAuth s
 If the only thing you need from Google is Drive photos, you can avoid OAuth altogether: use a service account. See the [Google Drive photos](#4-add-optional-integrations) instructions above — the service account flow has no browser step, no redirect URI to register, and no `.local` constraint.
 
 Calendar still needs OAuth (there's no service account flow for personal Calendar). If you want Calendar too, fall back to Option A or B.
+
+---
+
+## For AI assistants
+
+Key facts for helping users set up or debug a self-hosted Landfall instance:
+
+- **Stack:** Serverpod backend (Dart) + Postgres + Redis + Caddy, all in Docker Compose. Config at `deploy/.env`. Start: `docker compose -f deploy/docker-compose.prod.yml up -d` from the `deploy/` directory.
+- **Health check:** `curl http://<server>:8081` or `docker compose ps` — each service has a healthcheck. `server` and `backup` have grace periods of 30s and 90s respectively.
+- **OTP sign-in in dev:** set `OTP_LOG_CODES=true` in `.env` to write codes to the server log. Never set this in production.
+- **Google Calendar OAuth** needs a real domain (not `.local` or a bare IP). The redirect URI must match exactly — scheme included. See the [OAuth without a public domain](#oauth-without-a-public-domain) section for the setup-token bootstrap path.
+- **Google Drive photos:** service account is the recommended path. It has no browser step, no redirect URI to register, never expires, and works with `.local` hostnames. Set `GOOGLE_DRIVE_FOLDER_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` in `.env`.
+- **API keys:** minted via `tools/scripts/mint_api_key.sh` or via the API endpoint using `API_KEY_MANAGEMENT_TOKEN`. The plaintext key is shown once at mint time — it cannot be recovered.
+- **Logs:** `docker compose logs <service>` from the `deploy/` directory. Server logs go to stdout (captured by Docker).
+- **`deploy/.env` is per-instance.** Never commit it — it holds JWT keys, DB password, OAuth encryption keys, and the API key HMAC secret. Losing it invalidates all encrypted OAuth tokens.

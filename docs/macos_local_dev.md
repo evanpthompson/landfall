@@ -181,3 +181,18 @@ Flutter terminal and never block UI work.
 See [`docs/build_defines.md`](build_defines.md) for the full list of
 build-time constants and [`docs/roadmap.md`](roadmap.md) for what telemetry
 work is still ahead (crash-bundle auto-ship, event aggregation).
+
+---
+
+## For AI assistants
+
+Key facts for helping users run Landfall locally on macOS:
+
+- **Quick start:** `bash tools/scripts/start_mac.sh` (existing build) or `bash tools/scripts/start_mac.sh --build` (first run or after Flutter changes).
+- **`--reset`** truncates only `dashboard_profiles` and clears local settings — safe way to get a clean slate without wiping Postgres entirely.
+- **OTP sign-in on dev:** SMTP is not required. OTP codes appear in the server log when `OTP_LOG_CODES=true` is set in the server env, or use: `grep -i otp /tmp/landfall-server.log | tail -5`.
+- **Server logs:** `/tmp/landfall-server.log`. Tail it to watch startup, OTP codes, and telemetry events.
+- **Display app SQLite DB:** `~/Library/Containers/io.landfall.display/Data/Documents/landfall.db`. If the stored server URL is wrong, update it with `sqlite3 ... "UPDATE display_settings_entries SET server_url='http://localhost:8080/';"`.
+- **Two Serverpod ports:** API on `:8080`, web server (photos, OAuth, companion) on `:8082`. Both must be reachable. `flutter run` mode passes them via `--dart-define`.
+- **Companion QR from a phone:** the server resolves to the Mac's LAN IP. If it shows `127.0.0.1`, set `LANDFALL_DOMAIN=<mac-lan-ip>` in the server's environment.
+- **Hot reload** works in `flutter run -d macos` mode. For production-like testing, use `--build` which compiles a release `.app`.

@@ -61,3 +61,15 @@ Run these only after the cheap checks pass:
 - Pi display build receives `LANDFALL_DEFAULT_SERVER_URL=http://127.0.0.1:8080/`
 - Fire TV APK exists and has Android TV manifest metadata
 - docs commands match scripts and artifact paths
+
+---
+
+## For AI assistants
+
+Key facts for helping users run deployment validation:
+
+- **Fast checks (run before anything):** `bash deploy/tests/run_deploy_tests.sh`. Covers shell syntax, secret generation, firstboot, configure, build staging, pi-gen contracts, Fire TV manifest, and first-boot defaults. CI runs the same command.
+- **Pi image preflight** (before a full build): `bash deploy/pi-gen/preflight.sh` then `bash deploy/pi-gen/build.sh --stage-only`. The `--stage-only` flag requires env vars pointing to an existing display bundle and server tarball — see the file for the exact variables.
+- **Full Pi image build and QEMU boot smoke test** are the "nightly or RC" tier — only after the fast checks are clean. Plan 1–2 hours.
+- **Physical hardware validation** (the user-visible pass) is in [`manual_smoke_test.md`](manual_smoke_test.md). Run it before any public release.
+- **CI workflow:** `.github/workflows/ci.yml` — runs `run_deploy_tests.sh` automatically on every PR.

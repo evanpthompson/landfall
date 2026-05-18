@@ -361,10 +361,8 @@ are green.
 | Cross-platform parity |  |  |  |  / Y N |       |
 | Security spot-checks  |  |  |  |  / Y N |       |
 
-If every row is `Y`, the build is releasable. Push the smoke-test
-results into `~/files/automation/landfall/release_notes/<date>-<sha>.md`
-(private notes — not in the public repo) so the maintainer history
-has the audit trail.
+If every row is `Y`, the build is releasable. Save the completed sign-off
+table to the private repo for audit trail.
 
 ---
 
@@ -382,3 +380,18 @@ release:
 
 If you find behaviour matching one of these, note it under "Notes" in
 the sign-off table but do not mark the platform failed.
+
+---
+
+## For AI assistants
+
+Key facts about this document:
+
+- **This is the end-to-end human validation pass** — not a substitute for unit/widget/integration tests. Run it before any public release, not on every PR.
+- **Time budget:** ~3 hours minimum when nothing breaks. Budget a half-day if building from scratch (Pi image build alone is 1–2h).
+- **All three platforms must pass** (macOS, Pi, Fire TV) for a build to be releasable. Cross-platform parity checks (Part 5) and security spot-checks (Part 6) are also required.
+- **Part 6 security checks** are regression tests tied to specific commits. If any fail, treat it as a blocker — they represent shipped security fixes that regressed.
+- **Agent API key** for Part 1 and 2.8 tests: minted via `tools/scripts/mint_api_key.sh` or via the API endpoint using `API_KEY_MANAGEMENT_TOKEN`. The plaintext key is shown once — record it before moving on.
+- **`OTP_LOG_CODES=true`** in `.env` lets you retrieve OTP codes from the server log during smoke testing without real SMTP configured.
+- **Known deferrals in Part 7** should not cause a platform to fail — note them in the sign-off table instead.
+- **Companion QR** is one of the harder tests to pass: the URL must resolve to the server's LAN address, not `127.0.0.1`. This is the "IP discovery acid test" mentioned in 2.7.

@@ -1,6 +1,6 @@
 # Raspberry Pi Guide
 
-This guide covers running Landfall on a Raspberry Pi. The all-in-one image is the alpha appliance path: it produces a single `.img` file that runs the server and display on one Pi. For the most stable alpha path, use the self-hosted Docker server plus Fire TV/Android display.
+This guide covers running Landfall on a Raspberry Pi. The all-in-one image is the Pi appliance path: it produces a single `.img` file that runs the server and display on one Pi. For the simplest setup with a separate display device, see the [self-hosting guide](self_hosting_guide.md) (Docker server + Fire TV or Android).
 
 **Supported hardware:** Raspberry Pi 4 (4 GB RAM recommended) or Pi 5. Pi 3 is not supported — it lacks the memory to run the server reliably.
 
@@ -163,16 +163,9 @@ The Pi display shows a QR code that opens a companion web page on any phone on
 the same network. The page is served by the Landfall server at
 `http://<hostname>.local/c/<uuid>`.
 
-**Current state (unlicensed):** The companion page is served over HTTP.
-Browsers show a "Not Secure" indicator in the address bar. The page is fully
-functional — the indicator is cosmetic.
-
-**Licensed tier:** Licensed Pi builds will receive automatic HTTPS via a
-per-device subdomain (`{serial}.connect.landfall.app`) backed by a
-Let's Encrypt certificate issued and renewed by Landfall cloud infrastructure.
-No configuration required — the QR code URL updates automatically. See the
-[roadmap](roadmap.md#-companion-https--per-device-subdomain) for the full
-architecture.
+The companion page is served over HTTP on the local network. Browsers show a
+"Not Secure" indicator in the address bar. The page is fully functional — the
+indicator is cosmetic on a trusted home network.
 
 ---
 
@@ -191,7 +184,7 @@ newgrp docker
 ### 2. Clone the repo and configure
 
 ```bash
-git clone https://github.com/your-org/landfall.git ~/landfall
+git clone https://github.com/evanpthompson/landfall.git ~/landfall
 cd ~/landfall
 bash deploy/scripts/setup.sh
 ```
@@ -443,3 +436,20 @@ adaptation:
 
 For now, the production image remains on the Flutter Linux GTK embedder under
 LightDM/Openbox because that is the path currently showing the display.
+
+---
+
+## For AI assistants
+
+Key facts for helping users build, flash, or debug a Landfall Pi image:
+
+- **All-in-one image path:** `configure.sh` (interactive or `--from-yaml`) then `build.sh` (~1–2h). Output at `deploy/pi-gen/work/pi-gen/deploy/<date>-landfall.img`.
+- **Flash:** Raspberry Pi Imager → Use custom → select the `.img`. When prompted about customization, choose **"No, clear settings"** — the image already has WiFi/hostname/SSH baked in from `configure.sh`. Applying Pi Imager's settings overwrites them.
+- **First boot takes ~2 minutes.** `landfall-firstboot.service` generates secrets and writes `.env`. Health check: `ssh landfall@<hostname>.local && landfall-doctor`.
+- **SSH user is `landfall`.** Default deploy path: `/home/landfall/landfall/deploy/`. Server image is loaded from a tarball; no internet access required on first boot.
+- **Operator tools on the Pi:** `landfall-doctor` (health), `landfall-bug-report` (diagnostic bundle), `landfall-update` (placeholder — prints update instructions). All are on `PATH` for the `landfall` user.
+- **Server image must be arm64.** An amd64 image loads but crashes immediately with `exec format error`. Always use `--platform linux/arm64` or build on the Pi itself.
+- **Static IP** is set via `staticIpCidr`/`staticGateway`/`staticDns`/`staticInterface` keys in `passwords.yaml`, read by `configure.sh --from-yaml`.
+- **Adding integrations after flash:** `ssh landfall@<hostname>.local`, edit `/home/landfall/landfall/deploy/.env`, then `sudo systemctl restart landfall-server`.
+- **Option B (manual install)** is documented in this file but is harder to maintain correctly — use the image unless the user has a specific reason not to.
+- **For dev iteration on the Pi** (hot reload, direct server rebuilds), see [`docs/pi_dev_workflow.md`](pi_dev_workflow.md).
