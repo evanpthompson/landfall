@@ -71,17 +71,12 @@ docs/                     # Architecture decisions, guides
 
 Landfall is self-host first for alpha. Start with the Docker server and a Fire TV/Android display:
 
-- [Self-hosting guide](docs/self_hosting_guide.md) - recommended server path
-- [Fire TV guide](docs/fire_tv_guide.md) - APK build/sideload path
-- [Raspberry Pi guide](docs/raspberry_pi_guide.md) - alpha all-in-one appliance image and manual Pi setup
-- [Debugging a Pi image](docs/debugging_pi.md) - build a maximally-debuggable Pi (SSH + dev telemetry baked in)
-- [Updating a Pi](docs/updating.md) - default beta path is build a new image + restore data; advanced in-place server/display updates documented as edge cases
-- [Roadmap](docs/roadmap.md) - deferred follow-ups, post-beta plans, decisions blocking work
-- [Deployment validation](docs/deployment_validation.md) - checks to run before long image builds
+- [Self-hosting guide](docs/self_hosting_guide.md) — recommended server path
+- [Fire TV guide](docs/fire_tv_guide.md) — APK build/sideload
+- [Raspberry Pi guide](docs/raspberry_pi_guide.md) — appliance image and manual setup
+- [Agent integration guide](docs/agent_integration_guide.md) — pushing cards from any agent or automation
 
-## Agent integration
-
-See [docs/agent_integration_guide.md](docs/agent_integration_guide.md) for pushing cards from any agent or automation.
+**Full documentation index:** [docs/README.md](docs/README.md) — every guide, schema, package README, and runbook in the repo.
 
 ## Contributing
 

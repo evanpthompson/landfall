@@ -49,6 +49,13 @@ in this repo. The public-facing equivalents are:
 - [`docs/build_defines.md`](docs/build_defines.md) — `--dart-define` reference
 - [`docs/dependency_policy.md`](docs/dependency_policy.md) — pubspec / lock-file policy
 
+## Documentation index
+
+`docs/README.md` is the canonical index of every doc in the repo (including package
+READMEs, schemas, and runbooks). Whenever you add, rename, move, or delete a `.md`
+file anywhere in the repo, update `docs/README.md` in the same commit. The root
+`README.md` links into the index — do not re-list individual docs there.
+
 ## Commit discipline
 
 - No AI attribution in commit messages (no Co-Authored-By lines)
