@@ -1,10 +1,11 @@
 # Landfall Documentation Index
 
-The canonical map of every doc in the repo. If you add a new doc, add it here in the same commit — see [CLAUDE.md](../CLAUDE.md) for the rule.
+Every doc in the repo, in one place. Add a new `.md` file anywhere and it goes here in the same commit — see [CLAUDE.md](../CLAUDE.md) for why.
 
 ## Start here
 
 - [Project README](../README.md) — what Landfall is, REST API, monorepo layout
+- [Community](community.md) — GitHub Discussions, issue templates, where to ask for help
 - [CONTRIBUTING](../CONTRIBUTING.md) — how to propose changes
 - [SECURITY](../SECURITY.md) — private disclosure process for security issues
 - [CLAUDE.md](../CLAUDE.md) — TDD rules and commit discipline (also applies to humans)
@@ -59,3 +60,15 @@ The canonical map of every doc in the repo. If you add a new doc, add it here in
 
 - [.github/workflows README](../.github/workflows/README.md) — CI workflows
 - [Pull request template](../.github/PULL_REQUEST_TEMPLATE.md)
+- [Bug report template](../.github/ISSUE_TEMPLATE/bug_report.md)
+- [Feature request template](../.github/ISSUE_TEMPLATE/feature_request.md)
+
+## For AI assistants
+
+This index is the right place to start when navigating the repo. A few things worth knowing:
+
+- `docs/README.md` (this file) must be updated in the same commit as any `.md` add, rename, move, or delete anywhere in the repo.
+- For setup help, start with [self_hosting_guide.md](self_hosting_guide.md) (Docker) or [raspberry_pi_guide.md](raspberry_pi_guide.md) (Pi image).
+- For agent integration questions, [agent_integration_guide.md](agent_integration_guide.md) covers REST, MCP, and the Dart SDK with copy-paste examples.
+- For server-side code questions, the Serverpod backend is at `server/landfall_server/`. Schema changes are in `server/landfall_server/lib/src/generated/` and are fatal on mismatch — always regenerate the client after changing endpoints.
+- Card and theme schemas are machine-readable: [card-schema.md](card-schema.md), [theme-schema.md](theme-schema.md), [layout-schema.md](layout-schema.md).

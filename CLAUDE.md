@@ -2,7 +2,7 @@
 
 ## TDD is non-negotiable
 
-Every session follows Red → Green → Refactor. No production code is written without a failing test first.
+Every session follows Red → Green → Refactor. No production code without a failing test first.
 
 ### Required test coverage for every component
 
@@ -38,9 +38,7 @@ Never declare a feature complete without confirming all three levels (unit, widg
 
 ## Architecture
 
-The full architecture-decisions record and the phased delivery plan live in
-the maintainer's private notes (`~/files/automation/landfall/`) and are not
-in this repo. The public-facing equivalents are:
+The full architecture-decisions record and phased delivery plan are in a private repository. The public-facing references are:
 
 - [`docs/card-schema.md`](docs/card-schema.md) — the Card model
 - [`docs/theme-schema.md`](docs/theme-schema.md) — Theme tokens
@@ -50,10 +48,7 @@ in this repo. The public-facing equivalents are:
 
 ## Documentation index
 
-`docs/README.md` is the canonical index of every doc in the repo (including package
-READMEs, schemas, and runbooks). Whenever you add, rename, move, or delete a `.md`
-file anywhere in the repo, update `docs/README.md` in the same commit. The root
-`README.md` links into the index — do not re-list individual docs there.
+`docs/README.md` is the canonical index of every doc in the repo (including package READMEs, schemas, and runbooks). Whenever you add, rename, move, or delete a `.md` file anywhere in the repo, update `docs/README.md` in the same commit. The root `README.md` links into the index — do not re-list individual docs there.
 
 ## Commit discipline
 

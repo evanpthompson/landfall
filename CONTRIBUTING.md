@@ -1,17 +1,14 @@
 # Contributing to Landfall
 
-Thanks for considering a contribution. Landfall is in alpha — feedback,
-bug reports, and small focused PRs are the most valuable contributions
-right now.
+Landfall is in alpha. Bug reports and small focused PRs are the most useful contributions right now.
 
 ## Before you open a PR
 
-- **Open an issue first** for any change beyond a typo or one-file fix.
-  This avoids work on something that conflicts with in-flight refactors.
-- For new card types, integration packs, or themes, check the relevant
-  docs in [`docs/`](docs/) — there are dedicated guides for each.
+Open an issue first for anything beyond a typo or single-file fix. This keeps you from building something that conflicts with in-progress work.
 
-## Development workflow
+For new card types or themes, check the relevant docs in [`docs/`](docs/) before starting.
+
+## Development setup
 
 Landfall is a Dart/Flutter monorepo managed with Melos.
 
@@ -20,62 +17,64 @@ Landfall is a Dart/Flutter monorepo managed with Melos.
 dart pub global activate melos
 melos bootstrap
 
-# Run analysis and tests across all packages
+# Analysis and tests across all packages
 melos run analyze
 melos run test
 ```
 
-See [`docs/macos_local_dev.md`](docs/macos_local_dev.md) for the full
-local development setup, including running the Serverpod backend.
+See [`docs/macos_local_dev.md`](docs/macos_local_dev.md) for the full local setup, including running the Serverpod backend.
 
 ## TDD is required
 
-Per `CLAUDE.md`: every change follows Red → Green → Refactor.
+Every change follows Red → Green → Refactor. Write the failing test first, then the minimum code to make it pass.
 
-- Every `Cubit` / `Bloc` needs a `bloc_test` suite covering all state
-  transitions
-- Every public widget needs a widget test plus a golden test at 1920×1080
+- Every `Cubit` / `Bloc` needs a `bloc_test` suite covering all state transitions
+- Every public widget needs a widget test and a golden test at 1920×1080
 - Every Serverpod endpoint needs an integration test
-- Every use case needs unit tests covering success, failure, and edge
-  cases
+- Every use case needs unit tests for success, failure, and edge cases
 
-PRs without tests will be asked to add them before review.
+PRs without tests don't get merged.
 
 ## Commit discipline
 
 - One logical change per commit
-- Commit messages describe the **why**, not the what
-- No AI attribution lines (no `Co-Authored-By: Claude …` etc.)
-- Follow conventional capitalisation and imperative mood
-  (`Add foo` / `Fix bar`, not `Added` / `Fixes`)
+- Commit messages describe the why, not the what
+- No AI attribution lines (`Co-Authored-By: Claude …`)
+- Imperative mood: `Add foo` / `Fix bar`, not `Added` / `Fixes`
 
 ## Code style
 
 - `melos run analyze` must be clean before opening a PR
 - Run `dart format .` on changed files
 - Prefer editing existing files over adding new ones
-- Avoid speculative abstractions and backwards-compat shims unless the
-  surface is already public
+- Skip speculative abstractions and backwards-compat shims unless the surface is already public
 
 ## Reporting bugs
 
 Open an issue with:
 
-- What you expected to happen
-- What actually happened
+- What you expected vs. what happened
 - Steps to reproduce
-- Platform: macOS / Raspberry Pi / Fire TV (Android)
-- Commit SHA you tested against
+- Platform: macOS / Raspberry Pi / Fire TV
+- Commit SHA
 
-Logs from `~/.landfall-display.log` (Pi) or `flutter run` console output
-are extremely helpful.
+Server logs (`docker compose logs landfall_server`) and display logs (`journalctl -u landfall-display` on Pi, or `flutter run` console on macOS) are useful to include.
 
 ## Security issues
 
-Please **do not** open a public issue for security vulnerabilities. See
-[`SECURITY.md`](SECURITY.md) for the private disclosure process.
+Do not open a public issue for security vulnerabilities. See [`SECURITY.md`](SECURITY.md).
 
 ## License
 
-By contributing, you agree that your contributions will be licensed
-under the project's [MIT License](LICENSE).
+By contributing, you agree your changes will be licensed under the project's [MIT License](LICENSE).
+
+## For AI assistants
+
+If you're an AI helping someone contribute to Landfall:
+
+- **Test commands:** `melos run test` (all Flutter packages), `cd server/landfall_server && dart test` (server unit + integration tests). Run both before declaring work done.
+- **Single test:** `flutter test test/path/to/test.dart` inside the relevant package directory, or `dart test test/path/to/test.dart` inside `server/landfall_server/`.
+- **Serverpod schema:** Any new endpoint requires a matching entry in `server/landfall_server/lib/src/generated/protocol.yaml` and regeneration of `server/landfall_client/`. Schema mismatches cause a fatal `ExitException(1)` on server startup — not a runtime error.
+- **No database mocks in tests:** Serverpod tests hit a real local test database (`landfall_test`). Do not mock the database layer.
+- **Golden tests:** Run `flutter test --update-goldens` inside `apps/display/` or `packages/ui_kit/` if UI changed. Review the diff before committing.
+- **Commit messages:** No `Co-Authored-By` or AI attribution lines.

@@ -1,22 +1,22 @@
 # Landfall
 
-**Alpha** · The ambient display layer for the agentic era.
+**Alpha** · Ambient display for your home. Agent output land.
 
-Landfall is an open-source, self-hosted platform that makes your AI-assisted life visible. A beautiful ambient display for your home — calendar, weather, photos, clock — running on macOS, Raspberry Pi, or Fire TV. And the place where agent output lands instead of disappearing into chat windows.
+Landfall is a self-hosted ambient display — calendar, weather, photos, clock — running on a Raspberry Pi, Fire TV, or macOS. It also exposes a REST API and MCP server so your agents, scripts, and automations can push cards to it. Agent output shows up on the wall instead of sitting in a chat log.
 
-> **Project status:** Alpha. Expect breaking changes between commits. Run for fun, file bugs, hold off on production deployments.
+> **Status:** Alpha. Breaking changes happen between commits. Run it for fun, file bugs, hold off on anything production-critical.
 
 ## What it does
 
-- Displays a live family dashboard: clock, weather, calendar, photos
-- Exposes a **REST API** — any agent, automation, or script can push cards over plain HTTP
-- Exposes an **MCP server** — AI agents with MCP support (Claude Desktop, Cursor) can push cards natively
-- Exposes a **Dart SDK** (`packages/agent_sdk`) for native Dart/Flutter agent integration
+- Shows a live dashboard: clock, weather, calendar, photos
+- REST API — any agent, script, or automation can push cards over plain HTTP
+- MCP server — agents with MCP support (Claude Desktop, Cursor) can push cards natively
+- Dart SDK (`packages/agent_sdk`) for native agent integration
 - Self-hosted: your data stays on your server
 
 ## REST API
 
-Push cards from any language or tool. Authenticate with `Authorization: Bearer <api_key>`.
+Authenticate with `Authorization: Bearer <api_key>`.
 
 ```
 GET    /api/v1/cards         List active cards
@@ -62,26 +62,43 @@ packages/ui_kit/          # Design system
 themes/                   # Community themes (YAML)
 deploy/                   # Docker Compose, Pi image build, Fire TV scripts
 site/                     # Static landing page
-infra/                    # OpenTofu infrastructure (DigitalOcean)
+infra/                    # OpenTofu infrastructure
 tools/                    # Build and utility scripts
-docs/                     # Architecture decisions, guides
+docs/                     # Guides, schemas, runbooks
 ```
 
 ## Getting started
 
-Landfall is self-host first for alpha. Start with the Docker server and a Fire TV/Android display:
+Self-host first. Start with the Docker server and a Fire TV or Android display:
 
 - [Self-hosting guide](docs/self_hosting_guide.md) — recommended server path
-- [Fire TV guide](docs/fire_tv_guide.md) — APK build/sideload
+- [Fire TV guide](docs/fire_tv_guide.md) — APK build and sideload
 - [Raspberry Pi guide](docs/raspberry_pi_guide.md) — appliance image and manual setup
-- [Agent integration guide](docs/agent_integration_guide.md) — pushing cards from any agent or automation
+- [Agent integration guide](docs/agent_integration_guide.md) — pushing cards from any agent
 
-**Full documentation index:** [docs/README.md](docs/README.md) — every guide, schema, package README, and runbook in the repo.
+**Full doc index:** [docs/README.md](docs/README.md)
+
+## Community
+
+Questions, setup help, and show-and-tell in [GitHub Discussions](https://github.com/evanpthompson/landfall/discussions).
+Bug reports and feature requests via [GitHub Issues](https://github.com/evanpthompson/landfall/issues).
 
 ## Contributing
 
-PRs and bug reports welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
-For security issues, please follow the private disclosure process in [SECURITY.md](SECURITY.md).
+PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+For security issues, follow the private disclosure process in [SECURITY.md](SECURITY.md).
+
+## For AI assistants
+
+If you're an AI helping a user set up or integrate with Landfall:
+
+- The stack is Dart/Flutter (display app) + Serverpod (backend). Not Node, not Go.
+- There is no central hosted service. Every installation is self-hosted. `your-server` in the examples is the user's own machine or Pi.
+- API keys are generated in the running app at Settings → Accounts, not via CLI.
+- The REST API base path is `/api/v1/`. Bearer token format is `lf_<key>`.
+- Card schema reference: [`docs/card-schema.md`](docs/card-schema.md).
+- The canonical doc index is [`docs/README.md`](docs/README.md) — start there for any topic not covered here.
+- For server-side work: the Serverpod server lives at `server/landfall_server/`. Protocol changes require regenerating `server/landfall_client/` — schema mismatches are fatal on startup.
 
 ## License
 
