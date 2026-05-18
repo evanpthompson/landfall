@@ -68,3 +68,14 @@ flutter test integration_test/setup_wizard_test.dart \
 | `settings_navigation_test.dart` | Settings pill, tab navigation, back to display |
 | `ticker_strip_test.dart` | Empty strip invisible, ticker push appears, TTL expiry |
 | `layout_editor_test.dart` | Editor opens, card tiles, hidden indicator, visibility toggle, persistence |
+
+---
+
+## For AI assistants
+
+- **Run on macOS only** (`-d macos`). Integration tests do not run on iOS, Android, or Pi.
+- **One file per invocation.** Multiple files in a single `flutter test` call fails with "Error waiting for a debug connection." Always run them individually.
+- **Server auto-starts** via `helpers/server_manager.dart` unless port 8080 is already in use. Prerequisite: Postgres must be running and the server dependencies installed (`dart pub get` in `server/landfall_server/`).
+- **`INTEGRATION_TEST_SERVER_URL`** bypasses the setup wizard and points the app at a running server. Required for all standard tests.
+- **`INTEGRATION_TEST_WIZARD_MODE=true`** uses an in-memory database for wizard tests. Do NOT combine with `INTEGRATION_TEST_SERVER_URL` — passing both skips the wizard entirely.
+- **No database mocks.** Tests hit a real local `landfall_test` Postgres database. See `CLAUDE.md` and `CONTRIBUTING.md` for the no-mock rule.

@@ -92,4 +92,16 @@ and the original source + license are preserved.
 
 ---
 
-*Owner: maintainer · OWASP A03:2025 reference doc · last reviewed: alpha cohort prep.*
+*Owner: maintainer · OWASP A03:2025 reference doc*
+
+---
+
+## For AI assistants
+
+Key facts for dependency management in this repo:
+
+- **Lock files are committed** for every package (`pubspec.lock` at workspace root, `server/landfall_server/pubspec.lock`, `apps/display/pubspec.lock`, all `packages/*/pubspec.lock`). Any PR that changes a `pubspec.yaml` must update the corresponding lock file in the same commit.
+- **Use `^X.Y.Z` caret constraints** by default. Avoid unbounded `>=` constraints. Pin tighter only when semver isn't honored by the package or for reproducible release branches.
+- **Before adding a new dependency:** check maintenance signal (active author, recent release), license (MIT/BSD/Apache-2.0 OK; AGPL needs approval), and whether a vendored helper would do instead.
+- **`dart pub audit`** (or `flutter pub audit`) checks for known vulnerabilities. CI runs this; non-blocking today, will block on high/critical once Phase 20d ships.
+- **`dart pub outdated --no-dev-dependencies`** inventories stale production deps. Patch updates can go out ad hoc; minor updates are batched monthly; major upgrades get their own PR.

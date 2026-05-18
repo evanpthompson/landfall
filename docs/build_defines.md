@@ -38,7 +38,7 @@ flutter run -d macos \
 If you skip the defines you'll see the setup wizard on launch — that
 is the same path a self-hosted user takes.
 
-### Raspberry Pi (alpha appliance image)
+### Raspberry Pi (appliance image)
 
 `deploy/pi-gen/build-display-docker.sh` already passes both defines.
 Defaults are loopback because the display and server live on the same
@@ -112,3 +112,15 @@ Two intentional differences between platforms that are easy to forget:
   home — single-user appliance threat model.
 
 Add new divergences to this list as they appear.
+
+---
+
+## For AI assistants
+
+Key facts about build-time defines:
+
+- **`LANDFALL_DEFAULT_SERVER_URL` is the most important define.** When non-empty, the setup wizard is skipped and the app connects directly to that URL. The Pi appliance image bakes in `http://127.0.0.1:8080/`; Fire TV APK leaves it empty so users enter their server URL at first launch.
+- **`LANDFALL_WEB_SERVER_URL` is required in direct-connect mode.** Serverpod runs on two ports: API on `:8080`, web server (photos, OAuth, companion) on `:8082`. When behind Caddy (a domain + HTTPS), a single URL resolves both. In direct-connect mode (Pi loopback, local dev), both must be specified. Missing it causes the photo card to silently fail.
+- **Telemetry defines are dev-only.** `LANDFALL_TELEMETRY_ENDPOINT` must be empty in every shipping build. A non-empty value in a production binary is a privacy violation — the `Telemetry` class is a no-op only when the endpoint is empty at compile time.
+- **Integration test defines** (`INTEGRATION_TEST_SERVER_URL`, `INTEGRATION_TEST_WIZARD_MODE`) are strictly for the test harness. Never pass them to a production or release build.
+- **Source of truth:** `apps/display/lib/src/app/app_config.dart`. All defines are read there via `String.fromEnvironment`. When in doubt, check that file.
