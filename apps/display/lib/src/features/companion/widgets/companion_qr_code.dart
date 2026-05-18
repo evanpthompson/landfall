@@ -6,10 +6,9 @@ import 'package:qr_flutter/qr_flutter.dart';
 /// Sizing rule:
 /// - With an explicit [targetSize], use it verbatim.
 /// - Otherwise, use the shorter side of the parent's constraints, capped at
-///   the 270 px spec ceiling from `docs/companion_card_design.md`. The
-///   parent (e.g. CompanionCard's wide/stacked layout) is responsible for
-///   giving the QR enough room — a too-small QR is preferable to one that
-///   overflows the card.
+///   270 px. The parent (e.g. CompanionCard's wide/stacked layout) is
+///   responsible for giving the QR enough room — a too-small QR is
+///   preferable to one that overflows the card.
 class CompanionQrCode extends StatelessWidget {
   const CompanionQrCode({
     super.key,

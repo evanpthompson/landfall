@@ -5,11 +5,10 @@ import 'package:landfall_shared/landfall_shared.dart';
 
 import '../provider/companion_provider.dart';
 
-/// Companion sprite ceiling per `docs/companion_card_design.md` — 192×208
-/// source frame at ×1.5–2× upscale → ~353×384 logical px on 1080p. Every
-/// surface that renders the companion (dashboard, mobile companion page,
-/// future variants) caps to this so the creature never over-magnifies and
-/// always leaves room for the QR + meta around it.
+/// Companion sprite ceiling: 192×208 source frame at ×1.5–2× upscale →
+/// ~353×384 logical px on 1080p. Every surface that renders the companion
+/// (dashboard, mobile companion page) caps to this so the creature never
+/// over-magnifies and always leaves room for the QR + meta around it.
 const Size kCompanionSpriteMaxSize = Size(353, 384);
 
 class SpriteSheetCompanionRenderer {

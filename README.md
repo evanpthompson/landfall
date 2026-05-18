@@ -59,7 +59,7 @@ server/landfall_mcp/      # MCP server (Claude Desktop, Cursor)
 packages/agent_sdk/       # Published Dart SDK (landfall_agent_sdk)
 packages/landfall_shared/ # Shared Dart models
 packages/ui_kit/          # Design system
-themes/                   # Community and marketplace themes (YAML)
+themes/                   # Community themes (YAML)
 deploy/                   # Docker Compose, Pi image build, Fire TV scripts
 site/                     # Static landing page
 infra/                    # OpenTofu infrastructure (DigitalOcean)

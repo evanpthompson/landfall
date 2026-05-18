@@ -20,7 +20,6 @@ The canonical map of every doc in the repo. If you add a new doc, add it here in
 - [Updating a Pi](updating.md) — default new-image path plus in-place edge cases
 - [Deployment validation](deployment_validation.md) — checks before long image builds
 - [Manual smoke test](manual_smoke_test.md) — runnable cold checklist for a build
-- [Beta launch checklist](beta_launch_checklist.md) — pre-flight before public beta image
 
 ## For agent integrators
 
@@ -32,24 +31,19 @@ The canonical map of every doc in the repo. If you add a new doc, add it here in
 
 ## For theme authors
 
-- [Theme submission guide](theme-submission-guide.md) — write, submit, and earn from a theme
-- [Theme marketplace launch (draft blog)](blog-theme-marketplace-launch.md) — narrative walkthrough
-- [Themes directory README](../themes/README.md) — community + marketplace YAML themes
+- [Themes directory README](../themes/README.md) — where community theme YAMLs live
 
 ## Schemas and design
 
 - [Card schema](card-schema.md) — the Card model
 - [Theme schema](theme-schema.md) — Theme tokens
 - [Layout schema](layout-schema.md) — Layout schema
-- [Companion card design](companion_card_design.md) — companion UX
 
 ## Developer reference
 
 - [Build defines](build_defines.md) — `--dart-define` reference
 - [Dependency policy](dependency_policy.md) — pubspec and lock-file rules
-- [End-to-end test plan](e2e-test-plan.md) — authoritative E2E task list
-- [Control app plan](control_app_plan.md) — sibling Flutter app (`apps/control/`) for setup, settings, API keys, themes; web-first, deferred mobile/desktop builds
-- [Roadmap](roadmap.md) — deferred follow-ups, post-beta plans, blockers
+- [Roadmap](roadmap.md) — near-term scoped work
 
 ## Package READMEs
 

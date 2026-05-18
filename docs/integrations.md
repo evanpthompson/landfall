@@ -26,19 +26,3 @@ See [Publishing Your Integration](agent_integration_guide.md#publishing-your-int
 *No community integrations yet — be the first!*
 
 Submitted integrations will appear here once merged.
-
----
-
-## Integration Packs (Marketplace)
-
-These packs are available in the Landfall integration pack marketplace. See
-Settings → Integration Packs to browse and purchase.
-
-| Pack | Source prefix | Price | Description |
-|---|---|---|---|
-| Sports Scores | `pack.sports` | $5 | Live game scores and tickers for major leagues |
-| Home Assistant | `pack.home_assistant` | $7 | Deep HA integration with entity cards and dashboards |
-| Todoist / Tasks | `pack.tasks` | $5 | Task counts, due-today lists, and overdue alerts |
-| RSS Headlines | `pack.rss` | $5 | News headlines from any RSS feed |
-| Countdown Timers | `pack.countdown` | $5 | Vacation, birthday, and event countdowns |
-| Stocks & Crypto | `pack.markets` | $8 | Price cards with sparkline charts |

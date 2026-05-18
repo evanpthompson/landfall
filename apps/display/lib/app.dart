@@ -58,7 +58,7 @@ class LandfallApp extends StatelessWidget {
   /// The Serverpod server URL.
   ///
   /// Development: `'http://localhost:8080/'`
-  /// Production:  `'https://api.makefastlandfall.com/'`
+  /// Production:  `'https://<your-server-domain>/'`
   final String serverUrl;
 
   /// Stable unique identifier for this display, generated on first launch.

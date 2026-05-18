@@ -19,7 +19,7 @@ platform — keep it in sync when adding new ones.
 
 The companion QR base URL is **not** a build define — it is resolved at
 runtime by the server via `CompanionEndpoint.getCompanionBaseUrl`. See
-`docs/companion_card_design.md` and the implementation in
+the implementation in
 `server/landfall_server/lib/src/companion/companion_endpoint.dart`.
 
 ## Per-platform invocations

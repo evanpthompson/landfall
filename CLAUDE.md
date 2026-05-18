@@ -45,7 +45,6 @@ in this repo. The public-facing equivalents are:
 - [`docs/card-schema.md`](docs/card-schema.md) — the Card model
 - [`docs/theme-schema.md`](docs/theme-schema.md) — Theme tokens
 - [`docs/layout-schema.md`](docs/layout-schema.md) — Layout schema
-- [`docs/companion_card_design.md`](docs/companion_card_design.md) — Companion design
 - [`docs/build_defines.md`](docs/build_defines.md) — `--dart-define` reference
 - [`docs/dependency_policy.md`](docs/dependency_policy.md) — pubspec / lock-file policy
 
