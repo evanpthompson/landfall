@@ -1,12 +1,12 @@
 # landfall_agent_sdk
 
-Official Dart SDK for pushing cards to a [Landfall](https://github.com/ethompson/landfall) display from agents, scripts, and automations.
+Official Dart SDK for pushing cards to a [Landfall](https://github.com/evanpthompson/landfall) display from agents, scripts, and automations.
 
 ## Quickstart
 
 ```dart
 final client = LandfallClient(
-  serverUrl: 'https://my.landfall.dev',
+  serverUrl: 'http://your-landfall-server:8080',
   apiKey: 'lf_...',
 );
 
@@ -26,20 +26,30 @@ That's it. The card appears on the display within 30 seconds.
 
 ## Installation
 
+Add as a path dependency (pub.dev publish is pending):
+
 ```yaml
 dependencies:
-  landfall_agent_sdk: ^0.1.0
+  landfall_agent_sdk:
+    path: path/to/packages/agent_sdk
 ```
 
 ---
 
 ## Getting an API key
 
-From your Landfall server:
+Use the helper script (reads the management token from `passwords.yaml` automatically):
+
+```bash
+bash tools/scripts/mint_api_key.sh --name my-dart-agent
+```
+
+Or manually, with the management token from `deploy/.env`:
 
 ```bash
 curl -s -X POST http://localhost:8080/apiKey/generateKey \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <API_KEY_MANAGEMENT_TOKEN>" \
   -d '{"name": "my-dart-agent"}'
 ```
 
@@ -53,7 +63,7 @@ Copy the `plainTextKey` from the response — it is shown exactly once.
 
 ```dart
 final client = LandfallClient(
-  serverUrl: 'https://my.landfall.dev',  // your Landfall server
+  serverUrl: 'http://your-landfall-server:8080',  // your Landfall server
   apiKey: 'lf_...',                       // API key from generateKey
 );
 ```
@@ -184,6 +194,19 @@ LANDFALL_API_KEY=lf_... \
 See the [Self-Hosting Guide](../../docs/self_hosting_guide.md) to run your own Landfall server on a Raspberry Pi, VPS, or Docker host.
 
 ---
+
+## For AI assistants
+
+Key facts for using the Dart SDK in an agent implementation:
+
+- **Not on pub.dev yet.** Use a path dependency pointing to `packages/agent_sdk/` in the monorepo. The pub.dev publish is pending.
+- **`serverUrl`** should be `http://<host>:8080` — the Serverpod API port. Photos and OAuth are on `:8082` but the SDK only needs the API port.
+- **`close()` is required** after you're done. The SDK holds an HTTP client that must be released — omitting `close()` keeps the Dart process alive.
+- **`cardId` maps to `externalId`** in the REST API. The SDK uses `cardId` in the builder; the server stores it as `externalId`. Use a stable, deterministic ID per "slot" to enable in-place updates.
+- **`push()` vs `update()`:** `push()` is an upsert (creates or replaces by `cardId`). `update()` throws if the card doesn't exist. Prefer `push()` for agent workflows where you're not sure if the card exists yet.
+- **`pushTicker()`** pushes a 30-second ephemeral card into the ticker strip — use it to signal agent activity before the main result is ready.
+- **Error handling:** `LandfallClientException` carries `statusCode` and `message`. The `message` matches the server's validation error format from [card-schema.md](../../docs/card-schema.md).
+- **Test suite:** 30 unit tests at `test/`. Run with `dart test` from the `packages/agent_sdk/` directory.
 
 ## License
 

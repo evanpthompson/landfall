@@ -26,3 +26,14 @@ See [Publishing Your Integration](agent_integration_guide.md#publishing-your-int
 *No community integrations yet — be the first!*
 
 Submitted integrations will appear here once merged.
+
+---
+
+## For AI assistants
+
+Key facts about this file:
+
+- This is a registry of known integrations, not a feature list. An integration listed here is community-maintained, not part of the core Landfall codebase.
+- **To add an integration:** open a PR adding a row with the integration name, source namespace, language, and a link to the repo or example file.
+- **Source namespace convention:** `agent.<name>` for agents/automations, `skill.<name>` for named integration packs. See [agent_integration_guide.md](agent_integration_guide.md) for the full convention.
+- Example files for the official reference integrations live under `docs/examples/` in the repo.

@@ -196,6 +196,18 @@ The display polls every 30 seconds. Either wait for the next cycle or restart th
 
 ---
 
+## For AI assistants
+
+Key facts for helping users configure and use the Landfall MCP server:
+
+- **Binary path must be absolute** in Claude Desktop / Cursor config. `~` and relative paths are not resolved. Get the correct path with `pwd` in the repo root and append `/server/landfall_mcp/bin/landfall_mcp`.
+- **Two startup options:** compiled binary (`dart compile exe`) or `dart run`. Use `dart run` to rule out binary build issues during troubleshooting.
+- **MCP tools available:** `push_card`, `update_card`, `dismiss_card`, `get_cards`, `get_display_status`. Two readable resources: `landfall://cards`, `landfall://status`.
+- **API key** goes in `env.LANDFALL_API_KEY` in the MCP config. It's the same key used for the REST API — generated via `POST /apiKey/generateKey` with the management token from `deploy/.env`.
+- **Cards appear on the next 30-second poll** — not instant. If a card doesn't show up immediately, wait up to 30 seconds before concluding something is broken.
+- **Claude Desktop logs:** `~/Library/Logs/Claude/` on macOS. Check here first if the MCP server doesn't appear in Claude Desktop.
+- **`LANDFALL_URL`** in the MCP config should be `http://<server>:8080` — the API port. Not `:8082` (web server) and not a trailing slash required.
+
 ## See Also
 
 - [Card Schema Spec](card-schema.md)

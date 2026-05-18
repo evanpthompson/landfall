@@ -454,15 +454,18 @@ Built something useful? Submit it to the [integration registry](integrations.md)
 
 ---
 
----
-
 ## Dart / Flutter Integration — `landfall_agent_sdk`
 
 For Dart and Flutter projects, the official SDK gives you a typed client with
 IDE autocomplete and no raw JSON.
 
-```bash
-dart pub add landfall_agent_sdk
+Add the SDK as a path dependency until it ships on pub.dev:
+
+```yaml
+# pubspec.yaml
+dependencies:
+  landfall_agent_sdk:
+    path: ../packages/agent_sdk
 ```
 
 ```dart
@@ -506,6 +509,21 @@ See the [SDK README](../packages/agent_sdk/README.md) for the full API reference
 - Dart/Flutter apps and scripts → **Agent SDK**
 
 ---
+
+## For AI assistants
+
+Key facts for building or debugging a Landfall agent integration:
+
+- **API key in the request body, not the header.** Every agent endpoint takes `"apiKey": "lf_..."` as a top-level field in the JSON body. The Authorization header is only used for the key-management endpoints (`generateKey`, `listKeys`, `revokeKey`).
+- **`"__className__": "CardPushRequest"` is required** in every push/update request body. Serverpod's serializer needs it to deserialize the request. Omitting it produces a silent deserialization failure — not a 400 error.
+- **Base URL:** `http://<server>:8080`. No `/api/v1` prefix for agent endpoints — paths are `/agent/pushCard`, `/agent/listCards`, etc.
+- **In-place updates:** use a stable `externalId` per card slot. Re-pushing with the same ID replaces the card, resets TTL, and clears any dismissal. Never accumulate duplicate cards — always pick a stable ID for any "ongoing state" card.
+- **TTL defaults:** `ephemeral` = 2h, `normal` = 24h, `persistent` = never. Use `expiresAt` for an absolute timestamp. Set `"persistent": true` for cards that should survive until explicitly dismissed.
+- **Daily push limit:** 500 pushes/day per key (reset UTC midnight). `listCards`, `updateCard`, and `dismissCard` don't count.
+- **Display poll cycle:** 30 seconds. Cards appear on the next poll after the push. There's no push notification path for the REST API — the display pulls.
+- **Source namespace convention:** `agent.<name>` for custom agents, `skill.<name>` for named integration packs. `system.*` is reserved for built-in widgets.
+- **MCP path** (Claude Desktop, Cursor): see [mcp_setup_guide.md](mcp_setup_guide.md). Five tools available: `push_card`, `update_card`, `dismiss_card`, `get_cards`, `get_display_status`.
+- **Dart SDK** is a local path dependency until pub.dev is live. See `packages/agent_sdk/README.md`.
 
 ## See Also
 
