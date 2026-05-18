@@ -962,5 +962,22 @@ cards:
 
 ---
 
+---
+
+## For AI agents applying layouts
+
+Key facts for building and applying layouts:
+
+- **REST endpoint:** `POST /api/layout/apply` with `Authorization: Bearer <api-key>`. Accepts `Content-Type: application/yaml` or `application/json`.
+- **Partial layouts are valid and preferred for targeted changes.** A document that only specifies one card moves that card without touching anything else. Cards not listed are left exactly as they are.
+- **Reference cards by source string, not internal ID.** Source strings are stable: `system.clock`, `system.weather.current`, `system.weather.forecast`, `system.calendar`, `system.photos`. Agent feed container: `agent.feed`.
+- **Omit `slot` to preserve current position.** If you only want to update `displayConfig` without moving a card, leave the `slot` object out entirely.
+- **Target a specific profile** by setting `meta.profileSlug`. If omitted, the currently active profile is updated.
+- **Agent card positions within the feed cannot be set via LayoutSchema.** `agent.feed` controls the panel's position in the grid. Individual agent card ordering within that panel is determined by push time and priority, not layout config.
+- **Changing grid dimensions reflowing cards.** Cards that overflow after a resize are clamped to fit — not dropped. Positions may shift.
+- **Validation errors:** 400 returns an array of objects with `token`, `expected`, and `received` fields. 422 means structurally valid but semantically wrong (e.g., slot overflows the grid).
+- **Combining with theme changes:** call `apply_layout` for position changes and `apply_theme` (or `switchProfile`) for theme changes as separate requests. Each triggers a display refresh independently. For performance, group layout changes into one `apply_layout` call rather than sending multiple partial documents.
+- **Agent SDK:** `LandfallClient.applyLayout(LayoutDraft)` — use `LayoutDraft.fromYaml()` for YAML strings or `LayoutDraft.build()` for the fluent builder API. See [Agent SDK README](../packages/agent_sdk/README.md).
+
 *LayoutSchema v1.0 — April 2026*
 *Maintained by the Landfall project. Submit corrections and additions via GitHub issue or PR.*

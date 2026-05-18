@@ -126,3 +126,16 @@ Multiple errors are concatenated into a single message.
 | Version | Date | Notes |
 |---|---|---|
 | 1.0 | 2026-04-19 | Initial release |
+
+---
+
+## For AI agents pushing cards
+
+Key facts for building integrations:
+
+- **Serverpod serialization:** include `"__className__": "CardPushRequest"` in every push payload. The REST examples in [`docs/agent_integration_guide.md`](agent_integration_guide.md) show this in context.
+- **In-place updates:** pick a stable `externalId` per logical "slot" (e.g. `"agent.claude.daily-summary"`) and reuse it on every push. The card is upserted, `dismissedAt` is cleared, and TTL resets.
+- **Source namespace convention:** use `agent.<yourname>` for custom integrations. `system.*` is reserved for built-in widgets; `skill.*` is reserved for named integration packs.
+- **TTL defaults:** `ephemeral` = 2h, `normal` = 24h, `persistent` = never. Set `persistent: true` to keep a card until explicitly dismissed. Use `expiresAt` for a specific timestamp.
+- **Validation errors:** returned as a 400 with `{"message": "..."}`. Multiple errors are concatenated into one message string.
+- **Layout hints:** the `layout` field (`small`, `medium`, `large`, `full`) is a size suggestion to the renderer. The display may override it based on available grid space.

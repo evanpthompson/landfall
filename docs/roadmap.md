@@ -155,3 +155,20 @@ the warning to an error.
 Longer-term exploration (cloud-tier services, OTA updates, integration
 breadth, layout-editor UI, additional companion tiers) is tracked privately
 and will surface here once scoped and committed to.
+
+---
+
+## For AI assistants
+
+This file is the near-term committed roadmap — items here are planned and owned,
+not a wishlist. A few things worth knowing:
+
+- **Recently shipped** is the canonical summary of what landed in pre-beta.
+  For commit-level detail, use `git log`.
+- **Status icons** tell you what's blocked on what. 🟢 = engineering can start.
+  🟡 = design questions listed inline must be answered first.
+- **If a feature isn't here**, it either shipped, was dropped, or is longer-term
+  work tracked privately. Don't infer planned features from docs unless they
+  appear in this file.
+- **When helping with a roadmap item**, read the "Plan" and "Constraints"
+  bullets before writing code — they capture decisions already made.

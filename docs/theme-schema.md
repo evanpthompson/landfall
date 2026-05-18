@@ -1,6 +1,6 @@
 # Landfall ThemeSchema — Open Specification v1.0
 
-> This is the authoritative reference for Landfall theme authors, agent integrations, and the marketplace validation pipeline. If you are building a theme, start with [Creating Your First Theme](#creating-your-first-theme). If you are building a tool that generates or validates themes, start with [Theme File Format](#theme-file-format) and [Full Token Reference](#full-token-reference).
+> This is the authoritative reference for Landfall theme authors and agent integrations. If you are building a theme, start with [Creating Your First Theme](#creating-your-first-theme). If you are building a tool that generates or validates themes, start with [Theme File Format](#theme-file-format) and [Full Token Reference](#full-token-reference).
 
 ---
 
@@ -17,8 +17,7 @@
 9. [Versioning and Compatibility](#versioning-and-compatibility)
 10. [Creating Your First Theme](#creating-your-first-theme)
 11. [Import and Distribution](#import-and-distribution)
-12. [Marketplace Submission Guide](#marketplace-submission-guide)
-13. [Full Annotated Example](#full-annotated-example)
+12. [Full Annotated Example](#full-annotated-example)
 
 ---
 
@@ -76,7 +75,7 @@ This means a minimal theme only needs to specify the tokens it cares about. A th
 
 If a theme does not define `mood.urgent.*` tokens, the renderer falls back to base theme defaults (red border, subtle fill, pulse animation). This guarantee is load-bearing: no theme can accidentally produce an invisible urgent card. The fallback is always visible, always high-contrast, always distinguishable from a normal card.
 
-This is why the mood section is optional but its defaults are not negotiable. If you define mood tokens, define them with sufficient contrast. The marketplace validation pipeline checks contrast ratios for mood tokens.
+This is why the mood section is optional but its defaults are not negotiable. If you define mood tokens, define them with sufficient contrast. Contrast ratios for mood tokens are checked at import time.
 
 ### 5. The schema is versioned; tokens are never removed
 
@@ -109,7 +108,7 @@ meta           object    required
   author       string    optional    Author handle or name.
   description  string    optional    One or two sentences. Max 200 characters.
   previewUrl   string    optional    URL to a 1920×1080 PNG preview image.
-  tags         array     optional    String tags for marketplace filtering.
+  tags         array     optional    String tags for categorization and discovery.
   license      string    optional    SPDX license identifier or "proprietary".
 
 surface        object    optional    Background and card container tokens.
@@ -232,7 +231,7 @@ Stops must be in ascending order from 0.0 to 1.0. At least 2 stops required. Max
 | `warning` | hex | `#FF9F0A` | — | Warning semantic color. Used in system status indicators. Not currently used in mood rendering (no `warning` mood exists). |
 | `alert` | hex | `#FF3B30` | — | Error and alert semantic color. Used in urgent mood rendering defaults and system error states. |
 
-**Color contrast guidance:** At TV viewing distances (8–12 feet), contrast ratios that feel fine on a monitor at arm's length can become unreadable. Aim for a contrast ratio of at least 4.5:1 between `text.primary` and the effective card background (accounting for `card.fill` composited over `background.value`). The marketplace validation pipeline runs automated contrast checks against this target.
+**Color contrast guidance:** At TV viewing distances (8–12 feet), contrast ratios that feel fine on a monitor at arm's length can become unreadable. Aim for a contrast ratio of at least 4.5:1 between `text.primary` and the effective card background (accounting for `card.fill` composited over `background.value`). The import validator checks this ratio automatically and rejects themes that fall below it.
 
 ---
 
@@ -436,7 +435,7 @@ No token disappears in a major version without appearing in the deprecation list
 
 ### Theme schema version vs theme version
 
-The `version` field in a theme file refers to the ThemeSchema version the theme was authored against. This is not the same as the theme's own version (which would be relevant if you publish a `v1.2` of your theme to the marketplace). Authors using a marketplace-published theme get the latest version of that theme; the ThemeSchema version the theme was authored with is tracked separately.
+The `version` field in a theme file refers to the ThemeSchema version the theme was authored against. This is not the same as a theme's own iteration version (e.g., "v1.2 of this theme file"). The ThemeSchema version and the theme's own revision are tracked separately.
 
 ---
 
@@ -661,7 +660,7 @@ moods:
 
 Any HTTPS URL pointing to a raw YAML or JSON theme file can be imported via Settings > Themes > Import from URL. The display fetches the document, validates it against the current schema version, and stores it locally.
 
-The URL does not need to be hosted on the Landfall marketplace. GitHub raw URLs, personal sites, and any static file host work. The only requirement is HTTPS — HTTP URLs are not accepted.
+GitHub raw URLs, personal sites, and any static file host work. The only requirement is HTTPS — HTTP URLs are not accepted.
 
 On import, the server performs:
 1. Fetch with a 10-second timeout
@@ -677,71 +676,11 @@ If any step fails, the import is rejected with specific error messages identifyi
 
 Themes can be uploaded as `.yaml` or `.json` files via Settings > Themes > Import from file. Same validation pipeline as URL import. File size limit: 64 KB. Any theme file that requires more than 64 KB likely contains embedded data that belongs elsewhere.
 
-### Via the marketplace
+### Sharing themes
 
-Marketplace themes are imported with a single tap from the theme browser. Purchased themes are linked to the display's account and re-downloadable after reinstall.
+The simplest way to share a theme is to host it at any publicly accessible HTTPS URL and share that URL. Anyone can import it via Settings > Themes > Import from URL. GitHub Gist, a personal site, or any static file host work. The file just needs to be a valid `.yaml` or `.json` at a stable HTTPS URL.
 
-### CI preview pipeline
-
-When you submit a theme to the marketplace via GitHub PR, the CI pipeline:
-1. Validates the theme against the current JSON Schema
-2. Renders a 1920×1080 PNG preview using a headless Flutter build with seed content (clock, weather card, calendar card, a sample agent card)
-3. Renders the same preview with one card of each mood (urgent, celebratory, success, muted)
-4. Attaches the preview images to the PR as comments
-
-The preview images are what appear in the marketplace theme browser. The quality of your preview screenshot directly affects conversion. Use real-looking seed content if you are submitting a theme that is sensitive to content layout.
-
----
-
-## Marketplace Submission Guide
-
-### Who can submit
-
-Anyone. Community themes are welcome. You do not need to be a Landfall contributor or have prior experience with the codebase.
-
-### Free vs paid themes
-
-Free themes are submitted via GitHub PR and appear in the marketplace at no charge. They are licensed under the Open Font License or similar permissive terms.
-
-Paid themes ($3–15 one-time purchase) are submitted via a separate process (see the [theme marketplace onboarding form](https://landfall.dev/marketplace/submit)). Paid themes require a preview video in addition to static screenshots and go through a brief manual review for technical correctness (not aesthetic judgment). Revenue share: 70% to the author, 30% to Landfall.
-
-### Submission checklist
-
-Before opening a PR, confirm:
-
-- [ ] `version` field is present and valid
-- [ ] `meta.name` is present and under 60 characters
-- [ ] `meta.description` is present and under 200 characters
-- [ ] Theme file is under 64 KB
-- [ ] All token values are within documented ranges
-- [ ] Contrast ratio ≥ 4.5:1 between `text.primary` and effective card background
-- [ ] Urgent mood is visually distinguishable from normal mood cards
-- [ ] No `background.type: image` (image backgrounds require Pro; free-tier themes must not use them)
-- [ ] Theme has been locally imported and visually tested on a real or simulated display
-
-### PR process
-
-1. Fork the `landfall` repository
-2. Add your theme file to `packages/themes/community/<your-theme-slug>.yaml`
-3. Open a PR with the title format: `[theme] Your Theme Name`
-4. CI runs automatically: validation + preview rendering
-5. If CI passes, your PR will be reviewed within 7 days
-6. Review checks: technical correctness only. Aesthetic judgment is explicitly not performed. The community decides what is good.
-
-### What gets rejected
-
-- Token values out of documented ranges
-- Contrast ratio below 4.5:1 on primary text
-- `background.type: image` in a free-tier theme
-- Theme file over 64 KB
-- Themes that fail CI validation
-- Themes that are byte-for-byte copies of existing themes
-
-Rejection is not permanent. Fix the listed issues and re-push; CI re-runs automatically.
-
-### Licensing
-
-Community themes in this repository are licensed under MIT unless explicitly stated otherwise in the theme file's `meta.license` field. Themes with a `proprietary` license are not accepted into the community registry — they belong in the paid marketplace tier.
+To contribute a theme to the community directory in the repo, add your theme file to `themes/community/<your-theme-slug>.yaml` and open a PR. See [themes/README.md](../themes/README.md) for details.
 
 ---
 
@@ -757,8 +696,8 @@ meta:
   name: "Neon Arcade"
   author: "landfall"
   description: "High-contrast neon on deep black. High energy. Good for entertainment contexts."
-  # previewUrl points to a 1920×1080 PNG. This is shown in the theme browser.
-  previewUrl: "https://themes.landfall.dev/previews/neon-arcade.png"
+  # previewUrl points to a 1920×1080 PNG hosted at an HTTPS URL you control.
+  # previewUrl: "https://example.com/neon-arcade-preview.png"
   tags: [vibrant, dark, gaming, entertainment, neon]
   license: "MIT"
 
@@ -1263,6 +1202,23 @@ moods:
 ```
 
 ---
+
+---
+
+## For AI agents authoring themes
+
+Key facts for building and validating themes:
+
+- **Required fields only:** `version: "1.0"` and `meta.name`. Everything else is optional. An empty theme is valid and applies built-in defaults for every token.
+- **Partial themes are coherent:** a theme that only sets `color.accent` works — derived values (`color.accentMuted`, `color.divider`, `color.agent.border`) fill in automatically from that single token.
+- **Font names are case-sensitive** and must exactly match a name from the [Landfall Font Registry](#landfall-font-registry). Invalid names fall back to `"System"` with a warning, not a hard rejection.
+- **previewUrl** in `meta` must be a reachable HTTPS URL to a 1920×1080 PNG. If you don't have one, omit the field — an absent previewUrl is valid; a dead URL is confusing.
+- **Contrast check:** the import validator enforces ≥ 4.5:1 contrast between `text.primary` and the effective card background (`card.fill` composited over `background.value`). Failing this rejects the whole theme.
+- **Token ranges are hard limits:** out-of-range values cause a full rejection — no partial imports, no silent clipping.
+- **Mood fallbacks are safe:** any undefined mood tokens fall back to documented defaults. You cannot accidentally produce an invisible urgent card.
+- **Import by URL:** `POST /api/theme/import` with a URL body, or Settings > Themes > Import from URL. Any HTTPS URL pointing to a raw `.yaml` or `.json` works — GitHub raw URLs included. HTTP is not accepted.
+- **Validation errors:** 400 returns `{"message": "..."}` with token-level details. Fix all errors — the whole theme must pass to import.
+- **Sharing:** host the file at any HTTPS URL and share the link for import. To contribute to the community directory, add to `themes/community/<slug>.yaml` and open a PR.
 
 *ThemeSchema v1.0 — April 2026*
 *Maintained by the Landfall project. Submit corrections and additions via GitHub issue or PR.*
