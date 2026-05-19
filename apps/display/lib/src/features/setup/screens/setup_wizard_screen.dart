@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'package:display/src/data/discovery/mdns_server_discovery.dart';
 import 'package:display/src/features/setup/cubit/setup_wizard_cubit.dart';
 import 'package:display/src/widgets/landfall_text_field.dart';
 
@@ -27,7 +28,7 @@ class SetupWizardScreen extends StatelessWidget {
         final step = switch (state) {
           SetupWizardAt(:final step) => step,
           SetupWizardStepError(:final step) => step,
-          SetupWizardValidating() => SetupWizardStep.serverUrl,
+          SetupWizardValidating() => SetupWizardStep.discover,
           SetupWizardComplete() => SetupWizardStep.done,
         };
 
@@ -69,7 +70,13 @@ class _StepIndicator extends StatelessWidget {
 
   final SetupWizardStep current;
 
-  static const _steps = SetupWizardStep.values;
+  // serverUrl is a fallback sub-step — not shown as a main-path dot.
+  static const _steps = [
+    SetupWizardStep.discover,
+    SetupWizardStep.location,
+    SetupWizardStep.linkAccount,
+    SetupWizardStep.done,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -109,14 +116,18 @@ class _StepBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (state) {
-      SetupWizardAt(:final step, :final serverUrl) => switch (step) {
+      SetupWizardAt(:final step, :final serverUrl, :final discoveredServers) =>
+        switch (step) {
+          SetupWizardStep.discover =>
+            _DiscoverStep(discoveredServers: discoveredServers),
           SetupWizardStep.serverUrl => const _ServerUrlStep(),
           SetupWizardStep.location => const _LocationStep(),
           SetupWizardStep.linkAccount =>
             _LinkAccountStep(serverUrl: serverUrl),
           SetupWizardStep.done => _DoneStep(serverUrl: serverUrl),
         },
-      SetupWizardValidating() => const _ServerUrlStep(validating: true),
+      SetupWizardValidating() =>
+        const _DiscoverStep(discoveredServers: [], validating: true),
       SetupWizardStepError(:final message, :final step) => switch (step) {
           SetupWizardStep.serverUrl => _ServerUrlStep(error: message),
           _ => _LocationStep(error: message),
@@ -127,14 +138,144 @@ class _StepBody extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Step 1 — Server URL
+// Step 1 — Discover servers
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DiscoverStep extends StatelessWidget {
+  const _DiscoverStep({
+    required this.discoveredServers,
+    this.validating = false,
+  });
+
+  final List<DiscoveredServer> discoveredServers;
+  final bool validating;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Find your server',
+          style: TextStyle(
+            color: LandfallColors.textPrimary,
+            fontSize: 28,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Scanning your network for a Landfall server...',
+          style: TextStyle(color: LandfallColors.textSecondary, fontSize: 15),
+        ),
+        const SizedBox(height: 32),
+        if (discoveredServers.isEmpty && !validating)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: CircularProgressIndicator(color: LandfallColors.accent),
+            ),
+          )
+        else if (validating)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: CircularProgressIndicator(color: LandfallColors.accent),
+            ),
+          )
+        else
+          Column(
+            children: discoveredServers
+                .map((s) => _ServerTile(server: s))
+                .toList(),
+          ),
+        const SizedBox(height: 16),
+        TextButton(
+          onPressed: () => context.read<SetupWizardCubit>().skipDiscovery(),
+          style: TextButton.styleFrom(
+            foregroundColor: LandfallColors.textSecondary,
+          ),
+          child: const Text('Enter manually'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ServerTile extends StatelessWidget {
+  const _ServerTile({required this.server});
+
+  final DiscoveredServer server;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () => context
+            .read<SetupWizardCubit>()
+            .selectDiscoveredServer(server.serverUrl),
+        borderRadius: BorderRadius.circular(8),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: LandfallColors.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: LandfallColors.cardBorder),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.dns_outlined,
+                  color: LandfallColors.accent,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        server.name,
+                        style: const TextStyle(
+                          color: LandfallColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        server.serverUrl,
+                        style: const TextStyle(
+                          color: LandfallColors.textSecondary,
+                          fontSize: 12,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  color: LandfallColors.textTertiary,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 1b — Server URL (manual fallback)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ServerUrlStep extends StatefulWidget {
-  const _ServerUrlStep({this.error, this.validating = false});
+  const _ServerUrlStep({this.error});
 
   final String? error;
-  final bool validating;
 
   @override
   State<_ServerUrlStep> createState() => _ServerUrlStepState();
@@ -181,7 +322,6 @@ class _ServerUrlStepState extends State<_ServerUrlStep> {
         LandfallTextField(
           controller: _ctrl,
           autofocus: true,
-          enabled: !widget.validating,
           keyboardType: TextInputType.url,
           style: const TextStyle(color: LandfallColors.textPrimary, fontSize: 16),
           decoration: InputDecoration(
@@ -210,7 +350,7 @@ class _ServerUrlStepState extends State<_ServerUrlStep> {
         ),
         const SizedBox(height: 24),
         FilledButton(
-          onPressed: widget.validating ? null : _submit,
+          onPressed: _submit,
           style: FilledButton.styleFrom(
             backgroundColor: LandfallColors.accent,
             foregroundColor: Colors.white,
@@ -219,16 +359,7 @@ class _ServerUrlStepState extends State<_ServerUrlStep> {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: widget.validating
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Text('Connect', style: TextStyle(fontSize: 16)),
+          child: const Text('Connect', style: TextStyle(fontSize: 16)),
         ),
       ],
     );

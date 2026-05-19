@@ -3,12 +3,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'dart:async';
+
+import 'package:display/src/data/discovery/mdns_server_discovery.dart';
 import 'package:display/src/data/server/server_health_checker.dart';
 import 'package:display/src/features/setup/cubit/setup_wizard_cubit.dart';
 
 class _MockSettingsRepo extends Mock implements DisplaySettingsRepository {}
 
 class _MockHealthChecker extends Mock implements ServerHealthChecker {}
+
+class _FakeDiscovery extends MdnsServerDiscovery {
+  _FakeDiscovery(this._stream)
+      : super(serviceStream: (_) => const Stream.empty());
+
+  final Stream<List<DiscoveredServer>> _stream;
+
+  @override
+  Stream<List<DiscoveredServer>> get servers => _stream;
+
+  @override
+  Future<void> start() async {}
+
+  @override
+  Future<void> stop() async {}
+}
 
 void main() {
   setUpAll(() {
@@ -35,10 +54,10 @@ void main() {
 
   group('init', () {
     blocTest<SetupWizardCubit, SetupWizardState>(
-      'starts at serverUrl step when no URL stored',
+      'starts at discover step when no URL stored',
       build: build,
       act: (c) => c.init(),
-      expect: () => [const SetupWizardAt(SetupWizardStep.serverUrl)],
+      expect: () => [const SetupWizardAt(SetupWizardStep.discover)],
     );
 
     blocTest<SetupWizardCubit, SetupWizardState>(
@@ -251,5 +270,97 @@ void main() {
         ).called(greaterThanOrEqualTo(1));
       },
     );
+  });
+
+  group('discovery', () {
+    test('startDiscovery emits updated state when servers appear', () async {
+      final ctrl = StreamController<List<DiscoveredServer>>();
+      final discovery = _FakeDiscovery(ctrl.stream);
+      final cubit = SetupWizardCubit(
+        settingsRepository: settings,
+        healthChecker: health,
+        discovery: discovery,
+      );
+
+      cubit.startDiscovery();
+
+      final emitted = <SetupWizardState>[];
+      final sub = cubit.stream.listen(emitted.add);
+
+      const server = DiscoveredServer(
+        name: 'Landfall A',
+        serverUrl: 'http://192.168.1.10:8080',
+      );
+      ctrl.add([server]);
+      await Future<void>.delayed(Duration.zero);
+
+      await sub.cancel();
+      await ctrl.close();
+      cubit.close();
+
+      expect(
+        emitted,
+        contains(
+          SetupWizardAt(
+            SetupWizardStep.discover,
+            discoveredServers: [server],
+          ),
+        ),
+      );
+    });
+
+    blocTest<SetupWizardCubit, SetupWizardState>(
+      'skipDiscovery advances to serverUrl step',
+      build: build,
+      act: (c) => c.skipDiscovery(),
+      expect: () => [const SetupWizardAt(SetupWizardStep.serverUrl)],
+    );
+
+    blocTest<SetupWizardCubit, SetupWizardState>(
+      'selectDiscoveredServer validates URL and advances to location step',
+      build: build,
+      setUp: () {
+        when(() => health.ping('http://192.168.1.10:8080/'))
+            .thenAnswer((_) async => true);
+      },
+      act: (c) => c.selectDiscoveredServer('http://192.168.1.10:8080'),
+      expect: () => [
+        const SetupWizardValidating(),
+        const SetupWizardAt(
+          SetupWizardStep.location,
+          serverUrl: 'http://192.168.1.10:8080/',
+        ),
+      ],
+    );
+
+    test('auto-picks single server when autoPickSingle is true', () async {
+      when(() => health.ping('http://192.168.1.10:8080/')).thenAnswer((_) async => true);
+
+      final ctrl = StreamController<List<DiscoveredServer>>();
+      final discovery = _FakeDiscovery(ctrl.stream);
+      final cubit = SetupWizardCubit(
+        settingsRepository: settings,
+        healthChecker: health,
+        discovery: discovery,
+        autoPickSingle: true,
+      );
+
+      cubit.startDiscovery();
+
+      const server = DiscoveredServer(
+        name: 'Only Server',
+        serverUrl: 'http://192.168.1.10:8080',
+      );
+      ctrl.add([server]);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      await ctrl.close();
+      await cubit.close();
+
+      // Should have advanced past the discover step automatically.
+      expect(cubit.state, isA<SetupWizardAt>());
+      final at = cubit.state as SetupWizardAt;
+      expect(at.step, isNot(SetupWizardStep.discover));
+    });
   });
 }

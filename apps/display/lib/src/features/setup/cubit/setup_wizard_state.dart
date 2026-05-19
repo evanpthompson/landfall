@@ -1,5 +1,11 @@
+import 'package:display/src/data/discovery/mdns_server_discovery.dart';
+
 /// Steps in the first-run setup wizard, in order.
-enum SetupWizardStep { serverUrl, location, linkAccount, done }
+///
+/// [discover] is step 1 — scans the LAN for Landfall servers via mDNS.
+/// [serverUrl] is step 1b — manual URL fallback shown when discovery finds
+/// nothing or the user chooses "Enter manually".
+enum SetupWizardStep { discover, serverUrl, location, linkAccount, done }
 
 sealed class SetupWizardState {
   const SetupWizardState();
@@ -7,22 +13,39 @@ sealed class SetupWizardState {
 
 /// Wizard is idle at the given step, ready for user input.
 final class SetupWizardAt extends SetupWizardState {
-  const SetupWizardAt(this.step, {this.serverUrl = ''});
+  const SetupWizardAt(
+    this.step, {
+    this.serverUrl = '',
+    this.discoveredServers = const [],
+  });
 
   final SetupWizardStep step;
 
   /// The server URL confirmed in step 1; carried forward for later steps.
   final String serverUrl;
 
+  /// Live list of servers found via mDNS. Populated while on the [discover]
+  /// step; empty on all other steps.
+  final List<DiscoveredServer> discoveredServers;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is SetupWizardAt &&
           step == other.step &&
-          serverUrl == other.serverUrl;
+          serverUrl == other.serverUrl &&
+          _listsEqual(discoveredServers, other.discoveredServers);
 
   @override
-  int get hashCode => Object.hash(step, serverUrl);
+  int get hashCode => Object.hash(step, serverUrl, discoveredServers);
+}
+
+bool _listsEqual<T>(List<T> a, List<T> b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }
 
 /// The cubit is running an async operation (connectivity check or DB write).

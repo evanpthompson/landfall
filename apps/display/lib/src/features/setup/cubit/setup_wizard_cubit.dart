@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
+import 'package:display/src/data/discovery/mdns_server_discovery.dart';
 import 'package:display/src/data/server/server_health_checker.dart';
 import 'setup_wizard_state.dart';
 
@@ -10,28 +13,71 @@ class SetupWizardCubit extends Cubit<SetupWizardState> {
   SetupWizardCubit({
     required DisplaySettingsRepository settingsRepository,
     required ServerHealthChecker healthChecker,
+    MdnsServerDiscovery? discovery,
+    bool autoPickSingle = false,
   })  : _settings = settingsRepository,
         _health = healthChecker,
-        super(const SetupWizardAt(SetupWizardStep.serverUrl));
+        _discovery = discovery,
+        _autoPickSingle = autoPickSingle,
+        super(const SetupWizardAt(SetupWizardStep.discover));
 
   final DisplaySettingsRepository _settings;
   final ServerHealthChecker _health;
+  final MdnsServerDiscovery? _discovery;
+  final bool _autoPickSingle;
 
   String _serverUrl = '';
+  StreamSubscription<List<DiscoveredServer>>? _discoverySub;
 
   /// Called on startup to resume at the correct step if a previous run
-  /// partially completed.
+  /// partially completed. When no URL is stored, starts at the discover step.
   Future<void> init() async {
     final s = await _settings.getSettings();
     _serverUrl = s.serverUrl;
 
     if (s.serverUrl.isEmpty) {
-      emit(const SetupWizardAt(SetupWizardStep.serverUrl));
+      emit(const SetupWizardAt(SetupWizardStep.discover));
     } else if (s.locationName.isEmpty) {
       emit(SetupWizardAt(SetupWizardStep.location, serverUrl: s.serverUrl));
     } else {
       emit(SetupWizardAt(SetupWizardStep.linkAccount, serverUrl: s.serverUrl));
     }
+  }
+
+  /// Starts mDNS discovery. Call this when the discover step is shown.
+  ///
+  /// Idempotent — calling multiple times starts discovery at most once.
+  void startDiscovery() {
+    if (_discoverySub != null || _discovery == null) return;
+    _discovery.start();
+    _discoverySub = _discovery.servers.listen(_onDiscoveryUpdate);
+  }
+
+  void _onDiscoveryUpdate(List<DiscoveredServer> servers) {
+    if (isClosed) return;
+
+    if (_autoPickSingle && servers.length == 1) {
+      selectDiscoveredServer(servers.first.serverUrl);
+      return;
+    }
+
+    final current = state;
+    if (current is SetupWizardAt && current.step == SetupWizardStep.discover) {
+      emit(SetupWizardAt(SetupWizardStep.discover, discoveredServers: servers));
+    }
+  }
+
+  /// Selects a server found via discovery. Validates reachability and advances
+  /// to the location step on success, same as [submitServerUrl].
+  Future<void> selectDiscoveredServer(String serverUrl) async {
+    _stopDiscovery();
+    await submitServerUrl(serverUrl);
+  }
+
+  /// Skips discovery and advances to the manual URL entry step.
+  void skipDiscovery() {
+    _stopDiscovery();
+    emit(const SetupWizardAt(SetupWizardStep.serverUrl));
   }
 
   /// Validates [raw] as a reachable server URL, then advances to step 2.
@@ -71,12 +117,21 @@ class SetupWizardCubit extends Cubit<SetupWizardState> {
   }
 
   /// Marks the wizard as complete and emits [SetupWizardComplete].
-  ///
-  /// The app root listens for this state and calls [runApp] with
-  /// [LandfallApp] using the confirmed [serverUrl].
   Future<void> complete() async {
     final current = await _settings.getSettings();
     await _settings.saveSettings(current.copyWith(wizardComplete: true));
     emit(SetupWizardComplete(serverUrl: _serverUrl));
+  }
+
+  void _stopDiscovery() {
+    _discoverySub?.cancel();
+    _discoverySub = null;
+    _discovery?.stop();
+  }
+
+  @override
+  Future<void> close() {
+    _stopDiscovery();
+    return super.close();
   }
 }

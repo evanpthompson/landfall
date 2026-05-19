@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'package:display/src/data/discovery/mdns_server_discovery.dart';
 import 'package:display/src/features/setup/cubit/setup_wizard_cubit.dart';
 import 'package:display/src/features/setup/screens/setup_wizard_screen.dart';
 
@@ -100,12 +101,13 @@ void main() {
       expect(find.text('Launch Landfall'), findsOneWidget);
     });
 
-    testWidgets('step indicator renders 4 dots', (tester) async {
+    testWidgets('step indicator renders 4 dots (discover, location, linkAccount, done)',
+        (tester) async {
       await tester
-          .pumpWidget(_wrap(const SetupWizardAt(SetupWizardStep.serverUrl)));
+          .pumpWidget(_wrap(const SetupWizardAt(SetupWizardStep.discover)));
       await tester.pump();
 
-      // 4 steps = 4 animated containers in the indicator row
+      // 4 main-path steps — serverUrl is a fallback sub-step, not shown.
       expect(find.byType(AnimatedContainer), findsNWidgets(4));
     });
 
@@ -138,6 +140,92 @@ void main() {
       await tester.pump();
 
       expect(received, 'https://done.example.com/');
+    });
+
+    testWidgets('discover step — shows scanning indicator when no servers yet',
+        (tester) async {
+      await tester.pumpWidget(
+          _wrap(const SetupWizardAt(SetupWizardStep.discover)));
+      await tester.pump();
+
+      expect(find.text('Find your server'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Enter manually'), findsOneWidget);
+    });
+
+    testWidgets('discover step — renders a tile for each discovered server',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        SetupWizardAt(
+          SetupWizardStep.discover,
+          discoveredServers: const [
+            DiscoveredServer(
+                name: 'Landfall A', serverUrl: 'http://192.168.1.10:8080'),
+            DiscoveredServer(
+                name: 'Landfall B', serverUrl: 'http://192.168.1.20:8080'),
+          ],
+        ),
+      ));
+      await tester.pump();
+
+      expect(find.text('Landfall A'), findsOneWidget);
+      expect(find.text('Landfall B'), findsOneWidget);
+      expect(find.text('http://192.168.1.10:8080'), findsOneWidget);
+      expect(find.text('http://192.168.1.20:8080'), findsOneWidget);
+    });
+
+    testWidgets('discover step — tapping a server tile calls selectDiscoveredServer',
+        (tester) async {
+      final cubit = _MockCubit();
+      const state = SetupWizardAt(
+        SetupWizardStep.discover,
+        discoveredServers: [
+          DiscoveredServer(
+              name: 'Landfall A', serverUrl: 'http://192.168.1.10:8080'),
+        ],
+      );
+      when(() => cubit.state).thenReturn(state);
+      whenListen(cubit, Stream<SetupWizardState>.value(state));
+      when(() => cubit.selectDiscoveredServer(any()))
+          .thenAnswer((_) async {});
+
+      await tester.pumpWidget(BlocProvider<SetupWizardCubit>.value(
+        value: cubit,
+        child: MaterialApp(
+          theme: LandfallTheme.dark,
+          home: SetupWizardScreen(onComplete: (_) {}),
+        ),
+      ));
+      await tester.pump();
+
+      await tester.tap(find.text('Landfall A'));
+      await tester.pump();
+
+      verify(() => cubit.selectDiscoveredServer('http://192.168.1.10:8080'))
+          .called(1);
+    });
+
+    testWidgets('discover step — tapping Enter manually calls skipDiscovery',
+        (tester) async {
+      final cubit = _MockCubit();
+      const state = SetupWizardAt(SetupWizardStep.discover);
+      when(() => cubit.state).thenReturn(state);
+      whenListen(cubit, Stream<SetupWizardState>.value(state));
+      when(() => cubit.skipDiscovery()).thenReturn(null);
+
+      await tester.pumpWidget(BlocProvider<SetupWizardCubit>.value(
+        value: cubit,
+        child: MaterialApp(
+          theme: LandfallTheme.dark,
+          home: SetupWizardScreen(onComplete: (_) {}),
+        ),
+      ));
+      await tester.pump();
+
+      await tester.tap(find.text('Enter manually'));
+      await tester.pump();
+
+      verify(() => cubit.skipDiscovery()).called(1);
     });
   });
 }
