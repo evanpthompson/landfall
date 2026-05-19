@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pinput/pinput.dart';
 
 import '../cubit/auth_cubit.dart';
 import '../widgets/landfall_button.dart';
@@ -212,13 +213,29 @@ class _LeanbackUnauthStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return FocusTraversalGroup(
+      policy: OrderedTraversalPolicy(),
+      child: Shortcuts(
+        shortcuts: {
+          LogicalKeySet(LogicalKeyboardKey.arrowDown): const NextFocusIntent(),
+          LogicalKeySet(LogicalKeyboardKey.arrowUp): const PreviousFocusIntent(),
+        },
+        child: _buildContent(),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        LandfallButton(
-          label: 'Sign in with TV code',
-          isLoading: isLoading,
-          onPressed: onStartDeviceFlow,
+        FocusTraversalOrder(
+          order: const NumericFocusOrder(1),
+          child: LandfallButton(
+            label: 'Sign in with TV code',
+            isLoading: isLoading,
+            onPressed: onStartDeviceFlow,
+          ),
         ),
         const SizedBox(height: 24),
         const Row(
@@ -237,25 +254,31 @@ class _LeanbackUnauthStep extends StatelessWidget {
           style: TextStyle(color: Colors.white70, fontSize: 15),
         ),
         const SizedBox(height: 12),
-        _LandfallTextField(
-          controller: emailController,
-          focusNode: emailFocus,
-          hint: 'you@example.com',
-          keyboardType: TextInputType.emailAddress,
-          autofillHints: const [AutofillHints.email],
-          textInputAction: TextInputAction.send,
-          onSubmitted: (_) => onSendCode(),
-          enabled: !isLoading,
+        FocusTraversalOrder(
+          order: const NumericFocusOrder(2),
+          child: _LandfallTextField(
+            controller: emailController,
+            focusNode: emailFocus,
+            hint: 'you@example.com',
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => emailFocus.nextFocus(),
+            enabled: !isLoading,
+          ),
         ),
         if (error != null) ...[
           const SizedBox(height: 8),
           Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
         ],
         const SizedBox(height: 16),
-        LandfallButton(
-          label: 'Send code',
-          isLoading: isLoading,
-          onPressed: onSendCode,
+        FocusTraversalOrder(
+          order: const NumericFocusOrder(3),
+          child: LandfallButton(
+            label: 'Send code',
+            isLoading: isLoading,
+            onPressed: onSendCode,
+          ),
         ),
       ],
     );
@@ -359,35 +382,50 @@ class _EmailStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Sign in',
-          style: TextStyle(color: Colors.white70, fontSize: 15),
+    return FocusTraversalGroup(
+      policy: OrderedTraversalPolicy(),
+      child: Shortcuts(
+        shortcuts: {
+          LogicalKeySet(LogicalKeyboardKey.arrowDown): const NextFocusIntent(),
+          LogicalKeySet(LogicalKeyboardKey.arrowUp): const PreviousFocusIntent(),
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Sign in',
+              style: TextStyle(color: Colors.white70, fontSize: 15),
+            ),
+            const SizedBox(height: 12),
+            FocusTraversalOrder(
+              order: const NumericFocusOrder(1),
+              child: _LandfallTextField(
+                controller: controller,
+                focusNode: focusNode,
+                hint: 'you@example.com',
+                keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
+                textInputAction: TextInputAction.next,
+                onSubmitted: (_) => focusNode.nextFocus(),
+                enabled: !isLoading,
+              ),
+            ),
+            if (error != null) ...[
+              const SizedBox(height: 8),
+              Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+            ],
+            const SizedBox(height: 16),
+            FocusTraversalOrder(
+              order: const NumericFocusOrder(2),
+              child: LandfallButton(
+                label: 'Send code',
+                isLoading: isLoading,
+                onPressed: onSend,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
-        _LandfallTextField(
-          controller: controller,
-          focusNode: focusNode,
-          hint: 'you@example.com',
-          keyboardType: TextInputType.emailAddress,
-          autofillHints: const [AutofillHints.email],
-          textInputAction: TextInputAction.send,
-          onSubmitted: (_) => onSend(),
-          enabled: !isLoading,
-        ),
-        if (error != null) ...[
-          const SizedBox(height: 8),
-          Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
-        ],
-        const SizedBox(height: 16),
-        LandfallButton(
-          label: 'Send code',
-          isLoading: isLoading,
-          onPressed: onSend,
-        ),
-      ],
+      ),
     );
   }
 }
@@ -415,62 +453,92 @@ class _CodeStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        RichText(
-          text: TextSpan(
-            style: const TextStyle(color: Colors.white70, fontSize: 15),
-            children: [
-              const TextSpan(text: 'Code sent to '),
-              TextSpan(
-                text: email,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        _LandfallTextField(
-          controller: controller,
-          focusNode: focusNode,
-          hint: '000000',
-          keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(6),
-          ],
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => onVerify(),
-          enabled: !isLoading,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 12,
-          ),
-        ),
-        if (error != null) ...[
-          const SizedBox(height: 8),
-          Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
-        ],
-        const SizedBox(height: 16),
-        LandfallButton(
-          label: 'Verify',
-          isLoading: isLoading,
-          onPressed: onVerify,
-        ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+    final defaultTheme = PinTheme(
+      width: 48,
+      height: 56,
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF2A2A2A)),
+      ),
+    );
+    final focusedTheme = defaultTheme.copyDecorationWith(
+      border: Border.all(color: const Color(0xFF4A9EFF), width: 1.5),
+    );
+    final submittedTheme = defaultTheme.copyDecorationWith(
+      border: Border.all(color: const Color(0xFF3A8AEF)),
+    );
+
+    return FocusTraversalGroup(
+      policy: OrderedTraversalPolicy(),
+      child: Shortcuts(
+        shortcuts: {
+          LogicalKeySet(LogicalKeyboardKey.arrowDown): const NextFocusIntent(),
+          LogicalKeySet(LogicalKeyboardKey.arrowUp): const PreviousFocusIntent(),
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _TextLink(label: 'Resend code', onTap: onResend),
-            const SizedBox(width: 24),
-            _TextLink(label: 'Change email', onTap: onChangeEmail),
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(color: Colors.white70, fontSize: 15),
+                children: [
+                  const TextSpan(text: 'Code sent to '),
+                  TextSpan(
+                    text: email,
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            FocusTraversalOrder(
+              order: const NumericFocusOrder(1),
+              child: Pinput(
+                length: 6,
+                controller: controller,
+                focusNode: focusNode,
+                keyboardType: TextInputType.number,
+                autofillHints: const [AutofillHints.oneTimeCode],
+                enabled: !isLoading,
+                defaultPinTheme: defaultTheme,
+                focusedPinTheme: focusedTheme,
+                submittedPinTheme: submittedTheme,
+                onCompleted: (_) => onVerify(),
+              ),
+            ),
+            if (error != null) ...[
+              const SizedBox(height: 8),
+              Text(error!,
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+            ],
+            const SizedBox(height: 16),
+            FocusTraversalOrder(
+              order: const NumericFocusOrder(2),
+              child: LandfallButton(
+                label: 'Verify',
+                isLoading: isLoading,
+                onPressed: onVerify,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _TextLink(label: 'Resend code', onTap: onResend),
+                const SizedBox(width: 24),
+                _TextLink(label: 'Change email', onTap: onChangeEmail),
+              ],
+            ),
           ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -481,26 +549,20 @@ class _LandfallTextField extends StatelessWidget {
     required this.focusNode,
     required this.hint,
     this.keyboardType,
-    this.inputFormatters,
     this.autofillHints,
     this.textInputAction,
     this.onSubmitted,
     this.enabled = true,
-    this.textAlign = TextAlign.start,
-    this.style,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
   final String hint;
   final TextInputType? keyboardType;
-  final List<TextInputFormatter>? inputFormatters;
   final List<String>? autofillHints;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onSubmitted;
   final bool enabled;
-  final TextAlign textAlign;
-  final TextStyle? style;
 
   @override
   Widget build(BuildContext context) {
@@ -509,12 +571,10 @@ class _LandfallTextField extends StatelessWidget {
       focusNode: focusNode,
       enabled: enabled,
       keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
       autofillHints: autofillHints,
       textInputAction: textInputAction,
       onSubmitted: onSubmitted,
-      textAlign: textAlign,
-      style: style ?? const TextStyle(color: Colors.white, fontSize: 16),
+      style: const TextStyle(color: Colors.white, fontSize: 16),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.white24),

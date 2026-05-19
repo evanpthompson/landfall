@@ -18,7 +18,9 @@ import 'package:display/src/data/theme/serverpod_theme_repository.dart';
 import 'package:display/src/data/weather/serverpod_weather_repository.dart';
 import 'package:display/src/domain/use_cases/get_current_time_use_case.dart';
 import 'package:display/src/features/auth/cubit/auth_cubit.dart';
+import 'package:display/src/features/auth/data/device_auth_client.dart';
 import 'package:display/src/features/auth/screens/login_screen.dart';
+import 'package:display/src/platform/leanback.dart';
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 import 'package:display/src/features/calendar/cubit/calendar_cubit.dart';
 import 'package:display/src/features/cards/cubit/card_cubit.dart';
@@ -119,8 +121,11 @@ class LandfallApp extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (_) =>
-                AuthCubit(client: client, sessionManager: sessionManager),
+            create: (_) => AuthCubit(
+              client: client,
+              sessionManager: sessionManager,
+              deviceAuthClient: HttpDeviceAuthClient(serverUrl: serverUrl),
+            ),
           ),
           BlocProvider(
             create: (ctx) => DashboardProfileCubit(
@@ -190,25 +195,40 @@ class LandfallApp extends StatelessWidget {
 }
 
 /// Switches between [LoginScreen] and [DisplayScreen] based on auth state.
-class _AuthGate extends StatelessWidget {
+class _AuthGate extends StatefulWidget {
   const _AuthGate({required this.client, required this.serverUrl});
 
   final Client client;
   final String serverUrl;
 
   @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  bool? _leanback;
+
+  @override
+  void initState() {
+    super.initState();
+    Leanback().isLeanback().then((v) {
+      if (mounted) setState(() => _leanback = v);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Integration tests bypass auth: either the server URL is injected
     // directly, or wizard mode is active (wizard completes then lands here).
     if (kIntegrationTestServerUrl.isNotEmpty || kIntegrationTestWizardMode) {
-      return DisplayScreen(client: client, serverUrl: serverUrl);
+      return DisplayScreen(client: widget.client, serverUrl: widget.serverUrl);
     }
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
         if (state is AuthAuthenticated) {
-          return DisplayScreen(client: client, serverUrl: serverUrl);
+          return DisplayScreen(client: widget.client, serverUrl: widget.serverUrl);
         }
-        return const LoginScreen();
+        return LoginScreen(leanback: _leanback ?? false);
       },
     );
   }
