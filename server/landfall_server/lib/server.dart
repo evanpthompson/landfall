@@ -22,6 +22,7 @@ import 'src/web/routes/microsoft_calendar_oauth_route.dart';
 import 'src/web/routes/photo_serve_route.dart';
 import 'src/web/routes/companion/companion_page_route.dart';
 import 'src/web/routes/root.dart';
+import 'src/discovery/mdns_broadcaster.dart';
 import 'src/weather/weather_refresh_call.dart';
 
 /// The starting point of the Serverpod server.
@@ -115,6 +116,24 @@ void run(List<String> args) async {
 
   // Start the server.
   await pod.start();
+
+  // Advertise this server on the LAN via mDNS so Landfall displays can
+  // discover it without the user typing a URL (Phase 2a — server broadcast).
+  final apiServer = pod.config.apiServer;
+  final serverUrl =
+      '${apiServer.publicScheme}://${apiServer.publicHost}:${apiServer.publicPort}';
+  final mdns = ProcessMdnsBroadcaster(
+    config: MdnsBroadcasterConfig(
+      serviceName: 'Landfall',
+      port: apiServer.publicPort,
+      serverUrl: serverUrl,
+      version: '1',
+    ),
+  );
+  await mdns.start();
+  ProcessSignal.sigterm.watch().listen((_) async {
+    await mdns.stop();
+  });
 
   // Seed built-in themes and marketplace themes if not already present.
   // Also clean up any orphaned companion profiles left by prior server versions.
