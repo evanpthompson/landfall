@@ -23,6 +23,7 @@ import 'src/web/routes/photo_serve_route.dart';
 import 'src/web/routes/companion/companion_page_route.dart';
 import 'src/web/routes/root.dart';
 import 'src/discovery/mdns_broadcaster.dart';
+import 'src/web/routes/device_auth_route.dart';
 import 'src/weather/weather_refresh_call.dart';
 
 /// The starting point of the Serverpod server.
@@ -107,6 +108,12 @@ void run(List<String> args) async {
   // Build manifest receipt — what actually shipped in this image. Baked at
   // build time into /etc/landfall/build-manifest.json; see deploy/pi-gen/build.sh.
   pod.webServer.addRoute(BuildManifestRoute(), '/health/build');
+
+  // Device authorization — RFC 8628-style zero-type login for TV/leanback.
+  pod.webServer.addRoute(DeviceAuthStartRoute(), '/auth/device/start');
+  pod.webServer.addRoute(DeviceAuthPollRoute(), '/auth/device/poll');
+  pod.webServer.addRoute(DevicePageGetRoute(), '/device');
+  pod.webServer.addRoute(DevicePagePostRoute(), '/device');
 
   // Dev-build-only self-hosted telemetry. Production builds (Pi appliance
   // image, public Fire TV APK, public macOS dmg) are built WITHOUT

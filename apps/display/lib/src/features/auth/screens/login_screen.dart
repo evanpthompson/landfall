@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,14 +9,16 @@ import '../widgets/landfall_button.dart';
 
 /// Full-screen login UI.
 ///
-/// Two-step OTP flow:
+/// Two-step OTP flow (all platforms):
 ///   1. Email entry → tap "Send code" → [AuthCodeSent]
 ///   2. 6-digit code entry → tap "Verify" → [AuthAuthenticated]
 ///
-/// Errors are shown inline; the cubit holds previous state so tapping
-/// "Try again" returns to the correct step.
+/// Leanback (TV) mode adds a device-authorization alternative:
+///   0. TV shows a 6-char code + server URL → user signs in on phone.
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.leanback = false});
+
+  final bool leanback;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -25,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _codeController = TextEditingController();
   final _emailFocus = FocusNode();
   final _codeFocus = FocusNode();
+  Timer? _pollTimer;
 
   @override
   void dispose() {
@@ -32,7 +37,22 @@ class _LoginScreenState extends State<LoginScreen> {
     _codeController.dispose();
     _emailFocus.dispose();
     _codeFocus.dispose();
+    _pollTimer?.cancel();
     super.dispose();
+  }
+
+  void _startPolling(String deviceCode) {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted) {
+        context.read<AuthCubit>().pollDeviceFlow(deviceCode);
+      }
+    });
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
   }
 
   @override
@@ -49,11 +69,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 _codeFocus.requestFocus();
               }
               if (state is AuthError && state.previous is AuthUnauthenticated) {
+                _stopPolling();
                 _emailFocus.requestFocus();
               }
               if (state is AuthError && state.previous is AuthCodeSent) {
                 _codeController.clear();
                 _codeFocus.requestFocus();
+              }
+              if (state is AuthDevicePending) {
+                _startPolling(state.deviceCode);
+              }
+              if (state is AuthAuthenticated) {
+                _stopPolling();
               }
             },
             builder: (context, state) {
@@ -74,6 +101,18 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildBody(BuildContext context, AuthState state) {
+    // Device pending — show the TV code + verification URL.
+    if (state is AuthDevicePending) {
+      return _DeviceAuthStep(
+        userCode: state.userCode,
+        verificationUri: state.verificationUri,
+        onCancel: () {
+          _stopPolling();
+          context.read<AuthCubit>().signOut();
+        },
+      );
+    }
+
     final email = switch (state) {
       AuthCodeSent(:final email) => email,
       AuthVerifying(:final email) => email,
@@ -97,6 +136,20 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     }
 
+    // Leanback: show device-auth option first, then email fallback.
+    if (widget.leanback) {
+      return _LeanbackUnauthStep(
+        emailController: _emailController,
+        emailFocus: _emailFocus,
+        isLoading: state is AuthSendingCode,
+        error: state is AuthError ? state.message : null,
+        onStartDeviceFlow: () => context.read<AuthCubit>().startDeviceFlow(),
+        onSendCode: () => context.read<AuthCubit>().sendCode(
+          _emailController.text.trim(),
+        ),
+      );
+    }
+
     return _EmailStep(
       controller: _emailController,
       focusNode: _emailFocus,
@@ -108,6 +161,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+
+// ── Widgets ──────────────────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
   @override
@@ -132,6 +187,156 @@ class _Header extends StatelessWidget {
             fontSize: 13,
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Leanback unauthenticated step — device-flow button + email fallback.
+class _LeanbackUnauthStep extends StatelessWidget {
+  const _LeanbackUnauthStep({
+    required this.emailController,
+    required this.emailFocus,
+    required this.isLoading,
+    required this.error,
+    required this.onStartDeviceFlow,
+    required this.onSendCode,
+  });
+
+  final TextEditingController emailController;
+  final FocusNode emailFocus;
+  final bool isLoading;
+  final String? error;
+  final VoidCallback onStartDeviceFlow;
+  final VoidCallback onSendCode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LandfallButton(
+          label: 'Sign in with TV code',
+          isLoading: isLoading,
+          onPressed: onStartDeviceFlow,
+        ),
+        const SizedBox(height: 24),
+        const Row(
+          children: [
+            Expanded(child: Divider(color: Color(0xFF2A2A2A))),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Text('or', style: TextStyle(color: Colors.white24, fontSize: 12)),
+            ),
+            Expanded(child: Divider(color: Color(0xFF2A2A2A))),
+          ],
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Sign in with email',
+          style: TextStyle(color: Colors.white70, fontSize: 15),
+        ),
+        const SizedBox(height: 12),
+        _LandfallTextField(
+          controller: emailController,
+          focusNode: emailFocus,
+          hint: 'you@example.com',
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
+          textInputAction: TextInputAction.send,
+          onSubmitted: (_) => onSendCode(),
+          enabled: !isLoading,
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 8),
+          Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+        ],
+        const SizedBox(height: 16),
+        LandfallButton(
+          label: 'Send code',
+          isLoading: isLoading,
+          onPressed: onSendCode,
+        ),
+      ],
+    );
+  }
+}
+
+/// Device authorization step — shown on TV while waiting for phone sign-in.
+class _DeviceAuthStep extends StatelessWidget {
+  const _DeviceAuthStep({
+    required this.userCode,
+    required this.verificationUri,
+    required this.onCancel,
+  });
+
+  final String userCode;
+  final String verificationUri;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Sign in from your phone',
+          style: const TextStyle(color: Colors.white70, fontSize: 15),
+        ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141414),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF2A2A2A)),
+          ),
+          child: Column(
+            children: [
+              Text(
+                userCode,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 42,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 12,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                verificationUri,
+                style: const TextStyle(color: Color(0xFF4A9EFF), fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Open the URL above on your phone and enter this code.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white38, fontSize: 13),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white24,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Waiting…',
+              style: TextStyle(color: Colors.white38, fontSize: 12),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _TextLink(label: 'Cancel', onTap: onCancel),
       ],
     );
   }
