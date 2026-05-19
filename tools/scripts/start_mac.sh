@@ -6,6 +6,8 @@
 #   bash tools/scripts/start_mac.sh --build   # rebuild the macOS app first, then launch
 #   bash tools/scripts/start_mac.sh --reset   # clear profile data + rebuild app + fresh start
 #   bash tools/scripts/start_mac.sh --server  # start backend only (no app launch)
+#   bash tools/scripts/start_mac.sh --debug   # start backend + `flutter run -d macos`
+#                                             # (foreground, streams Flutter logs to terminal)
 #
 # --reset truncates dashboard_profiles and clears the app's local SQLite so the
 # display client re-seeds all three default profiles (Weekday/Weekend/Night) on
@@ -21,8 +23,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SERVER_DIR="${REPO_ROOT}/server/landfall_server"
 DISPLAY_DIR="${REPO_ROOT}/apps/display"
-APP_DEBUG="${DISPLAY_DIR}/build/macos/Build/Products/Debug/display.app"
-APP_RELEASE="${DISPLAY_DIR}/build/macos/Build/Products/Release/display.app"
+APP_DEBUG="${DISPLAY_DIR}/build/macos/Build/Products/Debug/Landfall.app"
+APP_RELEASE="${DISPLAY_DIR}/build/macos/Build/Products/Release/Landfall.app"
 SERVER_LOG="/tmp/landfall-server.log"
 APP_SQLITE="${HOME}/Library/Containers/com.example.display/Data/Documents/landfall.db"
 
@@ -41,12 +43,14 @@ fail() { echo "${RED}✗  $*${RESET}"; exit 1; }
 MODE_BUILD=false
 MODE_SERVER_ONLY=false
 MODE_RESET=false
+MODE_DEBUG=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --build)  MODE_BUILD=true; shift ;;
     --server) MODE_SERVER_ONLY=true; shift ;;
     --reset)  MODE_RESET=true; MODE_BUILD=true; shift ;;
+    --debug)  MODE_DEBUG=true; shift ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -179,7 +183,7 @@ fi
 
 info "Launching ${APP_PATH##*/build/macos/Build/Products/}..."
 # Quit any running instance first so macOS opens the freshly built binary
-osascript -e 'quit app "display"' > /dev/null 2>&1 || true
+osascript -e 'quit app "Landfall"' > /dev/null 2>&1 || true
 sleep 1
 open -n "${APP_PATH}"
 ok "Display launched"

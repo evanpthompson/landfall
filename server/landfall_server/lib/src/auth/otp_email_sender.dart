@@ -71,6 +71,8 @@ This code expires in ${lifetime.inMinutes} minutes. If you did not request it, y
         timeout: const Duration(seconds: 15),
       );
     } catch (error, stackTrace) {
+      // ignore: avoid_print
+      print('[OTP] SMTP delivery failed for $email: $error\n$stackTrace');
       session.log(
         '[OTP] SMTP delivery failed for $email: $error',
         level: LogLevel.error,

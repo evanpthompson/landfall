@@ -20,7 +20,8 @@ Every doc in the repo, in one place. Add a new `.md` file anywhere and it goes h
 - [Pi dev workflow](pi_dev_workflow.md) — hot reload against a live Pi server
 - [Updating a Pi](updating.md) — default new-image path plus in-place edge cases
 - [Deployment validation](deployment_validation.md) — checks before long image builds
-- [Manual smoke test](manual_smoke_test.md) — runnable cold checklist for a build
+- [Manual smoke test](manual_smoke_test.md) — runnable cold checklist for a build (release gate)
+- [End-to-end feature test](e2e_feature_test.md) — exhaustive feature-by-feature regression sweep
 
 ## For agent integrators
 

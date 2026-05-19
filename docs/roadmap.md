@@ -152,9 +152,24 @@ the warning to an error.
 - Move shipped items into [`docs/updating.md`](updating.md) (if user-facing) or
   strike them through here with a commit reference.
 
-Longer-term exploration (cloud-tier services, OTA updates, integration
-breadth, layout-editor UI, additional companion tiers) is tracked privately
-and will surface here once scoped and committed to.
+Longer-term exploration (cloud-tier services, integration breadth,
+layout-editor UI, additional companion tiers) is tracked privately and will
+surface here once scoped and committed to.
+
+---
+
+## Backlog / Under consideration
+
+Items here are not committed — no design decisions made, no timeline. They
+exist so ideas don't get lost. Move to the main roadmap when scoped.
+
+### OTA update tool/script
+
+A mechanism to push a new APK or Pi image to deployed devices without
+requiring physical access or manual sideloading. Useful for beta users running
+Fire TV or Pi builds who can't easily plug in a laptop. Scope TBD — could be
+as simple as a shell script that pulls and installs a new build from the
+server, or as involved as a background update daemon. Not blocking beta launch.
 
 ---
 
