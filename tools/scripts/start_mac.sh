@@ -156,7 +156,26 @@ if [[ "${MODE_SERVER_ONLY}" == true ]]; then
   exit 0
 fi
 
-# ── 4. Build macOS app (optional) ────────────────────────────────────────────
+# ── 4a. Debug mode — `flutter run` in foreground ────────────────────────────
+
+if [[ "${MODE_DEBUG}" == true ]]; then
+  if ! command -v flutter > /dev/null; then
+    fail "flutter not found. Install it from https://docs.flutter.dev/get-started/install/macos"
+  fi
+
+  # Quit any running release build so flutter run can take the slot.
+  osascript -e 'quit app "Landfall"' > /dev/null 2>&1 || true
+  sleep 1
+
+  echo "${CYAN}${BOLD}Launching debug build via flutter run...${RESET}"
+  info "Client logs will stream to this terminal. Server log: ${SERVER_LOG}"
+  echo ""
+  cd "${DISPLAY_DIR}"
+  exec flutter run -d macos \
+    --dart-define=LANDFALL_DEFAULT_SERVER_URL=http://localhost:8080/
+fi
+
+# ── 4b. Build macOS app (optional) ───────────────────────────────────────────
 
 if [[ "${MODE_BUILD}" == true ]]; then
   if ! command -v flutter > /dev/null; then

@@ -55,6 +55,53 @@ curl http://<SERVER_IP>:8081
 
 ---
 
+## Remote-control state of play
+
+Beta-required: the app must be navigable end-to-end from the Fire TV remote, no USB keyboard. Full plan lives in [`firetv_remote_nav_plan.md`](firetv_remote_nav_plan.md). This section is the Phase 0 bench-test log — fill it in by walking the wizard with the script below, then the later phases adjust to what you find.
+
+### Bench-test script
+
+Drive the Fire TV from the Mac. Replace `<FIRE_TV_IP>` once.
+
+```bash
+adb connect <FIRE_TV_IP>:5555
+
+# D-pad
+adb shell input keyevent 19   # up
+adb shell input keyevent 20   # down
+adb shell input keyevent 21   # left
+adb shell input keyevent 22   # right
+adb shell input keyevent 23   # OK / center
+adb shell input keyevent 4    # back
+
+# Launch the app fresh
+adb shell am force-stop io.landfall.display
+adb shell am start -n io.landfall.display/.MainActivity
+
+# Watch logs while you navigate
+adb logcat | grep -iE 'flutter|landfall'
+```
+
+### Checklist (fill in as you bench)
+
+- [ ] **Initial focus on wizard step 1** — does any control look focused on launch?
+- [ ] **TextField focus → IME** — does the Amazon keyboard appear on first launch?
+- [ ] **Focus visibility on buttons** — can you see which control is focused from the couch?
+- [ ] **D-pad traversal order** — does down/right move focus where you expect?
+- [ ] **OK button** — submits forms? Activates buttons?
+- [ ] **Back button** — closes IME? Goes back a step? Or exits the app?
+- [ ] **TextField submit** — does the Amazon keyboard's "Done" advance the wizard?
+- [ ] **Wizard step 2 (location)** — same checks as step 1
+- [ ] **Wizard step 3 (link accounts)** — D-pad navigates to "Got it"?
+- [ ] **Login screen email** — same checks; OTP code entry usable?
+- [ ] **Settings tray** — can you open it from the display? Close it?
+
+### Observations
+
+_(Bullets go here once Phase 0 is run. Be specific: "step 1 has no visible focus ring on the TextField; D-pad-down jumps two widgets, skipping the helper text; back button kills the app.")_
+
+---
+
 ## For AI assistants
 
 Key facts for helping users build and sideload the Fire TV APK:

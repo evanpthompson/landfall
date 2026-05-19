@@ -40,6 +40,16 @@ StartupDecision resolveStartupDecision({
     return const StartupDecision.setupWizard();
   }
 
+  // A baked-in default that differs from the stored URL wins and is
+  // persisted. Without this, a stale serverUrl in the local DB (e.g. an
+  // old Mac dev IP) survives every dart-define swap and rebuild.
+  if (defaultServerUrl.isNotEmpty && defaultServerUrl != settings.serverUrl) {
+    return StartupDecision.display(
+      defaultServerUrl,
+      persistDefaultSettings: true,
+    );
+  }
+
   if (settings.serverUrl.isNotEmpty && settings.wizardComplete) {
     return StartupDecision.display(settings.serverUrl);
   }

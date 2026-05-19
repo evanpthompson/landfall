@@ -46,6 +46,7 @@ Every doc in the repo, in one place. Add a new `.md` file anywhere and it goes h
 - [Build defines](build_defines.md) — `--dart-define` reference
 - [Dependency policy](dependency_policy.md) — pubspec and lock-file rules
 - [Roadmap](roadmap.md) — near-term scoped work
+- [Fire TV remote navigation plan](firetv_remote_nav_plan.md) — beta-scope phased plan for D-pad + remote-only UX
 
 ## Package READMEs
 

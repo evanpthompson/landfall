@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../cubit/auth_cubit.dart';
+import '../widgets/landfall_button.dart';
 
 /// Full-screen login UI.
 ///
@@ -176,7 +177,7 @@ class _EmailStep extends StatelessWidget {
           Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
         ],
         const SizedBox(height: 16),
-        _LandfallButton(
+        LandfallButton(
           label: 'Send code',
           isLoading: isLoading,
           onPressed: onSend,
@@ -250,7 +251,7 @@ class _CodeStep extends StatelessWidget {
           Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
         ],
         const SizedBox(height: 16),
-        _LandfallButton(
+        LandfallButton(
           label: 'Verify',
           isLoading: isLoading,
           onPressed: onVerify,
@@ -331,44 +332,6 @@ class _LandfallTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Color(0xFF1A1A1A)),
         ),
-      ),
-    );
-  }
-}
-
-class _LandfallButton extends StatelessWidget {
-  const _LandfallButton({
-    required this.label,
-    required this.isLoading,
-    required this.onPressed,
-  });
-
-  final String label;
-  final bool isLoading;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF4A9EFF),
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: const Color(0xFF2A2A2A),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: isLoading
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white54,
-                ),
-              )
-            : Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
       ),
     );
   }

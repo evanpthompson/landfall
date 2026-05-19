@@ -34,7 +34,46 @@ void main() {
       expect(decision.target, StartupTarget.setupWizard);
     });
 
-    test('stored completed settings override production default', () {
+    test('stored settings used when they match the production default', () {
+      final decision = resolveStartupDecision(
+        settings: const DisplaySettings(
+          serverUrl: 'http://127.0.0.1:8080/',
+          wizardComplete: true,
+        ),
+        integrationTestServerUrl: '',
+        integrationTestWizardMode: false,
+        defaultServerUrl: 'http://127.0.0.1:8080/',
+      );
+
+      expect(decision.target, StartupTarget.display);
+      expect(decision.serverUrl, 'http://127.0.0.1:8080/');
+      expect(decision.persistDefaultSettings, isFalse);
+    });
+
+    test(
+      'production default overrides stored URL when they differ and persists',
+      () {
+        // Guards against the stale-dev-URL trap: a Mac dev DB pinned an old
+        // DHCP IP, and the dart-define swap could not take effect because
+        // the stored URL won unconditionally. Now a non-empty, differing
+        // default wins and overwrites the stored value.
+        final decision = resolveStartupDecision(
+          settings: const DisplaySettings(
+            serverUrl: 'http://192.168.1.118:8080/',
+            wizardComplete: true,
+          ),
+          integrationTestServerUrl: '',
+          integrationTestWizardMode: false,
+          defaultServerUrl: 'http://MacBookPro-3.lan:8080/',
+        );
+
+        expect(decision.target, StartupTarget.display);
+        expect(decision.serverUrl, 'http://MacBookPro-3.lan:8080/');
+        expect(decision.persistDefaultSettings, isTrue);
+      },
+    );
+
+    test('stored settings used when no default is baked in', () {
       final decision = resolveStartupDecision(
         settings: const DisplaySettings(
           serverUrl: 'http://stored:8080/',
@@ -42,7 +81,7 @@ void main() {
         ),
         integrationTestServerUrl: '',
         integrationTestWizardMode: false,
-        defaultServerUrl: 'http://127.0.0.1:8080/',
+        defaultServerUrl: '',
       );
 
       expect(decision.target, StartupTarget.display);

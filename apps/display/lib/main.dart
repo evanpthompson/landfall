@@ -30,7 +30,7 @@ void main() async {
   // dev (macOS + Linux outside the kiosk image) and Windows.
   if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
     await windowManager.ensureInitialized();
-    await windowManager.setMinimumSize(const Size(900, 560));
+    await windowManager.setMinimumSize(const Size(1280, 720));
     await windowManager.setFullScreen(true);
   }
 
