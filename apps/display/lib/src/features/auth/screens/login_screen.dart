@@ -137,17 +137,12 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     }
 
-    // Leanback: show device-auth option first, then email fallback.
+    // Leanback: device-auth only — no email text field on the TV.
     if (widget.leanback) {
       return _LeanbackUnauthStep(
-        emailController: _emailController,
-        emailFocus: _emailFocus,
         isLoading: state is AuthSendingCode,
         error: state is AuthError ? state.message : null,
         onStartDeviceFlow: () => context.read<AuthCubit>().startDeviceFlow(),
-        onSendCode: () => context.read<AuthCubit>().sendCode(
-          _emailController.text.trim(),
-        ),
       );
     }
 
@@ -159,6 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
       onSend: () => context.read<AuthCubit>().sendCode(
         _emailController.text.trim(),
       ),
+      onStartDeviceFlow: () => context.read<AuthCubit>().startDeviceFlow(),
     );
   }
 }
@@ -193,92 +189,44 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// Leanback unauthenticated step — device-flow button + email fallback.
+/// Leanback unauthenticated step — device-flow button only.
+///
+/// No email fallback: typing on a TV remote is painful and the device-auth
+/// flow (sign in on phone, TV auto-advances) is the correct leanback path.
 class _LeanbackUnauthStep extends StatelessWidget {
   const _LeanbackUnauthStep({
-    required this.emailController,
-    required this.emailFocus,
     required this.isLoading,
     required this.error,
     required this.onStartDeviceFlow,
-    required this.onSendCode,
   });
 
-  final TextEditingController emailController;
-  final FocusNode emailFocus;
   final bool isLoading;
   final String? error;
   final VoidCallback onStartDeviceFlow;
-  final VoidCallback onSendCode;
 
   @override
   Widget build(BuildContext context) {
-    return FocusTraversalGroup(
-      policy: OrderedTraversalPolicy(),
-      child: Shortcuts(
-        shortcuts: {
-          LogicalKeySet(LogicalKeyboardKey.arrowDown): const NextFocusIntent(),
-          LogicalKeySet(LogicalKeyboardKey.arrowUp): const PreviousFocusIntent(),
-        },
-        child: _buildContent(),
-      ),
-    );
-  }
-
-  Widget _buildContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FocusTraversalOrder(
-          order: const NumericFocusOrder(1),
-          child: LandfallButton(
-            label: 'Sign in with TV code',
-            isLoading: isLoading,
-            onPressed: onStartDeviceFlow,
-          ),
-        ),
-        const SizedBox(height: 24),
-        const Row(
-          children: [
-            Expanded(child: Divider(color: Color(0xFF2A2A2A))),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Text('or', style: TextStyle(color: Colors.white24, fontSize: 12)),
-            ),
-            Expanded(child: Divider(color: Color(0xFF2A2A2A))),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Sign in with email',
-          style: TextStyle(color: Colors.white70, fontSize: 15),
-        ),
-        const SizedBox(height: 12),
-        FocusTraversalOrder(
-          order: const NumericFocusOrder(2),
-          child: _LandfallTextField(
-            controller: emailController,
-            focusNode: emailFocus,
-            hint: 'you@example.com',
-            keyboardType: TextInputType.emailAddress,
-            autofillHints: const [AutofillHints.email],
-            textInputAction: TextInputAction.next,
-            onSubmitted: (_) => emailFocus.nextFocus(),
-            enabled: !isLoading,
-          ),
+        LandfallButton(
+          label: 'Sign in with TV code',
+          isLoading: isLoading,
+          onPressed: onStartDeviceFlow,
         ),
         if (error != null) ...[
-          const SizedBox(height: 8),
-          Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
-        ],
-        const SizedBox(height: 16),
-        FocusTraversalOrder(
-          order: const NumericFocusOrder(3),
-          child: LandfallButton(
-            label: 'Send code',
-            isLoading: isLoading,
-            onPressed: onSendCode,
+          const SizedBox(height: 16),
+          Text(
+            error!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.redAccent, fontSize: 13),
           ),
+        ],
+        const SizedBox(height: 24),
+        Text(
+          'Your TV will show a 6-character code.\nSign in on your phone at the URL displayed.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white38, fontSize: 13, height: 1.5),
         ),
       ],
     );
@@ -372,6 +320,7 @@ class _EmailStep extends StatelessWidget {
     required this.isLoading,
     required this.error,
     required this.onSend,
+    required this.onStartDeviceFlow,
   });
 
   final TextEditingController controller;
@@ -379,6 +328,7 @@ class _EmailStep extends StatelessWidget {
   final bool isLoading;
   final String? error;
   final VoidCallback onSend;
+  final VoidCallback onStartDeviceFlow;
 
   @override
   Widget build(BuildContext context) {
@@ -421,6 +371,28 @@ class _EmailStep extends StatelessWidget {
                 label: 'Send code',
                 isLoading: isLoading,
                 onPressed: onSend,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                const Expanded(child: Divider(color: Color(0xFF2A2A2A))),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    'or',
+                    style: const TextStyle(color: Colors.white24, fontSize: 12),
+                  ),
+                ),
+                const Expanded(child: Divider(color: Color(0xFF2A2A2A))),
+              ],
+            ),
+            const SizedBox(height: 16),
+            FocusTraversalOrder(
+              order: const NumericFocusOrder(3),
+              child: _TextLink(
+                label: 'Sign in with a code from your phone',
+                onTap: onStartDeviceFlow,
               ),
             ),
           ],

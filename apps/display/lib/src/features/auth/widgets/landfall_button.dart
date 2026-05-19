@@ -21,16 +21,29 @@ class LandfallButton extends StatelessWidget {
       height: 48,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF4A9EFF),
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: const Color(0xFF2A2A2A),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          // Weight via styleFrom merges into the theme's labelLarge with
-          // inherit:false. Passing it on the child `Text` instead forces
-          // inherit:true and crashes AnimatedDefaultTextStyle.lerp whenever
-          // the surrounding theme rebuilds (resize, theme swap, MediaQuery).
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) return const Color(0xFF2A2A2A);
+            if (states.contains(WidgetState.focused)) return const Color(0xFF7AB8FF);
+            return const Color(0xFF4A9EFF);
+          }),
+          foregroundColor: WidgetStateProperty.all(Colors.white),
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) return Colors.white.withValues(alpha: 0.15);
+            return null;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return const BorderSide(color: Colors.white, width: 2.5);
+            }
+            return BorderSide.none;
+          }),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          textStyle: WidgetStateProperty.all(
+            const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ),
         child: isLoading
             ? const SizedBox(

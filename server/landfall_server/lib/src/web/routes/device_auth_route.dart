@@ -109,10 +109,20 @@ class DeviceAuthPollRoute extends Route {
 
 /// GET+POST /device
 ///
-/// GET:  Serves a minimal HTML page with a form for phone-side code entry.
-/// POST: Form submission — userCode + email + code (OTP).
-///       On success: verifies OTP, pairs the device, returns a success page.
-///       On failure: returns an error page.
+/// Two-step flow:
+///
+/// Step 1 — GET /device
+///   Shows form: TV code + email. User submits → POST with step=send.
+///
+/// Step 1 — POST /device (step=send)
+///   Calls [OtpService.sendCode], then redirects to:
+///   GET /device?userCode=XXX&email=yyy  (step 2 view)
+///
+/// Step 2 — GET /device?userCode=XXX&email=yyy
+///   Shows OTP entry form pre-filled with userCode and email.
+///
+/// Step 2 — POST /device (step=verify)
+///   Verifies OTP, pairs the device, returns success page.
 class DevicePageRoute extends Route {
   DevicePageRoute() : super(methods: {Method.get, Method.post});
 
@@ -121,33 +131,63 @@ class DevicePageRoute extends Route {
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
     if (request.method == Method.get) {
-      return _html(200, _devicePageHtml());
+      final userCode = request.url.queryParameters['userCode'] ?? '';
+      final email = request.url.queryParameters['email'] ?? '';
+      if (userCode.isNotEmpty && email.isNotEmpty) {
+        return _html(200, _deviceStep2Html(userCode: userCode, email: email));
+      }
+      return _html(200, _deviceStep1Html());
     }
 
     final rawBody = await request.readAsString();
     final params = Uri.splitQueryString(rawBody);
+    final step = params['step'] ?? 'verify';
 
+    if (step == 'send') {
+      // Step 1 → send OTP to email, then redirect to step 2.
+      final userCode = (params['userCode'] ?? '').trim().toUpperCase();
+      final email = (params['email'] ?? '').trim().toLowerCase();
+
+      if (userCode.isEmpty || email.isEmpty) {
+        return _html(400, _deviceStep1Html(error: 'TV code and email are required.'));
+      }
+      if (!DeviceAuthService.isValidUserCode(userCode)) {
+        return _html(400, _deviceStep1Html(error: 'Invalid or expired TV code. Check the code on your TV and try again.'));
+      }
+
+      try {
+        await _otpService.sendCode(session, email);
+      } catch (_) {
+        return _html(400, _deviceStep1Html(error: 'Could not send code. Check your email address and try again.'));
+      }
+
+      final redirectUri = Uri.parse('/device').replace(queryParameters: {
+        'userCode': userCode,
+        'email': email,
+      });
+      return Response.seeOther(redirectUri);
+    }
+
+    // Step 2 → verify OTP and pair device.
     final userCode = (params['userCode'] ?? '').trim().toUpperCase();
     final email = (params['email'] ?? '').trim().toLowerCase();
     final code = (params['code'] ?? '').trim();
 
     if (userCode.isEmpty || email.isEmpty || code.isEmpty) {
-      return _html(400, _errorPageHtml('All fields are required.'));
+      return _html(400, _deviceStep2Html(userCode: userCode, email: email, error: 'All fields are required.'));
     }
-
     if (!DeviceAuthService.isValidUserCode(userCode)) {
-      return _html(400, _errorPageHtml('Invalid or expired code. Please try again.'));
+      return _html(400, _deviceStep2Html(userCode: userCode, email: email, error: 'Invalid or expired TV code. Please start over on your TV.'));
     }
 
     final AuthSuccess authResult;
     try {
       authResult = await _otpService.verifyCode(session, email, code);
-    } catch (e) {
-      return _html(400, _errorPageHtml('Invalid or expired code. Please try again.'));
+    } catch (_) {
+      return _html(400, _deviceStep2Html(userCode: userCode, email: email, error: 'Invalid or expired code. Check your email and try again.'));
     }
 
     DeviceAuthService.completeFlow(userCode, authResult.toJson());
-
     return _html(200, _successPageHtml());
   }
 }
@@ -159,14 +199,7 @@ Result _html(int status, String body) => Response(
       body: Body.fromString(body, mimeType: MimeType.html),
     );
 
-String _devicePageHtml() => '''
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign in to Landfall</title>
-  <style>
+String _sharedCss() => '''
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -179,6 +212,7 @@ String _devicePageHtml() => '''
     }
     h1 { font-size: 22px; font-weight: 700; letter-spacing: 4px; color: #fff; margin-bottom: 8px; }
     p { color: #666; font-size: 14px; margin-bottom: 28px; line-height: 1.5; }
+    .step { font-size: 11px; color: #555; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 20px; }
     label { display: block; font-size: 12px; color: #888; margin-bottom: 6px; letter-spacing: 0.5px; }
     input {
       width: 100%; padding: 12px 14px; background: #1a1a1a; border: 1px solid #2a2a2a;
@@ -192,30 +226,72 @@ String _devicePageHtml() => '''
       color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
     }
     button:hover { opacity: 0.85; }
-  </style>
+    .error { color: #ff6b6b; font-size: 13px; margin-bottom: 16px; }
+''';
+
+String _deviceStep1Html({String? error}) => '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in to Landfall</title>
+  <style>${_sharedCss()}</style>
 </head>
 <body>
   <div class="card">
     <h1>LANDFALL</h1>
-    <p>Enter the code shown on your TV, your email address, and the one-time code sent to your email.</p>
+    <p class="step">Step 1 of 2</p>
+    <p>Enter the 6-character code shown on your TV and your email address. We'll send a sign-in code to your email.</p>
+    ${error != null ? '<p class="error">$error</p>' : ''}
     <form method="POST" action="/device">
+      <input type="hidden" name="step" value="send">
       <label for="userCode">Code from TV</label>
       <input id="userCode" name="userCode" type="text" maxlength="6"
-             placeholder="A1B2C3" autocomplete="off" autocapitalize="characters" required>
+             placeholder="A1B2C3" autocomplete="off" autocapitalize="characters"
+             spellcheck="false" required autofocus>
       <label for="email">Email address</label>
       <input id="email" name="email" type="email" placeholder="you@example.com"
              autocomplete="email" required>
-      <label for="code">One-time code</label>
-      <input id="code" name="code" type="text" inputmode="numeric" maxlength="6"
-             placeholder="000000" autocomplete="one-time-code" required>
-      <button type="submit">Sign in</button>
+      <button type="submit">Send sign-in code</button>
     </form>
   </div>
-  <script>
-    // Auto-request OTP when email is entered and code-from-TV is valid.
-    // Note: The user must have already triggered sendCode via the Landfall app
-    // or request it separately. This form just pairs the device.
-  </script>
+</body>
+</html>
+''';
+
+String _deviceStep2Html({
+  required String userCode,
+  required String email,
+  String? error,
+}) => '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in to Landfall</title>
+  <style>${_sharedCss()}</style>
+</head>
+<body>
+  <div class="card">
+    <h1>LANDFALL</h1>
+    <p class="step">Step 2 of 2</p>
+    <p>We sent a 6-digit code to <strong style="color:#e0e0e0">$email</strong>. Enter it below to sign in.</p>
+    ${error != null ? '<p class="error">$error</p>' : ''}
+    <form method="POST" action="/device">
+      <input type="hidden" name="step" value="verify">
+      <input type="hidden" name="userCode" value="$userCode">
+      <input type="hidden" name="email" value="$email">
+      <label for="code">Sign-in code from email</label>
+      <input id="code" name="code" type="text" inputmode="numeric" maxlength="6"
+             placeholder="000000" autocomplete="one-time-code" required autofocus>
+      <button type="submit">Sign in</button>
+    </form>
+    <p style="margin-top:20px;text-align:center">
+      <a href="/device" style="color:#555;font-size:13px">Start over</a>
+    </p>
+  </div>
 </body>
 </html>
 ''';

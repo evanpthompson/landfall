@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_client/landfall_client.dart' hide LandfallTheme;
@@ -124,7 +126,7 @@ class LandfallApp extends StatelessWidget {
             create: (_) => AuthCubit(
               client: client,
               sessionManager: sessionManager,
-              deviceAuthClient: HttpDeviceAuthClient(serverUrl: serverUrl),
+              deviceAuthClient: HttpDeviceAuthClient(serverUrl: webServerUrl),
             ),
           ),
           BlocProvider(
@@ -185,6 +187,33 @@ class LandfallApp extends StatelessWidget {
               title: 'Landfall',
               debugShowCheckedModeBanner: false,
               theme: themeData,
+              // On Android (Fire TV) the platform reports a high screen density
+              // (hdpi/xhdpi), so Flutter's logical coordinate space can be as
+              // small as 960×540 even on a 1080p display. That makes the grid
+              // cells too small, the agent feed too narrow, and the companion
+              // card QR code dominant. FittedBox scales a fixed 1920×1080
+              // design space to fill the logical size the platform reports;
+              // the MediaQuery override ensures widgets inside always see
+              // 1920×1080 design coords. Desktop is left untouched so it
+              // responds naturally to the monitor's actual resolution.
+              builder: Platform.isAndroid
+                  ? (context, child) {
+                      const designSize = Size(1920, 1080);
+                      return MediaQuery(
+                        data: MediaQuery.of(context).copyWith(
+                          size: designSize,
+                          textScaler: TextScaler.noScaling,
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.fill,
+                          child: SizedBox.fromSize(
+                            size: designSize,
+                            child: child!,
+                          ),
+                        ),
+                      );
+                    }
+                  : null,
               home: _AuthGate(client: client, serverUrl: serverUrl),
             );
           },

@@ -75,6 +75,32 @@ void main() {
 
         verify(() => cubit.sendCode(any())).called(1);
       });
+
+      testWidgets('shows "Sign in with a code" link on non-leanback',
+          (tester) async {
+        final cubit = _MockCubit();
+        await tester.pumpWidget(_wrap(const AuthUnauthenticated(), cubit));
+        await tester.pump();
+
+        expect(
+          find.text('Sign in with a code from your phone'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('"Sign in with a code" link calls startDeviceFlow',
+          (tester) async {
+        final cubit = _MockCubit();
+        when(() => cubit.startDeviceFlow()).thenAnswer((_) async {});
+
+        await tester.pumpWidget(_wrap(const AuthUnauthenticated(), cubit));
+        await tester.pump();
+
+        await tester.tap(find.text('Sign in with a code from your phone'));
+        await tester.pump();
+
+        verify(() => cubit.startDeviceFlow()).called(1);
+      });
     });
 
     // ── Code step ──────────────────────────────────────────────────────────────
@@ -121,8 +147,20 @@ void main() {
 
     // ── Leanback device-auth step ──────────────────────────────────────────────
 
-    group('leanback email fallback', () {
-      testWidgets('arrowDown from device-flow button reaches email field',
+    group('leanback mode', () {
+      testWidgets('shows Sign in with TV code button', (tester) async {
+        final cubit = _MockCubit();
+        when(() => cubit.startDeviceFlow()).thenAnswer((_) async {});
+
+        await tester.pumpWidget(
+          _wrap(const AuthUnauthenticated(), cubit, leanback: true),
+        );
+        await tester.pump();
+
+        expect(find.text('Sign in with TV code'), findsOneWidget);
+      });
+
+      testWidgets('has no TextField — no keyboard trap on Fire TV',
           (tester) async {
         final cubit = _MockCubit();
         when(() => cubit.startDeviceFlow()).thenAnswer((_) async {});
@@ -132,16 +170,7 @@ void main() {
         );
         await tester.pump();
 
-        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-        await tester.pump();
-
-        final before = FocusManager.instance.primaryFocus;
-
-        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-        await tester.pump();
-
-        final after = FocusManager.instance.primaryFocus;
-        expect(after, isNot(same(before)));
+        expect(find.byType(TextField), findsNothing);
       });
     });
   });
