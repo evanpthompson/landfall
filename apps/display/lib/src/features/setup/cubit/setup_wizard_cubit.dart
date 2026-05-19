@@ -80,6 +80,29 @@ class SetupWizardCubit extends Cubit<SetupWizardState> {
     emit(const SetupWizardAt(SetupWizardStep.serverUrl));
   }
 
+  /// Goes one step backwards. Called by [PopScope] when the user presses Back.
+  ///
+  /// No-op on the first step ([SetupWizardStep.discover]) — the system handles
+  /// the back event there, so the app can exit or pop normally.
+  void previousStep() {
+    final current = state;
+    if (current is! SetupWizardAt) return;
+    switch (current.step) {
+      case SetupWizardStep.serverUrl:
+        emit(const SetupWizardAt(SetupWizardStep.discover));
+      case SetupWizardStep.location:
+        emit(const SetupWizardAt(SetupWizardStep.serverUrl));
+      case SetupWizardStep.linkAccount:
+        emit(
+            SetupWizardAt(SetupWizardStep.location, serverUrl: _serverUrl));
+      case SetupWizardStep.done:
+        emit(
+            SetupWizardAt(SetupWizardStep.linkAccount, serverUrl: _serverUrl));
+      case SetupWizardStep.discover:
+        break; // first step — let system handle Back
+    }
+  }
+
   /// Validates [raw] as a reachable server URL, then advances to step 2.
   Future<void> submitServerUrl(String raw) async {
     emit(const SetupWizardValidating());

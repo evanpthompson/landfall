@@ -1,5 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -12,7 +13,11 @@ import 'package:display/src/features/setup/screens/setup_wizard_screen.dart';
 class _MockCubit extends MockCubit<SetupWizardState>
     implements SetupWizardCubit {}
 
-Widget _wrap(SetupWizardState state, {ValueChanged<String>? onComplete}) {
+Widget _wrap(
+  SetupWizardState state, {
+  ValueChanged<String>? onComplete,
+  bool leanback = false,
+}) {
   final cubit = _MockCubit();
   when(() => cubit.state).thenReturn(state);
   whenListen(cubit, Stream<SetupWizardState>.value(state));
@@ -21,7 +26,10 @@ Widget _wrap(SetupWizardState state, {ValueChanged<String>? onComplete}) {
     value: cubit,
     child: MaterialApp(
       theme: LandfallTheme.dark,
-      home: SetupWizardScreen(onComplete: onComplete ?? (_) {}),
+      home: SetupWizardScreen(
+        onComplete: onComplete ?? (_) {},
+        leanback: leanback,
+      ),
     ),
   );
 }
@@ -226,6 +234,106 @@ void main() {
       await tester.pump();
 
       verify(() => cubit.skipDiscovery()).called(1);
+    });
+
+    // ── Remote nav — PopScope ────────────────────────────────────────────────
+
+    testWidgets('Back (maybePop) on non-first step calls previousStep',
+        (tester) async {
+      final cubit = _MockCubit();
+      const state = SetupWizardAt(
+          SetupWizardStep.location, serverUrl: 'https://x.com/');
+      when(() => cubit.state).thenReturn(state);
+      whenListen(cubit, Stream<SetupWizardState>.value(state));
+      when(() => cubit.previousStep()).thenReturn(null);
+
+      await tester.pumpWidget(BlocProvider<SetupWizardCubit>.value(
+        value: cubit,
+        child: MaterialApp(
+          theme: LandfallTheme.dark,
+          home: SetupWizardScreen(onComplete: (_) {}),
+        ),
+      ));
+      await tester.pump();
+
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      await navigator.maybePop();
+      await tester.pump();
+
+      verify(() => cubit.previousStep()).called(1);
+    });
+
+    testWidgets('Back (maybePop) on discover step does NOT call previousStep',
+        (tester) async {
+      final cubit = _MockCubit();
+      const state = SetupWizardAt(SetupWizardStep.discover);
+      when(() => cubit.state).thenReturn(state);
+      whenListen(cubit, Stream<SetupWizardState>.value(state));
+      when(() => cubit.previousStep()).thenReturn(null);
+
+      await tester.pumpWidget(BlocProvider<SetupWizardCubit>.value(
+        value: cubit,
+        child: MaterialApp(
+          theme: LandfallTheme.dark,
+          home: SetupWizardScreen(onComplete: (_) {}),
+        ),
+      ));
+      await tester.pump();
+
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      await navigator.maybePop();
+      await tester.pump();
+
+      verifyNever(() => cubit.previousStep());
+    });
+
+    // ── Remote nav — quick-fill chips (leanback only) ───────────────────────
+
+    testWidgets('serverUrl step — quick-fill chips visible when leanback=true',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        const SetupWizardAt(SetupWizardStep.serverUrl),
+        leanback: true,
+      ));
+      await tester.pump();
+
+      expect(find.text('http://'), findsOneWidget);
+      expect(find.text('https://'), findsOneWidget);
+      expect(find.text(':8080/'), findsOneWidget);
+    });
+
+    testWidgets('serverUrl step — quick-fill chips hidden when leanback=false',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        const SetupWizardAt(SetupWizardStep.serverUrl),
+      ));
+      await tester.pump();
+
+      expect(find.text('http://'), findsNothing);
+      expect(find.text('https://'), findsNothing);
+      expect(find.text(':8080/'), findsNothing);
+    });
+
+    // ── Remote nav — arrow-key focus traversal ───────────────────────────────
+
+    testWidgets('arrowDown moves focus to next interactive element', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const SetupWizardAt(SetupWizardStep.serverUrl),
+      ));
+      await tester.pump();
+
+      // Tab to establish initial focus order, then test arrowDown.
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+
+      final before = FocusManager.instance.primaryFocus?.context?.widget;
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+
+      final after = FocusManager.instance.primaryFocus?.context?.widget;
+      // Focus should have moved (different widget focused).
+      expect(after, isNot(same(before)));
     });
   });
 }

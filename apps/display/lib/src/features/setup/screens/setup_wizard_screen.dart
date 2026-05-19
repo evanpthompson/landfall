@@ -1,27 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import 'package:display/src/data/discovery/mdns_server_discovery.dart';
 import 'package:display/src/features/setup/cubit/setup_wizard_cubit.dart';
+import 'package:display/src/platform/leanback.dart';
 import 'package:display/src/widgets/landfall_text_field.dart';
 
 /// Full-screen first-run setup wizard.
 ///
-/// Shown when [DisplaySettings.serverUrl] is empty or [wizardComplete] is false.
-/// [onComplete] is called with the confirmed server URL when the user finishes;
-/// the caller is responsible for calling [runApp] with [LandfallApp].
-class SetupWizardScreen extends StatelessWidget {
-  const SetupWizardScreen({super.key, required this.onComplete});
+/// [onComplete] is called with the confirmed server URL when the user finishes.
+/// [leanback] overrides the platform detection — inject `true` or `false` in
+/// tests; leave null in production to query [Leanback].
+class SetupWizardScreen extends StatefulWidget {
+  const SetupWizardScreen({
+    super.key,
+    required this.onComplete,
+    this.leanback,
+  });
 
   final ValueChanged<String> onComplete;
+
+  /// Test seam for leanback detection. Null = query [Leanback] at runtime.
+  final bool? leanback;
+
+  @override
+  State<SetupWizardScreen> createState() => _SetupWizardScreenState();
+}
+
+class _SetupWizardScreenState extends State<SetupWizardScreen> {
+  bool _leanback = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.leanback != null) {
+      _leanback = widget.leanback!;
+    } else {
+      Leanback().isLeanback().then((v) {
+        if (mounted) setState(() => _leanback = v);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<SetupWizardCubit, SetupWizardState>(
       listener: (context, state) {
         if (state is SetupWizardComplete) {
-          onComplete(state.serverUrl);
+          widget.onComplete(state.serverUrl);
         }
       },
       builder: (context, state) {
@@ -32,25 +60,51 @@ class SetupWizardScreen extends StatelessWidget {
           SetupWizardComplete() => SetupWizardStep.done,
         };
 
-        return Scaffold(
-          backgroundColor: LandfallColors.background,
-          body: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 8),
-                    _StepIndicator(current: step),
-                    const SizedBox(height: 40),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: _StepBody(state: state),
+        // PopScope intercepts Back on all non-first steps so it navigates
+        // one step back instead of exiting. On the first step (discover)
+        // canPop=true lets the system handle it normally.
+        final isFirstStep = step == SetupWizardStep.discover;
+
+        return PopScope(
+          canPop: isFirstStep,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) context.read<SetupWizardCubit>().previousStep();
+          },
+          child: Shortcuts(
+            shortcuts: {
+              LogicalKeySet(LogicalKeyboardKey.arrowDown):
+                  const NextFocusIntent(),
+              LogicalKeySet(LogicalKeyboardKey.arrowUp):
+                  const PreviousFocusIntent(),
+            },
+            child: Scaffold(
+              backgroundColor: LandfallColors.background,
+              body: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 40, vertical: 48),
+                    child: FocusTraversalGroup(
+                      policy: OrderedTraversalPolicy(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 8),
+                          _StepIndicator(current: step),
+                          const SizedBox(height: 40),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: _StepBody(
+                                state: state,
+                                leanback: _leanback,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -109,9 +163,10 @@ class _StepIndicator extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _StepBody extends StatelessWidget {
-  const _StepBody({required this.state});
+  const _StepBody({required this.state, required this.leanback});
 
   final SetupWizardState state;
+  final bool leanback;
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +175,7 @@ class _StepBody extends StatelessWidget {
         switch (step) {
           SetupWizardStep.discover =>
             _DiscoverStep(discoveredServers: discoveredServers),
-          SetupWizardStep.serverUrl => const _ServerUrlStep(),
+          SetupWizardStep.serverUrl => _ServerUrlStep(leanback: leanback),
           SetupWizardStep.location => const _LocationStep(),
           SetupWizardStep.linkAccount =>
             _LinkAccountStep(serverUrl: serverUrl),
@@ -129,7 +184,7 @@ class _StepBody extends StatelessWidget {
       SetupWizardValidating() =>
         const _DiscoverStep(discoveredServers: [], validating: true),
       SetupWizardStepError(:final message, :final step) => switch (step) {
-          SetupWizardStep.serverUrl => _ServerUrlStep(error: message),
+          SetupWizardStep.serverUrl => _ServerUrlStep(error: message, leanback: leanback),
           _ => _LocationStep(error: message),
         },
       SetupWizardComplete() => const SizedBox.shrink(),
@@ -273,9 +328,10 @@ class _ServerTile extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ServerUrlStep extends StatefulWidget {
-  const _ServerUrlStep({this.error});
+  const _ServerUrlStep({this.error, this.leanback = false});
 
   final String? error;
+  final bool leanback;
 
   @override
   State<_ServerUrlStep> createState() => _ServerUrlStepState();
@@ -298,6 +354,11 @@ class _ServerUrlStepState extends State<_ServerUrlStep> {
 
   void _submit() {
     context.read<SetupWizardCubit>().submitServerUrl(_ctrl.text);
+  }
+
+  void _appendText(String text) {
+    _ctrl.text += text;
+    _ctrl.selection = TextSelection.collapsed(offset: _ctrl.text.length);
   }
 
   @override
@@ -348,6 +409,17 @@ class _ServerUrlStepState extends State<_ServerUrlStep> {
             fontFamily: 'monospace',
           ),
         ),
+        if (widget.leanback) ...[
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            children: [
+              _QuickFillChip(label: 'http://', onTap: () => _appendText('http://')),
+              _QuickFillChip(label: 'https://', onTap: () => _appendText('https://')),
+              _QuickFillChip(label: ':8080/', onTap: () => _appendText(':8080/')),
+            ],
+          ),
+        ],
         const SizedBox(height: 24),
         FilledButton(
           onPressed: _submit,
@@ -642,3 +714,27 @@ OutlineInputBorder _inputBorder(Color color) => OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
       borderSide: BorderSide(color: color),
     );
+
+class _QuickFillChip extends StatelessWidget {
+  const _QuickFillChip({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionChip(
+      label: Text(
+        label,
+        style: const TextStyle(
+          color: LandfallColors.textSecondary,
+          fontSize: 12,
+          fontFamily: 'monospace',
+        ),
+      ),
+      backgroundColor: LandfallColors.surface,
+      side: const BorderSide(color: LandfallColors.cardBorder),
+      onPressed: onTap,
+    );
+  }
+}

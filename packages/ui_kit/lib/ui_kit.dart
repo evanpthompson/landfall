@@ -1,5 +1,6 @@
 
 export 'src/theme/landfall_active_theme.dart';
+export 'src/widgets/landfall_focusable.dart';
 export 'src/theme/theme_tokens_material.dart';
 export 'src/theme/landfall_colors.dart';
 export 'src/theme/landfall_typography.dart';

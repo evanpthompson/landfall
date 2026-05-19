@@ -363,4 +363,58 @@ void main() {
       expect(at.step, isNot(SetupWizardStep.discover));
     });
   });
+
+  group('previousStep', () {
+    blocTest<SetupWizardCubit, SetupWizardState>(
+      'serverUrl → discover',
+      build: build,
+      act: (c) {
+        c.skipDiscovery(); // reach serverUrl
+        c.previousStep();
+      },
+      skip: 1,
+      expect: () => [const SetupWizardAt(SetupWizardStep.discover)],
+    );
+
+    blocTest<SetupWizardCubit, SetupWizardState>(
+      'location → serverUrl',
+      build: build,
+      setUp: () {
+        when(() => health.ping(any())).thenAnswer((_) async => true);
+      },
+      act: (c) async {
+        await c.submitServerUrl('https://x.com/');
+        c.previousStep();
+      },
+      skip: 2,
+      expect: () => [const SetupWizardAt(SetupWizardStep.serverUrl)],
+    );
+
+    blocTest<SetupWizardCubit, SetupWizardState>(
+      'linkAccount → location',
+      build: build,
+      setUp: () {
+        when(() => health.ping(any())).thenAnswer((_) async => true);
+      },
+      act: (c) async {
+        await c.submitServerUrl('https://x.com/');
+        await c.submitLocation('Seattle');
+        c.previousStep();
+      },
+      skip: 3,
+      expect: () => [
+        const SetupWizardAt(
+          SetupWizardStep.location,
+          serverUrl: 'https://x.com/',
+        ),
+      ],
+    );
+
+    blocTest<SetupWizardCubit, SetupWizardState>(
+      'discover step — previousStep is a no-op (first step)',
+      build: build,
+      act: (c) => c.previousStep(),
+      expect: () => [],
+    );
+  });
 }
