@@ -16,6 +16,7 @@ platform — keep it in sync when adding new ones.
 | `LANDFALL_TELEMETRY_API_KEY` | API key for non-loopback telemetry endpoints (fleet aggregators). **Not required** when the endpoint resolves to `127.0.0.1` / `::1` — the server route bypasses auth for loopback requests. | empty | same |
 | `INTEGRATION_TEST_SERVER_URL` | Test-only — bypasses the wizard for integration runs. | empty | same |
 | `INTEGRATION_TEST_WIZARD_MODE` | Test-only — runs the wizard against an in-memory DB. | `false` | same |
+| `LANDFALL_LEANBACK` | Force the TV / 10-foot UX on or off, overriding the Android `UiModeManager` probe. Useful for stress-testing touch UX on a Fire TV during dev (`=false`) or for forcing TV UX on a non-TV Android device. Leave unset on every production build — the runtime probe picks the right path automatically. | unset | `apps/display/lib/src/platform/leanback.dart` |
 
 The companion QR base URL is **not** a build define — it is resolved at
 runtime by the server via `CompanionEndpoint.getCompanionBaseUrl`. See

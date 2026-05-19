@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import 'package:display/src/features/setup/cubit/setup_wizard_cubit.dart';
+import 'package:display/src/widgets/landfall_text_field.dart';
 
 /// Full-screen first-run setup wizard.
 ///
@@ -177,7 +178,7 @@ class _ServerUrlStepState extends State<_ServerUrlStep> {
           style: TextStyle(color: LandfallColors.textSecondary, fontSize: 15),
         ),
         const SizedBox(height: 32),
-        TextField(
+        LandfallTextField(
           controller: _ctrl,
           autofocus: true,
           enabled: !widget.validating,
@@ -286,7 +287,7 @@ class _LocationStepState extends State<_LocationStep> {
           style: TextStyle(color: LandfallColors.textSecondary, fontSize: 15),
         ),
         const SizedBox(height: 32),
-        TextField(
+        LandfallTextField(
           controller: _ctrl,
           autofocus: true,
           style: const TextStyle(color: LandfallColors.textPrimary, fontSize: 16),

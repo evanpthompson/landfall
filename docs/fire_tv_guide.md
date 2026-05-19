@@ -96,9 +96,26 @@ adb logcat | grep -iE 'flutter|landfall'
 - [ ] **Login screen email** — same checks; OTP code entry usable?
 - [ ] **Settings tray** — can you open it from the display? Close it?
 
-### Observations
+### Observations (Phase 0 bench-test, 2026-05-19)
 
-_(Bullets go here once Phase 0 is run. Be specific: "step 1 has no visible focus ring on the TextField; D-pad-down jumps two widgets, skipping the helper text; back button kills the app.")_
+Bench-tested against a sideloaded APK on Fire TV (model TBD; Impeller/Vulkan rendering).
+
+- **Initial focus:** TextField on wizard step 1 is focused on launch (border highlight visible). `autofocus: true` works as expected.
+- **Amazon IME never appears.** With focus on the TextField, no on-screen keyboard is summoned. There is no way to type a server URL using only the remote. **This is the beta blocker.**
+- **D-pad does not traverse off the TextField.** None of up/down/left/right move focus to the Connect button. The TextField appears to swallow arrow keys (default Android `EditText` behavior — arrows are caret movement when text is empty too).
+- **OK / center has no observable effect.** Likely because focus is parked on a TextField with no text to submit; the button is unreachable.
+- **Back button kills the app.** Single back press exits to the Fire TV home screen. No graceful per-step navigation; no `PopScope`/`WillPopScope` handler exists.
+- **`LEANBACK_LAUNCHER` is already wired** in the Android manifest — confirmed in logcat (`cat=[android.intent.category.LEANBACK_LAUNCHER]` on launch).
+- **Impeller/Vulkan rendering is active.** Not a problem, but a variable to keep in mind if odd rendering issues appear later (`android_context_vk_impeller.cc`).
+
+### Implications for the plan
+
+1. **IME blocker has two viable solutions** (decide before starting Phase 1 widget work):
+   - **Plan A — fix the IME.** Add `android:windowSoftInputMode="stateVisible|adjustResize"` to the activity, and on TextField focus explicitly call `SystemChannels.textInput.invokeMethod('TextInput.show')`. Cheap if it works; uncertain on Fire OS.
+   - **Plan B — phone-pairing flow.** Show a short code on the Fire TV. User opens a URL on their phone, enters the code, then enters the server URL. Fire TV polls until it receives the URL. Requires a small pairing-relay endpoint on the server (or a third-party relay). Sidesteps the IME entirely and is the pattern most Fire TV apps use (Netflix, Disney+, Plex).
+2. **Phase 2's `FocusTraversalGroup` work is still needed** regardless of which IME path wins — D-pad needs to escape the TextField.
+3. **Phase 2's `PopScope` handler is essential.** Single back press must not exit the app from any wizard step.
+4. **Phase 5 manifest work is partly done.** Still need `<uses-feature android:name="android.hardware.touchscreen" android:required="false"/>` for clean Fire TV submission.
 
 ---
 

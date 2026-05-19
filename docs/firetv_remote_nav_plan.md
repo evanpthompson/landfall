@@ -1,61 +1,111 @@
-# Fire TV Remote Navigation — Implementation Plan
+# Fire TV Remote Navigation + Zero-Type Setup — Implementation Plan
 
-Beta-scope plan for making the display app navigable end-to-end with a Fire TV remote (no USB keyboard required). Discovered gap: the codebase has zero TV awareness — no `FocusNode` wiring, no `Focus` widgets, no D-pad refs, no leanback detection. The wizard and login screens rely entirely on Flutter's default focus traversal plus Material's built-in focusability, which gets the IME to open for `TextField` but leaves no visible focus ring on buttons and no tested navigation order.
+> **Revised after Phase 0 bench-test** (see [`fire_tv_guide.md`](fire_tv_guide.md) → Remote-control state of play). The cheap IME fix is being shipped as a fallback; the *real* answer is mDNS server discovery so users don't have to type a URL on any platform.
 
-Beta scope = wizard + login + display dismiss/settings entry must work cold from a remote. Everything else can land post-beta.
+## Why this scope
 
----
+Phase 0 surfaced two truths:
 
-## Phase 0 — Bench the real gap (no code change)
+1. The Amazon IME never appears on Fire TV when a Flutter `TextField` gets focus. URL entry by remote is impossible today.
+2. The root problem isn't just Fire TV. Asking any user to type `http://192.168.1.167:8080/` is bad UX on Pi, Fire TV, mobile, and macOS dev too.
 
-Before writing anything, find out what already works. Drive Fire TV from your Mac with `adb`:
+The answer that solves it everywhere is **mDNS service discovery**: the server broadcasts `_landfall._tcp.local`, every Landfall display scans on launch, the user picks from a list (or auto-connects if exactly one). Zero typing. Same pattern as Plex/Sonos/HomeKit.
 
-| Key | adb keyevent |
-|---|---|
-| D-pad up/down/left/right | 19/20/21/22 |
-| OK / Center | 23 |
-| Back | 4 |
+For login (email + OTP), the canonical TV pattern is **device authorization** (RFC 8628 — what Plex/Netflix use): TV shows a short code, user signs in on phone, server marks the code paired, TV polls and receives the token. Also zero typing on the TV side.
 
-Walk the wizard with only the remote. Capture what does and doesn't work — focus visibility, IME open/close, initial focus, back button.
-
-**Deliverable:** bench-test note (5–10 bullets) appended to [`fire_tv_guide.md`](fire_tv_guide.md) under "Remote-control state of play". Outcome of this phase reshapes scope.
+Manual URL entry and TV keyboard typing remain as fallbacks for unusual networks and power users.
 
 ---
 
-## Phase 1 — TV detection + focus-visible theme
+## Phase 0 — Bench the real gap ✅
 
-Goal: a runtime flag so TV-aware styling activates without breaking touch UX, plus a high-contrast focus ring visible across a room.
-
-- **Test:** unit test that `isLeanback()` returns true for `--dart-define=LANDFALL_LEANBACK=true` and reads Android `UiModeManager` else → **Code:** `lib/src/platform/leanback.dart`
-- **Test:** golden test of a `LandfallFocusableContainer` showing a 3px accent ring + 1.04× scale at 1920×1080 → **Code:** wrapper widget in `ui_kit/lib/src/widgets/landfall_focusable.dart`
-- **Test:** widget test that `FilledButton` inside this wrapper draws the ring when `Focus.of(context).hasFocus` is true → **Code:** apply the ring via `FocusableActionDetector.onShowFocusHighlight`
+Done. Observations are in `fire_tv_guide.md`. Headlines: IME never appears, D-pad doesn't escape TextField, back exits the app.
 
 ---
 
-## Phase 2 — Setup wizard remote nav
+## Phase 1 — Foundation (TV detection + cheap IME fix + focus theme)
 
-- **Test:** widget test pumps `SetupWizardScreen` at step `serverUrl`, sends `LogicalKeyboardKey.arrowDown` × 2, asserts focus lands on the Connect button → **Code:** wrap each step body in `FocusTraversalGroup` with `OrderedTraversalPolicy`, add explicit `FocusNode`s
-- **Test:** widget test asserts focus initially lands on the TextField (so IME opens) on every step entry → **Code:** keep `autofocus: true`, add `FocusScope.of(context).requestFocus(...)` on state restore
-- **Test:** widget test sends `LogicalKeyboardKey.escape` (Fire TV back) and asserts the wizard goes back one step (not killing the app) → **Code:** `PopScope` handler driving `SetupWizardCubit.previousStep`
-- **Test:** widget test of URL-prefix quick-fill chips ("http://", "https://"), arrow-right cycles them → **Code:** chip row above the TextField when `isLeanback()` is true
-- **Manual on Fire TV:** with the Amazon keyboard, typing a server URL submits cleanly. Documented procedure added to `fire_tv_guide.md`.
+### 1a. `isLeanback()` detection ✅ DONE this session
 
-Why the chips: typing `http://192.168.1.167:8080/` on the Amazon virtual keyboard takes ~40 D-pad presses. Two chip presses + the IP body cuts it to ~12.
+`apps/display/lib/src/platform/leanback.dart` + Android `MainActivity.kt` channel handler + 7 tests + `build_defines.md` entry for `LANDFALL_LEANBACK`.
+
+### 1b. Cheap IME fix (Plan A — no-loss fallback for non-mDNS networks)
+
+- **Test:** widget test that a focused `LandfallTextField` calls `SystemChannels.textInput.invokeMethod('TextInput.show')` → **Code:** new `widgets/landfall_text_field.dart` wrapping `TextField` with explicit show-IME on focus
+- **Code (no test, manifest config):** `AndroidManifest.xml` add `android:windowSoftInputMode="stateVisible|adjustResize"` to `MainActivity`
+- **Code (no test, manifest config):** `<uses-feature android:name="android.hardware.touchscreen" android:required="false"/>`
+- **Manual on Fire TV:** rebuild APK, sideload, confirm Amazon IME appears on TextField focus
+
+### 1c. Focus-visible widget
+
+- **Test:** unit/widget test of `LandfallFocusable` (in `packages/ui_kit/lib/src/widgets/landfall_focusable.dart`) — when wrapped child gains focus, ring is drawn → **Code:** `FocusableActionDetector` with `onShowFocusHighlight` toggling a 3px ring + 1.04× scale
+- **Test:** golden test at 1920×1080 showing focused vs unfocused state → **Code:** ditto
+- **Test:** widget test wrapping a `FilledButton` with `LandfallFocusable` and asserting the ring renders when focus is requested via FocusNode → **Code:** ditto
+- **Apply globally:** when `Leanback().isLeanback()` is true, swap `ElevatedButton`/`FilledButton`/`TextButton` for the focusable-wrapped variants. Use a theme extension to thread the flag.
 
 ---
 
-## Phase 3 — Login screen remote nav
+## Phase 2 — mDNS server discovery (the real Plan B, replaces typed URL entry)
+
+The biggest UX win. Eliminates URL typing for every user on every platform.
+
+### 2a. Server-side broadcast
+
+- **Test:** Serverpod test that the mDNS broadcaster registers `_landfall._tcp.local` with the right TXT records (`serverUrl`, `version`, `displayName`) when the server starts → **Code:** `server/landfall_server/lib/src/discovery/mdns_broadcaster.dart` using the `bonsoir` or `nsd` Dart package
+- **Test:** test that the broadcast stops cleanly on server shutdown → **Code:** ditto, register the lifecycle hook
+- **Code (no test, config):** wire startup hook in `server/landfall_server/lib/server.dart`
+
+### 2b. Client-side discovery
+
+- **Test:** widget/unit test of `MdnsServerDiscovery` — when the platform stream yields a service, `discoveredServers` includes it → **Code:** `apps/display/lib/src/data/discovery/mdns_server_discovery.dart`
+- **Test:** test that discovery times out gracefully after 8s with empty results → **Code:** ditto
+- **Test:** test that discovery is stopped on disposal (no leaked subscriptions) → **Code:** ditto
+
+### 2c. New wizard step: "Discover servers"
+
+This becomes the new step 1 of the wizard, ahead of the existing URL step.
+
+- **Test:** widget test (`SetupWizardScreen` with `_DiscoverStep`) — pumps the screen, fakes the discovery service to yield 2 servers, asserts both render as D-pad-selectable tiles → **Code:** new `_DiscoverStep` widget; `SetupWizardCubit.startDiscovery()` and `selectDiscoveredServer(...)` methods
+- **Test:** when discovery yields exactly one server AND `--dart-define=LANDFALL_AUTO_PICK_SINGLE=true`, the wizard auto-advances → **Code:** auto-pick branch in cubit
+- **Test:** when discovery yields zero servers after timeout, "Enter manually" option is focused first → **Code:** fallback branch
+- **Test:** "Enter manually" routes to the existing URL step (now step 1b) → **Code:** new cubit transition
+
+---
+
+## Phase 3 — Wizard remote nav (always-on, regardless of discovery path)
+
+- **Test:** widget test on every wizard step — `LogicalKeyboardKey.arrowDown` moves focus through interactive elements in document order → **Code:** wrap each step body in `FocusTraversalGroup` with `OrderedTraversalPolicy`, add explicit `FocusNode`s
+- **Test:** widget test that `LogicalKeyboardKey.escape` (Fire TV back) goes one wizard step backwards instead of popping the app → **Code:** `PopScope` driving `SetupWizardCubit.previousStep`
+- **Test:** D-pad arrow keys escape the TextField (no more "trapped in input") → **Code:** wrap TextFields with `Shortcuts({arrowDown: NextFocusIntent()})` + `Actions` so arrows traverse when caret is at edges, or use `TextInputAction.next` + `onSubmitted` to advance
+- **Test:** URL-entry-fallback step shows quick-fill chips (`http://`, `https://`, `:8080/`) when `Leanback().isLeanback()` is true → **Code:** chip row above the TextField
+- **Manual on Fire TV:** confirm all four wizard steps are reachable, completable, and back-traversable using only the remote
+
+---
+
+## Phase 4 — Login: device authorization (the real fix) + remote nav fallback
+
+### 4a. Device-authorization flow (zero-type login on TV)
+
+Pattern: TV shows a 6-character user code + a short URL (e.g. `http://<server>/device`). User opens that URL on their phone (full keyboard), enters the code + their email/OTP, server marks the device session authorized, TV polls and receives the access token.
+
+- **Test:** Serverpod test that `POST /auth/device/start` returns `{userCode, deviceCode, verificationUri, expiresIn, interval}` → **Code:** new `DeviceAuthEndpoint` in the server
+- **Test:** Serverpod test that polling `POST /auth/device/poll` with a paired `deviceCode` returns the access token → **Code:** ditto
+- **Test:** Serverpod test that polling an unpaired code returns `authorization_pending`, then after expiry returns `expired_token` → **Code:** ditto, with cleanup timer
+- **Test:** Serverpod test that `GET /device` serves an HTML page with email + OTP form that completes the pairing → **Code:** server-rendered page (or `serverpod_web_server` route)
+- **Test:** client widget test that `LoginScreen` in `Leanback().isLeanback()` mode shows the user code + URL and polls `auth/device/poll` until receiving a token → **Code:** new `_DeviceAuthStep` in `LoginScreen` (gated by leanback flag), `AuthCubit.startDeviceFlow()`
+- **Manual on Fire TV + phone:** complete login end-to-end using only the remote on the TV and a phone for the code entry
+
+### 4b. Remote nav fallback for non-leanback login
+
+For non-TV builds where the existing email + OTP flow is fine, just polish:
 
 - **Test:** widget test of `LoginScreen` with mock `AuthCubit` — initial focus on email field, arrow-down to "Send code", Enter submits → **Code:** `FocusTraversalGroup` + nodes in `_EmailStep` and `_CodeStep`
-- **Test:** OTP code entry — focus traps inside the 6-digit field, digits auto-advance, last digit triggers verify → **Code:** swap the single TextField for a Pinput-style 6-cell widget with `LengthLimitingTextInputFormatter` + auto-submit
+- **Test:** OTP code entry — focus traps inside the 6-digit field, digits auto-advance, last digit triggers verify → **Code:** swap the single TextField for a Pinput-style 6-cell widget
 - **Test:** numeric-IME keyboard type stays set → **Code:** `keyboardType: TextInputType.number`
-- **Manual:** Fire TV Amazon keyboard shows numeric pad for OTP entry. Document on `fire_tv_guide.md`.
-
-Biggest UX win: 6-digit code entry over a single underlined field on a TV is hostile.
 
 ---
 
-## Phase 4 — Display screen + settings entry remote nav
+## Phase 5 — Display + settings entry remote nav
 
 - **Test:** widget test of `DisplayScreen` — pressing OK opens the settings tray, Back closes it → **Code:** `Focus` + `KeyboardListener` at the display root, `Actions.invoke(OpenSettingsIntent())`
 - **Test:** `SettingsScreen` first focusable is the first tile; arrow-down traverses tiles in document order → **Code:** group settings list as `FocusTraversalGroup` with `ReadingOrderTraversalPolicy`
@@ -63,41 +113,51 @@ Biggest UX win: 6-digit code entry over a single underlined field on a TV is hos
 
 ---
 
-## Phase 5 — Manifest + launch behavior
+## Phase 6 — Manifest + launch polish
 
-- `AndroidManifest.xml` — add `<category android:name="android.intent.category.LEANBACK_LAUNCHER"/>` so Fire TV's home rail shows the app under "Your Apps" without sideload trickery. Add `<uses-feature android:name="android.software.leanback" android:required="false"/>`.
-- `<uses-feature android:name="android.hardware.touchscreen" android:required="false"/>` — required for any Fire TV submission.
-- Smoke test: `adb shell am start -n io.landfall.display/.MainActivity` launches via D-pad, no touchscreen warning.
+- `<category android:name="android.intent.category.LEANBACK_LAUNCHER"/>` — **already present** (confirmed in Phase 0 logcat).
+- `<uses-feature android:name="android.software.leanback" android:required="false"/>`
+- `<uses-feature android:name="android.hardware.touchscreen" android:required="false"/>` — moved to Phase 1b since it pairs with the IME work.
+- Smoke test: `adb shell am start -n io.landfall.display/.MainActivity` launches via D-pad, no touchscreen warning, app appears in Fire TV "Your Apps" row.
 
 ---
 
 ## Out of scope for beta (backlog)
 
-- Voice-search integration (Fire TV "Alexa, open Landfall and connect to ...")
-- Overscan-safe padding for older Fire TV Sticks (assume modern HDMI for beta)
-- Settings screens not reached during first-run (calendar reconnect, theme picker, etc.) — get focus theme via Phase 1 globally; explicit traversal can wait
+- Voice-search integration ("Alexa, open Landfall and connect to X")
+- Overscan-safe padding for older Fire TV Sticks
+- Settings screens not reached during first-run (theme picker, calendar reconnect)
 - Fire OS Live App Tile / channel surfaces
+- mDNS broadcaster on the **macOS** dev server (Pi + Linux server only for now; Mac users can use the URL fallback)
+- QR-code companion pairing for the existing post-setup companion (separate feature)
 
 ---
 
-## Tooling and gotchas
+## Tooling and dependencies
 
-- **Test simulation:** `tester.sendKeyEvent(LogicalKeyboardKey.arrowDown)` + `tester.pump()`. Already in `flutter_test`.
-- **bloc_test:** already in tree.
-- **Pinput:** if you go with Phase 3 OTP suggestion, add `pinput: ^5.0.0` to `apps/display/pubspec.yaml`. Active maintenance, ~1.5k stars.
-- **CLAUDE.md TDD bar:** every cubit gets a `bloc_test`, every public widget gets widget + golden tests. Phase 1's `LandfallFocusableContainer` needs both.
+| Need | Package |
+|---|---|
+| Client mDNS discovery | `nsd: ^2.5.0` (or `multicast_dns` from Flutter team — review both) |
+| Server mDNS broadcast | `bonsoir: ^5.1.0` (Dart-only, works in Serverpod) |
+| Pinput OTP cells | `pinput: ^5.0.0` |
+| Key event tests | `flutter_test` (built-in) |
+| Bloc test | `bloc_test` (already in tree) |
 
 ---
 
-## Estimated session breakdown
+## Estimated session breakdown (revised)
 
-| Phase | Rough size | Blocks beta? |
-|---|---|---|
-| 0 | 30 min on Fire TV with remote | Yes — reshapes everything |
-| 1 | half session | Yes |
-| 2 | one session | Yes |
-| 3 | one session (Pinput refactor is the bulk) | Yes |
-| 4 | half session | Yes |
-| 5 | 30 min + Fire TV verify | Yes |
+| Phase | Rough size | Blocks beta? | Status |
+|---|---|---|---|
+| 0 | bench | Yes | ✅ done |
+| 1a `isLeanback()` | 30 min | Yes | ✅ done |
+| 1b cheap IME fix | 30 min + Fire TV verify | Yes (fallback) | Doing this session |
+| 1c focus widget | half session | Yes | Pending |
+| 2 mDNS discovery (server + client + wizard step) | **two sessions** — the big one | Yes (the real fix) | Pending |
+| 3 wizard remote nav | one session | Yes | Pending |
+| 4a device auth | one session | Yes (the real fix for login) | Pending |
+| 4b login fallback nav | half session | Yes | Pending |
+| 5 display + settings nav | half session | Yes | Pending |
+| 6 manifest polish | 30 min | Yes | Pending |
 
-Roughly **3–4 focused sessions** to beta-ready. Phase 0 first since its results may collapse or expand later phases.
+Roughly **5–6 focused sessions** to beta-ready. mDNS discovery + device authorization are the biggest single-feature commitments and the largest UX payoffs. Cheap IME fix this session unblocks bench testing while the bigger pieces land.
