@@ -112,8 +112,7 @@ void run(List<String> args) async {
   // Device authorization — RFC 8628-style zero-type login for TV/leanback.
   pod.webServer.addRoute(DeviceAuthStartRoute(), '/auth/device/start');
   pod.webServer.addRoute(DeviceAuthPollRoute(), '/auth/device/poll');
-  pod.webServer.addRoute(DevicePageGetRoute(), '/device');
-  pod.webServer.addRoute(DevicePagePostRoute(), '/device');
+  pod.webServer.addRoute(DevicePageRoute(), '/device');
 
   // Dev-build-only self-hosted telemetry. Production builds (Pi appliance
   // image, public Fire TV APK, public macOS dmg) are built WITHOUT

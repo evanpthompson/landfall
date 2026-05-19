@@ -16,6 +16,7 @@ import 'package:display/src/features/clock/cubit/clock_cubit.dart';
 import 'package:display/src/features/clock/cubit/clock_state.dart';
 import 'package:display/src/features/clock/widgets/clock_card.dart';
 import 'package:display/src/features/display/cursor_mode_shortcuts.dart';
+import 'package:display/src/features/display/remote_nav_keys.dart';
 import 'package:display/src/features/display/widgets/ambient_dim_overlay.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
@@ -175,6 +176,10 @@ class _DisplayScreenState extends State<DisplayScreen> {
               onKeyEvent: (event) {
                 if (isCursorModeToggle(event)) {
                   _toggleCursorMode();
+                } else if (isDisplaySelectKey(event)) {
+                  // Fire TV OK / Enter — show settings pill and focus it.
+                  _showGear();
+                  _settingsFocusNode.requestFocus();
                 }
               },
               child: GestureDetector(

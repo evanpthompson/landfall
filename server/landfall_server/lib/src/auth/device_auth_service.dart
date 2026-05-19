@@ -58,10 +58,10 @@ class DeviceAuthService {
     if (entry == null || entry.isExpired) {
       return const DevicePollResult(status: DevicePollStatus.expiredToken);
     }
-    if (entry.accessToken != null) {
+    if (entry.authSuccessJson != null) {
       return DevicePollResult(
         status: DevicePollStatus.authorized,
-        accessToken: entry.accessToken,
+        authSuccessJson: entry.authSuccessJson,
       );
     }
     return const DevicePollResult(status: DevicePollStatus.authorizationPending);
@@ -71,12 +71,12 @@ class DeviceAuthService {
   static bool isValidUserCode(String userCode) =>
       _lookupEntry(userCode) != null;
 
-  /// Stores [accessToken] against the device entry for [userCode].
+  /// Stores the full [authSuccessJson] against the device entry for [userCode].
   ///
   /// Called by the server after the user successfully authenticates on phone.
   /// No-op if [userCode] is unknown or expired.
-  static void completeFlow(String userCode, String accessToken) {
-    _lookupEntry(userCode)?.accessToken = accessToken;
+  static void completeFlow(String userCode, Map<String, dynamic> authSuccessJson) {
+    _lookupEntry(userCode)?.authSuccessJson = authSuccessJson;
   }
 
   static _DeviceEntry? _lookupEntry(String userCode) {
@@ -95,9 +95,14 @@ class DeviceAuthService {
     _byUserCode.clear();
   }
 
-  /// Pairs a device entry with a fake token. For testing only.
-  static void pairForTest(String userCode, String accessToken) {
-    completeFlow(userCode, accessToken);
+  /// Pairs a device entry with a minimal fake auth response. For testing only.
+  static void pairForTest(String userCode, String fakeToken) {
+    completeFlow(userCode, {
+      'authStrategy': 'otp',
+      'token': fakeToken,
+      'authUserId': '00000000-0000-0000-0000-000000000000',
+      'scopeNames': ['user'],
+    });
   }
 
   // ── Private helpers ────────────────────────────────────────────────────────
@@ -141,10 +146,15 @@ class DeviceAuthStartResult {
 enum DevicePollStatus { authorizationPending, authorized, expiredToken }
 
 class DevicePollResult {
-  const DevicePollResult({required this.status, this.accessToken});
+  const DevicePollResult({required this.status, this.authSuccessJson});
 
   final DevicePollStatus status;
-  final String? accessToken;
+
+  /// Full serialized `AuthSuccess` JSON, present only when [status] is [DevicePollStatus.authorized].
+  final Map<String, dynamic>? authSuccessJson;
+
+  /// Convenience accessor for the raw JWT token.
+  String? get accessToken => authSuccessJson?['token'] as String?;
 }
 
 class _DeviceEntry {
@@ -157,7 +167,7 @@ class _DeviceEntry {
   final String userCode;
   final String deviceCode;
   final DateTime expiresAt;
-  String? accessToken;
+  Map<String, dynamic>? authSuccessJson;
 
   bool get isExpired => DateTime.now().toUtc().isAfter(expiresAt);
 }

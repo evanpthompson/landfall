@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_client/landfall_client.dart';
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
-    show ClientAuthSessionManager;
+    show AuthSuccess, ClientAuthSessionManager;
 
 import '../data/device_auth_client.dart';
 
@@ -120,9 +120,17 @@ class AuthCubit extends Cubit<AuthState> {
       final result = await _deviceAuth!.poll(deviceCode);
       switch (result.status) {
         case DevicePollStatus.authorized:
-          // Device auth tokens are in-memory only for beta — user re-authenticates
-          // after app restart. Full session persistence added in a future session.
-          emit(AuthAuthenticated(accessToken: result.accessToken!));
+          final json = result.authSuccessJson;
+          final sessionMgr = _sessionManager;
+          if (sessionMgr != null && json != null) {
+            try {
+              final authSuccess = AuthSuccess.fromJson(json);
+              await sessionMgr.updateSignedInUser(authSuccess);
+            } catch (_) {
+              // Fall through — still emit AuthAuthenticated for in-memory access.
+            }
+          }
+          emit(AuthAuthenticated(accessToken: result.accessToken ?? ''));
         case DevicePollStatus.expiredToken:
           emit(const AuthError(
             message: 'The sign-in code has expired. Please try again.',

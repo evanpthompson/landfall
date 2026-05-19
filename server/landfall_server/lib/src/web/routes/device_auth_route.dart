@@ -87,7 +87,7 @@ class DeviceAuthPollRoute extends Route {
     final Map<String, dynamic> responseBody = switch (poll.status) {
       DevicePollStatus.authorized => {
           'status': 'authorized',
-          'accessToken': poll.accessToken,
+          'authSuccess': poll.authSuccessJson,
         },
       DevicePollStatus.authorizationPending => {
           'status': 'authorization_pending',
@@ -107,31 +107,23 @@ class DeviceAuthPollRoute extends Route {
   }
 }
 
-/// GET /device
+/// GET+POST /device
 ///
-/// Serves a minimal HTML page with a form for phone-side code entry.
-/// The user enters the 6-char code shown on their TV plus their email + OTP.
-class DevicePageGetRoute extends Route {
-  DevicePageGetRoute() : super(methods: {Method.get});
-
-  @override
-  FutureOr<Result> handleCall(Session session, Request request) async {
-    return _html(200, _devicePageHtml());
-  }
-}
-
-/// POST /device
-///
-/// Form submission: userCode + email + code (OTP).
-/// On success: verifies OTP, pairs the device, returns a success page.
-/// On failure: returns an error page.
-class DevicePagePostRoute extends Route {
-  DevicePagePostRoute() : super(methods: {Method.post});
+/// GET:  Serves a minimal HTML page with a form for phone-side code entry.
+/// POST: Form submission — userCode + email + code (OTP).
+///       On success: verifies OTP, pairs the device, returns a success page.
+///       On failure: returns an error page.
+class DevicePageRoute extends Route {
+  DevicePageRoute() : super(methods: {Method.get, Method.post});
 
   final _otpService = OtpService();
 
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
+    if (request.method == Method.get) {
+      return _html(200, _devicePageHtml());
+    }
+
     final rawBody = await request.readAsString();
     final params = Uri.splitQueryString(rawBody);
 
@@ -154,7 +146,7 @@ class DevicePagePostRoute extends Route {
       return _html(400, _errorPageHtml('Invalid or expired code. Please try again.'));
     }
 
-    DeviceAuthService.completeFlow(userCode, authResult.token);
+    DeviceAuthService.completeFlow(userCode, authResult.toJson());
 
     return _html(200, _successPageHtml());
   }

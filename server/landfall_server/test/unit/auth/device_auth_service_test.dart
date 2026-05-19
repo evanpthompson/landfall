@@ -104,11 +104,16 @@ void main() {
   });
 
   group('completeFlow', () {
-    test('stores the access token so pollFlow returns it', () {
+    test('stores the auth success so pollFlow returns it', () {
       final start = DeviceAuthService.startFlow(
         verificationUri: 'http://x/device',
       );
-      DeviceAuthService.completeFlow(start.userCode, 'tok-abc');
+      DeviceAuthService.completeFlow(start.userCode, {
+        'authStrategy': 'otp',
+        'token': 'tok-abc',
+        'authUserId': '00000000-0000-0000-0000-000000000000',
+        'scopeNames': ['user'],
+      });
 
       final poll = DeviceAuthService.pollFlow(start.deviceCode);
       expect(poll.status, DevicePollStatus.authorized);
@@ -118,7 +123,12 @@ void main() {
     test('no-ops for an unknown user code', () {
       // Should not throw.
       expect(
-        () => DeviceAuthService.completeFlow('ZZZZZZ', 'tok-xyz'),
+        () => DeviceAuthService.completeFlow('ZZZZZZ', {
+          'authStrategy': 'otp',
+          'token': 'tok-xyz',
+          'authUserId': '00000000-0000-0000-0000-000000000000',
+          'scopeNames': ['user'],
+        }),
         returnsNormally,
       );
     });

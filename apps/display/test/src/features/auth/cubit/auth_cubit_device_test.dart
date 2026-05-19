@@ -87,9 +87,14 @@ void main() {
       ),
       setUp: () {
         when(() => deviceClient.poll('device-code-abc')).thenAnswer(
-          (_) async => const DevicePollResponse(
+          (_) async => DevicePollResponse(
             status: DevicePollStatus.authorized,
-            accessToken: 'jwt-token-xyz',
+            authSuccessJson: const {
+              'authStrategy': 'otp',
+              'token': 'jwt-token-xyz',
+              'authUserId': '00000000-0000-0000-0000-000000000000',
+              'scopeNames': ['user'],
+            },
           ),
         );
       },

@@ -79,7 +79,7 @@ class DeviceAuthStartResponse {
 enum DevicePollStatus { authorizationPending, authorized, expiredToken }
 
 class DevicePollResponse {
-  const DevicePollResponse({required this.status, this.accessToken});
+  const DevicePollResponse({required this.status, this.authSuccessJson});
 
   factory DevicePollResponse.fromJson(Map<String, dynamic> json) {
     final status = switch (json['status'] as String) {
@@ -89,10 +89,15 @@ class DevicePollResponse {
     };
     return DevicePollResponse(
       status: status,
-      accessToken: json['accessToken'] as String?,
+      authSuccessJson: json['authSuccess'] as Map<String, dynamic>?,
     );
   }
 
   final DevicePollStatus status;
-  final String? accessToken;
+
+  /// Full `AuthSuccess` JSON, present only when [status] is [DevicePollStatus.authorized].
+  final Map<String, dynamic>? authSuccessJson;
+
+  /// Convenience accessor for the raw JWT token.
+  String? get accessToken => authSuccessJson?['token'] as String?;
 }

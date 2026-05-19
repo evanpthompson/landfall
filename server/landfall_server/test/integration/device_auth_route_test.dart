@@ -47,7 +47,7 @@ void main() {
         Uri.parse('http://localhost:8080/device'),
         Object(),
       );
-      return (await DevicePageGetRoute().handleCall(session, req)) as Response;
+      return (await DevicePageRoute().handleCall(session, req)) as Response;
     }
 
     Future<Response> postDevice(
@@ -72,7 +72,7 @@ void main() {
           mimeType: MimeType.urlEncoded,
         ),
       );
-      return (await DevicePagePostRoute().handleCall(session, req)) as Response;
+      return (await DevicePageRoute().handleCall(session, req)) as Response;
     }
 
     // ── POST /auth/device/start ────────────────────────────────────────────────
@@ -134,7 +134,7 @@ void main() {
         final body =
             jsonDecode(await pollRes.readAsString()) as Map<String, dynamic>;
         expect(body['status'], equals('authorization_pending'));
-        expect(body.containsKey('accessToken'), isFalse);
+        expect(body.containsKey('authSuccess'), isFalse);
       });
 
       test('returns expired_token for an unknown device code', () async {
@@ -147,14 +147,14 @@ void main() {
         expect(body['status'], equals('expired_token'));
       });
 
-      test('returns authorized + access token after completeFlow', () async {
+      test('returns authorized + authSuccess after completeFlow', () async {
         final s1 = sessionBuilder.build();
         final startRes = await postStart(s1);
         await s1.close();
         final startBody =
             jsonDecode(await startRes.readAsString()) as Map<String, dynamic>;
 
-        DeviceAuthService.completeFlow(
+        DeviceAuthService.pairForTest(
           startBody['userCode'] as String,
           'test-jwt-token',
         );
@@ -167,7 +167,8 @@ void main() {
         final body =
             jsonDecode(await pollRes.readAsString()) as Map<String, dynamic>;
         expect(body['status'], equals('authorized'));
-        expect(body['accessToken'], equals('test-jwt-token'));
+        final authSuccess = body['authSuccess'] as Map<String, dynamic>;
+        expect(authSuccess['token'], equals('test-jwt-token'));
       });
     });
 
