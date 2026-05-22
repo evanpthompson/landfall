@@ -1050,7 +1050,9 @@ Run these last, with all three platforms online against the same backend.
 | 11. Parity          |  —  |  —  |  —  |  |
 
 Sweep is releasable when every row is green or every red cell has a
-"deferred" note pointing to a tracked issue.
+"deferred" note pointing to a tracked issue. For shipped-as-is UX
+items in the public beta, see
+[`beta_known_limitations.md`](beta_known_limitations.md).
 
 ---
 

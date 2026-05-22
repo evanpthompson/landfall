@@ -378,8 +378,11 @@ release:
 - Companion Hybrid / Full Pet tiers — deferred to Phase X
 - Per-platform CI matrix (Linux/Android emulator) — nice-to-have
 
-If you find behaviour matching one of these, note it under "Notes" in
-the sign-off table but do not mark the platform failed.
+For user-facing limitations carried into the public beta (Fire TV IME,
+display goldens, prior-server card bleed-through, etc.), see
+[`beta_known_limitations.md`](beta_known_limitations.md). Behaviour
+matching either list should be noted under "Notes" in the sign-off
+table but does not fail the platform.
 
 ---
 

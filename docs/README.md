@@ -22,6 +22,7 @@ Every doc in the repo, in one place. Add a new `.md` file anywhere and it goes h
 - [Deployment validation](deployment_validation.md) — checks before long image builds
 - [Manual smoke test](manual_smoke_test.md) — runnable cold checklist for a build (release gate)
 - [End-to-end feature test](e2e_feature_test.md) — exhaustive feature-by-feature regression sweep
+- [Beta known limitations](beta_known_limitations.md) — intentionally-deferred items, workflows, and pointers to future work
 
 ## For agent integrators
 

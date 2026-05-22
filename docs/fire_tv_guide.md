@@ -57,7 +57,7 @@ curl http://<SERVER_IP>:8081
 
 ## Remote-control state of play
 
-Beta-required: the app must be navigable end-to-end from the Fire TV remote, no USB keyboard. Full plan lives in [`firetv_remote_nav_plan.md`](firetv_remote_nav_plan.md). This section is the Phase 0 bench-test log — fill it in by walking the wizard with the script below, then the later phases adjust to what you find.
+Beta-required: the app must be navigable end-to-end from the Fire TV remote, no USB keyboard. Full plan lives in [`firetv_remote_nav_plan.md`](firetv_remote_nav_plan.md). User-facing items that are deferred into the beta (keyboard-on-focus, focus widget adoption) are in [`beta_known_limitations.md`](beta_known_limitations.md). This section is the Phase 0 bench-test log — fill it in by walking the wizard with the script below, then the later phases adjust to what you find.
 
 ### Bench-test script
 

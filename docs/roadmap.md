@@ -156,6 +156,10 @@ Longer-term exploration (cloud-tier services, integration breadth,
 layout-editor UI, additional companion tiers) is tracked privately and will
 surface here once scoped and committed to.
 
+For user-facing limitations that ship with the public beta (Fire TV IME,
+display goldens, prior-server card bleed-through, focus widget adoption),
+see [`beta_known_limitations.md`](beta_known_limitations.md).
+
 ---
 
 ## Backlog / Under consideration
