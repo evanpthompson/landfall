@@ -116,7 +116,7 @@ void main() {
       );
 
       blocTest<WeatherCubit, WeatherState>(
-        'emits WeatherLoading before each reload',
+        'does not emit WeatherLoading on background refresh when already loaded',
         build: () {
           when(() => repository.getCurrentWeather())
               .thenAnswer((_) async => _weather);
@@ -131,8 +131,51 @@ void main() {
         expect: () => [
           isA<WeatherLoading>(),
           isA<WeatherLoaded>(),
+          isA<WeatherLoaded>(), // second refresh: no WeatherLoading, data updates silently
+        ],
+      );
+
+      blocTest<WeatherCubit, WeatherState>(
+        'keeps stale data when background refresh returns null',
+        build: () {
+          when(() => repository.getCurrentWeather())
+              .thenAnswer((_) async => _weather);
+          when(() => repository.getForecast())
+              .thenAnswer((_) async => _forecast);
+          return WeatherCubit(repository);
+        },
+        act: (cubit) async {
+          await cubit.loadWeather();
+          when(() => repository.getCurrentWeather())
+              .thenAnswer((_) async => null);
+          await cubit.loadWeather();
+        },
+        expect: () => [
           isA<WeatherLoading>(),
           isA<WeatherLoaded>(),
+          // null on refresh: no error emitted, stale WeatherLoaded stays
+        ],
+      );
+
+      blocTest<WeatherCubit, WeatherState>(
+        'keeps stale data when background refresh throws',
+        build: () {
+          when(() => repository.getCurrentWeather())
+              .thenAnswer((_) async => _weather);
+          when(() => repository.getForecast())
+              .thenAnswer((_) async => _forecast);
+          return WeatherCubit(repository);
+        },
+        act: (cubit) async {
+          await cubit.loadWeather();
+          when(() => repository.getCurrentWeather())
+              .thenThrow(Exception('Network error'));
+          await cubit.loadWeather();
+        },
+        expect: () => [
+          isA<WeatherLoading>(),
+          isA<WeatherLoaded>(),
+          // error on refresh: no error emitted, stale WeatherLoaded stays
         ],
       );
     });

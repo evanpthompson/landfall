@@ -31,9 +31,10 @@ class CalendarCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: switch (displayConfig['view']) {
+          'daily' => _DailyView(events: events),
           'weekly' => _WeeklyView(events: events),
           'monthly' => _MonthlyView(events: events),
-          _ => _DailyView(events: events),
+          _ => _BiweeklyView(events: events),
         },
       ),
     );
@@ -219,6 +220,79 @@ class _EventRow extends StatelessWidget {
     final displayHour = hour % 12 == 0 ? 12 : hour % 12;
     final minuteStr = minute.toString().padLeft(2, '0');
     return '$displayHour:$minuteStr $period';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Biweekly view (default) — next 14 days, daily-list style
+// ---------------------------------------------------------------------------
+
+class _BiweeklyView extends StatelessWidget {
+  const _BiweeklyView({required this.events});
+
+  final List<CalendarEventEntity> events;
+
+  @override
+  Widget build(BuildContext context) {
+    final grouped = _groupByDay(events);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _CalendarLabel(text: 'CALENDAR — NEXT 2 WEEKS'),
+        const SizedBox(height: 12),
+        Expanded(
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            itemCount: grouped.length,
+            itemBuilder: (context, i) => _DayGroup(group: grouped[i]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  static List<_DayData> _groupByDay(List<CalendarEventEntity> events) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final cutoff = today.add(const Duration(days: 14));
+
+    final Map<String, List<CalendarEventEntity>> byDay = {};
+    for (final event in events) {
+      final local = event.startTime.toLocal();
+      final eventDay = DateTime(local.year, local.month, local.day);
+      if (eventDay.isBefore(today) || !eventDay.isBefore(cutoff)) continue;
+      final key = _dayKey(local);
+      byDay.putIfAbsent(key, () => []).add(event);
+    }
+
+    final entries = byDay.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    return entries
+        .map((e) => _DayData(label: _dayLabel(e.key, now), events: e.value))
+        .toList();
+  }
+
+  static String _dayKey(DateTime dt) =>
+      '${dt.year.toString().padLeft(4, '0')}-'
+      '${dt.month.toString().padLeft(2, '0')}-'
+      '${dt.day.toString().padLeft(2, '0')}';
+
+  static String _dayLabel(String key, DateTime now) {
+    final today = _dayKey(now);
+    final tomorrow = _dayKey(now.add(const Duration(days: 1)));
+    if (key == today) return 'Today';
+    if (key == tomorrow) return 'Tomorrow';
+    final parts = key.split('-');
+    final dt = DateTime(
+        int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${weekdays[dt.weekday - 1]}, ${months[dt.month - 1]} ${dt.day}';
   }
 }
 

@@ -895,10 +895,18 @@ class _CardHud extends StatelessWidget {
           Row(
             children: [
               _HudChip(
+                key: const ValueKey('hud_calendar_view_biweekly'),
+                label: '2 Weeks',
+                selected: config.displayConfig['view'] != 'daily' &&
+                    config.displayConfig['view'] != 'weekly' &&
+                    config.displayConfig['view'] != 'monthly',
+                onTap: () => update({'view': 'biweekly'}),
+              ),
+              const SizedBox(width: 8),
+              _HudChip(
                 key: const ValueKey('hud_calendar_view_daily'),
                 label: 'Daily',
-                selected: config.displayConfig['view'] != 'weekly' &&
-                    config.displayConfig['view'] != 'monthly',
+                selected: config.displayConfig['view'] == 'daily',
                 onTap: () => update({'view': 'daily'}),
               ),
               const SizedBox(width: 8),

@@ -57,6 +57,8 @@ void main() {
       await tester.pumpWidget(_wrapLayout(_calendarLayout()));
       await _openHud(tester);
 
+      expect(find.byKey(const ValueKey('hud_calendar_view_biweekly')),
+          findsOneWidget);
       expect(find.byKey(const ValueKey('hud_calendar_view_daily')),
           findsOneWidget);
       expect(find.byKey(const ValueKey('hud_calendar_view_weekly')),
@@ -65,13 +67,58 @@ void main() {
           findsOneWidget);
     });
 
-    testWidgets('Daily chip is selected by default', (tester) async {
+    testWidgets('2 Weeks chip is selected by default', (tester) async {
+      await tester.pumpWidget(_wrapLayout(_calendarLayout()));
+      await _openHud(tester);
+
+      final chip = tester.widget<FilterChip>(
+        find.descendant(
+          of: find.byKey(const ValueKey('hud_calendar_view_biweekly')),
+          matching: find.byType(FilterChip),
+        ),
+      );
+      expect(chip.selected, isTrue);
+    });
+
+    testWidgets('Daily chip is not selected by default', (tester) async {
       await tester.pumpWidget(_wrapLayout(_calendarLayout()));
       await _openHud(tester);
 
       final chip = tester.widget<FilterChip>(
         find.descendant(
           of: find.byKey(const ValueKey('hud_calendar_view_daily')),
+          matching: find.byType(FilterChip),
+        ),
+      );
+      expect(chip.selected, isFalse);
+    });
+
+    testWidgets('tapping 2 Weeks chip emits displayConfig view=biweekly',
+        (tester) async {
+      DashboardLayout? emitted;
+      await tester.pumpWidget(_wrapLayout(
+        _calendarLayout(displayConfig: const {'view': 'daily'}),
+        onChanged: (l) => emitted = l,
+      ));
+      await _openHud(tester);
+
+      await tester
+          .tap(find.byKey(const ValueKey('hud_calendar_view_biweekly')));
+      await tester.pumpAndSettle();
+
+      expect(emitted, isNotNull);
+      expect(emitted!.cards.first.displayConfig['view'], equals('biweekly'));
+    });
+
+    testWidgets('2 Weeks chip is selected when view=biweekly in displayConfig',
+        (tester) async {
+      await tester.pumpWidget(
+          _wrapLayout(_calendarLayout(displayConfig: const {'view': 'biweekly'})));
+      await _openHud(tester);
+
+      final chip = tester.widget<FilterChip>(
+        find.descendant(
+          of: find.byKey(const ValueKey('hud_calendar_view_biweekly')),
           matching: find.byType(FilterChip),
         ),
       );

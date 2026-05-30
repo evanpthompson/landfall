@@ -76,9 +76,12 @@ List<CalendarEventEntity> _thisMonthEvents() {
 // ---------------------------------------------------------------------------
 
 void main() {
-  group('CalendarCard — daily view (default)', () {
-    testWidgets('shows UPCOMING heading', (tester) async {
-      await tester.pumpWidget(_wrap(CalendarCard(events: const [])));
+  group('CalendarCard — daily view', () {
+    testWidgets('shows CALENDAR — TODAY heading', (tester) async {
+      await tester.pumpWidget(_wrap(CalendarCard(
+        events: const [],
+        displayConfig: const {'view': 'daily'},
+      )));
       expect(find.text('CALENDAR — TODAY'), findsOneWidget);
     });
 
@@ -86,17 +89,104 @@ void main() {
       final now = DateTime.now().toUtc();
       await tester.pumpWidget(_wrap(CalendarCard(
         events: [_event(id: 1, startTime: now, title: 'Daily Event')],
+        displayConfig: const {'view': 'daily'},
       )));
       expect(find.text('Daily Event'), findsOneWidget);
     });
+  });
 
-    testWidgets('daily view is default when displayConfig is empty',
+  // ── Biweekly view (default) ────────────────────────────────────────────────
+
+  group('CalendarCard — biweekly view (default)', () {
+    testWidgets('biweekly view is default when displayConfig is empty',
         (tester) async {
       await tester.pumpWidget(_wrap(CalendarCard(
         events: const [],
         displayConfig: const {},
       )));
-      expect(find.text('CALENDAR — TODAY'), findsOneWidget);
+      expect(find.text('CALENDAR — NEXT 2 WEEKS'), findsOneWidget);
+    });
+
+    testWidgets('shows CALENDAR — NEXT 2 WEEKS heading', (tester) async {
+      await tester.pumpWidget(_wrap(CalendarCard(
+        events: const [],
+        displayConfig: const {'view': 'biweekly'},
+      )));
+      expect(find.text('CALENDAR — NEXT 2 WEEKS'), findsOneWidget);
+    });
+
+    testWidgets('renders events within next 14 days', (tester) async {
+      final now = DateTime.now().toUtc();
+      final inOneWeek = now.add(const Duration(days: 7));
+      await tester.pumpWidget(_wrap(CalendarCard(
+        events: [_event(id: 1, startTime: inOneWeek, title: 'Next Week Event')],
+        displayConfig: const {'view': 'biweekly'},
+      )));
+      await tester.pump();
+      expect(find.text('Next Week Event'), findsOneWidget);
+    });
+
+    testWidgets('does not render events beyond 14 days', (tester) async {
+      final now = DateTime.now().toUtc();
+      final in15Days = now.add(const Duration(days: 15));
+      await tester.pumpWidget(_wrap(CalendarCard(
+        events: [_event(id: 1, startTime: in15Days, title: 'Far Future Event')],
+        displayConfig: const {'view': 'biweekly'},
+      )));
+      await tester.pump();
+      expect(find.text('Far Future Event'), findsNothing);
+    });
+
+    testWidgets('does not show daily or weekly heading in biweekly mode',
+        (tester) async {
+      await tester.pumpWidget(_wrap(CalendarCard(
+        events: const [],
+        displayConfig: const {'view': 'biweekly'},
+      )));
+      await tester.pump();
+      expect(find.text('CALENDAR — TODAY'), findsNothing);
+      expect(find.text('CALENDAR — THIS WEEK'), findsNothing);
+    });
+
+    testWidgets('does not overflow in a 200x200 slot (biweekly)', (tester) async {
+      final now = DateTime.now().toUtc();
+      await tester.pumpWidget(MaterialApp(
+        theme: LandfallTheme.dark,
+        home: Scaffold(
+          body: SizedBox(
+            width: 200,
+            height: 200,
+            child: CalendarCard(
+              events: [_event(id: 1, startTime: now, title: 'Standup')],
+              displayConfig: const {'view': 'biweekly'},
+            ),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('golden — biweekly view', (tester) async {
+      // Fixed future date: 7 days from a known anchor.
+      final base = DateTime(2024, 3, 18, 9, 0); // a Monday
+      await tester.pumpWidget(_wrap(CalendarCard(
+        events: [
+          _event(id: 1, startTime: base, title: 'Team Standup'),
+          _event(
+            id: 2,
+            startTime: base.add(const Duration(days: 3, hours: 2)),
+            title: 'Design Review',
+            calendarName: 'Team',
+          ),
+        ],
+        displayConfig: const {'view': 'biweekly'},
+      )));
+      await tester.pump();
+
+      await expectLater(
+        find.byType(CalendarCard),
+        matchesGoldenFile('goldens/calendar_card_biweekly.png'),
+      );
     });
   });
 
@@ -248,7 +338,6 @@ void main() {
 
   group('CalendarCard — resize safety', () {
     testWidgets('does not overflow in a 200x200 slot (daily)', (tester) async {
-      final now = DateTime(2024, 3, 11, 9, 0);
       await tester.pumpWidget(MaterialApp(
         theme: LandfallTheme.dark,
         home: Scaffold(
@@ -256,7 +345,7 @@ void main() {
             width: 200,
             height: 200,
             child: CalendarCard(
-              events: [_event(id: 1, startTime: now, title: 'Standup')],
+              events: [_event(id: 1, startTime: DateTime(2024, 3, 11, 9, 0), title: 'Standup')],
               displayConfig: const {'view': 'daily'},
             ),
           ),

@@ -20,7 +20,10 @@ class WeatherCubit extends Cubit<WeatherState> {
   String? _lastCondition;
 
   Future<void> loadWeather() async {
-    emit(const WeatherLoading());
+    final previous = state;
+    if (previous is! WeatherLoaded) {
+      emit(const WeatherLoading());
+    }
     try {
       final results = await Future.wait([
         _repository.getCurrentWeather(),
@@ -29,14 +32,18 @@ class WeatherCubit extends Cubit<WeatherState> {
       final current = results[0] as WeatherEntity?;
       final forecast = results[1] as List<ForecastDayEntity>;
       if (current == null) {
-        emit(const WeatherError('No weather data available yet.'));
+        if (previous is! WeatherLoaded) {
+          emit(const WeatherError('No weather data available yet.'));
+        }
         return;
       }
       _emitBusTrigger(current.condition);
       _lastCondition = current.condition;
       emit(WeatherLoaded(current: current, forecast: forecast));
     } catch (e) {
-      emit(WeatherError(e.toString()));
+      if (previous is! WeatherLoaded) {
+        emit(WeatherError(e.toString()));
+      }
     }
   }
 

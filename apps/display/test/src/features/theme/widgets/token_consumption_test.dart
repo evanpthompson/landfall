@@ -136,7 +136,7 @@ void main() {
 
         final box = tester.widget<DecoratedBox>(
           find.ancestor(
-            of: find.text('CALENDAR — TODAY'),
+            of: find.text('CALENDAR — NEXT 2 WEEKS'),
             matching: find.byType(DecoratedBox),
           ).first,
         );
