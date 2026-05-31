@@ -86,15 +86,15 @@ class DeviceAuthPollRoute extends Route {
 
     final Map<String, dynamic> responseBody = switch (poll.status) {
       DevicePollStatus.authorized => {
-          'status': 'authorized',
-          'authSuccess': poll.authSuccessJson,
-        },
+        'status': 'authorized',
+        'authSuccess': poll.authSuccessJson,
+      },
       DevicePollStatus.authorizationPending => {
-          'status': 'authorization_pending',
-        },
+        'status': 'authorization_pending',
+      },
       DevicePollStatus.expiredToken => {
-          'status': 'expired_token',
-        },
+        'status': 'expired_token',
+      },
     };
 
     return Response(
@@ -149,22 +149,39 @@ class DevicePageRoute extends Route {
       final email = (params['email'] ?? '').trim().toLowerCase();
 
       if (userCode.isEmpty || email.isEmpty) {
-        return _html(400, _deviceStep1Html(error: 'TV code and email are required.'));
+        return _html(
+          400,
+          _deviceStep1Html(error: 'TV code and email are required.'),
+        );
       }
       if (!DeviceAuthService.isValidUserCode(userCode)) {
-        return _html(400, _deviceStep1Html(error: 'Invalid or expired TV code. Check the code on your TV and try again.'));
+        return _html(
+          400,
+          _deviceStep1Html(
+            error:
+                'Invalid or expired TV code. Check the code on your TV and try again.',
+          ),
+        );
       }
 
       try {
         await _otpService.sendCode(session, email);
       } catch (_) {
-        return _html(400, _deviceStep1Html(error: 'Could not send code. Check your email address and try again.'));
+        return _html(
+          400,
+          _deviceStep1Html(
+            error:
+                'Could not send code. Check your email address and try again.',
+          ),
+        );
       }
 
-      final redirectUri = Uri.parse('/device').replace(queryParameters: {
-        'userCode': userCode,
-        'email': email,
-      });
+      final redirectUri = Uri.parse('/device').replace(
+        queryParameters: {
+          'userCode': userCode,
+          'email': email,
+        },
+      );
       return Response.seeOther(redirectUri);
     }
 
@@ -174,17 +191,38 @@ class DevicePageRoute extends Route {
     final code = (params['code'] ?? '').trim();
 
     if (userCode.isEmpty || email.isEmpty || code.isEmpty) {
-      return _html(400, _deviceStep2Html(userCode: userCode, email: email, error: 'All fields are required.'));
+      return _html(
+        400,
+        _deviceStep2Html(
+          userCode: userCode,
+          email: email,
+          error: 'All fields are required.',
+        ),
+      );
     }
     if (!DeviceAuthService.isValidUserCode(userCode)) {
-      return _html(400, _deviceStep2Html(userCode: userCode, email: email, error: 'Invalid or expired TV code. Please start over on your TV.'));
+      return _html(
+        400,
+        _deviceStep2Html(
+          userCode: userCode,
+          email: email,
+          error: 'Invalid or expired TV code. Please start over on your TV.',
+        ),
+      );
     }
 
     final AuthSuccess authResult;
     try {
       authResult = await _otpService.verifyCode(session, email, code);
     } catch (_) {
-      return _html(400, _deviceStep2Html(userCode: userCode, email: email, error: 'Invalid or expired code. Check your email and try again.'));
+      return _html(
+        400,
+        _deviceStep2Html(
+          userCode: userCode,
+          email: email,
+          error: 'Invalid or expired code. Check your email and try again.',
+        ),
+      );
     }
 
     DeviceAuthService.completeFlow(userCode, authResult.toJson());
@@ -195,9 +233,9 @@ class DevicePageRoute extends Route {
 // ── HTML templates ─────────────────────────────────────────────────────────
 
 Result _html(int status, String body) => Response(
-      status,
-      body: Body.fromString(body, mimeType: MimeType.html),
-    );
+  status,
+  body: Body.fromString(body, mimeType: MimeType.html),
+);
 
 String _sharedCss() => '''
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -229,7 +267,8 @@ String _sharedCss() => '''
     .error { color: #ff6b6b; font-size: 13px; margin-bottom: 16px; }
 ''';
 
-String _deviceStep1Html({String? error}) => '''
+String _deviceStep1Html({String? error}) =>
+    '''
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -264,7 +303,8 @@ String _deviceStep2Html({
   required String userCode,
   required String email,
   String? error,
-}) => '''
+}) =>
+    '''
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -323,37 +363,6 @@ String _successPageHtml() => '''
     <h1>LANDFALL</h1>
     <p>You&rsquo;re signed in. Your TV will continue automatically in a moment.</p>
     <p style="margin-top:12px">You can close this window.</p>
-  </div>
-</body>
-</html>
-''';
-
-String _errorPageHtml(String message) => '''
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Error — Landfall</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0a0a0a; color: #e0e0e0;
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    }
-    .card {
-      background: #141414; border: 1px solid #222; border-radius: 12px;
-      padding: 40px; max-width: 400px; text-align: center;
-    }
-    h1 { font-size: 22px; letter-spacing: 4px; color: #fff; margin-bottom: 16px; }
-    .error { color: #ff6b6b; font-size: 14px; margin-bottom: 20px; }
-    a { color: #4a9eff; text-decoration: none; font-size: 14px; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>LANDFALL</h1>
-    <p class="error">$message</p>
-    <a href="/device">&larr; Try again</a>
   </div>
 </body>
 </html>
