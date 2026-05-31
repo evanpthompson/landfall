@@ -109,13 +109,23 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
   }
 
   /// Persists [layout] into the currently active profile.
+  ///
+  /// Emits the updated state optimistically so the UI reflects the change
+  /// immediately. If the server call fails, rolls back to the previous state.
   Future<void> saveActiveLayout(DashboardLayout layout) async {
-    final current = state;
-    if (current is! DashboardProfileLoaded) return;
+    final previous = state;
+    if (previous is! DashboardProfileLoaded) return;
+    final updated = previous.active.copyWith(layout: layout);
+    emit(DashboardProfileLoaded(
+      updated,
+      profiles: previous.profiles
+          .map((p) => p.id == updated.id ? updated : p)
+          .toList(),
+    ));
     try {
-      await _repository.updateProfile(current.active.id, layout: layout);
-      await _refreshAfterWrite();
+      await _repository.updateProfile(previous.active.id, layout: layout);
     } catch (e) {
+      emit(previous);
       emit(DashboardProfileError(e.toString()));
     }
   }

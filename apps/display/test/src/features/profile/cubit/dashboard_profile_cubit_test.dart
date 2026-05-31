@@ -143,12 +143,59 @@ void main() {
 
   group('saveActiveLayout', () {
     blocTest<DashboardProfileCubit, DashboardProfileState>(
-      'calls updateProfile with new layout then refreshes',
+      'emits updated state optimistically before server responds',
       build: build,
       setUp: () {
         when(() => repo.updateProfile(any(), layout: any(named: 'layout')))
             .thenAnswer((_) async => _weekday);
-        when(() => repo.listProfiles()).thenAnswer((_) async => _all);
+      },
+      seed: () => DashboardProfileLoaded(_weekday, profiles: _all),
+      act: (c) => c.saveActiveLayout(DashboardLayout.nightLayout()),
+      expect: () => [
+        predicate<DashboardProfileState>((s) =>
+            s is DashboardProfileLoaded &&
+            s.active.layout == DashboardLayout.nightLayout()),
+      ],
+    );
+
+    blocTest<DashboardProfileCubit, DashboardProfileState>(
+      'does not call listProfiles after saving layout',
+      build: build,
+      setUp: () {
+        when(() => repo.updateProfile(any(), layout: any(named: 'layout')))
+            .thenAnswer((_) async => _weekday);
+      },
+      seed: () => DashboardProfileLoaded(_weekday, profiles: _all),
+      act: (c) => c.saveActiveLayout(DashboardLayout.nightLayout()),
+      verify: (_) {
+        verifyNever(() => repo.listProfiles());
+      },
+    );
+
+    blocTest<DashboardProfileCubit, DashboardProfileState>(
+      'rolls back to previous state and emits error when updateProfile throws',
+      build: build,
+      setUp: () {
+        when(() => repo.updateProfile(any(), layout: any(named: 'layout')))
+            .thenThrow(Exception('server error'));
+      },
+      seed: () => DashboardProfileLoaded(_weekday, profiles: _all),
+      act: (c) => c.saveActiveLayout(DashboardLayout.nightLayout()),
+      expect: () => [
+        predicate<DashboardProfileState>((s) =>
+            s is DashboardProfileLoaded &&
+            s.active.layout == DashboardLayout.nightLayout()),
+        DashboardProfileLoaded(_weekday, profiles: _all),
+        isA<DashboardProfileError>(),
+      ],
+    );
+
+    blocTest<DashboardProfileCubit, DashboardProfileState>(
+      'calls updateProfile with new layout',
+      build: build,
+      setUp: () {
+        when(() => repo.updateProfile(any(), layout: any(named: 'layout')))
+            .thenAnswer((_) async => _weekday);
       },
       seed: () => DashboardProfileLoaded(_weekday, profiles: _all),
       act: (c) => c.saveActiveLayout(DashboardLayout.nightLayout()),
