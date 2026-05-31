@@ -12,14 +12,15 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #0d0f12;
-      --surface:   #141720;
-      --border:    #1e2330;
-      --accent:    #4f7cff;
-      --accent-dim:#2a3f80;
-      --text:      #e8eaf0;
-      --text-muted:#7a8099;
-      --text-dim:  #4a5268;
+      --bg:        #0B1021;
+      --surface:   #1A2440;
+      --border:    #232F56;
+      --accent:    #7861FF;
+      --accent-dim:#3d2f8a;
+      --cyan:      #00E5FF;
+      --text:      #FFFFFF;
+      --text-muted:#A3B1FF;
+      --text-dim:  #778199;
       --green:     #3dd68c;
       --amber:     #f5a623;
       --radius:    12px;
@@ -59,12 +60,17 @@
       justify-content: space-between;
     }
     .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .logo-wordmark {
       font-size: 18px;
       font-weight: 700;
       letter-spacing: -0.3px;
       color: var(--text);
     }
-    .logo span { color: var(--accent); }
     .nav-links { display: flex; align-items: center; gap: 24px; }
     .nav-links a:not(.btn) { color: var(--text-muted); font-size: 14px; font-weight: 500; }
     .nav-links a:not(.btn):hover { color: var(--text); text-decoration: none; }
@@ -127,7 +133,7 @@
     }
     .hero h1 em {
       font-style: normal;
-      background: linear-gradient(135deg, #4f7cff 0%, #a78bfa 100%);
+      background: linear-gradient(135deg, #00E5FF 0%, #7861FF 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -376,8 +382,8 @@
 
     /* ── Companion teaser ── */
     .companion-wrap {
-      background: linear-gradient(135deg, rgba(79,124,255,0.07) 0%, rgba(167,139,250,0.07) 100%);
-      border: 1px solid rgba(79,124,255,0.2);
+      background: linear-gradient(135deg, rgba(0,229,255,0.06) 0%, rgba(120,97,255,0.07) 100%);
+      border: 1px solid rgba(120,97,255,0.2);
       border-radius: 20px;
       padding: 56px;
       display: grid;
@@ -391,11 +397,11 @@
       gap: 6px;
       padding: 4px 12px;
       border-radius: 100px;
-      background: rgba(167,139,250,0.1);
-      border: 1px solid rgba(167,139,250,0.25);
+      background: rgba(120,97,255,0.12);
+      border: 1px solid rgba(120,97,255,0.3);
       font-size: 12px;
       font-weight: 600;
-      color: #a78bfa;
+      color: #A3B1FF;
       margin-bottom: 20px;
     }
     .companion-wrap h2 { letter-spacing: -1px; }
@@ -557,7 +563,24 @@
 <!-- ── Nav ── -->
 <nav>
   <div class="nav-inner">
-    <div class="logo">land<span>fall</span></div>
+    <div class="logo">
+      <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="lg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#00E5FF"/>
+            <stop offset="100%" stop-color="#7861FF"/>
+          </linearGradient>
+        </defs>
+        <!-- dots -->
+        <circle cx="50" cy="14" r="2.5" fill="url(#lg)" opacity="0.5"/>
+        <circle cx="50" cy="22" r="3.5" fill="url(#lg)" opacity="0.7"/>
+        <!-- orb -->
+        <circle cx="50" cy="33" r="6" fill="url(#lg)"/>
+        <!-- frame with V notch -->
+        <path d="M18 38 Q18 38 32 38 L44 52 L50 46 L56 52 L68 38 Q82 38 82 38 L82 82 Q82 92 72 92 L28 92 Q18 92 18 82 Z" stroke="url(#lg)" stroke-width="4.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-wordmark">landfall</span>
+    </div>
     <div class="nav-links">
       <a href="#features">Features</a>
       <a href="#how">How it works</a>

@@ -8,33 +8,36 @@ import 'package:flutter/material.dart';
 abstract final class LandfallColors {
   // ── Backgrounds ────────────────────────────────────────────────────────────
 
-  /// Primary display background. Near-black with a slight warm tint.
-  static const Color background = Color(0xFF0D0D0F);
+  /// Primary display background — brand Navy.
+  static const Color background = Color(0xFF0B1021);
 
-  /// Card surface. Slightly elevated above background.
-  static const Color surface = Color(0xFF1A1A1F);
+  /// Card surface — brand Slate.
+  static const Color surface = Color(0xFF1A2440);
 
   /// Elevated card surface. Used for modals, drawers, focused cards.
-  static const Color surfaceElevated = Color(0xFF242429);
+  static const Color surfaceElevated = Color(0xFF1E2C55);
 
   // ── Text ───────────────────────────────────────────────────────────────────
 
   /// Primary text. Used for titles, time display, key data.
-  static const Color textPrimary = Color(0xFFF2F2F7);
+  static const Color textPrimary = Color(0xFFFFFFFF);
 
-  /// Secondary text. Used for subtitles, body copy, metadata.
-  static const Color textSecondary = Color(0xFF8E8E9A);
+  /// Secondary text. Used for subtitles, body copy, metadata — brand Periwinkle.
+  static const Color textSecondary = Color(0xFFA3B1FF);
 
-  /// Tertiary text. Used for captions, source labels, timestamps.
-  static const Color textTertiary = Color(0xFF5A5A6A);
+  /// Tertiary text. Used for captions, source labels, timestamps — brand Steel.
+  static const Color textTertiary = Color(0xFF778199);
 
   // ── Accent ─────────────────────────────────────────────────────────────────
 
-  /// Primary accent. Used for interactive elements, highlights, agent badges.
-  static const Color accent = Color(0xFF4F8EF7);
+  /// Primary accent — brand Violet. Solid colour for interactive elements.
+  static const Color accent = Color(0xFF7861FF);
+
+  /// Cyan highlight — brand Cyan. Used in gradients and glows.
+  static const Color accentCyan = Color(0xFF00E5FF);
 
   /// Accent with reduced opacity — for hover/focus states and subtle highlights.
-  static const Color accentMuted = Color(0x334F8EF7);
+  static const Color accentMuted = Color(0x337861FF);
 
   // ── Semantic ───────────────────────────────────────────────────────────────
 
@@ -50,15 +53,15 @@ abstract final class LandfallColors {
   // ── Card ───────────────────────────────────────────────────────────────────
 
   /// Default card border. Subtle separation from background.
-  static const Color cardBorder = Color(0xFF2C2C35);
+  static const Color cardBorder = Color(0xFF232F56);
 
   /// Card border when focused or selected.
-  static const Color cardBorderFocused = Color(0xFF4F8EF7);
+  static const Color cardBorderFocused = Color(0xFF7861FF);
 
   // ── Utility ────────────────────────────────────────────────────────────────
 
   /// Divider / separator lines.
-  static const Color divider = Color(0xFF2C2C35);
+  static const Color divider = Color(0xFF232F56);
 
   /// Scrim overlay for modals and dim mode.
   static const Color scrim = Color(0xCC000000);
