@@ -133,7 +133,7 @@ class _UpgradeSection extends StatelessWidget {
         _PriceCard(
           name: 'Founding Member',
           price: '\$80',
-          description: 'Pro + all integration packs released in the first 18 months.',
+          description: 'Pro + early access to new features for the first 18 months.',
           color: const Color(0xFFFFD700),
           onBuy: () => _copyPaymentLink(context, 'Founding Member'),
         ),

@@ -7,7 +7,6 @@ import 'package:ui_kit/ui_kit.dart';
 
 import 'package:display/src/features/license/cubit/license_cubit.dart';
 import 'package:display/src/features/license/screens/license_screen.dart';
-import 'package:display/src/features/license/screens/pack_browser_screen.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
 import 'package:display/src/features/theme/cubit/theme_cubit.dart';
 import 'package:display/src/features/theme/cubit/theme_state.dart';
@@ -117,7 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 _AccountsTab(client: widget.client, serverUrl: widget.serverUrl),
                 const _LayoutTab(),
                 const _ThemesTab(),
-                _LicenseTab(client: widget.client),
+                const _LicenseTab(),
               ],
             ),
           ),
@@ -898,40 +897,11 @@ class _SwatchChip extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _LicenseTab extends StatelessWidget {
-  const _LicenseTab({required this.client});
-
-  final Client client;
+  const _LicenseTab();
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(child: const LicenseTab()),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-          child: SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => PackBrowserScreen(
-                    client: client,
-                    licenseCubit: context.read<LicenseCubit>(),
-                  ),
-                ),
-              ),
-              icon: const Icon(Icons.extension_outlined, size: 18),
-              label: const Text('Browse Integration Packs'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: LandfallColors.accent,
-                side: const BorderSide(color: LandfallColors.accent),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+    return const LicenseTab();
   }
 }
 
