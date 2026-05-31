@@ -95,6 +95,69 @@ void main() {
 
       expect(spawnCount, equals(1));
     });
+
+    // Regression: a missing avahi-publish binary in the server's Alpine image
+    // threw an unhandled ProcessException from run(), crashing the server
+    // before the API port opened and trapping the Pi on the boot splash. mDNS
+    // is a non-essential convenience and must degrade, never abort startup.
+    test('start() swallows ProcessException when the binary is missing', () async {
+      final b = ProcessMdnsBroadcaster(
+        config: testConfig,
+        isLinux: true,
+        isMacOS: false,
+        processStarter: (executable, args) async =>
+            throw ProcessException(executable, args, 'No such file or directory', 2),
+      );
+
+      await expectLater(b.start(), completes);
+    });
+
+    test('start() can be retried after the binary was missing', () async {
+      int attempts = 0;
+      final b = ProcessMdnsBroadcaster(
+        config: testConfig,
+        isLinux: true,
+        isMacOS: false,
+        processStarter: (executable, args) async {
+          attempts++;
+          if (attempts == 1) {
+            throw ProcessException(executable, args, 'No such file or directory', 2);
+          }
+          return _FakeProcess(executable, args);
+        },
+      );
+
+      await b.start(); // first attempt fails and is swallowed
+      await b.start(); // _process still null, so a retry is allowed
+
+      expect(attempts, equals(2));
+    });
+  });
+
+  group('mdnsBroadcastEnabled', () {
+    test('defaults to true when the flag is unset', () {
+      expect(mdnsBroadcastEnabled(const {}), isTrue);
+    });
+
+    test('is false for falsey values (case-insensitive)', () {
+      for (final v in ['false', '0', 'off', 'no', 'FALSE', 'Off', 'No']) {
+        expect(
+          mdnsBroadcastEnabled({'LANDFALL_MDNS_BROADCAST': v}),
+          isFalse,
+          reason: 'expected "$v" to disable broadcast',
+        );
+      }
+    });
+
+    test('is true for any other value', () {
+      for (final v in ['true', '1', 'on', 'yes', '']) {
+        expect(
+          mdnsBroadcastEnabled({'LANDFALL_MDNS_BROADCAST': v}),
+          isTrue,
+          reason: 'expected "$v" to enable broadcast',
+        );
+      }
+    });
   });
 
   group('ProcessMdnsBroadcaster — macOS', () {

@@ -63,6 +63,9 @@ WEATHER_LOCATION_NAME=London
 STRIPE_WEBHOOK_SECRET=stripe-key
 ENV
 
+avahi_template="${REPO_ROOT}/deploy/pi-gen/stage2-landfall/00-landfall/files/landfall.avahi-service.template"
+avahi_service_file="${tmp}/avahi/landfall.service"
+
 LANDFALL_HOSTNAME_FILE="${hostname_file}" \
 LANDFALL_ENV_FILE="${env_file}" \
 LANDFALL_INTEGRATIONS_FILE="${integrations_file}" \
@@ -70,6 +73,8 @@ LANDFALL_INITIALIZED_FLAG="${flag_file}" \
 LANDFALL_IMAGE_TARBALL="${image_tarball}" \
 LANDFALL_DOCKER_BIN="${docker_stub}" \
 LANDFALL_DATA_DIR="${tmp}/data/landfall" \
+LANDFALL_AVAHI_TEMPLATE="${avahi_template}" \
+LANDFALL_AVAHI_SERVICE_FILE="${avahi_service_file}" \
   bash "${FIRSTBOOT}"
 
 [[ -f "${env_file}" ]] || { echo ".env was not created" >&2; exit 1; }
@@ -100,6 +105,13 @@ done
 assert_contains "${env_file}" '^LANDFALL_DOMAIN=kitchen-frame\.local$'
 assert_contains "${env_file}" '^GOOGLE_REDIRECT_URI=https://kitchen-frame\.local/calendar/oauth/callback$'
 assert_contains "${env_file}" '^MICROSOFT_REDIRECT_URI=https://kitchen-frame\.local/calendar/microsoft/oauth/callback$'
+
+# mDNS service file is rendered for the host avahi-daemon with the real domain
+# substituted and no leftover template placeholder.
+[[ -f "${avahi_service_file}" ]] || { echo "avahi service file was not rendered" >&2; exit 1; }
+assert_contains "${avahi_service_file}" '<type>_landfall\._tcp</type>'
+assert_contains "${avahi_service_file}" 'serverUrl=https://kitchen-frame\.local:443'
+assert_not_contains "${avahi_service_file}" '\$\{LANDFALL_DOMAIN\}'
 
 tmp2="$(mktemp -d)"
 printf 'hallway\n' > "${tmp2}/hostname"

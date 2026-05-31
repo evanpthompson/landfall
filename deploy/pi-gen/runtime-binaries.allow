@@ -1,0 +1,26 @@
+# Landfall — runtime external-binary contract
+#
+# Every external binary the SERVER spawns at runtime (Process.start / Process.run
+# / the ProcessStarter `_start` alias in server/landfall_server/lib) MUST be
+# declared here. `deploy/pi-gen/preflight.sh` scans the server source and FAILS
+# the build if it finds a spawned binary that is not listed below.
+#
+# This exists because a binary added in code but never provisioned in the image
+# (avahi-publish, May 2026) crash-looped the server and trapped the Pi on the
+# boot splash. Declaring provisioning here forces that decision to be explicit
+# and reviewed.
+#
+# Format (whitespace-separated):
+#   <binary>  <provided-by>  <reason...>
+#
+# <provided-by> is one of:
+#   image:<apk-package>  Installed in server/landfall_server/Dockerfile via
+#                        `apk add <apk-package>`. preflight verifies the
+#                        Dockerfile actually installs that package.
+#   host:<note>          Provided by the Raspberry Pi host, NOT the container.
+#                        Only valid if the container does not depend on it at
+#                        runtime (e.g. the call path is disabled in the image).
+#   dev:<note>           Used only in local/dev runs, never in the Pi image.
+
+avahi-publish  host:avahi-utils  Pi host avahi-daemon publishes _landfall._tcp; container broadcast disabled via LANDFALL_MDNS_BROADCAST=false, and start() is crash-safe if the binary is absent.
+dns-sd         dev:macos         macOS-only mDNS CLI for desktop dev runs; never invoked in the Linux container.

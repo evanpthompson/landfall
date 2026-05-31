@@ -160,6 +160,24 @@ else
   log "Skipping data directory setup (not running as root with landfall user)"
 fi
 
+# ── Publish LAN mDNS service via the host avahi-daemon ────────────────────────
+# The server container runs on the Docker bridge network and cannot reach the
+# LAN multicast group, so it advertises nothing (LANDFALL_MDNS_BROADCAST=false).
+# Instead the host's avahi-daemon publishes _landfall._tcp from a static service
+# file. Render the template with the real domain; avahi picks up the change
+# automatically (no reload needed).
+AVAHI_TEMPLATE="${LANDFALL_AVAHI_TEMPLATE:-/opt/landfall/landfall.avahi-service.template}"
+AVAHI_SERVICE_FILE="${LANDFALL_AVAHI_SERVICE_FILE:-/etc/avahi/services/landfall.service}"
+if [[ -f "${AVAHI_TEMPLATE}" ]]; then
+  log "Publishing mDNS service for ${LANDFALL_DOMAIN}"
+  mkdir -p "$(dirname "${AVAHI_SERVICE_FILE}")"
+  sed "s|\${LANDFALL_DOMAIN}|${LANDFALL_DOMAIN}|g" "${AVAHI_TEMPLATE}" \
+    > "${AVAHI_SERVICE_FILE}"
+  chmod 644 "${AVAHI_SERVICE_FILE}"
+else
+  log "WARNING: ${AVAHI_TEMPLATE} not found — LAN discovery will be unavailable"
+fi
+
 mkdir -p "$(dirname "${INITIALIZED_FLAG}")"
 touch "${INITIALIZED_FLAG}"
 log "First-boot initialization complete"

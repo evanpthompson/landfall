@@ -128,18 +128,24 @@ void run(List<String> args) async {
   final apiServer = pod.config.apiServer;
   final serverUrl =
       '${apiServer.publicScheme}://${apiServer.publicHost}:${apiServer.publicPort}';
-  final mdns = ProcessMdnsBroadcaster(
-    config: MdnsBroadcasterConfig(
-      serviceName: 'Landfall',
-      port: apiServer.publicPort,
-      serverUrl: serverUrl,
-      version: '1',
-    ),
-  );
-  await mdns.start();
-  ProcessSignal.sigterm.watch().listen((_) async {
-    await mdns.stop();
-  });
+  // Skip the in-process broadcaster where the host owns mDNS (the Pi image sets
+  // LANDFALL_MDNS_BROADCAST=false and publishes via the host avahi-daemon). The
+  // broadcaster is also internally crash-safe, so even when enabled a missing
+  // mDNS CLI degrades to a warning rather than aborting startup.
+  if (mdnsBroadcastEnabled(Platform.environment)) {
+    final mdns = ProcessMdnsBroadcaster(
+      config: MdnsBroadcasterConfig(
+        serviceName: 'Landfall',
+        port: apiServer.publicPort,
+        serverUrl: serverUrl,
+        version: '1',
+      ),
+    );
+    await mdns.start();
+    ProcessSignal.sigterm.watch().listen((_) async {
+      await mdns.stop();
+    });
+  }
 
   // Seed built-in themes and marketplace themes if not already present.
   // Also clean up any orphaned companion profiles left by prior server versions.

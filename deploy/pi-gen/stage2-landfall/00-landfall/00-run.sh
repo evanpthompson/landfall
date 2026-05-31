@@ -215,6 +215,12 @@ install -d "${ROOTFS_DIR}/opt/landfall"
 install -m 755 "${STAGE_FILES}/firstboot.sh" \
                "${ROOTFS_DIR}/opt/landfall/firstboot.sh"
 
+# mDNS service template — firstboot.sh renders this to
+# /etc/avahi/services/landfall.service so the host avahi-daemon advertises the
+# server on the LAN (the container cannot, see LANDFALL_MDNS_BROADCAST).
+install -m 644 "${STAGE_FILES}/landfall.avahi-service.template" \
+               "${ROOTFS_DIR}/opt/landfall/landfall.avahi-service.template"
+
 # ── Boot splash + diagnostic fallback ─────────────────────────────────────────
 install -m 755 "${STAGE_FILES}/landfall-splash.py" \
                "${ROOTFS_DIR}/opt/landfall/landfall-splash.py"

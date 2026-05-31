@@ -130,6 +130,54 @@ else
   fail "deploy/pi-gen/config not found"
 fi
 
+# ── Runtime binary dependencies ──────────────────────────────────────────────
+# Catch the class of bug where the server spawns an external binary (e.g.
+# avahi-publish) that was never provisioned in the runtime image. Every spawned
+# binary must be declared in runtime-binaries.allow; image-provided ones are
+# cross-checked against the Dockerfile's apk packages.
+section "Runtime binary dependencies"
+
+ALLOWLIST="${SCRIPT_DIR}/runtime-binaries.allow"
+SERVER_LIB="${REPO_ROOT}/server/landfall_server/lib"
+SERVER_DOCKERFILE="${REPO_ROOT}/server/landfall_server/Dockerfile"
+
+if [[ ! -f "${ALLOWLIST}" ]]; then
+  fail "runtime-binaries.allow not found — cannot verify spawned binaries"
+elif [[ ! -d "${SERVER_LIB}" ]]; then
+  fail "server/landfall_server/lib not found — cannot scan for spawned binaries"
+else
+  # Executables passed as a string literal to a process-spawn call. Matches
+  # Process.start/run/runSync and the ProcessStarter `_start`/`_run` aliases.
+  spawned=$(grep -rhoE "(Process\.start|Process\.run|Process\.runSync|_start|_run)\(['\"][A-Za-z0-9][A-Za-z0-9._-]*['\"]" "${SERVER_LIB}" 2>/dev/null \
+    | grep -oE "['\"][A-Za-z0-9][A-Za-z0-9._-]*['\"]" \
+    | tr -d "\"'" \
+    | sort -u)
+
+  if [[ -z "${spawned}" ]]; then
+    pass "server spawns no external binaries"
+  else
+    while IFS= read -r bin; do
+      [[ -z "${bin}" ]] && continue
+      # provided-by token for this binary from the allowlist (first match).
+      provided=$(grep -E "^[[:space:]]*${bin}[[:space:]]" "${ALLOWLIST}" 2>/dev/null \
+        | grep -vE "^[[:space:]]*#" | awk '{print $2}' | head -1)
+      if [[ -z "${provided}" ]]; then
+        fail "server spawns '${bin}' but it is not declared in runtime-binaries.allow"
+        info "Add a line: '${bin}  image:<apk-pkg>|host:<note>|dev:<note>  <reason>'"
+      elif [[ "${provided}" == image:* ]]; then
+        pkg="${provided#image:}"
+        if grep -qE "apk add[^\\n]*\b${pkg}\b" "${SERVER_DOCKERFILE}" 2>/dev/null; then
+          pass "'${bin}' provided by image package '${pkg}'"
+        else
+          fail "'${bin}' declared as image:${pkg} but Dockerfile has no 'apk add ${pkg}'"
+        fi
+      else
+        pass "'${bin}' declared (${provided})"
+      fi
+    done <<< "${spawned}"
+  fi
+fi
+
 # ── Cached build artifacts (slow steps that can be skipped) ──────────────────
 section "Cached build artifacts"
 

@@ -1,0 +1,27 @@
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<!--
+  Landfall LAN service advertisement, published by the Pi host's avahi-daemon.
+
+  This is the production path for mDNS discovery. The server itself runs in a
+  bridge-networked Docker container that cannot reach the LAN multicast group,
+  so the in-process broadcaster is disabled (LANDFALL_MDNS_BROADCAST=false) and
+  the host advertises the service instead.
+
+  firstboot.sh renders this template to /etc/avahi/services/landfall.service,
+  substituting ${LANDFALL_DOMAIN} (e.g. landfall.local) at first boot. avahi
+  auto-detects files in /etc/avahi/services and republishes on change — no
+  daemon reload required.
+
+  The TXT records match what the in-process broadcaster emitted so displays see
+  an identical advertisement regardless of which path published it.
+-->
+<service-group>
+  <name replace-wildcards="yes">Landfall on %h</name>
+  <service>
+    <type>_landfall._tcp</type>
+    <port>443</port>
+    <txt-record>serverUrl=https://${LANDFALL_DOMAIN}:443</txt-record>
+    <txt-record>version=1</txt-record>
+  </service>
+</service-group>

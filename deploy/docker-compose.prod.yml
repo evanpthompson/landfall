@@ -10,6 +10,11 @@ services:
       DB_HOST: postgres
       REDIS_HOST: redis
       SERVERPOD_PASSWORD_redis: ${REDIS_PASSWORD}
+      # The server runs on the compose bridge network and cannot reach the LAN
+      # mDNS multicast group, so the in-process broadcaster is disabled here.
+      # The Pi host's avahi-daemon publishes _landfall._tcp instead, via the
+      # /etc/avahi/services/landfall.service file rendered by firstboot.sh.
+      LANDFALL_MDNS_BROADCAST: "false"
     depends_on:
       postgres:
         condition: service_healthy

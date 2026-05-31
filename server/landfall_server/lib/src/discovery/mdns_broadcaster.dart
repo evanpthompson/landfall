@@ -5,6 +5,18 @@ typedef ProcessStarter = Future<Process> Function(
   List<String> arguments,
 );
 
+/// Whether the in-process mDNS broadcaster should run, read from [environment].
+///
+/// Defaults to enabled. The Raspberry Pi image sets `LANDFALL_MDNS_BROADCAST=false`
+/// because the server runs in a bridge-networked container that cannot reach the
+/// LAN multicast group; on the Pi the host's avahi-daemon publishes the service
+/// instead (see deploy/pi-gen .../landfall.avahi-service.template). Dev and
+/// desktop runs leave it enabled so discovery works without extra setup.
+bool mdnsBroadcastEnabled(Map<String, String> environment) {
+  final raw = environment['LANDFALL_MDNS_BROADCAST']?.trim().toLowerCase();
+  return !(raw == 'false' || raw == '0' || raw == 'off' || raw == 'no');
+}
+
 /// Configuration for the mDNS service advertisement.
 class MdnsBroadcasterConfig {
   const MdnsBroadcasterConfig({
@@ -61,23 +73,35 @@ class ProcessMdnsBroadcaster implements MdnsBroadcaster {
       'version=${config.version}',
     ];
 
-    if (_isLinux) {
-      _process = await _start('avahi-publish', [
-        '-s',
-        config.serviceName,
-        '_landfall._tcp',
-        '${config.port}',
-        ...txtRecords,
-      ]);
-    } else if (_isMacOS) {
-      _process = await _start('dns-sd', [
-        '-R',
-        config.serviceName,
-        '_landfall._tcp',
-        '.',
-        '${config.port}',
-        ...txtRecords,
-      ]);
+    // mDNS advertisement is a convenience: it lets displays discover the server
+    // without the operator typing a URL. If the platform's mDNS CLI is missing
+    // (e.g. avahi-utils not installed in a minimal image) Process.start throws
+    // ProcessException. Swallow it — a discovery failure must never take down
+    // the server. _process is left null so a later call can retry.
+    try {
+      if (_isLinux) {
+        _process = await _start('avahi-publish', [
+          '-s',
+          config.serviceName,
+          '_landfall._tcp',
+          '${config.port}',
+          ...txtRecords,
+        ]);
+      } else if (_isMacOS) {
+        _process = await _start('dns-sd', [
+          '-R',
+          config.serviceName,
+          '_landfall._tcp',
+          '.',
+          '${config.port}',
+          ...txtRecords,
+        ]);
+      }
+    } on ProcessException catch (e) {
+      stderr.writeln(
+        'mDNS broadcast unavailable (${e.executable} not found): ${e.message}. '
+        'LAN auto-discovery is disabled; the server is unaffected.',
+      );
     }
   }
 
