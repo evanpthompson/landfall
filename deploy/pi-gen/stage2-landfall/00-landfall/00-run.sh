@@ -40,7 +40,7 @@ apt-get install -y --no-install-recommends \
   unclutter x11-xserver-utils \
   wireless-regdb avahi-daemon libnss-mdns \
   gnome-keyring \
-  python3-tk python3-xdg
+  python3-tk python3-xdg python3-pil
 
 for group in docker video render input; do
   if getent group "${group}" >/dev/null; then

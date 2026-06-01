@@ -32,8 +32,10 @@ ACCENT    = "#00E5FF"  # Cyan   — loading accent
 
 DOTS = ["   ", ".  ", ".. ", "..."]
 
-# On-screen height for the logo mark, as a fraction of screen height.
-LOGO_SCREEN_FRACTION = 0.22
+# On-screen height for the logo mark, as a fraction of screen height. The mark
+# asset carries ~18% transparent padding, so the visible card reads a bit
+# smaller than this box.
+LOGO_SCREEN_FRACTION = 0.28
 
 
 def poll_server(on_ready):
