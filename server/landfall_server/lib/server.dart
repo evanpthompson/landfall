@@ -13,6 +13,7 @@ import 'src/theme/marketplace_seeder.dart';
 import 'src/photo/photo_refresh_call.dart';
 import 'src/profile/profile_schedule_call.dart';
 import 'src/web/routes/build_manifest_route.dart';
+import 'src/web/routes/config_route.dart';
 import 'src/web/routes/rest/card_detail_route.dart';
 import 'src/web/routes/rest/cards_route.dart';
 import 'src/web/routes/rest/telemetry_route.dart';
@@ -108,6 +109,10 @@ void run(List<String> args) async {
   // Build manifest receipt — what actually shipped in this image. Baked at
   // build time into /etc/landfall/build-manifest.json; see deploy/pi-gen/build.sh.
   pod.webServer.addRoute(BuildManifestRoute(), '/health/build');
+
+  // Non-sensitive display config (currently the clock timezone) so the display
+  // renders household wall-clock time regardless of the device OS zone.
+  pod.webServer.addRoute(ConfigRoute(), '/config');
 
   // Device authorization — RFC 8628-style zero-type login for TV/leanback.
   pod.webServer.addRoute(DeviceAuthStartRoute(), '/auth/device/start');

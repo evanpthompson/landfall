@@ -9,7 +9,6 @@ import 'package:display/src/app/app_config.dart';
 import 'package:display/src/data/auth/file_client_auth_success_storage.dart';
 import 'package:display/src/data/calendar/serverpod_calendar_repository.dart';
 import 'package:display/src/data/cards/serverpod_card_repository.dart';
-import 'package:display/src/data/clock/system_clock_repository.dart';
 import 'package:display/src/data/local/app_database.dart';
 import 'package:display/src/data/profile/serverpod_profile_repository.dart';
 import 'package:display/src/data/photo/serverpod_photo_repository.dart';
@@ -55,9 +54,14 @@ class LandfallApp extends StatelessWidget {
     required this.database,
     required this.serverUrl,
     required this.displayId,
+    required this.clockRepository,
   });
 
   final AppDatabase database;
+
+  /// Clock source for the [ClockCubit]. Owned by `main.dart` so it can be
+  /// aligned to the server-configured timezone after launch.
+  final ClockRepository clockRepository;
 
   /// The Serverpod server URL.
   ///
@@ -88,7 +92,6 @@ class LandfallApp extends StatelessWidget {
         : serverUrl;
     final photoRepository = ServerpodPhotoRepository(client, webServerUrl);
     final displaySettingsRepository = DriftDisplaySettingsRepository(database);
-    final clockRepository = const SystemClockRepository();
     final getCurrentTime = GetCurrentTimeUseCase(clockRepository);
     final licenseRepository = ServerpodLicenseRepository(client);
     final themeRepository = ServerpodThemeRepository(client);
