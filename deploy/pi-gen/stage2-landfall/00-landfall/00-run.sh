@@ -224,6 +224,13 @@ install -m 644 "${STAGE_FILES}/landfall.avahi-service.template" \
 # ── Boot splash + diagnostic fallback ─────────────────────────────────────────
 install -m 755 "${STAGE_FILES}/landfall-splash.py" \
                "${ROOTFS_DIR}/opt/landfall/landfall-splash.py"
+# Optional brand mark for the splash. The splash renders it above the wordmark
+# when present (and falls back to the wordmark alone when absent), so shipping
+# it is optional — drop a square transparent PNG at files/landfall-logo.png.
+if [[ -f "${STAGE_FILES}/landfall-logo.png" ]]; then
+  install -m 644 "${STAGE_FILES}/landfall-logo.png" \
+                 "${ROOTFS_DIR}/opt/landfall/landfall-logo.png"
+fi
 install -m 755 "${STAGE_FILES}/landfall-diagnostic.py" \
                "${ROOTFS_DIR}/opt/landfall/landfall-diagnostic.py"
 

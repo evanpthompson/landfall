@@ -6,22 +6,32 @@ import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart';
 
 import '../../auth/device_auth_service.dart';
 import '../../auth/otp_service.dart';
+import '../../net/lan_base_url.dart';
 
 /// POST /auth/device/start
 ///
 /// Creates a new device authorization request. No authentication required.
 /// Returns JSON: {userCode, deviceCode, verificationUri, expiresIn, interval}
 class DeviceAuthStartRoute extends Route {
-  DeviceAuthStartRoute() : super(methods: {Method.post});
+  DeviceAuthStartRoute({Future<String> Function()? resolveBaseUrl})
+      : _resolveBaseUrl = resolveBaseUrl ?? resolveLanBaseUrl,
+        super(methods: {Method.post});
+
+  /// Resolves the LAN-reachable base URL for the verification page. Injectable
+  /// so tests can pin the URL without depending on the host's interfaces.
+  final Future<String> Function() _resolveBaseUrl;
 
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
-    final host = request.url.host;
-    final port = request.url.port;
-    final scheme = request.url.scheme.isNotEmpty ? request.url.scheme : 'http';
-    final origin = port == 0 || port == 80 || port == 443
-        ? '$scheme://$host'
-        : '$scheme://$host:$port';
+    // The phone that visits this URL is on the household LAN, NOT the host the
+    // TV used to reach the server. The TV hits the server over loopback on the
+    // Pi (LANDFALL_WEB_SERVER_URL=http://127.0.0.1:8082/), so trusting
+    // request.url.host would tell the user to open "127.0.0.1:8082/device" —
+    // unreachable from a phone. Resolve the LAN-reachable base instead
+    // (Caddy-fronted domain on the Pi, RFC1918 IP in direct-connect dev), and
+    // only fall back to the request origin if no LAN address is available.
+    final base = await _resolveBaseUrl();
+    final origin = base.isNotEmpty ? base : _originFromRequest(request);
     final verificationUri = '$origin/device';
 
     final result = DeviceAuthService.startFlow(
@@ -41,6 +51,18 @@ class DeviceAuthStartRoute extends Route {
         mimeType: MimeType.json,
       ),
     );
+  }
+
+  /// Last-resort origin derived from the inbound request. Only used when no
+  /// LAN-reachable base could be resolved (no LANDFALL_DOMAIN and no RFC1918
+  /// interface), e.g. a fully isolated dev box.
+  static String _originFromRequest(Request request) {
+    final host = request.url.host;
+    final port = request.url.port;
+    final scheme = request.url.scheme.isNotEmpty ? request.url.scheme : 'http';
+    return port == 0 || port == 80 || port == 443
+        ? '$scheme://$host'
+        : '$scheme://$host:$port';
   }
 }
 

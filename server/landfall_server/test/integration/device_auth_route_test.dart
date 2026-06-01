@@ -28,6 +28,23 @@ void main() {
       return (await DeviceAuthStartRoute().handleCall(session, req)) as Response;
     }
 
+    // Variant that pins the LAN-base resolution: the verification URL shown to
+    // the phone must come from [resolveBaseUrl], NOT the request host (which is
+    // loopback when the TV hits the local server on the Pi).
+    Future<Response> postStartWithBase(
+      Session session,
+      Future<String> Function() resolveBaseUrl,
+    ) async {
+      final req = RequestInternal.create(
+        Method.post,
+        // Loopback request host — what the TV actually sends on the Pi.
+        Uri.parse('http://127.0.0.1:8082/auth/device/start'),
+        Object(),
+      );
+      return (await DeviceAuthStartRoute(resolveBaseUrl: resolveBaseUrl)
+          .handleCall(session, req)) as Response;
+    }
+
     Future<Response> postPoll(Session session, String deviceCode) async {
       final req = RequestInternal.create(
         Method.post,
@@ -111,6 +128,33 @@ void main() {
 
         final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
         expect(body['verificationUri'] as String, contains('/device'));
+      });
+
+      test('verificationUri uses the resolved LAN base, not the request host',
+          () async {
+        final session = sessionBuilder.build();
+        final res = await postStartWithBase(
+          session,
+          () async => 'https://kitchen-pi.local',
+        );
+        await session.close();
+
+        final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+        final uri = body['verificationUri'] as String;
+        // Must be the LAN-reachable host, never the loopback the TV connected on.
+        expect(uri, 'https://kitchen-pi.local/device');
+        expect(uri, isNot(contains('127.0.0.1')));
+      });
+
+      test('verificationUri falls back to request origin when no LAN base',
+          () async {
+        final session = sessionBuilder.build();
+        // Empty base => isolated host with no domain and no RFC1918 address.
+        final res = await postStartWithBase(session, () async => '');
+        await session.close();
+
+        final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+        expect(body['verificationUri'] as String, 'http://127.0.0.1:8082/device');
       });
     });
 
