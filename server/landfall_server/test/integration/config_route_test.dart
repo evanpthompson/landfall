@@ -29,12 +29,18 @@ void main() {
       expect(body['timezone'], isA<String>());
     });
 
-    test('exposes the piTimezone configured in passwords.yaml', () async {
-      // Pins the wiring: the shared `piTimezone` in passwords.yaml is surfaced
-      // verbatim so the display can render the household wall-clock time.
+    test('surfaces the piTimezone password verbatim', () async {
+      // Pins the wiring without hardcoding a zone: the route must echo whatever
+      // `piTimezone` is configured in passwords (which differs between a dev
+      // machine and CI, where it is unset → empty string). Reading the expected
+      // value from the same session keeps this environment-independent.
+      final session = sessionBuilder.build();
+      final expected = session.passwords['piTimezone'] ?? '';
+      await session.close();
+
       final res = await getConfig();
       final body = jsonDecode(await res.readAsString()) as Map<String, dynamic>;
-      expect(body['timezone'], equals('America/Chicago'));
+      expect(body['timezone'], equals(expected));
     });
   });
 }
