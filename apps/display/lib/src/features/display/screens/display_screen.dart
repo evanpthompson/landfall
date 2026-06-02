@@ -17,6 +17,7 @@ import 'package:display/src/features/clock/cubit/clock_state.dart';
 import 'package:display/src/features/clock/widgets/clock_card.dart';
 import 'package:display/src/features/display/cursor_mode_shortcuts.dart';
 import 'package:display/src/features/display/remote_nav_keys.dart';
+import 'package:display/src/platform/cma_memory_watchdog.dart';
 import 'package:display/src/features/display/widgets/ambient_dim_overlay.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
@@ -72,6 +73,11 @@ class _DisplayScreenState extends State<DisplayScreen> {
   Timer? _photoRefreshTimer;
   Timer? _tickerRefreshTimer;
   Timer? _gearHideTimer;
+  // Watches the GPU CMA pool and releases image textures under pressure. Inert
+  // on platforms without a CMA pool (macOS/Fire TV/Android) — the reader finds
+  // no CmaTotal in /proc/meminfo and every tick no-ops — so it is safe to run
+  // on every display and only acts on the Raspberry Pi.
+  final CmaMemoryWatchdog _cmaWatchdog = CmaMemoryWatchdog();
   final FocusNode _displayFocusNode = FocusNode();
   final FocusNode _settingsFocusNode = FocusNode();
 
@@ -141,6 +147,8 @@ class _DisplayScreenState extends State<DisplayScreen> {
     _tickerRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       if (mounted) context.read<TickerCubit>().loadTicker();
     });
+
+    _cmaWatchdog.start();
   }
 
   @override
@@ -152,6 +160,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
     _photoRefreshTimer?.cancel();
     _tickerRefreshTimer?.cancel();
     _gearHideTimer?.cancel();
+    _cmaWatchdog.stop();
     _displayFocusNode.dispose();
     _settingsFocusNode.dispose();
     super.dispose();
