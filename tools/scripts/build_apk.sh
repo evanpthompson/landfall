@@ -47,8 +47,31 @@ grep -q 'applicationId = "io.landfall.display"' "${GRADLE_FILE}" \
 
 cd "${DISPLAY_DIR}"
 
+# Optional server URLs, baked via --dart-define (both default to empty, which
+# preserves the stock behavior: first-run setup wizard, single-origin client).
+#
+# For direct-port LAN validation against a Caddy-less dev server, set both so
+# RPC and device-auth sign-in resolve to their separate ports (mirrors the Pi):
+#   LANDFALL_DEFAULT_SERVER_URL=http://192.168.1.167:8080/ \
+#   LANDFALL_WEB_SERVER_URL=http://192.168.1.167:8082/ \
+#   bash tools/scripts/build_apk.sh
+# Omit LANDFALL_DEFAULT_SERVER_URL to keep the setup wizard; LANDFALL_WEB_SERVER_URL
+# alone is enough for sign-in to reach the web server while you type the :8080
+# RPC URL in the wizard.
+LANDFALL_DEFAULT_SERVER_URL="${LANDFALL_DEFAULT_SERVER_URL:-}"
+LANDFALL_WEB_SERVER_URL="${LANDFALL_WEB_SERVER_URL:-}"
+
+if [[ -n "${LANDFALL_DEFAULT_SERVER_URL}" ]]; then
+  info "Baking LANDFALL_DEFAULT_SERVER_URL=${LANDFALL_DEFAULT_SERVER_URL}"
+fi
+if [[ -n "${LANDFALL_WEB_SERVER_URL}" ]]; then
+  info "Baking LANDFALL_WEB_SERVER_URL=${LANDFALL_WEB_SERVER_URL}"
+fi
+
 info "Building release APK..."
-flutter build apk --release
+flutter build apk --release \
+  --dart-define=LANDFALL_DEFAULT_SERVER_URL="${LANDFALL_DEFAULT_SERVER_URL}" \
+  --dart-define=LANDFALL_WEB_SERVER_URL="${LANDFALL_WEB_SERVER_URL}"
 
 APK="${DISPLAY_DIR}/build/app/outputs/flutter-apk/app-release.apk"
 ok "APK ready: ${APK}"
