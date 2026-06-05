@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart' hide Card;
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_client/landfall_client.dart';
 import 'package:landfall_shared/landfall_shared.dart';
@@ -17,6 +16,7 @@ import 'package:display/src/features/clock/cubit/clock_state.dart';
 import 'package:display/src/features/clock/widgets/clock_card.dart';
 import 'package:display/src/features/display/cursor_mode_shortcuts.dart';
 import 'package:display/src/features/display/remote_nav_keys.dart';
+import 'package:display/src/features/display/widgets/settings_pill.dart';
 import 'package:display/src/platform/cma_memory_watchdog.dart';
 import 'package:display/src/features/display/widgets/ambient_dim_overlay.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
@@ -231,7 +231,7 @@ class _DisplayScreenState extends State<DisplayScreen> {
                           duration: const Duration(milliseconds: 300),
                           child: IgnorePointer(
                             ignoring: !_gearVisible,
-                            child: _SettingsPill(
+                            child: SettingsPill(
                               key: const Key('settings_pill'),
                               focusNode: _settingsFocusNode,
                               onTap: _openSettings,
@@ -248,80 +248,6 @@ class _DisplayScreenState extends State<DisplayScreen> {
           ),
         );
       },
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Settings pill button
-// ---------------------------------------------------------------------------
-
-/// A translucent pill that appears on tap and opens [SettingsScreen].
-///
-/// Designed to stay out of the way on an ambient display: low-opacity, dark
-/// background, tight padding. Fades in/out managed by [_DisplayScreenState].
-class _SettingsPill extends StatelessWidget {
-  const _SettingsPill({
-    super.key,
-    required this.onTap,
-    required this.focusNode,
-    required this.onFocusGained,
-  });
-
-  final VoidCallback onTap;
-  final FocusNode focusNode;
-  final VoidCallback onFocusGained;
-
-  @override
-  Widget build(BuildContext context) {
-    return Focus(
-      focusNode: focusNode,
-      onFocusChange: (gained) {
-        if (gained) onFocusGained();
-      },
-      onKeyEvent: (_, event) {
-        if (event is KeyDownEvent &&
-            (event.logicalKey == LogicalKeyboardKey.enter ||
-                event.logicalKey == LogicalKeyboardKey.space)) {
-          onTap();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0D0D0F).withValues(alpha: 0.82),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.13),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.settings,
-                size: 14,
-                color: Colors.white.withValues(alpha: 0.6),
-              ),
-              const SizedBox(width: 7),
-              Text(
-                'Settings',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
