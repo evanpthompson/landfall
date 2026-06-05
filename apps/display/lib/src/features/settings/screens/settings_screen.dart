@@ -16,6 +16,7 @@ import 'package:display/src/features/profile/screens/profile_manager_screen.dart
 import 'package:display/src/features/profile/widgets/profile_switcher.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/photo/screens/photo_sources_screen.dart';
+import 'package:display/src/features/server/screens/change_server_screen.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
 import 'package:display/src/features/settings/widgets/agent_keys_section.dart';
 import 'package:display/src/features/settings/widgets/layout_editor.dart';
@@ -199,6 +200,19 @@ class _DisplayFormState extends State<_DisplayForm> {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
+        _SectionHeader('Server'),
+        const SizedBox(height: 12),
+        _NavTile(
+          icon: Icons.dns_outlined,
+          title: 'Server address',
+          subtitle: widget.serverUrl.isEmpty ? 'Not set' : widget.serverUrl,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => ChangeServerScreen(currentUrl: widget.serverUrl),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
         _SectionHeader('Ambient Dim'),
         const SizedBox(height: 12),
         SwitchListTile(

@@ -28,7 +28,7 @@ class SetupWizardApp extends StatelessWidget {
     return BlocProvider(
       create: (_) => SetupWizardCubit(
         settingsRepository: DriftDisplaySettingsRepository(database),
-        healthChecker: const HttpServerHealthChecker(),
+        healthChecker: HttpServerHealthChecker(),
       )..init(),
       child: MaterialApp(
         title: 'Landfall Setup',

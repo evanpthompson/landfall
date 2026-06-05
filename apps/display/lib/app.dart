@@ -260,7 +260,10 @@ class _AuthGateState extends State<_AuthGate> {
         if (state is AuthAuthenticated) {
           return DisplayScreen(client: widget.client, serverUrl: widget.serverUrl);
         }
-        return LoginScreen(leanback: _leanback ?? false);
+        return LoginScreen(
+          leanback: _leanback ?? false,
+          serverUrl: widget.serverUrl,
+        );
       },
     );
   }

@@ -1,10 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
-import 'package:display/src/data/discovery/mdns_server_discovery.dart';
 import 'package:display/src/data/server/server_health_checker.dart';
+import 'package:display/src/data/server/server_url_validator.dart';
 import 'setup_wizard_state.dart';
 
 export 'setup_wizard_state.dart';
@@ -13,30 +11,23 @@ class SetupWizardCubit extends Cubit<SetupWizardState> {
   SetupWizardCubit({
     required DisplaySettingsRepository settingsRepository,
     required ServerHealthChecker healthChecker,
-    MdnsServerDiscovery? discovery,
-    bool autoPickSingle = false,
   })  : _settings = settingsRepository,
         _health = healthChecker,
-        _discovery = discovery,
-        _autoPickSingle = autoPickSingle,
-        super(const SetupWizardAt(SetupWizardStep.discover));
+        super(const SetupWizardAt(SetupWizardStep.serverUrl));
 
   final DisplaySettingsRepository _settings;
   final ServerHealthChecker _health;
-  final MdnsServerDiscovery? _discovery;
-  final bool _autoPickSingle;
 
   String _serverUrl = '';
-  StreamSubscription<List<DiscoveredServer>>? _discoverySub;
 
   /// Called on startup to resume at the correct step if a previous run
-  /// partially completed. When no URL is stored, starts at the discover step.
+  /// partially completed. When no URL is stored, starts at the server-URL step.
   Future<void> init() async {
     final s = await _settings.getSettings();
     _serverUrl = s.serverUrl;
 
     if (s.serverUrl.isEmpty) {
-      emit(const SetupWizardAt(SetupWizardStep.discover));
+      emit(const SetupWizardAt(SetupWizardStep.serverUrl));
     } else if (s.locationName.isEmpty) {
       emit(SetupWizardAt(SetupWizardStep.location, serverUrl: s.serverUrl));
     } else {
@@ -44,62 +35,23 @@ class SetupWizardCubit extends Cubit<SetupWizardState> {
     }
   }
 
-  /// Starts mDNS discovery. Call this when the discover step is shown.
-  ///
-  /// Idempotent — calling multiple times starts discovery at most once.
-  void startDiscovery() {
-    if (_discoverySub != null || _discovery == null) return;
-    _discovery.start();
-    _discoverySub = _discovery.servers.listen(_onDiscoveryUpdate);
-  }
-
-  void _onDiscoveryUpdate(List<DiscoveredServer> servers) {
-    if (isClosed) return;
-
-    if (_autoPickSingle && servers.length == 1) {
-      selectDiscoveredServer(servers.first.serverUrl);
-      return;
-    }
-
-    final current = state;
-    if (current is SetupWizardAt && current.step == SetupWizardStep.discover) {
-      emit(SetupWizardAt(SetupWizardStep.discover, discoveredServers: servers));
-    }
-  }
-
-  /// Selects a server found via discovery. Validates reachability and advances
-  /// to the location step on success, same as [submitServerUrl].
-  Future<void> selectDiscoveredServer(String serverUrl) async {
-    _stopDiscovery();
-    await submitServerUrl(serverUrl);
-  }
-
-  /// Skips discovery and advances to the manual URL entry step.
-  void skipDiscovery() {
-    _stopDiscovery();
-    emit(const SetupWizardAt(SetupWizardStep.serverUrl));
-  }
-
   /// Goes one step backwards. Called by [PopScope] when the user presses Back.
   ///
-  /// No-op on the first step ([SetupWizardStep.discover]) — the system handles
+  /// No-op on the first step ([SetupWizardStep.serverUrl]) — the system handles
   /// the back event there, so the app can exit or pop normally.
   void previousStep() {
     final current = state;
     if (current is! SetupWizardAt) return;
     switch (current.step) {
       case SetupWizardStep.serverUrl:
-        emit(const SetupWizardAt(SetupWizardStep.discover));
+        break; // first step — let system handle Back
       case SetupWizardStep.location:
         emit(const SetupWizardAt(SetupWizardStep.serverUrl));
       case SetupWizardStep.linkAccount:
-        emit(
-            SetupWizardAt(SetupWizardStep.location, serverUrl: _serverUrl));
+        emit(SetupWizardAt(SetupWizardStep.location, serverUrl: _serverUrl));
       case SetupWizardStep.done:
         emit(
             SetupWizardAt(SetupWizardStep.linkAccount, serverUrl: _serverUrl));
-      case SetupWizardStep.discover:
-        break; // first step — let system handle Back
     }
   }
 
@@ -107,18 +59,13 @@ class SetupWizardCubit extends Cubit<SetupWizardState> {
   Future<void> submitServerUrl(String raw) async {
     emit(const SetupWizardValidating());
 
-    final trimmed = raw.trim();
-    final url = trimmed.endsWith('/') ? trimmed : '$trimmed/';
-
-    final reachable = await _health.ping(url);
-    if (!reachable) {
-      emit(const SetupWizardStepError(
-        'Could not reach the server. Check the URL and try again.',
-        SetupWizardStep.serverUrl,
-      ));
+    final outcome = await ServerUrlValidator(_health).validate(raw);
+    if (!outcome.isOk) {
+      emit(SetupWizardStepError(outcome.error!, SetupWizardStep.serverUrl));
       return;
     }
 
+    final url = outcome.normalizedUrl!;
     _serverUrl = url;
     final current = await _settings.getSettings();
     await _settings.saveSettings(current.copyWith(serverUrl: url));
@@ -144,17 +91,5 @@ class SetupWizardCubit extends Cubit<SetupWizardState> {
     final current = await _settings.getSettings();
     await _settings.saveSettings(current.copyWith(wizardComplete: true));
     emit(SetupWizardComplete(serverUrl: _serverUrl));
-  }
-
-  void _stopDiscovery() {
-    _discoverySub?.cancel();
-    _discoverySub = null;
-    _discovery?.stop();
-  }
-
-  @override
-  Future<void> close() {
-    _stopDiscovery();
-    return super.close();
   }
 }

@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pinput/pinput.dart';
 
+import 'package:display/src/features/server/screens/change_server_screen.dart';
+
 import '../cubit/auth_cubit.dart';
 import '../widgets/landfall_button.dart';
 
@@ -17,9 +19,13 @@ import '../widgets/landfall_button.dart';
 /// Leanback (TV) mode adds a device-authorization alternative:
 ///   0. TV shows a 6-char code + server URL → user signs in on phone.
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.leanback = false});
+  const LoginScreen({super.key, this.leanback = false, this.serverUrl = ''});
 
   final bool leanback;
+
+  /// The currently configured server URL, passed to the "change server
+  /// address" recovery screen so the user can see and correct it.
+  final String serverUrl;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -101,6 +107,17 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  void _openChangeServer() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChangeServerScreen(
+          leanback: widget.leanback,
+          currentUrl: widget.serverUrl,
+        ),
+      ),
+    );
+  }
+
   Widget _buildBody(BuildContext context, AuthState state) {
     // Device pending — show the TV code + verification URL.
     if (state is AuthDevicePending) {
@@ -111,6 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _stopPolling();
           context.read<AuthCubit>().signOut();
         },
+        onChangeServer: _openChangeServer,
       );
     }
 
@@ -143,6 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
         isLoading: state is AuthSendingCode,
         error: state is AuthError ? state.message : null,
         onStartDeviceFlow: () => context.read<AuthCubit>().startDeviceFlow(),
+        onChangeServer: _openChangeServer,
       );
     }
 
@@ -155,6 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text.trim(),
       ),
       onStartDeviceFlow: () => context.read<AuthCubit>().startDeviceFlow(),
+      onChangeServer: _openChangeServer,
     );
   }
 }
@@ -198,11 +218,13 @@ class _LeanbackUnauthStep extends StatelessWidget {
     required this.isLoading,
     required this.error,
     required this.onStartDeviceFlow,
+    required this.onChangeServer,
   });
 
   final bool isLoading;
   final String? error;
   final VoidCallback onStartDeviceFlow;
+  final VoidCallback onChangeServer;
 
   @override
   Widget build(BuildContext context) {
@@ -228,6 +250,13 @@ class _LeanbackUnauthStep extends StatelessWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(color: Colors.white38, fontSize: 13, height: 1.5),
         ),
+        const SizedBox(height: 16),
+        Center(
+          child: _TextLink(
+            label: 'Change server address',
+            onTap: onChangeServer,
+          ),
+        ),
       ],
     );
   }
@@ -239,11 +268,13 @@ class _DeviceAuthStep extends StatelessWidget {
     required this.userCode,
     required this.verificationUri,
     required this.onCancel,
+    required this.onChangeServer,
   });
 
   final String userCode;
   final String verificationUri;
   final VoidCallback onCancel;
+  final VoidCallback onChangeServer;
 
   @override
   Widget build(BuildContext context) {
@@ -307,7 +338,14 @@ class _DeviceAuthStep extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
-        _TextLink(label: 'Cancel', onTap: onCancel),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 24,
+          children: [
+            _TextLink(label: 'Cancel', onTap: onCancel),
+            _TextLink(label: 'Change server address', onTap: onChangeServer),
+          ],
+        ),
       ],
     );
   }
@@ -321,6 +359,7 @@ class _EmailStep extends StatelessWidget {
     required this.error,
     required this.onSend,
     required this.onStartDeviceFlow,
+    required this.onChangeServer,
   });
 
   final TextEditingController controller;
@@ -329,6 +368,7 @@ class _EmailStep extends StatelessWidget {
   final String? error;
   final VoidCallback onSend;
   final VoidCallback onStartDeviceFlow;
+  final VoidCallback onChangeServer;
 
   @override
   Widget build(BuildContext context) {
@@ -393,6 +433,14 @@ class _EmailStep extends StatelessWidget {
               child: _TextLink(
                 label: 'Sign in with a code from your phone',
                 onTap: onStartDeviceFlow,
+              ),
+            ),
+            const SizedBox(height: 8),
+            FocusTraversalOrder(
+              order: const NumericFocusOrder(4),
+              child: _TextLink(
+                label: 'Change server address',
+                onTap: onChangeServer,
               ),
             ),
           ],

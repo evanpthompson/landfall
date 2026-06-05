@@ -1,9 +1,13 @@
 // Item F — setup_wizard_test.dart
-// Pre-condition: server running at http://localhost:8080/ (dev mode).
+// Pre-condition: dev server running — RPC on http://localhost:8080/ and the
+// web server (which serves /config + /auth/device/*) on http://localhost:8082/.
 //
-// Run with wizard mode flag — does NOT use INTEGRATION_TEST_SERVER_URL:
+// Run with wizard mode flag — does NOT use INTEGRATION_TEST_SERVER_URL. The
+// LANDFALL_WEB_SERVER_URL define mirrors the split-port dev/Pi topology so the
+// wizard's hardened reachability check probes /config on the web server:
 //   flutter test integration_test/setup_wizard_test.dart \
-//     -d macos --dart-define=INTEGRATION_TEST_WIZARD_MODE=true
+//     -d macos --dart-define=INTEGRATION_TEST_WIZARD_MODE=true \
+//     --dart-define=LANDFALL_WEB_SERVER_URL=http://localhost:8082/
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

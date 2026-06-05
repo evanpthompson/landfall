@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:ui_kit/ui_kit.dart';
 
-import 'package:display/src/data/discovery/mdns_server_discovery.dart';
 import 'package:display/src/features/setup/cubit/setup_wizard_cubit.dart';
 import 'package:display/src/features/setup/screens/setup_wizard_screen.dart';
 
@@ -109,13 +108,12 @@ void main() {
       expect(find.text('Launch Landfall'), findsOneWidget);
     });
 
-    testWidgets('step indicator renders 4 dots (discover, location, linkAccount, done)',
+    testWidgets('step indicator renders 4 dots (serverUrl, location, linkAccount, done)',
         (tester) async {
       await tester
-          .pumpWidget(_wrap(const SetupWizardAt(SetupWizardStep.discover)));
+          .pumpWidget(_wrap(const SetupWizardAt(SetupWizardStep.serverUrl)));
       await tester.pump();
 
-      // 4 main-path steps — serverUrl is a fallback sub-step, not shown.
       expect(find.byType(AnimatedContainer), findsNWidgets(4));
     });
 
@@ -150,90 +148,50 @@ void main() {
       expect(received, 'https://done.example.com/');
     });
 
-    testWidgets('discover step — shows scanning indicator when no servers yet',
-        (tester) async {
-      await tester.pumpWidget(
-          _wrap(const SetupWizardAt(SetupWizardStep.discover)));
-      await tester.pump();
-
-      expect(find.text('Find your server'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('Enter manually'), findsOneWidget);
-    });
-
-    testWidgets('discover step — renders a tile for each discovered server',
-        (tester) async {
+    testWidgets('location step does not auto-pop the keyboard', (tester) async {
       await tester.pumpWidget(_wrap(
-        SetupWizardAt(
-          SetupWizardStep.discover,
-          discoveredServers: const [
-            DiscoveredServer(
-                name: 'Landfall A', serverUrl: 'http://192.168.1.10:8080'),
-            DiscoveredServer(
-                name: 'Landfall B', serverUrl: 'http://192.168.1.20:8080'),
-          ],
+        const SetupWizardAt(
+          SetupWizardStep.location,
+          serverUrl: 'https://x.com/',
         ),
       ));
       await tester.pump();
 
-      expect(find.text('Landfall A'), findsOneWidget);
-      expect(find.text('Landfall B'), findsOneWidget);
-      expect(find.text('http://192.168.1.10:8080'), findsOneWidget);
-      expect(find.text('http://192.168.1.20:8080'), findsOneWidget);
+      // The location field is not autofocused on entry, so the IME is not
+      // force-shown over the "Where are you?" page.
+      final editable = tester.widget<EditableText>(find.byType(EditableText));
+      expect(editable.focusNode.hasFocus, isFalse);
     });
 
-    testWidgets('discover step — tapping a server tile calls selectDiscoveredServer',
-        (tester) async {
+    testWidgets('location step lands focus on a button so the TV OK key '
+        'activates it without navigating first', (tester) async {
       final cubit = _MockCubit();
       const state = SetupWizardAt(
-        SetupWizardStep.discover,
-        discoveredServers: [
-          DiscoveredServer(
-              name: 'Landfall A', serverUrl: 'http://192.168.1.10:8080'),
-        ],
+          SetupWizardStep.location, serverUrl: 'https://x.com/');
+      when(() => cubit.state).thenReturn(state);
+      // Single, stable state (as on a real device) — a re-emit of the same
+      // state would rebuild and steal the autofocus, which never happens live.
+      whenListen(
+        cubit,
+        const Stream<SetupWizardState>.empty(),
+        initialState: state,
       );
-      when(() => cubit.state).thenReturn(state);
-      whenListen(cubit, Stream<SetupWizardState>.value(state));
-      when(() => cubit.selectDiscoveredServer(any()))
-          .thenAnswer((_) async {});
+      when(() => cubit.submitLocation(any())).thenAnswer((_) async {});
 
       await tester.pumpWidget(BlocProvider<SetupWizardCubit>.value(
         value: cubit,
         child: MaterialApp(
           theme: LandfallTheme.dark,
-          home: SetupWizardScreen(onComplete: (_) {}),
+          home: SetupWizardScreen(onComplete: (_) {}, leanback: false),
         ),
       ));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Landfall A'));
-      await tester.pump();
+      // No focus traversal first — OK (Fire TV center) hits the focused button.
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pumpAndSettle();
 
-      verify(() => cubit.selectDiscoveredServer('http://192.168.1.10:8080'))
-          .called(1);
-    });
-
-    testWidgets('discover step — tapping Enter manually calls skipDiscovery',
-        (tester) async {
-      final cubit = _MockCubit();
-      const state = SetupWizardAt(SetupWizardStep.discover);
-      when(() => cubit.state).thenReturn(state);
-      whenListen(cubit, Stream<SetupWizardState>.value(state));
-      when(() => cubit.skipDiscovery()).thenReturn(null);
-
-      await tester.pumpWidget(BlocProvider<SetupWizardCubit>.value(
-        value: cubit,
-        child: MaterialApp(
-          theme: LandfallTheme.dark,
-          home: SetupWizardScreen(onComplete: (_) {}),
-        ),
-      ));
-      await tester.pump();
-
-      await tester.tap(find.text('Enter manually'));
-      await tester.pump();
-
-      verify(() => cubit.skipDiscovery()).called(1);
+      verify(() => cubit.submitLocation(any())).called(1);
     });
 
     // ── Remote nav — PopScope ────────────────────────────────────────────────
@@ -263,10 +221,43 @@ void main() {
       verify(() => cubit.previousStep()).called(1);
     });
 
-    testWidgets('Back (maybePop) on discover step does NOT call previousStep',
+    testWidgets('Back with the keyboard open dismisses it, no step change',
         (tester) async {
       final cubit = _MockCubit();
-      const state = SetupWizardAt(SetupWizardStep.discover);
+      const state = SetupWizardAt(
+          SetupWizardStep.location, serverUrl: 'https://x.com/');
+      when(() => cubit.state).thenReturn(state);
+      whenListen(cubit, Stream<SetupWizardState>.value(state));
+      when(() => cubit.previousStep()).thenReturn(null);
+
+      await tester.pumpWidget(BlocProvider<SetupWizardCubit>.value(
+        value: cubit,
+        child: MaterialApp(
+          theme: LandfallTheme.dark,
+          // Simulate an open soft keyboard via non-zero bottom view insets.
+          home: Builder(
+            builder: (context) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(viewInsets: const EdgeInsets.only(bottom: 300)),
+              child: SetupWizardScreen(onComplete: (_) {}),
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      await navigator.maybePop();
+      await tester.pump();
+
+      // Keyboard-first: Back closes the IME instead of navigating a step.
+      verifyNever(() => cubit.previousStep());
+    });
+
+    testWidgets('Back (maybePop) on the first (serverUrl) step does NOT call '
+        'previousStep', (tester) async {
+      final cubit = _MockCubit();
+      const state = SetupWizardAt(SetupWizardStep.serverUrl);
       when(() => cubit.state).thenReturn(state);
       whenListen(cubit, Stream<SetupWizardState>.value(state));
       when(() => cubit.previousStep()).thenReturn(null);

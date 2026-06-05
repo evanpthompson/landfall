@@ -5,13 +5,11 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:landfall_shared/landfall_shared.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
-import 'package:uuid/uuid.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'package:display/src/app/app_config.dart';
-import 'package:display/src/app/startup_decision.dart';
+import 'package:display/src/app/landfall_root.dart';
 import 'package:display/src/app/telemetry.dart';
 import 'package:display/src/data/clock/display_config_client.dart';
 import 'package:display/src/data/clock/system_clock_repository.dart';
@@ -60,52 +58,32 @@ void main() async {
 
   final clockRepository = SystemClockRepository();
 
-  void launchApp(String serverUrl, String displayId) {
-    final webServerUrl =
-        kLandfallWebServerUrl.isNotEmpty ? kLandfallWebServerUrl : serverUrl;
-    // Fire-and-forget: align the clock to the server-configured zone. The clock
-    // shows device-local time until this resolves, and stays device-local if
-    // the server is unreachable — launch is never blocked on it.
-    unawaited(_alignClockTimezone(clockRepository, webServerUrl));
-    runApp(LandfallApp(
-      database: database,
-      serverUrl: serverUrl,
-      displayId: displayId,
-      clockRepository: clockRepository,
-    ));
-  }
-
-  var settings = kIntegrationTestWizardMode
-      ? const DisplaySettings()
-      : await settingsRepository.getSettings();
-
-  // Generate a stable display UUID on first launch and persist it.
-  if (settings.displayId.isEmpty && !kIntegrationTestWizardMode) {
-    final displayId = const Uuid().v4();
-    settings = settings.copyWith(displayId: displayId);
-    await settingsRepository.saveSettings(settings);
-  }
-
-  final decision = resolveStartupDecision(
-    settings: settings,
-    integrationTestServerUrl: kIntegrationTestServerUrl,
-    integrationTestWizardMode: kIntegrationTestWizardMode,
-    defaultServerUrl: kLandfallDefaultServerUrl,
-  );
-
-  if (decision.target == StartupTarget.display) {
-    if (decision.persistDefaultSettings) {
-      await settingsRepository.saveSettings(
-        settings.copyWith(serverUrl: decision.serverUrl, wizardComplete: true),
+  // LandfallRoot owns the server-URL source of truth: it reads settings,
+  // resolves the startup decision, and rebuilds the tree on relaunch() when the
+  // URL changes (setup wizard, or "change server address" from the app).
+  runApp(LandfallRoot(
+    settingsRepository: settingsRepository,
+    buildDisplay: (serverUrl, displayId) {
+      final webServerUrl =
+          kLandfallWebServerUrl.isNotEmpty ? kLandfallWebServerUrl : serverUrl;
+      // Fire-and-forget: align the clock to the server-configured zone. The
+      // clock shows device-local time until this resolves, and stays
+      // device-local if the server is unreachable — launch is never blocked.
+      unawaited(_alignClockTimezone(clockRepository, webServerUrl));
+      return LandfallApp(
+        // Key on the URL so changing servers replaces the whole subtree
+        // (Serverpod client, repos, auth) rather than mutating it in place.
+        key: ValueKey(serverUrl),
+        database: database,
+        serverUrl: serverUrl,
+        displayId: displayId,
+        clockRepository: clockRepository,
       );
-    }
-    launchApp(decision.serverUrl, settings.displayId);
-    return;
-  }
-
-  runApp(SetupWizardApp(
-    database: database,
-    onComplete: (serverUrl) => launchApp(serverUrl, settings.displayId),
+    },
+    buildWizard: (onComplete) => SetupWizardApp(
+      database: database,
+      onComplete: (_) => onComplete(),
+    ),
   ));
 }
 
