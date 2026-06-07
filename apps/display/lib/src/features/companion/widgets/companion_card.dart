@@ -7,7 +7,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
-import 'package:display/src/data/companion/companion_poll_service.dart';
 import '../companion_event_bus.dart';
 import '../cubit/companion_cubit.dart';
 import '../provider/petdex_provider.dart';
@@ -64,8 +63,8 @@ class _CompanionCardState extends State<CompanionCard>
     with TickerProviderStateMixin {
   late final SpriteSheetCompanionRenderer _renderer;
   StreamSubscription<CompanionTrigger>? _busSub;
+  StreamSubscription<String>? _kindSub;
   Timer? _lookAtViewerTimer;
-  bool _polling = false;
 
   @override
   void initState() {
@@ -83,20 +82,15 @@ class _CompanionCardState extends State<CompanionCard>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _busSub?.cancel();
+    _kindSub?.cancel();
     try {
       final bus = context.read<CompanionEventBus>();
       _busSub = bus.events.listen(_onTrigger);
+      // Companion web action kinds (pet/play/feed) are routed here from
+      // DisplayActionService via CompanionEventBus.companionKinds.
+      _kindSub = bus.companionKinds.listen(_onKind);
     } catch (_) {}
 
-    if (!_polling) {
-      _polling = true;
-      _startPollLoop();
-    }
-    // _polling is never reset while this State is alive: deactivate() does not
-    // clear it, so a deactivate+reactivate cycle (layout reorder) re-enters
-    // didChangeDependencies with _polling=true and skips a duplicate start.
-    // dispose() is never called on a reactivated State — a new State would get
-    // _polling=false, but the old loop is already dead (mounted=false).
     _scheduleLookAtViewer();
   }
 
@@ -105,37 +99,9 @@ class _CompanionCardState extends State<CompanionCard>
     if (mounted) setState(() {});
   }
 
-  void _startPollLoop() {
-    final cubit = context.read<CompanionCubit>();
-    CompanionPollService? pollService;
-    try {
-      pollService = context.read<CompanionPollService>();
-    } catch (_) {
-      return;
-    }
-    _pollLoop(cubit.displayId, pollService);
-  }
-
-  Future<void> _pollLoop(
-    String displayId,
-    CompanionPollService pollService,
-  ) async {
-    while (mounted) {
-      try {
-        final action = await pollService.pollForEvents(
-          displayId,
-          timeoutSeconds: 30,
-        );
-        if (!mounted) break;
-        if (action != null) {
-          _renderer.triggerState(CompanionCard.kindToState(action.kind));
-          setState(() {});
-        }
-      } catch (_) {
-        // Network error — wait briefly before retrying to avoid hammering.
-        await Future<void>.delayed(const Duration(seconds: 5));
-      }
-    }
+  void _onKind(String kind) {
+    _renderer.triggerState(CompanionCard.kindToState(kind));
+    if (mounted) setState(() {});
   }
 
   void _scheduleLookAtViewer() {
@@ -154,6 +120,7 @@ class _CompanionCardState extends State<CompanionCard>
   @override
   void dispose() {
     _busSub?.cancel();
+    _kindSub?.cancel();
     _lookAtViewerTimer?.cancel();
     _renderer.dispose();
     super.dispose();

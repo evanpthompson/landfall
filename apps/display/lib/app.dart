@@ -39,6 +39,7 @@ import 'package:display/src/data/companion/companion_repository.dart';
 import 'package:display/src/data/companion/serverpod_companion_repository.dart';
 import 'package:display/src/features/companion/companion_event_bus.dart';
 import 'package:display/src/features/companion/cubit/companion_cubit.dart';
+import 'package:display/src/features/display/services/display_action_service.dart';
 import 'package:display/src/features/ticker/cubit/ticker_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:ui_kit/ui_kit.dart';
@@ -181,8 +182,10 @@ class LandfallApp extends StatelessWidget {
             ),
           ),
         ],
-        child: BlocBuilder<ThemeCubit, ThemeState>(
-          builder: (context, themeState) {
+        child: _DisplayActionRouter(
+          displayId: displayId,
+          child: BlocBuilder<ThemeCubit, ThemeState>(
+            builder: (context, themeState) {
             final themeData = themeState is ThemeLoaded
                 ? themeState.active.tokens.toMaterialThemeData()
                 : LandfallTheme.dark;
@@ -220,10 +223,63 @@ class LandfallApp extends StatelessWidget {
               home: _AuthGate(client: client, serverUrl: serverUrl),
             );
           },
+          ),
         ),
       ),
     );
   }
+}
+
+// Starts and owns the app-level DisplayActionService inside the BLoC tree.
+class _DisplayActionRouter extends StatefulWidget {
+  const _DisplayActionRouter({required this.displayId, required this.child});
+
+  final String displayId;
+  final Widget child;
+
+  @override
+  State<_DisplayActionRouter> createState() => _DisplayActionRouterState();
+}
+
+class _DisplayActionRouterState extends State<_DisplayActionRouter> {
+  DisplayActionService? _service;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _service ??= DisplayActionService(
+      displayId: widget.displayId,
+      pollService: context.read<CompanionPollService>(),
+      bus: context.read<CompanionEventBus>(),
+      profileReloader: _ProfileReloaderAdapter(
+        context.read<DashboardProfileCubit>(),
+      ),
+      themeReloader: _ThemeReloaderAdapter(context.read<ThemeCubit>()),
+    )..start();
+  }
+
+  @override
+  void dispose() {
+    _service?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+class _ProfileReloaderAdapter implements ProfileReloader {
+  const _ProfileReloaderAdapter(this._cubit);
+  final DashboardProfileCubit _cubit;
+  @override
+  Future<void> loadProfiles() => _cubit.loadProfiles();
+}
+
+class _ThemeReloaderAdapter implements ThemeReloader {
+  const _ThemeReloaderAdapter(this._cubit);
+  final ThemeCubit _cubit;
+  @override
+  Future<void> loadThemes() => _cubit.loadThemes();
 }
 
 /// Switches between [LoginScreen] and [DisplayScreen] based on auth state.

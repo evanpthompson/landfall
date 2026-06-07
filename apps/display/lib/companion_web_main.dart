@@ -3,10 +3,18 @@ import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:landfall_client/landfall_client.dart' as lf;
+import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 
+import 'src/data/auth/web_local_key_value_storage.dart';
+import 'src/data/profile/serverpod_profile_repository.dart';
+import 'src/features/auth/cubit/auth_cubit.dart';
+import 'src/features/auth/widgets/auth_gate.dart';
 import 'src/features/companion/widgets/companion_mobile_screen.dart';
+import 'src/features/profile/cubit/dashboard_profile_cubit.dart';
+import 'src/features/settings/screens/web_settings_screen.dart';
 
 // Reads the display ID injected by CompanionPageRoute into the page HTML.
 // The server injects: window.LANDFALL_DISPLAY_ID = "{uuid}";
@@ -29,16 +37,31 @@ void main() {
       ? '${uri.scheme}://${uri.host}/'
       : '${uri.scheme}://${uri.host}:${uri.port - 2}/';
 
-  final client = lf.Client(serverUrl);
+  // JWT stored in localStorage so sign-in persists across page reloads.
+  final sessionManager = ClientAuthSessionManager(
+    storage: KeyValueClientAuthSuccessStorage(
+      keyValueStorage: const WebLocalKeyValueStorage(),
+    ),
+  );
+  final client = lf.Client(serverUrl)..authSessionManager = sessionManager;
 
-  runApp(_CompanionWebApp(displayId: displayId, client: client));
+  runApp(_CompanionWebApp(
+    displayId: displayId,
+    client: client,
+    sessionManager: sessionManager,
+  ));
 }
 
 class _CompanionWebApp extends StatefulWidget {
-  const _CompanionWebApp({required this.displayId, required this.client});
+  const _CompanionWebApp({
+    required this.displayId,
+    required this.client,
+    required this.sessionManager,
+  });
 
   final String displayId;
   final lf.Client client;
+  final ClientAuthSessionManager sessionManager;
 
   @override
   State<_CompanionWebApp> createState() => _CompanionWebAppState();
@@ -104,36 +127,92 @@ class _CompanionWebAppState extends State<_CompanionWebApp> {
     // a third-party request the strict CSP and the offline-first architecture
     // both reject.
     final base = ThemeData.dark(useMaterial3: true);
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Landfall Companion',
-      theme: base.copyWith(
-        textTheme: base.textTheme.apply(fontFamily: 'Inter'),
-        primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Inter'),
-      ),
-      home: Stack(
-        children: [
-          CompanionMobileScreen(
-            displayId: widget.displayId,
-            onAction: (kind) =>
-                widget.client.companion.pushAction(widget.displayId, kind),
-            info: _info,
+    final profileRepository = ServerpodProfileRepository(widget.client);
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => AuthCubit(
+            client: widget.client,
+            sessionManager: widget.sessionManager,
           ),
-          Positioned(
-            top: 12,
-            right: 12,
-            child: SafeArea(
-              child: IconButton(
-                icon: const Icon(Icons.refresh),
-                color: const Color(0x66FFFFFF),
-                iconSize: 20,
-                tooltip: 'Refresh',
-                onPressed: () => web.window.location.reload(),
-              ),
+        ),
+        BlocProvider(
+          create: (_) => DashboardProfileCubit(profileRepository),
+        ),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Landfall Companion',
+        theme: base.copyWith(
+          textTheme: base.textTheme.apply(fontFamily: 'Inter'),
+          primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Inter'),
+        ),
+        home: _CompanionHome(
+          displayId: widget.displayId,
+          client: widget.client,
+          info: _info,
+        ),
+      ),
+    );
+  }
+}
+
+class _CompanionHome extends StatelessWidget {
+  const _CompanionHome({
+    required this.displayId,
+    required this.client,
+    required this.info,
+  });
+
+  final String displayId;
+  final lf.Client client;
+  final CompanionInfo? info;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        CompanionMobileScreen(
+          displayId: displayId,
+          onAction: (kind) => client.companion.pushAction(displayId, kind),
+          info: info,
+        ),
+        Positioned(
+          top: 12,
+          right: 12,
+          child: SafeArea(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  color: const Color(0x99FFFFFF),
+                  iconSize: 20,
+                  tooltip: 'Settings',
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => AuthGate(
+                        child: WebSettingsScreen(
+                          onPush: (kind) =>
+                              client.companion.pushAction(displayId, kind),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  color: const Color(0x66FFFFFF),
+                  iconSize: 20,
+                  tooltip: 'Refresh',
+                  onPressed: () => web.window.location.reload(),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

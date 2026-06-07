@@ -4,12 +4,22 @@ import 'package:landfall_shared/landfall_shared.dart';
 
 class CompanionEventBus {
   final _controller = StreamController<CompanionTrigger>.broadcast(sync: true);
+  final _kindController = StreamController<String>.broadcast(sync: true);
 
   Stream<CompanionTrigger> get events => _controller.stream;
 
+  /// Web companion action kinds (pet / play / feed) routed from the server
+  /// long-poll. CompanionCard subscribes and triggers the matching animation.
+  Stream<String> get companionKinds => _kindController.stream;
+
   void emit(CompanionTrigger trigger) => _controller.add(trigger);
 
-  void dispose() => _controller.close();
+  void emitCompanionKind(String kind) => _kindController.add(kind);
+
+  void dispose() {
+    _controller.close();
+    _kindController.close();
+  }
 
   static CompanionAnimationState triggerToState(CompanionTrigger trigger) {
     return switch (trigger) {

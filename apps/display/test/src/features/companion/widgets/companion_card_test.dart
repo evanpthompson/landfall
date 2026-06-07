@@ -1,49 +1,21 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:landfall_client/landfall_client.dart' as lf;
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import 'package:display/src/data/companion/companion_poll_service.dart';
 import 'package:display/src/data/companion/companion_repository.dart';
+import 'package:display/src/features/companion/companion_event_bus.dart';
 import 'package:display/src/features/companion/cubit/companion_cubit.dart';
 import 'package:display/src/features/companion/widgets/companion_card.dart';
 import 'package:display/src/features/companion/widgets/companion_qr_code.dart';
-
-// ---------------------------------------------------------------------------
-// Poll-count tracker — lets tests assert exactly how many concurrent polls
-// are in flight at any given moment.
-// ---------------------------------------------------------------------------
-
-class _CountingPollService implements CompanionPollService {
-  int inFlight = 0;
-  int maxConcurrent = 0;
-
-  @override
-  Future<lf.CompanionAction?> pollForEvents(
-    String displayId, {
-    int timeoutSeconds = 30,
-  }) async {
-    inFlight++;
-    if (inFlight > maxConcurrent) maxConcurrent = inFlight;
-    try {
-      return await Completer<lf.CompanionAction?>().future;
-    } finally {
-      inFlight--;
-    }
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
 class MockCompanionRepository extends Mock implements CompanionRepository {}
-class MockCompanionPollService extends Mock implements CompanionPollService {}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -62,29 +34,26 @@ CompanionEntity _entity({String displayId = 'display-abc'}) => CompanionEntity(
       assetCredit: '@credit',
     );
 
-/// Wraps CompanionCard with a pre-loaded cubit and a non-blocking poll service.
+/// Wraps CompanionCard with a pre-loaded cubit and a CompanionEventBus.
+/// No CompanionPollService — polling is now handled by DisplayActionService,
+/// which lives at app level and is not part of CompanionCard.
 Widget _wrap({
   String displayId = 'display-abc',
   String serverUrl = 'http://localhost:8080/',
-  CompanionPollService? pollService,
+  CompanionEventBus? bus,
   Size slotSize = const Size(400, 600),
 }) {
-  final poll = pollService ?? MockCompanionPollService();
-
-  // Return a future that never completes (no timer created — safe in fakeAsync).
-  when(() => poll.pollForEvents(
-        any(),
-        timeoutSeconds: any(named: 'timeoutSeconds'),
-      )).thenAnswer((_) => Completer<lf.CompanionAction?>().future);
-
+  final eventBus = bus ?? CompanionEventBus();
   final cubit = CompanionCubit(
     displayId: displayId,
     serverUrl: serverUrl,
     repository: MockCompanionRepository(),
   )..loadEntity(_entity(displayId: displayId));
 
-  return RepositoryProvider<CompanionPollService>(
-    create: (_) => poll,
+  return MultiRepositoryProvider(
+    providers: [
+      RepositoryProvider<CompanionEventBus>(create: (_) => eventBus),
+    ],
     child: BlocProvider<CompanionCubit>.value(
       value: cubit,
       child: MaterialApp(
@@ -94,45 +63,6 @@ Widget _wrap({
               width: slotSize.width,
               height: slotSize.height,
               child: const CompanionCard(),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-/// Wraps CompanionCard with a counting poll service.
-///
-/// [textScale] is injected via a MediaQuery override placed *inside*
-/// MaterialApp's own MediaQuery so it actually reaches CompanionCard and
-/// triggers didChangeDependencies when pumped with a different value.
-Widget _wrapCounting({
-  required _CountingPollService pollService,
-  double textScale = 1.0,
-}) {
-  final cubit = CompanionCubit(
-    displayId: 'display-abc',
-    serverUrl: 'http://localhost:8080/',
-    repository: MockCompanionRepository(),
-  )..loadEntity(_entity());
-
-  return RepositoryProvider<CompanionPollService>(
-    create: (_) => pollService,
-    child: BlocProvider<CompanionCubit>.value(
-      value: cubit,
-      child: MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (ctx) => MediaQuery(
-              data: MediaQuery.of(ctx).copyWith(
-                textScaler: TextScaler.linear(textScale),
-              ),
-              child: const SizedBox(
-                width: 400,
-                height: 600,
-                child: CompanionCard(),
-              ),
             ),
           ),
         ),
@@ -233,37 +163,37 @@ void main() {
       );
       expect(qrBadge, findsOneWidget);
       final size = tester.renderObject<RenderBox>(qrBadge).size;
-      // The old hard cap was 96. The new behaviour must render the QR much
-      // larger in a 960×540 slot — anywhere above the old cap proves it.
       expect(size.width, greaterThan(96),
           reason: 'QR must scale with the slot, not stay at the 96 px cap');
     });
 
     testWidgets(
-        'never runs more than one poll loop concurrently across dependency changes',
+        'no longer initiates its own polls — CompanionPollService absent from tree does not throw',
         (tester) async {
-      final poll = _CountingPollService();
-
-      // Initial mount — one poll should start.
-      await tester.pumpWidget(_wrapCounting(pollService: poll, textScale: 1.0));
+      // The poll service is NOT provided. CompanionCard used to look it up and
+      // start its own loop; it must not do so after this refactor.
+      await tester.pumpWidget(_wrap());
       await tester.pump();
-      expect(poll.inFlight, 1, reason: 'exactly one poll after initial mount');
+      // If CompanionCard still tried to read CompanionPollService it would throw
+      // a ProviderNotFoundException. Reaching here means it does not.
+      expect(find.byType(CompanionCard), findsOneWidget);
+    });
 
-      // Force didChangeDependencies by changing the MediaQuery text scale.
-      // This keeps the same State object alive (no dispose/initState cycle).
-      await tester.pumpWidget(_wrapCounting(pollService: poll, textScale: 1.5));
+    testWidgets(
+        'reacts to companion kind emitted on bus.companionKinds without crash',
+        (tester) async {
+      final bus = CompanionEventBus();
+      addTearDown(bus.dispose);
+
+      await tester.pumpWidget(_wrap(bus: bus));
       await tester.pump();
-      expect(poll.inFlight, 1,
-          reason: 'dependency change must not start a second concurrent poll');
 
-      // A second dependency change — still only one loop.
-      await tester.pumpWidget(_wrapCounting(pollService: poll, textScale: 2.0));
+      // Emit a web companion action kind via the app-level route.
+      bus.emitCompanionKind('pet');
       await tester.pump();
-      expect(poll.inFlight, 1,
-          reason: 'repeated dependency changes must not accumulate poll loops');
 
-      expect(poll.maxConcurrent, 1,
-          reason: 'peak concurrency must never exceed 1');
+      // Card must still render with no exception.
+      expect(find.byType(CompanionCard), findsOneWidget);
     });
   });
 }

@@ -7,19 +7,16 @@ import 'package:ui_kit/ui_kit.dart';
 
 import 'package:display/src/features/license/cubit/license_cubit.dart';
 import 'package:display/src/features/license/screens/license_screen.dart';
-import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
 import 'package:display/src/features/theme/cubit/theme_cubit.dart';
 import 'package:display/src/features/theme/cubit/theme_state.dart';
 import 'package:display/src/features/theme/screens/theme_browser_screen.dart';
-import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
-import 'package:display/src/features/profile/screens/profile_manager_screen.dart';
-import 'package:display/src/features/profile/widgets/profile_switcher.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/photo/screens/photo_sources_screen.dart';
 import 'package:display/src/features/server/screens/change_server_screen.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
 import 'package:display/src/features/settings/widgets/agent_keys_section.dart';
-import 'package:display/src/features/settings/widgets/layout_editor.dart';
+import 'package:display/src/features/settings/widgets/layout_tab_view.dart';
+import 'package:display/src/features/settings/widgets/section_header.dart';
 
 /// Full-screen settings panel pushed over [DisplayScreen].
 ///
@@ -146,7 +143,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               children: [
                 _DisplayTab(serverUrl: widget.serverUrl),
                 _AccountsTab(client: widget.client, serverUrl: widget.serverUrl),
-                _LayoutTab(
+                LayoutTabView(
                   leanback: widget.leanback,
                   onMoveModeChanged: (v) =>
                       setState(() => _lbEditorInMoveMode = v),
@@ -237,7 +234,7 @@ class _DisplayFormState extends State<_DisplayForm> {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        _SectionHeader('Server'),
+        SectionHeader('Server'),
         const SizedBox(height: 12),
         _NavTile(
           icon: Icons.dns_outlined,
@@ -250,7 +247,7 @@ class _DisplayFormState extends State<_DisplayForm> {
           ),
         ),
         const SizedBox(height: 24),
-        _SectionHeader('Ambient Dim'),
+        SectionHeader('Ambient Dim'),
         const SizedBox(height: 12),
         SwitchListTile(
           title: const Text('Enable dim schedule',
@@ -304,7 +301,7 @@ class _DisplayFormState extends State<_DisplayForm> {
               : null,
         ),
         const SizedBox(height: 24),
-        _SectionHeader('Location'),
+        SectionHeader('Location'),
         const SizedBox(height: 12),
         TextField(
           controller: _locationCtrl,
@@ -337,7 +334,7 @@ class _DisplayFormState extends State<_DisplayForm> {
               color: LandfallColors.textTertiary, fontSize: 12),
         ),
         const SizedBox(height: 24),
-        _SectionHeader('Photos'),
+        SectionHeader('Photos'),
         const SizedBox(height: 12),
         _NavTile(
           icon: Icons.photo_library_outlined,
@@ -495,7 +492,7 @@ class _AccountsList extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        _SectionHeader('Connected Accounts'),
+        SectionHeader('Connected Accounts'),
         const SizedBox(height: 12),
         if (credentials.isEmpty)
           const Padding(
@@ -508,7 +505,7 @@ class _AccountsList extends StatelessWidget {
         else
           ...credentials.map((c) => _CredentialTile(credential: c)),
         const SizedBox(height: 32),
-        _SectionHeader('Connect an Account'),
+        SectionHeader('Connect an Account'),
         const SizedBox(height: 4),
         const Text(
           'Visit the URL below from any device on the same network to link a calendar account.',
@@ -674,84 +671,6 @@ class _ConnectUrlTile extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Layout tab
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _LayoutTab extends StatelessWidget {
-  const _LayoutTab({
-    this.leanback = false,
-    this.onMoveModeChanged,
-    this.onCancelMoveRegistered,
-  });
-
-  final bool leanback;
-  final ValueChanged<bool>? onMoveModeChanged;
-  final ValueChanged<VoidCallback>? onCancelMoveRegistered;
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<DashboardProfileCubit, DashboardProfileState>(
-      builder: (context, state) {
-        if (state is! DashboardProfileLoaded) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        return Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SectionHeader('Profile'),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  ProfileSwitcher(
-                    profiles: state.profiles,
-                    activeId: state.active.id,
-                  ),
-                  const Spacer(),
-                  TextButton.icon(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const ProfileManagerScreen(),
-                      ),
-                    ),
-                    icon: const Icon(Icons.tune, size: 16),
-                    label: const Text('Manage profiles'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: LandfallColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _SectionHeader(
-                leanback
-                    ? 'Arrow keys to focus  •  OK to move  •  OK to drop  •  Back to cancel'
-                    : 'Tap to select  •  drag to move  •  drag corner to resize',
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: LayoutEditor(
-                  layout: state.active.layout,
-                  onLayoutChanged: (updated) =>
-                      context.read<DashboardProfileCubit>().saveActiveLayout(updated),
-                  onReset: leanback
-                      ? null
-                      : () => context.read<DashboardProfileCubit>().resetActiveLayout(),
-                  leanback: leanback,
-                  onMoveModeChanged: onMoveModeChanged,
-                  onCancelMoveRegistered: onCancelMoveRegistered,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Themes tab
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -765,12 +684,12 @@ class _ThemesTab extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            _SectionHeader('Active Theme'),
+            SectionHeader('Active Theme'),
             const SizedBox(height: 12),
             _ActiveThemeTile(state: state),
             if (state is ThemeLoaded) ...[
               const SizedBox(height: 20),
-              _SectionHeader('Token Colours'),
+              SectionHeader('Token Colours'),
               const SizedBox(height: 12),
               _TokenSwatchPanel(tokens: state.active.tokens),
             ],
@@ -1001,25 +920,6 @@ class _NavTile extends StatelessWidget {
       trailing: const Icon(Icons.chevron_right,
           color: LandfallColors.textTertiary, size: 18),
       onTap: onTap,
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.title);
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title.toUpperCase(),
-      style: const TextStyle(
-        color: LandfallColors.textTertiary,
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 1.2,
-      ),
     );
   }
 }
