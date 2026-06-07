@@ -5,6 +5,9 @@ import 'package:landfall_client/landfall_client.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'package:display/src/features/companion/companion_url.dart';
+import 'package:display/src/features/companion/cubit/companion_cubit.dart';
+import 'package:display/src/features/companion/widgets/companion_qr_code.dart';
 import 'package:display/src/features/license/cubit/license_cubit.dart';
 import 'package:display/src/features/license/screens/license_screen.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
@@ -185,28 +188,40 @@ class _DisplayTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DisplaySettingsCubit, DisplaySettingsState>(
-      builder: (context, state) {
-        if (state is! DisplaySettingsLoaded) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        return _DisplayForm(settings: state.settings, serverUrl: serverUrl);
-      },
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        SectionHeader('Remote Control'),
+        const SizedBox(height: 12),
+        _RemoteControlTile(),
+        const SizedBox(height: 24),
+        BlocBuilder<DisplaySettingsCubit, DisplaySettingsState>(
+          builder: (context, state) {
+            if (state is! DisplaySettingsLoaded) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return _DisplayFormBody(
+              settings: state.settings,
+              serverUrl: serverUrl,
+            );
+          },
+        ),
+      ],
     );
   }
 }
 
-class _DisplayForm extends StatefulWidget {
-  const _DisplayForm({required this.settings, required this.serverUrl});
+class _DisplayFormBody extends StatefulWidget {
+  const _DisplayFormBody({required this.settings, required this.serverUrl});
 
   final DisplaySettings settings;
   final String serverUrl;
 
   @override
-  State<_DisplayForm> createState() => _DisplayFormState();
+  State<_DisplayFormBody> createState() => _DisplayFormBodyState();
 }
 
-class _DisplayFormState extends State<_DisplayForm> {
+class _DisplayFormBodyState extends State<_DisplayFormBody> {
   late bool _dimEnabled;
   late int _dimStartHour;
   late int _dimEndHour;
@@ -244,8 +259,9 @@ class _DisplayFormState extends State<_DisplayForm> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(24),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
         SectionHeader('Server'),
         const SizedBox(height: 12),
@@ -363,6 +379,53 @@ class _DisplayFormState extends State<_DisplayForm> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Remote Control tile — shows the companion app QR + URL in the Display tab.
+// ---------------------------------------------------------------------------
+
+class _RemoteControlTile extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CompanionCubit, CompanionState>(
+      builder: (context, state) {
+        if (state is! CompanionLoaded) {
+          return const SizedBox.shrink();
+        }
+
+        final cubit = context.read<CompanionCubit>();
+        final baseUrl = state.companionBaseUrl.isNotEmpty
+            ? state.companionBaseUrl
+            : companionWebServerUrl(cubit.serverUrl);
+        final url = buildCompanionUrl(baseUrl, cubit.displayId);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Scan from your phone to manage this display remotely.',
+              style: const TextStyle(
+                color: LandfallColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 16),
+            CompanionQrCode(url: url, targetSize: 160),
+            const SizedBox(height: 12),
+            Text(
+              url,
+              style: const TextStyle(
+                color: LandfallColors.textSecondary,
+                fontSize: 12,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

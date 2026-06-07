@@ -2,11 +2,12 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:landfall_client/landfall_client.dart';
+import 'package:landfall_client/landfall_client.dart' hide CompanionEntity;
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:display/src/app/landfall_root.dart';
+import 'package:display/src/features/companion/cubit/companion_cubit.dart';
 import 'package:display/src/features/license/cubit/license_cubit.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
@@ -30,6 +31,9 @@ class _MockPhotoCubit extends MockCubit<PhotoState> implements PhotoCubit {}
 class _MockDashboardProfileCubit extends MockCubit<DashboardProfileState>
     implements DashboardProfileCubit {}
 
+class _MockCompanionCubit extends MockCubit<CompanionState>
+    implements CompanionCubit {}
+
 class _FakeSettingsRepo implements DisplaySettingsRepository {
   DisplaySettings settings = const DisplaySettings(displayId: 'd1');
   @override
@@ -44,6 +48,7 @@ Widget _wrap() {
   final themeCubit = _MockThemeCubit();
   final photoCubit = _MockPhotoCubit();
   final profileCubit = _MockDashboardProfileCubit();
+  final companionCubit = _MockCompanionCubit();
 
   const loaded = DisplaySettingsLoaded(DisplaySettings(displayId: 'd1'));
   when(() => dsCubit.state).thenReturn(loaded);
@@ -59,6 +64,10 @@ Widget _wrap() {
       .thenReturn(const DashboardProfileLoading());
   whenListen(profileCubit,
       Stream<DashboardProfileState>.value(const DashboardProfileLoading()));
+  when(() => companionCubit.state).thenReturn(CompanionLoading());
+  whenListen(companionCubit, Stream<CompanionState>.value(CompanionLoading()));
+  when(() => companionCubit.displayId).thenReturn('d1');
+  when(() => companionCubit.serverUrl).thenReturn('http://localhost:9999/');
 
   return AppRelauncher(
     relaunch: () {},
@@ -71,6 +80,7 @@ Widget _wrap() {
           BlocProvider<ThemeCubit>.value(value: themeCubit),
           BlocProvider<PhotoCubit>.value(value: photoCubit),
           BlocProvider<DashboardProfileCubit>.value(value: profileCubit),
+          BlocProvider<CompanionCubit>.value(value: companionCubit),
         ],
         child: MaterialApp(
           home: SettingsScreen(

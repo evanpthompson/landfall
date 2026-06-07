@@ -387,8 +387,8 @@ default: keep TV editing with write-through** (7.2) — the TV remains usable st
 - [x] All five tabs functional on web per the matrix; Server address visibly absent by design.
 - [x] TV reflects web edits (layout/theme/display settings) without restart. (`DisplaySettingsSyncService` + `settings.changed` routing)
 - [x] Works through Caddy on the Pi image, not just direct ports. (Caddy matchers for all 12 endpoints including `displaySettings`)
-- [ ] TV settings screen offers the QR entry point regardless of layout contents. (Phase 3.3 — deferred)
-- [ ] Goldens: TV unchanged (except the deliberate Phase 3 QR tile); web goldens added. (deferred — no golden regressions introduced)
+- [x] TV settings screen offers the QR entry point regardless of layout contents. (Phase 3.3 — shipped 2026-06-07: Remote Control section at top of Display tab)
+- [x] Goldens: TV unchanged; web goldens added (shipped 2026-06-07: 3 goldens at 600×900 portrait, 1024×600 landscape, 600×900 Display tab). Note: 390 px phone-width goldens deferred — LayoutEditor and WebDisplayTab hour-picker row overflow at that width; tracked as a responsive-layout fix.
 - [x] `flutter analyze` clean; `flutter test` green in all packages (822 tests); server suite green.
 - [x] `docs/README.md` indexes this spec; `docs/manual_smoke_test.md` extended (7.4).
 

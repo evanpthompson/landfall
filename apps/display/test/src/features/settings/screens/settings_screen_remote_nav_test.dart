@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:landfall_client/landfall_client.dart';
+import 'package:landfall_client/landfall_client.dart' hide CompanionEntity;
 import 'package:mocktail/mocktail.dart';
 
+import 'package:display/src/features/companion/cubit/companion_cubit.dart';
 import 'package:display/src/features/license/cubit/license_cubit.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
@@ -17,6 +18,9 @@ import 'package:display/src/features/theme/cubit/theme_state.dart';
 
 class _MockDisplaySettingsCubit extends MockCubit<DisplaySettingsState>
     implements DisplaySettingsCubit {}
+
+class _MockCompanionCubit extends MockCubit<CompanionState>
+    implements CompanionCubit {}
 
 class _MockLicenseCubit extends MockCubit<LicenseState>
     implements LicenseCubit {}
@@ -34,6 +38,7 @@ void _setupMocks({
   required _MockThemeCubit themeCubit,
   required _MockPhotoCubit photoCubit,
   required _MockDashboardProfileCubit profileCubit,
+  required _MockCompanionCubit companionCubit,
 }) {
   when(() => dsCubit.state).thenReturn(const DisplaySettingsLoading());
   whenListen(dsCubit, Stream<DisplaySettingsState>.value(const DisplaySettingsLoading()));
@@ -46,6 +51,10 @@ void _setupMocks({
   whenListen(photoCubit, Stream<PhotoState>.value(const PhotoLoading()));
   when(() => profileCubit.state).thenReturn(const DashboardProfileLoading());
   whenListen(profileCubit, Stream<DashboardProfileState>.value(const DashboardProfileLoading()));
+  when(() => companionCubit.state).thenReturn(CompanionLoading());
+  whenListen(companionCubit, Stream<CompanionState>.value(CompanionLoading()));
+  when(() => companionCubit.displayId).thenReturn('display-test');
+  when(() => companionCubit.serverUrl).thenReturn('http://localhost:9999/');
 }
 
 List<BlocProvider> _providers({
@@ -54,6 +63,7 @@ List<BlocProvider> _providers({
   required _MockThemeCubit themeCubit,
   required _MockPhotoCubit photoCubit,
   required _MockDashboardProfileCubit profileCubit,
+  required _MockCompanionCubit companionCubit,
 }) =>
     [
       BlocProvider<DisplaySettingsCubit>.value(value: dsCubit),
@@ -61,6 +71,7 @@ List<BlocProvider> _providers({
       BlocProvider<ThemeCubit>.value(value: themeCubit),
       BlocProvider<PhotoCubit>.value(value: photoCubit),
       BlocProvider<DashboardProfileCubit>.value(value: profileCubit),
+      BlocProvider<CompanionCubit>.value(value: companionCubit),
     ];
 
 Widget _wrap({bool leanback = false}) {
@@ -69,12 +80,14 @@ Widget _wrap({bool leanback = false}) {
   final themeCubit = _MockThemeCubit();
   final photoCubit = _MockPhotoCubit();
   final profileCubit = _MockDashboardProfileCubit();
+  final companionCubit = _MockCompanionCubit();
   _setupMocks(
     dsCubit: dsCubit,
     licCubit: licCubit,
     themeCubit: themeCubit,
     photoCubit: photoCubit,
     profileCubit: profileCubit,
+    companionCubit: companionCubit,
   );
 
   return MultiBlocProvider(
@@ -84,6 +97,7 @@ Widget _wrap({bool leanback = false}) {
       themeCubit: themeCubit,
       photoCubit: photoCubit,
       profileCubit: profileCubit,
+      companionCubit: companionCubit,
     ),
     child: MaterialApp(
       home: SettingsScreen(
@@ -102,12 +116,14 @@ Widget _wrapPushed({bool leanback = false}) {
   final themeCubit = _MockThemeCubit();
   final photoCubit = _MockPhotoCubit();
   final profileCubit = _MockDashboardProfileCubit();
+  final companionCubit = _MockCompanionCubit();
   _setupMocks(
     dsCubit: dsCubit,
     licCubit: licCubit,
     themeCubit: themeCubit,
     photoCubit: photoCubit,
     profileCubit: profileCubit,
+    companionCubit: companionCubit,
   );
 
   return MultiBlocProvider(
@@ -117,6 +133,7 @@ Widget _wrapPushed({bool leanback = false}) {
       themeCubit: themeCubit,
       photoCubit: photoCubit,
       profileCubit: profileCubit,
+      companionCubit: companionCubit,
     ),
     child: MaterialApp(
       home: Builder(
@@ -148,12 +165,14 @@ Widget _wrapWithKeyboard({bool leanback = false}) {
   final themeCubit = _MockThemeCubit();
   final photoCubit = _MockPhotoCubit();
   final profileCubit = _MockDashboardProfileCubit();
+  final companionCubit = _MockCompanionCubit();
   _setupMocks(
     dsCubit: dsCubit,
     licCubit: licCubit,
     themeCubit: themeCubit,
     photoCubit: photoCubit,
     profileCubit: profileCubit,
+    companionCubit: companionCubit,
   );
 
   return MultiBlocProvider(
@@ -163,6 +182,7 @@ Widget _wrapWithKeyboard({bool leanback = false}) {
       themeCubit: themeCubit,
       photoCubit: photoCubit,
       profileCubit: profileCubit,
+      companionCubit: companionCubit,
     ),
     child: MaterialApp(
       home: Builder(

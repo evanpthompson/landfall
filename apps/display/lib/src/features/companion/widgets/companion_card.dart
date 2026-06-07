@@ -8,6 +8,7 @@ import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import '../companion_event_bus.dart';
+import '../companion_url.dart';
 import '../cubit/companion_cubit.dart';
 import '../provider/petdex_provider.dart';
 import '../renderer/sprite_sheet_renderer.dart';
@@ -39,11 +40,7 @@ class CompanionCard extends StatefulWidget {
   /// Serverpod runs the web server on API port + 2 by default (8080 → 8082).
   /// This lets the companion QR use a single configured URL while hitting the
   /// correct port for the static web content.
-  static String _webServerUrl(String apiUrl) {
-    final uri = Uri.tryParse(apiUrl);
-    if (uri == null || uri.port == 0) return apiUrl;
-    return uri.replace(port: uri.port + 2).toString();
-  }
+  static String _webServerUrl(String apiUrl) => companionWebServerUrl(apiUrl);
 
   /// Maps a raw action kind string from the server to an animation state.
   static CompanionAnimationState kindToState(String kind) {
