@@ -4,21 +4,33 @@ import 'package:test/test.dart';
 import 'test_tools/serverpod_test_tools.dart';
 
 void main() {
-  // This is an example test that uses the `withServerpod` test helper.
-  // `withServerpod` enables you to call your endpoints directly from the test like regular functions.
-  // Note that after adding or modifying an endpoint, you will need to run
-  // `serverpod generate` to update the test tools code.
-  // Refer to the docs for more information on how to use the test helper.
   withServerpod('Given Greeting endpoint', (sessionBuilder, endpoints) {
-    test(
-      'when calling `hello` with name then returned greeting includes name',
-      () async {
-        // Call the endpoint method by using the `endpoints` parameter and
-        // pass `sessionBuilder` as a first argument. Refer to the docs on
-        // how to use the `sessionBuilder` to set up different test scenarios.
-        final greeting = await endpoints.greeting.hello(sessionBuilder, 'Bob');
-        expect(greeting.message, 'Hello Bob');
-      },
-    );
+    test('returns greeting including the provided name', () async {
+      final authed = sessionBuilder.copyWith(
+        authentication:
+            AuthenticationOverride.authenticationInfo('user-1', {}),
+      );
+      final greeting = await endpoints.greeting.hello(authed, 'Bob');
+      expect(greeting.message, 'Hello Bob');
+    });
+  });
+
+  // SEC-02: GreetingEndpoint auth guard.
+  withServerpod('Given Greeting endpoint auth guards', (sessionBuilder, endpoints) {
+    test('hello rejects unauthenticated caller', () async {
+      expect(
+        () => endpoints.greeting.hello(sessionBuilder, 'World'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('authenticated caller receives greeting (regression)', () async {
+      final authed = sessionBuilder.copyWith(
+        authentication:
+            AuthenticationOverride.authenticationInfo('user-1', {}),
+      );
+      final greeting = await endpoints.greeting.hello(authed, 'World');
+      expect(greeting.message, 'Hello World');
+    });
   });
 }

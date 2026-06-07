@@ -226,5 +226,12 @@ void main() {
         throwsA(isA<Exception>()),
       );
     });
+
+    test('listProfiles rejects unauthenticated caller', () async {
+      expect(
+        () => endpoints.profile.listProfiles(sessionBuilder),
+        throwsA(isA<Exception>()),
+      );
+    });
   });
 }

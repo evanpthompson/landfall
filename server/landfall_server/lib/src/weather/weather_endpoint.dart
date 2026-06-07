@@ -2,6 +2,12 @@ import 'package:serverpod/serverpod.dart';
 
 import '../generated/protocol.dart';
 
+void _requireAuth(Session session) {
+  if (session.authenticated == null) {
+    throw LandfallException(message: 'Authentication required.');
+  }
+}
+
 /// Serves cached weather data to the Flutter display client.
 ///
 /// Data is populated by [WeatherRefreshCall] on a 10-minute schedule.
@@ -10,6 +16,7 @@ import '../generated/protocol.dart';
 class WeatherEndpoint extends Endpoint {
   /// Returns the most recently cached current conditions, or null if none.
   Future<WeatherCurrent?> getCurrentWeather(Session session) async {
+    _requireAuth(session);
     return WeatherCurrent.db.findFirstRow(
       session,
       orderBy: (t) => t.fetchedAt,
@@ -21,6 +28,7 @@ class WeatherEndpoint extends Endpoint {
   ///
   /// Returns an empty list if no forecast data has been cached yet.
   Future<List<WeatherForecast>> getForecast(Session session) async {
+    _requireAuth(session);
     return WeatherForecast.db.find(
       session,
       orderBy: (t) => t.forecastDate,

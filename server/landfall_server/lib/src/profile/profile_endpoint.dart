@@ -16,6 +16,7 @@ void _requireAuth(Session session) {
 class ProfileEndpoint extends Endpoint {
   /// Returns all profiles ordered by [DashboardProfile.sortOrder] ascending.
   Future<List<DashboardProfile>> listProfiles(Session session) async {
+    _requireAuth(session);
     return DashboardProfile.db.find(
       session,
       orderBy: (t) => t.sortOrder,

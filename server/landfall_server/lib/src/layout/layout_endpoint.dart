@@ -19,6 +19,7 @@ class LayoutEndpoint extends Endpoint {
   ///
   /// Returns an empty list if no layouts have been saved yet.
   Future<List<LayoutConfig>> getLayouts(Session session) async {
+    _requireAuth(session);
     return LayoutConfig.db.find(
       session,
       orderBy: (t) => t.updatedAt,

@@ -34,7 +34,7 @@ void main() {
 
     group('getLayouts', () {
       test('returns empty list when no layouts have been saved', () async {
-        final layouts = await endpoints.layout.getLayouts(sessionBuilder);
+        final layouts = await endpoints.layout.getLayouts(authed);
         expect(layouts, isEmpty);
       });
 
@@ -42,13 +42,13 @@ void main() {
         await endpoints.layout.saveLayout(authed, _layout(name: 'A'));
         await endpoints.layout.saveLayout(authed, _layout(name: 'B'));
 
-        final layouts = await endpoints.layout.getLayouts(sessionBuilder);
+        final layouts = await endpoints.layout.getLayouts(authed);
         expect(layouts, hasLength(2));
       });
 
       test('returned layouts have assigned ids', () async {
         await endpoints.layout.saveLayout(authed, _layout());
-        final layouts = await endpoints.layout.getLayouts(sessionBuilder);
+        final layouts = await endpoints.layout.getLayouts(authed);
         expect(layouts.first.id, isNotNull);
       });
     });
@@ -93,7 +93,7 @@ void main() {
         final b = await endpoints.layout.saveLayout(authed, _layout(name: 'Beta'));
         expect(a.id, isNot(equals(b.id)));
         expect(
-          await endpoints.layout.getLayouts(sessionBuilder),
+          await endpoints.layout.getLayouts(authed),
           hasLength(2),
         );
       });
@@ -109,7 +109,7 @@ void main() {
           original.copyWith(name: 'After'),
         );
 
-        final all = await endpoints.layout.getLayouts(sessionBuilder);
+        final all = await endpoints.layout.getLayouts(authed);
         expect(all, hasLength(1));
         expect(all.first.name, equals('After'));
         expect(all.first.id, equals(original.id));
@@ -166,7 +166,7 @@ void main() {
         await endpoints.layout.setActiveLayout(authed, b.id!);
         await endpoints.layout.setActiveLayout(authed, c.id!);
 
-        final all = await endpoints.layout.getLayouts(sessionBuilder);
+        final all = await endpoints.layout.getLayouts(authed);
         final activeLayouts = all.where((l) => l.isActive).toList();
         expect(activeLayouts, hasLength(1));
         expect(activeLayouts.first.id, equals(c.id));
@@ -179,7 +179,7 @@ void main() {
         await endpoints.layout.setActiveLayout(authed, a.id!);
         await endpoints.layout.setActiveLayout(authed, b.id!);
 
-        final all = await endpoints.layout.getLayouts(sessionBuilder);
+        final all = await endpoints.layout.getLayouts(authed);
         final layoutA = all.firstWhere((l) => l.id == a.id);
         expect(layoutA.isActive, isFalse);
       });
@@ -199,7 +199,7 @@ void main() {
 
         await endpoints.layout.deleteLayout(authed, layout.id!);
 
-        final all = await endpoints.layout.getLayouts(sessionBuilder);
+        final all = await endpoints.layout.getLayouts(authed);
         expect(all.any((l) => l.id == layout.id), isFalse);
       });
 
@@ -211,7 +211,7 @@ void main() {
 
         await endpoints.layout.deleteLayout(authed, remove.id!);
 
-        final all = await endpoints.layout.getLayouts(sessionBuilder);
+        final all = await endpoints.layout.getLayouts(authed);
         expect(all, hasLength(1));
         expect(all.first.id, equals(keep.id));
       });
@@ -233,7 +233,7 @@ void main() {
         // Should not throw.
         await endpoints.layout.deleteLayout(authed, 999999);
 
-        final all = await endpoints.layout.getLayouts(sessionBuilder);
+        final all = await endpoints.layout.getLayouts(authed);
         expect(all, hasLength(1));
       });
     });
@@ -264,6 +264,13 @@ void main() {
       final saved = await endpoints.layout.saveLayout(authed, _layout());
       expect(
         () => endpoints.layout.deleteLayout(sessionBuilder, saved.id!),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('getLayouts rejects unauthenticated caller', () async {
+      expect(
+        () => endpoints.layout.getLayouts(sessionBuilder),
         throwsA(isA<Exception>()),
       );
     });

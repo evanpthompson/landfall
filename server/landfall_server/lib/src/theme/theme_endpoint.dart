@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:serverpod/serverpod.dart';
 
+import '../generated/agent/landfall_exception.dart';
 import '../generated/profile/dashboard_profile.dart';
 import '../generated/theme/landfall_theme.dart';
 import '../generated/theme/theme_upload_result.dart';
@@ -14,12 +15,19 @@ import 'ssrf_guard.dart';
 import 'theme_seeder.dart';
 import 'theme_validator.dart';
 
+void _requireAuth(Session session) {
+  if (session.authenticated == null) {
+    throw LandfallException(message: 'Authentication required.');
+  }
+}
+
 /// Manages themes: built-in, user-imported, and marketplace.
 class ThemeEndpoint extends Endpoint {
   /// Returns all themes available on this display (built-in + imported).
   ///
   /// Built-ins are seeded if the themes table is empty.
   Future<List<LandfallTheme>> listThemes(Session session) async {
+    _requireAuth(session);
     await _ensureSeeded(session);
     return LandfallTheme.db.find(
       session,
@@ -37,6 +45,7 @@ class ThemeEndpoint extends Endpoint {
     Session session,
     String yaml,
   ) async {
+    _requireAuth(session);
     final result = ThemeValidator.validate(yaml);
     if (!result.isValid) {
       return ThemeUploadResult(theme: null, errors: result.errors);
@@ -54,6 +63,7 @@ class ThemeEndpoint extends Endpoint {
     Session session,
     String url,
   ) async {
+    _requireAuth(session);
     final classification = SsrfGuard.classifyUrl(url);
     if (!classification.accepted) {
       return ThemeUploadResult(
@@ -161,6 +171,7 @@ class ThemeEndpoint extends Endpoint {
   /// Throws [InvalidRequestException] when attempting to delete a built-in
   /// theme. Is a no-op when [id] does not exist.
   Future<void> deleteTheme(Session session, int id) async {
+    _requireAuth(session);
     final theme = await LandfallTheme.db.findById(session, id);
     if (theme == null) return;
     if (theme.isBuiltIn) {
@@ -174,6 +185,7 @@ class ThemeEndpoint extends Endpoint {
   ///
   /// Throws [NotFoundException] when [id] does not exist.
   Future<String> previewTheme(Session session, int id) async {
+    _requireAuth(session);
     final theme = await LandfallTheme.db.findById(session, id);
     if (theme == null) {
       throw NotFoundException('LandfallTheme id=$id not found.');
@@ -194,6 +206,7 @@ class ThemeEndpoint extends Endpoint {
     int themeId, {
     int? profileId,
   }) async {
+    _requireAuth(session);
     final theme = await LandfallTheme.db.findById(session, themeId);
     if (theme == null) {
       throw NotFoundException('LandfallTheme id=$themeId not found.');

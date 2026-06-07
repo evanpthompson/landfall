@@ -47,7 +47,13 @@ WeatherForecast _forecast({
 
 void main() {
   withServerpod('Given WeatherEndpoint', (sessionBuilder, endpoints) {
+    late TestSessionBuilder authed;
+
     setUp(() async {
+      authed = sessionBuilder.copyWith(
+        authentication:
+            AuthenticationOverride.authenticationInfo('user-1', {}),
+      );
       final session = sessionBuilder.build();
       await WeatherCurrent.db.deleteWhere(
         session,
@@ -62,8 +68,7 @@ void main() {
 
     group('getCurrentWeather', () {
       test('returns null when no data has been cached', () async {
-        final result =
-            await endpoints.weather.getCurrentWeather(sessionBuilder);
+        final result = await endpoints.weather.getCurrentWeather(authed);
         expect(result, isNull);
       });
 
@@ -72,8 +77,7 @@ void main() {
         await WeatherCurrent.db.insertRow(session, _current());
         await session.close();
 
-        final result =
-            await endpoints.weather.getCurrentWeather(sessionBuilder);
+        final result = await endpoints.weather.getCurrentWeather(authed);
 
         expect(result, isNotNull);
         expect(result!.locationName, equals('Chicago'));
@@ -97,8 +101,7 @@ void main() {
         );
         await session.close();
 
-        final result =
-            await endpoints.weather.getCurrentWeather(sessionBuilder);
+        final result = await endpoints.weather.getCurrentWeather(authed);
         // Should return the newer row (fetchedAt = 2026-04-19).
         expect(result!.tempC, equals(18.5));
         expect(result.condition, equals('Clear sky'));
@@ -107,7 +110,7 @@ void main() {
 
     group('getForecast', () {
       test('returns empty list when no forecast data exists', () async {
-        final result = await endpoints.weather.getForecast(sessionBuilder);
+        final result = await endpoints.weather.getForecast(authed);
         expect(result, isEmpty);
       });
 
@@ -120,7 +123,7 @@ void main() {
         ]);
         await session.close();
 
-        final result = await endpoints.weather.getForecast(sessionBuilder);
+        final result = await endpoints.weather.getForecast(authed);
 
         expect(result.length, equals(3));
         expect(result[0].forecastDate, equals(DateTime.utc(2026, 4, 19)));
@@ -142,13 +145,46 @@ void main() {
         );
         await session.close();
 
-        final result = await endpoints.weather.getForecast(sessionBuilder);
+        final result = await endpoints.weather.getForecast(authed);
 
         expect(result.first.minTempC, equals(8.0));
         expect(result.first.maxTempC, equals(23.0));
         expect(result.first.condition, equals('Light rain'));
         expect(result.first.iconCode, equals('10d'));
       });
+    });
+  });
+
+  // SEC-02: WeatherEndpoint auth guards.
+  withServerpod('Given WeatherEndpoint auth guards', (sessionBuilder, endpoints) {
+    test('getCurrentWeather rejects unauthenticated caller', () async {
+      expect(
+        () => endpoints.weather.getCurrentWeather(sessionBuilder),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('getForecast rejects unauthenticated caller', () async {
+      expect(
+        () => endpoints.weather.getForecast(sessionBuilder),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('authenticated caller can read weather data (regression)', () async {
+      final authed = sessionBuilder.copyWith(
+        authentication:
+            AuthenticationOverride.authenticationInfo('user-1', {}),
+      );
+      // No data seeded in this context, but the calls must not throw.
+      await expectLater(
+        endpoints.weather.getCurrentWeather(authed),
+        completes,
+      );
+      await expectLater(
+        endpoints.weather.getForecast(authed),
+        completes,
+      );
     });
   });
 }

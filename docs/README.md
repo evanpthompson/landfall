@@ -48,6 +48,7 @@ Every doc in the repo, in one place. Add a new `.md` file anywhere and it goes h
 - [Dependency policy](dependency_policy.md) — pubspec and lock-file rules
 - [Roadmap](roadmap.md) — near-term scoped work
 - [Fire TV remote navigation plan](firetv_remote_nav_plan.md) — beta-scope phased plan for D-pad + remote-only UX
+- [Web settings implementation spec](web_settings_implementation_spec.md) — 4-phase plan for browser-based settings via the companion web app
 
 ## Package READMEs
 
