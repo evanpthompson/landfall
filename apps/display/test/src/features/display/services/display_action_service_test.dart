@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:landfall_client/landfall_client.dart' as lf;
-import 'package:landfall_shared/landfall_shared.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:display/src/data/companion/companion_poll_service.dart';
@@ -13,8 +12,6 @@ import 'package:display/src/features/display/services/display_action_service.dar
 // ---------------------------------------------------------------------------
 // Fakes & mocks
 // ---------------------------------------------------------------------------
-
-class _MockPollService extends Mock implements CompanionPollService {}
 
 class _MockProfileReloader extends Mock implements ProfileReloader {}
 

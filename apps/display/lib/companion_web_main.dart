@@ -9,12 +9,18 @@ import 'package:landfall_client/landfall_client.dart' as lf;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 
 import 'src/data/auth/web_local_key_value_storage.dart';
+import 'src/data/license/serverpod_license_repository.dart';
 import 'src/data/profile/serverpod_profile_repository.dart';
+import 'src/data/theme/serverpod_marketplace_repository.dart';
+import 'src/data/theme/serverpod_theme_repository.dart';
 import 'src/features/auth/cubit/auth_cubit.dart';
 import 'src/features/auth/widgets/auth_gate.dart';
 import 'src/features/companion/widgets/companion_mobile_screen.dart';
+import 'src/features/license/cubit/license_cubit.dart';
 import 'src/features/profile/cubit/dashboard_profile_cubit.dart';
 import 'src/features/settings/screens/web_settings_screen.dart';
+import 'src/features/theme/cubit/marketplace_cubit.dart';
+import 'src/features/theme/cubit/theme_cubit.dart';
 
 // Reads the display ID injected by CompanionPageRoute into the page HTML.
 // The server injects: window.LANDFALL_DISPLAY_ID = "{uuid}";
@@ -47,6 +53,7 @@ void main() {
 
   runApp(_CompanionWebApp(
     displayId: displayId,
+    serverUrl: serverUrl,
     client: client,
     sessionManager: sessionManager,
   ));
@@ -55,11 +62,13 @@ void main() {
 class _CompanionWebApp extends StatefulWidget {
   const _CompanionWebApp({
     required this.displayId,
+    required this.serverUrl,
     required this.client,
     required this.sessionManager,
   });
 
   final String displayId;
+  final String serverUrl;
   final lf.Client client;
   final ClientAuthSessionManager sessionManager;
 
@@ -128,6 +137,9 @@ class _CompanionWebAppState extends State<_CompanionWebApp> {
     // both reject.
     final base = ThemeData.dark(useMaterial3: true);
     final profileRepository = ServerpodProfileRepository(widget.client);
+    final themeRepository = ServerpodThemeRepository(widget.client);
+    final marketplaceRepository = ServerpodMarketplaceRepository(widget.client);
+    final licenseRepository = ServerpodLicenseRepository(widget.client);
 
     return MultiBlocProvider(
       providers: [
@@ -140,6 +152,17 @@ class _CompanionWebAppState extends State<_CompanionWebApp> {
         BlocProvider(
           create: (_) => DashboardProfileCubit(profileRepository),
         ),
+        BlocProvider(
+          create: (_) =>
+              ThemeCubit(themeRepository)..loadThemes(),
+        ),
+        BlocProvider(
+          create: (_) =>
+              MarketplaceCubit(marketplaceRepository)..loadMarketplace(),
+        ),
+        BlocProvider(
+          create: (_) => LicenseCubit(licenseRepository)..loadStatus(),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -150,6 +173,7 @@ class _CompanionWebAppState extends State<_CompanionWebApp> {
         ),
         home: _CompanionHome(
           displayId: widget.displayId,
+          serverUrl: widget.serverUrl,
           client: widget.client,
           info: _info,
         ),
@@ -161,11 +185,13 @@ class _CompanionWebAppState extends State<_CompanionWebApp> {
 class _CompanionHome extends StatelessWidget {
   const _CompanionHome({
     required this.displayId,
+    required this.serverUrl,
     required this.client,
     required this.info,
   });
 
   final String displayId;
+  final String serverUrl;
   final lf.Client client;
   final CompanionInfo? info;
 
@@ -196,6 +222,9 @@ class _CompanionHome extends StatelessWidget {
                         child: WebSettingsScreen(
                           onPush: (kind) =>
                               client.companion.pushAction(displayId, kind),
+                          client: client,
+                          serverUrl: serverUrl,
+                          onOpenUrl: (url) => web.window.open(url, '_blank'),
                         ),
                       ),
                     ),

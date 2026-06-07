@@ -30,6 +30,30 @@
     # causing intermittent 502s via round-robin against an invalid dial target.
     @companion path /companion /companion/*
     reverse_proxy @companion server:8080
+    # Serverpod endpoints called by the web settings UI (Phase 3).
+    # Each matcher covers the bare endpoint path and all method sub-paths.
+    @otp path /otp /otp/*
+    reverse_proxy @otp server:8080
+    @jwtRefresh path /jwtRefresh /jwtRefresh/*
+    reverse_proxy @jwtRefresh server:8080
+    @passkeyIdp path /passkeyIdp /passkeyIdp/*
+    reverse_proxy @passkeyIdp server:8080
+    @layout path /layout /layout/*
+    reverse_proxy @layout server:8080
+    @profile path /profile /profile/*
+    reverse_proxy @profile server:8080
+    @theme path /theme /theme/*
+    reverse_proxy @theme server:8080
+    @marketplace path /marketplace /marketplace/*
+    reverse_proxy @marketplace server:8080
+    @settings path /settings /settings/*
+    reverse_proxy @settings server:8080
+    @apiKey path /apiKey /apiKey/*
+    reverse_proxy @apiKey server:8080
+    @license path /license /license/*
+    reverse_proxy @license server:8080
+    @pack path /pack /pack/*
+    reverse_proxy @pack server:8080
     reverse_proxy /photos/* server:8082
 
     # WebSocket endpoint for real-time card push

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:landfall_client/landfall_client.dart' as lf;
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'package:display/src/features/license/screens/license_screen.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
+import 'package:display/src/features/settings/widgets/accounts_tab_view.dart';
 import 'package:display/src/features/settings/widgets/layout_tab_view.dart';
+import 'package:display/src/features/settings/widgets/themes_tab_view.dart';
 
 /// Web settings shell served via the companion app at /c/{displayId}.
 ///
@@ -14,9 +18,21 @@ import 'package:display/src/features/settings/widgets/layout_tab_view.dart';
 /// [onPush] is called with a domain.changed kind string after any
 /// successful settings save so the TV can react without restart.
 class WebSettingsScreen extends StatefulWidget {
-  const WebSettingsScreen({super.key, required this.onPush});
+  const WebSettingsScreen({
+    super.key,
+    required this.onPush,
+    required this.client,
+    required this.serverUrl,
+    this.onOpenUrl,
+  });
 
   final Future<void> Function(String kind) onPush;
+  final lf.Client client;
+  final String serverUrl;
+
+  /// When provided, connect tiles show an "Open" button that calls this with
+  /// the OAuth URL so the host can open it in a browser tab.
+  final void Function(String url)? onOpenUrl;
 
   @override
   State<WebSettingsScreen> createState() => WebSettingsScreenState();
@@ -99,10 +115,27 @@ class WebSettingsScreenState extends State<WebSettingsScreen>
             leanback: false,
             onAfterSave: onLayoutSaved,
           ),
-          const _PlaceholderTab('Themes'),
-          const _PlaceholderTab('Accounts'),
+          ThemesTabView(
+            onAfterThemeApplied: () => widget.onPush('theme.changed'),
+          ),
+          AccountsTabView(
+            onLoad: () async {
+              final credentials =
+                  await widget.client.settings.getLinkedCredentials();
+              final userId =
+                  await widget.client.settings.getMyAuthUserId();
+              return (credentials, userId);
+            },
+            serverUrl: widget.serverUrl,
+            onOpenUrl: widget.onOpenUrl,
+            onListKeys: (token) => widget.client.apiKey.listKeys(token),
+            onGenerateKey: (name, token) =>
+                widget.client.apiKey.generateKey(name, token),
+            onRevokeKey: (id, token) =>
+                widget.client.apiKey.revokeKey(id, token),
+          ),
           const _PlaceholderTab('Display'),
-          const _PlaceholderTab('License'),
+          const LicenseTab(),
         ],
       ),
     );
