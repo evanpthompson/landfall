@@ -684,7 +684,7 @@ class _LayoutTab extends StatelessWidget {
               ),
               SizedBox(height: 8),
               Text(
-                'Open Landfall in a browser or on your phone to rearrange cards.',
+                'Open the Landfall app on a Mac or touchscreen device to rearrange cards.',
                 style: TextStyle(
                     color: LandfallColors.textSecondary, fontSize: 13),
                 textAlign: TextAlign.center,
