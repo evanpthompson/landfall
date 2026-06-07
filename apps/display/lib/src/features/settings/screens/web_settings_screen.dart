@@ -9,6 +9,7 @@ import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart'
 import 'package:display/src/features/settings/widgets/accounts_tab_view.dart';
 import 'package:display/src/features/settings/widgets/layout_tab_view.dart';
 import 'package:display/src/features/settings/widgets/themes_tab_view.dart';
+import 'package:display/src/features/settings/widgets/web_display_tab.dart';
 
 /// Web settings shell served via the companion app at /c/{displayId}.
 ///
@@ -23,12 +24,14 @@ class WebSettingsScreen extends StatefulWidget {
     required this.onPush,
     required this.client,
     required this.serverUrl,
+    required this.displayId,
     this.onOpenUrl,
   });
 
   final Future<void> Function(String kind) onPush;
   final lf.Client client;
   final String serverUrl;
+  final String displayId;
 
   /// When provided, connect tiles show an "Open" button that calls this with
   /// the OAuth URL so the host can open it in a browser tab.
@@ -134,7 +137,12 @@ class WebSettingsScreenState extends State<WebSettingsScreen>
             onRevokeKey: (id, token) =>
                 widget.client.apiKey.revokeKey(id, token),
           ),
-          const _PlaceholderTab('Display'),
+          WebDisplayTab(
+            displayId: widget.displayId,
+            onLoad: () => widget.client.displaySettings.get(widget.displayId),
+            onSave: (s) => widget.client.displaySettings.save(s),
+            onPush: (kind) => widget.onPush(kind),
+          ),
           const LicenseTab(),
         ],
       ),
@@ -142,18 +150,3 @@ class WebSettingsScreenState extends State<WebSettingsScreen>
   }
 }
 
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab(this.name);
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        '$name coming soon',
-        style: const TextStyle(color: LandfallColors.textSecondary),
-      ),
-    );
-  }
-}

@@ -1,7 +1,7 @@
 # Web Settings — Implementation Specification
 
-**Status:** Reviewed and ready for implementation
-**Date:** 2026-06-07
+**Status:** Phases 1–4 implemented. All five tabs functional; full E2E manual validation pending.
+**Date:** 2026-06-07 (spec) — Phases 3–4 shipped 2026-06-07
 **Supersedes:** the standalone `/layout/` web-app plan and the standalone `/settings/` web-app plan. The chosen architecture is **Option B: settings folded into the existing companion web app** served at `/c/{displayId}`.
 
 This spec turns the agreed 4-phase plan into a per-phase implementation contract. Every
@@ -382,12 +382,20 @@ default: keep TV editing with write-through** (7.2) — the TV remains usable st
 
 ## 10. Definition of done (whole feature)
 
-- [ ] All Phase 1 lockdown tests green; no settings-relevant endpoint callable anonymously.
-- [ ] Phone browser can: sign in (OTP), persist across reload, auto-refresh JWT.
-- [ ] All five tabs functional on web per the matrix; Server address visibly absent by design.
-- [ ] TV reflects web edits (layout/theme/display settings) without restart.
-- [ ] Works through Caddy on the Pi image, not just direct ports.
-- [ ] TV settings screen offers the QR entry point regardless of layout contents.
-- [ ] Goldens: TV unchanged (except the deliberate Phase 3 QR tile); web goldens added.
-- [ ] `flutter analyze` clean; `flutter test` green in all packages; server suite green.
-- [ ] `docs/README.md` indexes this spec; `docs/manual_smoke_test.md` extended (7.4).
+- [x] All Phase 1 lockdown tests green; no settings-relevant endpoint callable anonymously.
+- [x] Phone browser can: sign in (OTP), persist across reload, auto-refresh JWT.
+- [x] All five tabs functional on web per the matrix; Server address visibly absent by design.
+- [x] TV reflects web edits (layout/theme/display settings) without restart. (`DisplaySettingsSyncService` + `settings.changed` routing)
+- [x] Works through Caddy on the Pi image, not just direct ports. (Caddy matchers for all 12 endpoints including `displaySettings`)
+- [ ] TV settings screen offers the QR entry point regardless of layout contents. (Phase 3.3 — deferred)
+- [ ] Goldens: TV unchanged (except the deliberate Phase 3 QR tile); web goldens added. (deferred — no golden regressions introduced)
+- [x] `flutter analyze` clean; `flutter test` green in all packages (822 tests); server suite green.
+- [x] `docs/README.md` indexes this spec; `docs/manual_smoke_test.md` extended (7.4).
+
+### Implementation notes (2026-06-07)
+
+**Phase 3 photo source label**: "Landfall Server" is kept as the display name (abstraction layer), but the info sheet opened via the ⓘ button explicitly names Google Drive and notes that Microsoft OneDrive is not yet supported. This satisfies the transparency requirement without coupling the UI label to the backend implementation.
+
+**`RemoteDisplaySettings` naming**: Named to avoid collision with `landfall_shared.DisplaySettings`. The server model carries `displayId`, `dimEnabled/StartHour/EndHour/Level`, `locationName`, `photoSourceJson`, `updatedAt`. `serverUrl`, `wizardComplete`, and `displayId`-generation fields are device-local and deliberately absent.
+
+**Write-through conflict policy**: last-write-wins by `updatedAt`. The server always stamps `updatedAt` with the server clock on save, so TV-local writes and web writes both produce monotonically-increasing timestamps without clock-sync issues.

@@ -348,6 +348,79 @@ user-visible ones.
 
 ---
 
+## Part 7 — Web Settings (companion app)
+
+### 7.1 Open the companion settings screen
+
+- [ ] On any display (macOS, Pi, or Fire TV), scan the QR code from the companion card — or navigate to `http://<host>/c/<displayId>` in a phone browser
+- [ ] Settings gear icon (top-right of the companion page) is visible
+- [ ] Tap the gear → login wall appears (not the settings screen itself)
+
+### 7.2 OTP login
+
+- [ ] Enter the email address associated with the display account
+- [ ] Tap "Send code" → OTP arrives in email or appears in server log (`OTP_LOG_CODES=true`)
+- [ ] Enter the code → settings screen opens, showing the "Layout" tab active by default
+
+### 7.3 Tab navigation
+
+- [ ] TabBar shows five tabs: **Layout**, **Themes**, **Accounts**, **Display**, **License**
+- [ ] Each tab is tappable on a phone-sized viewport (375 px wide)
+- [ ] Switching tabs does not lose unsaved changes in the previous tab (or shows a discard prompt if implemented)
+
+### 7.4 Display tab
+
+- [ ] Tap **Display** → tab loads with a brief loading indicator, then shows the form
+- [ ] Three sections visible after scroll: **LOCATION**, **DIM**, **PHOTO SOURCE**
+- [ ] **LOCATION** section shows the current timezone/location string
+
+**Dim settings:**
+
+- [ ] "Enable dimming" switch is present; toggling it shows/hides the hour pickers
+- [ ] Hour pickers show 12-hour labels (e.g. "12:00 AM", "9:00 PM") for hours 0–23
+- [ ] Brightness slider is present (0–100 range)
+
+**Photo source:**
+
+- [ ] "Landfall Server" chip is selected by default (for a freshly provisioned display)
+- [ ] ⓘ info button on the Landfall Server chip opens an info sheet
+- [ ] Info sheet names **Google Drive** explicitly
+- [ ] Info sheet states that **Microsoft OneDrive is not yet supported**
+- [ ] Dismiss the info sheet → returns to the tab form without losing state
+- [ ] "Network URLs" chip is selectable
+- [ ] Selecting Network URLs reveals a multiline text field for entering URLs (one per line)
+- [ ] Entering no URLs → Save button is disabled
+- [ ] Entering at least one URL → Save button becomes enabled
+
+**Save and push:**
+
+- [ ] Save the Display tab with dim changes → **no error**; a brief saving state appears and resolves
+- [ ] Within ~5 seconds the TV display dims (or un-dims) per the new schedule without restarting the app
+- [ ] Switch to Network URLs, enter 2–3 image URLs → save → TV photo source switches to those URLs within ~5 seconds
+- [ ] Switch back to Landfall Server → save → TV reverts to Drive photos
+
+### 7.5 Layout tab from web
+
+- [ ] Tap **Layout** → card grid renders; cards are draggable with a mouse/finger
+- [ ] Drag one card to a new slot → Save button appears (or auto-save fires)
+- [ ] Save → within ~5 seconds the TV display recomposes to the new layout
+
+### 7.6 Accounts tab
+
+- [ ] **Accounts** tab loads the linked credentials list
+- [ ] The Google account added during setup is listed
+- [ ] "Add account" flows work (OAuth URL displayed / copyable)
+
+### 7.7 Sign-out
+
+- [ ] Settings → Accounts (or a dedicated sign-out control) → sign out
+- [ ] Page returns to the companion landing screen (not a blank page or error)
+- [ ] Gear icon re-opens the login wall (session cleared)
+
+**Web Settings pass:** [ ] all of 7.x ticked.
+
+---
+
 ## Sign-off
 
 Fill in once every platform has passed and the security spot-checks
@@ -360,6 +433,7 @@ are green.
 | Fire TV  |     |        |      |  / Y N |       |
 | Cross-platform parity |  |  |  |  / Y N |       |
 | Security spot-checks  |  |  |  |  / Y N |       |
+| Web Settings (companion) |  |  |  |  / Y N |       |
 
 If every row is `Y`, the build is releasable. Save the completed sign-off
 table to the private repo for audit trail.
@@ -398,3 +472,4 @@ Key facts about this document:
 - **`OTP_LOG_CODES=true`** in `.env` lets you retrieve OTP codes from the server log during smoke testing without real SMTP configured.
 - **Known deferrals in Part 7** should not cause a platform to fail — note them in the sign-off table instead.
 - **Companion QR** is one of the harder tests to pass: the URL must resolve to the server's LAN address, not `127.0.0.1`. This is the "IP discovery acid test" mentioned in 2.7.
+- **Part 7 (Web Settings)** tests the companion web app at `/c/{displayId}`. Requires a phone browser or desktop browser in mobile-viewport mode. The settings screen is behind OTP auth — use `OTP_LOG_CODES=true` in `.env` if SMTP is not configured. TV-side reflection checks (7.4 Save and push, 7.5) require an active display on the same backend.

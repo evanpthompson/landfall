@@ -40,6 +40,7 @@ import 'package:display/src/data/companion/serverpod_companion_repository.dart';
 import 'package:display/src/features/companion/companion_event_bus.dart';
 import 'package:display/src/features/companion/cubit/companion_cubit.dart';
 import 'package:display/src/features/display/services/display_action_service.dart';
+import 'package:display/src/features/display/services/display_settings_sync_service.dart';
 import 'package:display/src/features/ticker/cubit/ticker_cubit.dart';
 import 'package:display/src/features/weather/cubit/weather_cubit.dart';
 import 'package:ui_kit/ui_kit.dart';
@@ -98,6 +99,16 @@ class LandfallApp extends StatelessWidget {
     final themeRepository = ServerpodThemeRepository(client);
     final marketplaceRepository = ServerpodMarketplaceRepository(client);
 
+    // onApplySettings starts as a no-op; _DisplayActionRouterState rebinds it
+    // to cubit.loadSettings() once the BLoC tree is available.
+    final displaySettingsSyncService = DisplaySettingsSyncService(
+      displayId: displayId,
+      localRepository: displaySettingsRepository,
+      remoteGet: (id) => client.displaySettings.get(id),
+      remoteSave: (s) => client.displaySettings.save(s),
+      onApplySettings: (_) async {},
+    );
+
     final companionEventBus = CompanionEventBus();
     final companionRepository = ServerpodCompanionRepository(client);
     final companionPollService = ClientCompanionPollService(client);
@@ -122,6 +133,9 @@ class LandfallApp extends StatelessWidget {
         RepositoryProvider<PhotoRepository>(create: (_) => photoRepository),
         RepositoryProvider<DisplaySettingsRepository>(
           create: (_) => displaySettingsRepository,
+        ),
+        RepositoryProvider<DisplaySettingsSyncService>(
+          create: (_) => displaySettingsSyncService,
         ),
       ],
       child: MultiBlocProvider(
@@ -157,8 +171,10 @@ class LandfallApp extends StatelessWidget {
             ),
           ),
           BlocProvider(
-            create: (ctx) =>
-                DisplaySettingsCubit(ctx.read<DisplaySettingsRepository>()),
+            create: (ctx) => DisplaySettingsCubit(
+              ctx.read<DisplaySettingsRepository>(),
+              onAfterSave: displaySettingsSyncService.pushAsync,
+            ),
           ),
           BlocProvider(
             create: (ctx) => TickerCubit(ctx.read<CardRepository>()),
@@ -184,6 +200,7 @@ class LandfallApp extends StatelessWidget {
         ],
         child: _DisplayActionRouter(
           displayId: displayId,
+          settingsReloader: _SettingsReloaderAdapter(displaySettingsSyncService),
           child: BlocBuilder<ThemeCubit, ThemeState>(
             builder: (context, themeState) {
             final themeData = themeState is ThemeLoaded
@@ -232,10 +249,15 @@ class LandfallApp extends StatelessWidget {
 
 // Starts and owns the app-level DisplayActionService inside the BLoC tree.
 class _DisplayActionRouter extends StatefulWidget {
-  const _DisplayActionRouter({required this.displayId, required this.child});
+  const _DisplayActionRouter({
+    required this.displayId,
+    required this.child,
+    this.settingsReloader,
+  });
 
   final String displayId;
   final Widget child;
+  final SettingsReloader? settingsReloader;
 
   @override
   State<_DisplayActionRouter> createState() => _DisplayActionRouterState();
@@ -247,15 +269,24 @@ class _DisplayActionRouterState extends State<_DisplayActionRouter> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _service ??= DisplayActionService(
-      displayId: widget.displayId,
-      pollService: context.read<CompanionPollService>(),
-      bus: context.read<CompanionEventBus>(),
-      profileReloader: _ProfileReloaderAdapter(
-        context.read<DashboardProfileCubit>(),
-      ),
-      themeReloader: _ThemeReloaderAdapter(context.read<ThemeCubit>()),
-    )..start();
+    if (_service == null) {
+      // Rebind onApplySettings now that the BLoC tree is ready.
+      final syncSvc = context.read<DisplaySettingsSyncService>();
+      final settingsCubit = context.read<DisplaySettingsCubit>();
+      syncSvc.onApplySettings = (_) => settingsCubit.loadSettings();
+
+      _service = DisplayActionService(
+        displayId: widget.displayId,
+        pollService: context.read<CompanionPollService>(),
+        bus: context.read<CompanionEventBus>(),
+        profileReloader: _ProfileReloaderAdapter(
+          context.read<DashboardProfileCubit>(),
+        ),
+        themeReloader: _ThemeReloaderAdapter(context.read<ThemeCubit>()),
+        settingsReloader: widget.settingsReloader,
+      )..start();
+      widget.settingsReloader?.syncOnStartup();
+    }
   }
 
   @override
@@ -280,6 +311,15 @@ class _ThemeReloaderAdapter implements ThemeReloader {
   final ThemeCubit _cubit;
   @override
   Future<void> loadThemes() => _cubit.loadThemes();
+}
+
+class _SettingsReloaderAdapter implements SettingsReloader {
+  const _SettingsReloaderAdapter(this._svc);
+  final DisplaySettingsSyncService _svc;
+  @override
+  Future<void> syncOnStartup() => _svc.syncOnStartup();
+  @override
+  Future<void> pullAndApply() => _svc.pullAndApply();
 }
 
 /// Switches between [LoginScreen] and [DisplayScreen] based on auth state.

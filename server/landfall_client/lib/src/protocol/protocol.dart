@@ -31,35 +31,36 @@ import 'license/pack_info_response.dart' as _i18;
 import 'photo/photo.dart' as _i19;
 import 'profile/dashboard_profile.dart' as _i20;
 import 'settings/linked_credential_summary.dart' as _i21;
-import 'theme/landfall_theme.dart' as _i22;
-import 'theme/marketplace_theme_info.dart' as _i23;
-import 'theme/theme_purchase.dart' as _i24;
-import 'theme/theme_upload_result.dart' as _i25;
-import 'theme/theme_validation_error.dart' as _i26;
-import 'weather/weather_current.dart' as _i27;
-import 'weather/weather_forecast.dart' as _i28;
-import 'package:landfall_client/src/protocol/cards/card_row.dart' as _i29;
-import 'package:landfall_client/src/protocol/agent/api_key.dart' as _i30;
-import 'dart:typed_data' as _i31;
+import 'settings/remote_display_settings.dart' as _i22;
+import 'theme/landfall_theme.dart' as _i23;
+import 'theme/marketplace_theme_info.dart' as _i24;
+import 'theme/theme_purchase.dart' as _i25;
+import 'theme/theme_upload_result.dart' as _i26;
+import 'theme/theme_validation_error.dart' as _i27;
+import 'weather/weather_current.dart' as _i28;
+import 'weather/weather_forecast.dart' as _i29;
+import 'package:landfall_client/src/protocol/cards/card_row.dart' as _i30;
+import 'package:landfall_client/src/protocol/agent/api_key.dart' as _i31;
+import 'dart:typed_data' as _i32;
 import 'package:landfall_client/src/protocol/calendar/calendar_event.dart'
-    as _i32;
-import 'package:landfall_client/src/protocol/layout/layout_config.dart' as _i33;
+    as _i33;
+import 'package:landfall_client/src/protocol/layout/layout_config.dart' as _i34;
 import 'package:landfall_client/src/protocol/license/pack_info_response.dart'
-    as _i34;
-import 'package:landfall_client/src/protocol/photo/photo.dart' as _i35;
+    as _i35;
+import 'package:landfall_client/src/protocol/photo/photo.dart' as _i36;
 import 'package:landfall_client/src/protocol/profile/dashboard_profile.dart'
-    as _i36;
-import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
     as _i37;
-import 'package:landfall_client/src/protocol/theme/marketplace_theme_info.dart'
+import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
     as _i38;
-import 'package:landfall_client/src/protocol/theme/landfall_theme.dart' as _i39;
+import 'package:landfall_client/src/protocol/theme/marketplace_theme_info.dart'
+    as _i39;
+import 'package:landfall_client/src/protocol/theme/landfall_theme.dart' as _i40;
 import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
-    as _i40;
-import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _i41;
-import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
+import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _i42;
+import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
+    as _i43;
 export 'agent/api_key.dart';
 export 'agent/api_key_create_response.dart';
 export 'agent/landfall_exception.dart';
@@ -80,6 +81,7 @@ export 'license/pack_info_response.dart';
 export 'photo/photo.dart';
 export 'profile/dashboard_profile.dart';
 export 'settings/linked_credential_summary.dart';
+export 'settings/remote_display_settings.dart';
 export 'theme/landfall_theme.dart';
 export 'theme/marketplace_theme_info.dart';
 export 'theme/theme_purchase.dart';
@@ -183,26 +185,29 @@ class Protocol extends _i1.SerializationManager {
     if (t == _i21.LinkedCredentialSummary) {
       return _i21.LinkedCredentialSummary.fromJson(data) as T;
     }
-    if (t == _i22.LandfallTheme) {
-      return _i22.LandfallTheme.fromJson(data) as T;
+    if (t == _i22.RemoteDisplaySettings) {
+      return _i22.RemoteDisplaySettings.fromJson(data) as T;
     }
-    if (t == _i23.MarketplaceThemeInfo) {
-      return _i23.MarketplaceThemeInfo.fromJson(data) as T;
+    if (t == _i23.LandfallTheme) {
+      return _i23.LandfallTheme.fromJson(data) as T;
     }
-    if (t == _i24.ThemePurchase) {
-      return _i24.ThemePurchase.fromJson(data) as T;
+    if (t == _i24.MarketplaceThemeInfo) {
+      return _i24.MarketplaceThemeInfo.fromJson(data) as T;
     }
-    if (t == _i25.ThemeUploadResult) {
-      return _i25.ThemeUploadResult.fromJson(data) as T;
+    if (t == _i25.ThemePurchase) {
+      return _i25.ThemePurchase.fromJson(data) as T;
     }
-    if (t == _i26.ThemeValidationError) {
-      return _i26.ThemeValidationError.fromJson(data) as T;
+    if (t == _i26.ThemeUploadResult) {
+      return _i26.ThemeUploadResult.fromJson(data) as T;
     }
-    if (t == _i27.WeatherCurrent) {
-      return _i27.WeatherCurrent.fromJson(data) as T;
+    if (t == _i27.ThemeValidationError) {
+      return _i27.ThemeValidationError.fromJson(data) as T;
     }
-    if (t == _i28.WeatherForecast) {
-      return _i28.WeatherForecast.fromJson(data) as T;
+    if (t == _i28.WeatherCurrent) {
+      return _i28.WeatherCurrent.fromJson(data) as T;
+    }
+    if (t == _i29.WeatherForecast) {
+      return _i29.WeatherForecast.fromJson(data) as T;
     }
     if (t == _i1.getType<_i2.ApiKey?>()) {
       return (data != null ? _i2.ApiKey.fromJson(data) : null) as T;
@@ -267,109 +272,113 @@ class Protocol extends _i1.SerializationManager {
       return (data != null ? _i21.LinkedCredentialSummary.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i22.LandfallTheme?>()) {
-      return (data != null ? _i22.LandfallTheme.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i23.MarketplaceThemeInfo?>()) {
-      return (data != null ? _i23.MarketplaceThemeInfo.fromJson(data) : null)
+    if (t == _i1.getType<_i22.RemoteDisplaySettings?>()) {
+      return (data != null ? _i22.RemoteDisplaySettings.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i24.ThemePurchase?>()) {
-      return (data != null ? _i24.ThemePurchase.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i23.LandfallTheme?>()) {
+      return (data != null ? _i23.LandfallTheme.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i25.ThemeUploadResult?>()) {
-      return (data != null ? _i25.ThemeUploadResult.fromJson(data) : null) as T;
-    }
-    if (t == _i1.getType<_i26.ThemeValidationError?>()) {
-      return (data != null ? _i26.ThemeValidationError.fromJson(data) : null)
+    if (t == _i1.getType<_i24.MarketplaceThemeInfo?>()) {
+      return (data != null ? _i24.MarketplaceThemeInfo.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i27.WeatherCurrent?>()) {
-      return (data != null ? _i27.WeatherCurrent.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i25.ThemePurchase?>()) {
+      return (data != null ? _i25.ThemePurchase.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i28.WeatherForecast?>()) {
-      return (data != null ? _i28.WeatherForecast.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i26.ThemeUploadResult?>()) {
+      return (data != null ? _i26.ThemeUploadResult.fromJson(data) : null) as T;
     }
-    if (t == List<_i26.ThemeValidationError>) {
+    if (t == _i1.getType<_i27.ThemeValidationError?>()) {
+      return (data != null ? _i27.ThemeValidationError.fromJson(data) : null)
+          as T;
+    }
+    if (t == _i1.getType<_i28.WeatherCurrent?>()) {
+      return (data != null ? _i28.WeatherCurrent.fromJson(data) : null) as T;
+    }
+    if (t == _i1.getType<_i29.WeatherForecast?>()) {
+      return (data != null ? _i29.WeatherForecast.fromJson(data) : null) as T;
+    }
+    if (t == List<_i27.ThemeValidationError>) {
       return (data as List)
-              .map((e) => deserialize<_i26.ThemeValidationError>(e))
+              .map((e) => deserialize<_i27.ThemeValidationError>(e))
               .toList()
           as T;
     }
-    if (t == List<_i29.CardRow>) {
-      return (data as List).map((e) => deserialize<_i29.CardRow>(e)).toList()
+    if (t == List<_i30.CardRow>) {
+      return (data as List).map((e) => deserialize<_i30.CardRow>(e)).toList()
           as T;
     }
-    if (t == List<_i30.ApiKey>) {
-      return (data as List).map((e) => deserialize<_i30.ApiKey>(e)).toList()
+    if (t == List<_i31.ApiKey>) {
+      return (data as List).map((e) => deserialize<_i31.ApiKey>(e)).toList()
           as T;
     }
-    if (t == _i1.getType<({_i31.ByteData challenge, _i1.UuidValue id})>()) {
+    if (t == _i1.getType<({_i32.ByteData challenge, _i1.UuidValue id})>()) {
       return (
-            challenge: deserialize<_i31.ByteData>(
+            challenge: deserialize<_i32.ByteData>(
               ((data as Map)['n'] as Map)['challenge'],
             ),
             id: deserialize<_i1.UuidValue>(data['n']['id']),
           )
           as T;
     }
-    if (t == List<_i32.CalendarEvent>) {
+    if (t == List<_i33.CalendarEvent>) {
       return (data as List)
-              .map((e) => deserialize<_i32.CalendarEvent>(e))
+              .map((e) => deserialize<_i33.CalendarEvent>(e))
               .toList()
           as T;
     }
-    if (t == List<_i33.LayoutConfig>) {
+    if (t == List<_i34.LayoutConfig>) {
       return (data as List)
-              .map((e) => deserialize<_i33.LayoutConfig>(e))
+              .map((e) => deserialize<_i34.LayoutConfig>(e))
               .toList()
           as T;
     }
-    if (t == List<_i34.PackInfoResponse>) {
+    if (t == List<_i35.PackInfoResponse>) {
       return (data as List)
-              .map((e) => deserialize<_i34.PackInfoResponse>(e))
+              .map((e) => deserialize<_i35.PackInfoResponse>(e))
               .toList()
           as T;
     }
-    if (t == List<_i35.Photo>) {
-      return (data as List).map((e) => deserialize<_i35.Photo>(e)).toList()
+    if (t == List<_i36.Photo>) {
+      return (data as List).map((e) => deserialize<_i36.Photo>(e)).toList()
           as T;
     }
-    if (t == List<_i36.DashboardProfile>) {
+    if (t == List<_i37.DashboardProfile>) {
       return (data as List)
-              .map((e) => deserialize<_i36.DashboardProfile>(e))
+              .map((e) => deserialize<_i37.DashboardProfile>(e))
               .toList()
           as T;
     }
-    if (t == List<_i37.LinkedCredentialSummary>) {
+    if (t == List<_i38.LinkedCredentialSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i37.LinkedCredentialSummary>(e))
+              .map((e) => deserialize<_i38.LinkedCredentialSummary>(e))
               .toList()
           as T;
     }
-    if (t == List<_i38.MarketplaceThemeInfo>) {
+    if (t == List<_i39.MarketplaceThemeInfo>) {
       return (data as List)
-              .map((e) => deserialize<_i38.MarketplaceThemeInfo>(e))
+              .map((e) => deserialize<_i39.MarketplaceThemeInfo>(e))
               .toList()
           as T;
     }
-    if (t == List<_i39.LandfallTheme>) {
+    if (t == List<_i40.LandfallTheme>) {
       return (data as List)
-              .map((e) => deserialize<_i39.LandfallTheme>(e))
+              .map((e) => deserialize<_i40.LandfallTheme>(e))
               .toList()
           as T;
     }
-    if (t == List<_i40.WeatherForecast>) {
+    if (t == List<_i41.WeatherForecast>) {
       return (data as List)
-              .map((e) => deserialize<_i40.WeatherForecast>(e))
+              .map((e) => deserialize<_i41.WeatherForecast>(e))
               .toList()
           as T;
     }
-    try {
-      return _i41.Protocol().deserialize<T>(data, t);
-    } on _i1.DeserializationTypeNotFoundException catch (_) {}
     try {
       return _i42.Protocol().deserialize<T>(data, t);
+    } on _i1.DeserializationTypeNotFoundException catch (_) {}
+    try {
+      return _i43.Protocol().deserialize<T>(data, t);
     } on _i1.DeserializationTypeNotFoundException catch (_) {}
     return super.deserialize<T>(data, t);
   }
@@ -396,13 +405,14 @@ class Protocol extends _i1.SerializationManager {
       _i19.Photo => 'Photo',
       _i20.DashboardProfile => 'DashboardProfile',
       _i21.LinkedCredentialSummary => 'LinkedCredentialSummary',
-      _i22.LandfallTheme => 'LandfallTheme',
-      _i23.MarketplaceThemeInfo => 'MarketplaceThemeInfo',
-      _i24.ThemePurchase => 'ThemePurchase',
-      _i25.ThemeUploadResult => 'ThemeUploadResult',
-      _i26.ThemeValidationError => 'ThemeValidationError',
-      _i27.WeatherCurrent => 'WeatherCurrent',
-      _i28.WeatherForecast => 'WeatherForecast',
+      _i22.RemoteDisplaySettings => 'RemoteDisplaySettings',
+      _i23.LandfallTheme => 'LandfallTheme',
+      _i24.MarketplaceThemeInfo => 'MarketplaceThemeInfo',
+      _i25.ThemePurchase => 'ThemePurchase',
+      _i26.ThemeUploadResult => 'ThemeUploadResult',
+      _i27.ThemeValidationError => 'ThemeValidationError',
+      _i28.WeatherCurrent => 'WeatherCurrent',
+      _i29.WeatherForecast => 'WeatherForecast',
       _ => null,
     };
   }
@@ -457,26 +467,28 @@ class Protocol extends _i1.SerializationManager {
         return 'DashboardProfile';
       case _i21.LinkedCredentialSummary():
         return 'LinkedCredentialSummary';
-      case _i22.LandfallTheme():
+      case _i22.RemoteDisplaySettings():
+        return 'RemoteDisplaySettings';
+      case _i23.LandfallTheme():
         return 'LandfallTheme';
-      case _i23.MarketplaceThemeInfo():
+      case _i24.MarketplaceThemeInfo():
         return 'MarketplaceThemeInfo';
-      case _i24.ThemePurchase():
+      case _i25.ThemePurchase():
         return 'ThemePurchase';
-      case _i25.ThemeUploadResult():
+      case _i26.ThemeUploadResult():
         return 'ThemeUploadResult';
-      case _i26.ThemeValidationError():
+      case _i27.ThemeValidationError():
         return 'ThemeValidationError';
-      case _i27.WeatherCurrent():
+      case _i28.WeatherCurrent():
         return 'WeatherCurrent';
-      case _i28.WeatherForecast():
+      case _i29.WeatherForecast():
         return 'WeatherForecast';
     }
-    className = _i41.Protocol().getClassNameForObject(data);
+    className = _i42.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_idp.$className';
     }
-    className = _i42.Protocol().getClassNameForObject(data);
+    className = _i43.Protocol().getClassNameForObject(data);
     if (className != null) {
       return 'serverpod_auth_core.$className';
     }
@@ -549,34 +561,37 @@ class Protocol extends _i1.SerializationManager {
     if (dataClassName == 'LinkedCredentialSummary') {
       return deserialize<_i21.LinkedCredentialSummary>(data['data']);
     }
+    if (dataClassName == 'RemoteDisplaySettings') {
+      return deserialize<_i22.RemoteDisplaySettings>(data['data']);
+    }
     if (dataClassName == 'LandfallTheme') {
-      return deserialize<_i22.LandfallTheme>(data['data']);
+      return deserialize<_i23.LandfallTheme>(data['data']);
     }
     if (dataClassName == 'MarketplaceThemeInfo') {
-      return deserialize<_i23.MarketplaceThemeInfo>(data['data']);
+      return deserialize<_i24.MarketplaceThemeInfo>(data['data']);
     }
     if (dataClassName == 'ThemePurchase') {
-      return deserialize<_i24.ThemePurchase>(data['data']);
+      return deserialize<_i25.ThemePurchase>(data['data']);
     }
     if (dataClassName == 'ThemeUploadResult') {
-      return deserialize<_i25.ThemeUploadResult>(data['data']);
+      return deserialize<_i26.ThemeUploadResult>(data['data']);
     }
     if (dataClassName == 'ThemeValidationError') {
-      return deserialize<_i26.ThemeValidationError>(data['data']);
+      return deserialize<_i27.ThemeValidationError>(data['data']);
     }
     if (dataClassName == 'WeatherCurrent') {
-      return deserialize<_i27.WeatherCurrent>(data['data']);
+      return deserialize<_i28.WeatherCurrent>(data['data']);
     }
     if (dataClassName == 'WeatherForecast') {
-      return deserialize<_i28.WeatherForecast>(data['data']);
+      return deserialize<_i29.WeatherForecast>(data['data']);
     }
     if (dataClassName.startsWith('serverpod_auth_idp.')) {
       data['className'] = dataClassName.substring(19);
-      return _i41.Protocol().deserializeByClassName(data);
+      return _i42.Protocol().deserializeByClassName(data);
     }
     if (dataClassName.startsWith('serverpod_auth_core.')) {
       data['className'] = dataClassName.substring(20);
-      return _i42.Protocol().deserializeByClassName(data);
+      return _i43.Protocol().deserializeByClassName(data);
     }
     return super.deserializeByClassName(data);
   }
@@ -590,7 +605,7 @@ class Protocol extends _i1.SerializationManager {
     if (record == null) {
       return null;
     }
-    if (record is ({_i31.ByteData challenge, _i1.UuidValue id})) {
+    if (record is ({_i32.ByteData challenge, _i1.UuidValue id})) {
       return {
         "n": {
           "challenge": record.challenge.toJson(),
@@ -599,10 +614,10 @@ class Protocol extends _i1.SerializationManager {
       };
     }
     try {
-      return _i41.Protocol().mapRecordToJson(record);
+      return _i42.Protocol().mapRecordToJson(record);
     } catch (_) {}
     try {
-      return _i42.Protocol().mapRecordToJson(record);
+      return _i43.Protocol().mapRecordToJson(record);
     } catch (_) {}
     throw Exception('Unsupported record type ${record.runtimeType}');
   }

@@ -38,18 +38,20 @@ import 'package:landfall_client/src/protocol/license/pack_info_response.dart'
 import 'package:landfall_client/src/protocol/photo/photo.dart' as _i17;
 import 'package:landfall_client/src/protocol/profile/dashboard_profile.dart'
     as _i18;
-import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
+import 'package:landfall_client/src/protocol/settings/remote_display_settings.dart'
     as _i19;
-import 'package:landfall_client/src/protocol/theme/marketplace_theme_info.dart'
+import 'package:landfall_client/src/protocol/settings/linked_credential_summary.dart'
     as _i20;
-import 'package:landfall_client/src/protocol/theme/landfall_theme.dart' as _i21;
+import 'package:landfall_client/src/protocol/theme/marketplace_theme_info.dart'
+    as _i21;
+import 'package:landfall_client/src/protocol/theme/landfall_theme.dart' as _i22;
 import 'package:landfall_client/src/protocol/theme/theme_upload_result.dart'
-    as _i22;
-import 'package:landfall_client/src/protocol/weather/weather_current.dart'
     as _i23;
-import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+import 'package:landfall_client/src/protocol/weather/weather_current.dart'
     as _i24;
-import 'protocol.dart' as _i25;
+import 'package:landfall_client/src/protocol/weather/weather_forecast.dart'
+    as _i25;
+import 'protocol.dart' as _i26;
 
 /// The authenticated agent push API.
 ///
@@ -483,18 +485,10 @@ class EndpointCompanion extends _i1.EndpointRef {
 
   /// Returns the base URL a phone should hit to load `/c/{displayId}`.
   ///
-  /// Resolution order:
-  ///   1. `LANDFALL_DOMAIN` env var (set by `firstboot.sh` on Pi images) →
-  ///      `https://$LANDFALL_DOMAIN`. This is the Caddy-fronted hostname
-  ///      that mDNS resolves on the household LAN.
-  ///   2. The host's first non-loopback, non-link-local RFC1918 IPv4 address
-  ///      with the default web port (`:8082`). Covers macOS / Fire TV
-  ///      development where no Caddy is in front.
-  ///   3. Empty string — the client falls back to its build-time
-  ///      `LANDFALL_WEB_SERVER_URL` define.
-  ///
-  /// The phone scanning the QR must be on the same LAN as the host for
-  /// either branch to work; the URL is not designed to be internet-reachable.
+  /// Delegates to [resolveLanBaseUrl] so the companion page and the
+  /// device-auth `/device` page can never drift on how the LAN-reachable
+  /// host is resolved. The phone scanning the QR must be on the same LAN as
+  /// the host; the URL is not designed to be internet-reachable.
   _i2.Future<String> getCompanionBaseUrl() => caller.callServerEndpoint<String>(
     'companion',
     'getCompanionBaseUrl',
@@ -764,6 +758,39 @@ class EndpointProfile extends _i1.EndpointRef {
   );
 }
 
+/// Provides remote read/write access to a display's user-configurable settings.
+///
+/// All methods require an authenticated session.
+/// One row per displayId — last-write-wins by updatedAt.
+/// {@category Endpoint}
+class EndpointDisplaySettings extends _i1.EndpointRef {
+  EndpointDisplaySettings(_i1.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'displaySettings';
+
+  /// Returns the remote settings record for [displayId], or null when no
+  /// record exists yet (display has not yet seeded its settings to the server).
+  _i2.Future<_i19.RemoteDisplaySettings?> get(String displayId) =>
+      caller.callServerEndpoint<_i19.RemoteDisplaySettings?>(
+        'displaySettings',
+        'get',
+        {'displayId': displayId},
+      );
+
+  /// Upserts the settings record for the given [settings.displayId].
+  ///
+  /// Bumps [RemoteDisplaySettings.updatedAt] to now() server-side so that
+  /// last-write-wins resolution always uses a monotonically-increasing server
+  /// clock rather than a client clock.
+  _i2.Future<void> save(_i19.RemoteDisplaySettings settings) =>
+      caller.callServerEndpoint<void>(
+        'displaySettings',
+        'save',
+        {'settings': settings},
+      );
+}
+
 /// Provides settings data to the display client.
 ///
 /// All methods require an authenticated session.
@@ -775,8 +802,8 @@ class EndpointSettings extends _i1.EndpointRef {
   String get name => 'settings';
 
   /// Returns all linked credentials for the current user, token-free.
-  _i2.Future<List<_i19.LinkedCredentialSummary>> getLinkedCredentials() =>
-      caller.callServerEndpoint<List<_i19.LinkedCredentialSummary>>(
+  _i2.Future<List<_i20.LinkedCredentialSummary>> getLinkedCredentials() =>
+      caller.callServerEndpoint<List<_i20.LinkedCredentialSummary>>(
         'settings',
         'getLinkedCredentials',
         {},
@@ -809,8 +836,8 @@ class EndpointMarketplace extends _i1.EndpointRef {
   /// Returns all themes where [LandfallTheme.isMarketplace] is true, ordered
   /// by name. Each entry carries an [MarketplaceThemeInfo.isOwned] flag based
   /// on the authenticated caller's purchase history.
-  _i2.Future<List<_i20.MarketplaceThemeInfo>> listMarketplaceThemes() =>
-      caller.callServerEndpoint<List<_i20.MarketplaceThemeInfo>>(
+  _i2.Future<List<_i21.MarketplaceThemeInfo>> listMarketplaceThemes() =>
+      caller.callServerEndpoint<List<_i21.MarketplaceThemeInfo>>(
         'marketplace',
         'listMarketplaceThemes',
         {},
@@ -820,8 +847,8 @@ class EndpointMarketplace extends _i1.EndpointRef {
   ///
   /// Throws [NotFoundException] when [themeId] is unknown or is not a
   /// marketplace theme.
-  _i2.Future<_i20.MarketplaceThemeInfo> getMarketplaceTheme(int themeId) =>
-      caller.callServerEndpoint<_i20.MarketplaceThemeInfo>(
+  _i2.Future<_i21.MarketplaceThemeInfo> getMarketplaceTheme(int themeId) =>
+      caller.callServerEndpoint<_i21.MarketplaceThemeInfo>(
         'marketplace',
         'getMarketplaceTheme',
         {'themeId': themeId},
@@ -829,8 +856,8 @@ class EndpointMarketplace extends _i1.EndpointRef {
 
   /// Returns all marketplace themes owned (purchased) by the authenticated
   /// caller. Returns an empty list for unauthenticated sessions.
-  _i2.Future<List<_i20.MarketplaceThemeInfo>> getOwnedThemes() =>
-      caller.callServerEndpoint<List<_i20.MarketplaceThemeInfo>>(
+  _i2.Future<List<_i21.MarketplaceThemeInfo>> getOwnedThemes() =>
+      caller.callServerEndpoint<List<_i21.MarketplaceThemeInfo>>(
         'marketplace',
         'getOwnedThemes',
         {},
@@ -848,8 +875,8 @@ class EndpointTheme extends _i1.EndpointRef {
   /// Returns all themes available on this display (built-in + imported).
   ///
   /// Built-ins are seeded if the themes table is empty.
-  _i2.Future<List<_i21.LandfallTheme>> listThemes() =>
-      caller.callServerEndpoint<List<_i21.LandfallTheme>>(
+  _i2.Future<List<_i22.LandfallTheme>> listThemes() =>
+      caller.callServerEndpoint<List<_i22.LandfallTheme>>(
         'theme',
         'listThemes',
         {},
@@ -861,8 +888,8 @@ class EndpointTheme extends _i1.EndpointRef {
   /// On failure [theme] is null and [errors] lists each validation problem.
   ///
   /// If a theme with the same slug already exists it is replaced.
-  _i2.Future<_i22.ThemeUploadResult> uploadTheme(String yaml) =>
-      caller.callServerEndpoint<_i22.ThemeUploadResult>(
+  _i2.Future<_i23.ThemeUploadResult> uploadTheme(String yaml) =>
+      caller.callServerEndpoint<_i23.ThemeUploadResult>(
         'theme',
         'uploadTheme',
         {'yaml': yaml},
@@ -874,8 +901,8 @@ class EndpointTheme extends _i1.EndpointRef {
   /// Returns the same [ThemeUploadResult] shape as [uploadTheme].
   /// Rejects non-HTTPS URLs, private IP ranges, and loopback addresses to
   /// prevent SSRF. Enforces a 10-second fetch timeout. OWASP A06:2025.
-  _i2.Future<_i22.ThemeUploadResult> importTheme(String url) =>
-      caller.callServerEndpoint<_i22.ThemeUploadResult>(
+  _i2.Future<_i23.ThemeUploadResult> importTheme(String url) =>
+      caller.callServerEndpoint<_i23.ThemeUploadResult>(
         'theme',
         'importTheme',
         {'url': url},
@@ -935,8 +962,8 @@ class EndpointWeather extends _i1.EndpointRef {
   String get name => 'weather';
 
   /// Returns the most recently cached current conditions, or null if none.
-  _i2.Future<_i23.WeatherCurrent?> getCurrentWeather() =>
-      caller.callServerEndpoint<_i23.WeatherCurrent?>(
+  _i2.Future<_i24.WeatherCurrent?> getCurrentWeather() =>
+      caller.callServerEndpoint<_i24.WeatherCurrent?>(
         'weather',
         'getCurrentWeather',
         {},
@@ -945,8 +972,8 @@ class EndpointWeather extends _i1.EndpointRef {
   /// Returns the cached 5-day forecast, oldest day first.
   ///
   /// Returns an empty list if no forecast data has been cached yet.
-  _i2.Future<List<_i24.WeatherForecast>> getForecast() =>
-      caller.callServerEndpoint<List<_i24.WeatherForecast>>(
+  _i2.Future<List<_i25.WeatherForecast>> getForecast() =>
+      caller.callServerEndpoint<List<_i25.WeatherForecast>>(
         'weather',
         'getForecast',
         {},
@@ -984,7 +1011,7 @@ class Client extends _i1.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i25.Protocol(),
+         _i26.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -1007,6 +1034,7 @@ class Client extends _i1.ServerpodClientShared {
     pack = EndpointPack(this);
     photo = EndpointPhoto(this);
     profile = EndpointProfile(this);
+    displaySettings = EndpointDisplaySettings(this);
     settings = EndpointSettings(this);
     marketplace = EndpointMarketplace(this);
     theme = EndpointTheme(this);
@@ -1042,6 +1070,8 @@ class Client extends _i1.ServerpodClientShared {
 
   late final EndpointProfile profile;
 
+  late final EndpointDisplaySettings displaySettings;
+
   late final EndpointSettings settings;
 
   late final EndpointMarketplace marketplace;
@@ -1068,6 +1098,7 @@ class Client extends _i1.ServerpodClientShared {
     'pack': pack,
     'photo': photo,
     'profile': profile,
+    'displaySettings': displaySettings,
     'settings': settings,
     'marketplace': marketplace,
     'theme': theme,

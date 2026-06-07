@@ -71,7 +71,7 @@ Every doc in the repo, in one place. Add a new `.md` file anywhere and it goes h
 
 This index is the right place to start when navigating the repo. A few things worth knowing:
 
-- `docs/README.md` (this file) must be updated in the same commit as any `.md` add, rename, move, or delete anywhere in the repo.
+- `docs/README.md` (this file) must be updated in the same commit as any `.md` add, rename, move, or delete anywhere in the repo. `tools/scripts/check_docs.sh` enforces this automatically — it fails if any `docs/*.md` file is missing from this index or if any link in this index is broken. It runs as part of `deploy/tests/run_deploy_tests.sh`.
 - For setup help, start with [self_hosting_guide.md](self_hosting_guide.md) (Docker) or [raspberry_pi_guide.md](raspberry_pi_guide.md) (Pi image).
 - For agent integration questions, [agent_integration_guide.md](agent_integration_guide.md) covers REST, MCP, and the Dart SDK with copy-paste examples.
 - For server-side code questions, the Serverpod backend is at `server/landfall_server/`. Schema changes are in `server/landfall_server/lib/src/generated/` and are fatal on mismatch — always regenerate the client after changing endpoints.

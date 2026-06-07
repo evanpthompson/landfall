@@ -13,6 +13,12 @@ abstract class ThemeReloader {
   Future<void> loadThemes();
 }
 
+/// Callback interface for syncing display settings (implemented by DisplaySettingsSyncService).
+abstract class SettingsReloader {
+  Future<void> syncOnStartup();
+  Future<void> pullAndApply();
+}
+
 /// App-level long-poll router. Owns the single companion poll loop so web
 /// layout/theme edits reach the TV even when the companion card is not visible.
 ///
@@ -20,7 +26,7 @@ abstract class ThemeReloader {
 ///   pet / play / feed / … → CompanionEventBus.emitCompanionKind (animation)
 ///   layout.changed        → ProfileReloader.loadProfiles()
 ///   theme.changed         → ThemeReloader.loadThemes()
-///   settings.changed      → no-op until Phase 4
+///   settings.changed      → SettingsReloader.pullAndApply() (no-op if not provided)
 ///   unknown               → ignored + debug log
 class DisplayActionService {
   DisplayActionService({
@@ -29,12 +35,14 @@ class DisplayActionService {
     required CompanionEventBus bus,
     required ProfileReloader profileReloader,
     required ThemeReloader themeReloader,
+    SettingsReloader? settingsReloader,
     Duration backoffDuration = const Duration(seconds: 5),
   })  : _displayId = displayId,
         _pollService = pollService,
         _bus = bus,
         _profileReloader = profileReloader,
         _themeReloader = themeReloader,
+        _settingsReloader = settingsReloader,
         _backoffDuration = backoffDuration;
 
   final String _displayId;
@@ -42,6 +50,7 @@ class DisplayActionService {
   final CompanionEventBus _bus;
   final ProfileReloader _profileReloader;
   final ThemeReloader _themeReloader;
+  final SettingsReloader? _settingsReloader;
   final Duration _backoffDuration;
 
   bool _running = false;
@@ -70,7 +79,7 @@ class DisplayActionService {
           case 'theme.changed':
             await _themeReloader.loadThemes();
           case 'settings.changed':
-            break; // no-op until Phase 4
+            await _settingsReloader?.pullAndApply();
           default:
             // Companion animation kinds (pet, play, feed) and anything unknown.
             // Unknown kinds are silently ignored; known kinds animate the companion.

@@ -224,6 +224,7 @@ class _CompanionHome extends StatelessWidget {
                               client.companion.pushAction(displayId, kind),
                           client: client,
                           serverUrl: serverUrl,
+                          displayId: displayId,
                           onOpenUrl: (url) => web.window.open(url, '_blank'),
                         ),
                       ),

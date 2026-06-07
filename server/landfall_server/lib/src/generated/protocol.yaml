@@ -53,6 +53,9 @@ profile:
   - deleteProfile:
   - activateProfile:
   - duplicateProfile:
+displaySettings:
+  - get:
+  - save:
 settings:
   - getLinkedCredentials:
   - getMyAuthUserId:

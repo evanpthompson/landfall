@@ -14,6 +14,7 @@ import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart'
 import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
 import 'package:display/src/features/settings/screens/web_settings_screen.dart';
 import 'package:display/src/features/settings/widgets/layout_tab_view.dart';
+import 'package:display/src/features/settings/widgets/web_display_tab.dart';
 import 'package:display/src/features/theme/cubit/marketplace_cubit.dart';
 import 'package:display/src/features/theme/cubit/marketplace_state.dart';
 import 'package:display/src/features/theme/cubit/theme_cubit.dart';
@@ -37,6 +38,9 @@ class _MockLicenseCubit extends MockCubit<LicenseState>
     implements LicenseCubit {}
 
 class _MockClient extends Mock implements lf.Client {}
+
+class _MockDisplaySettingsEndpoint extends Mock
+    implements lf.EndpointDisplaySettings {}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -91,6 +95,9 @@ Widget _wrapAuthenticated({
   }
 
   final mockClient = client ?? _MockClient();
+  final mockDsEndpoint = _MockDisplaySettingsEndpoint();
+  when(() => mockDsEndpoint.get(any())).thenAnswer((_) async => null);
+  when(() => mockClient.displaySettings).thenReturn(mockDsEndpoint);
 
   return MultiBlocProvider(
     providers: [
@@ -107,6 +114,7 @@ Widget _wrapAuthenticated({
           onPush: onPush ?? (_) async {},
           client: mockClient,
           serverUrl: 'http://localhost:8080/',
+          displayId: 'display-test',
         ),
       ),
     ),
@@ -120,6 +128,7 @@ Widget _wrapAuthenticated({
 void main() {
   setUpAll(() {
     registerFallbackValue(DashboardLayout.defaultLayout());
+    registerFallbackValue('');
   });
 
   group('WebSettingsScreen', () {
@@ -146,14 +155,16 @@ void main() {
       expect(find.byType(LayoutTabView), findsOneWidget);
     });
 
-    testWidgets('Display tab still shows placeholder pane', (tester) async {
+    testWidgets('Display tab renders WebDisplayTab', (tester) async {
       await tester.pumpWidget(_wrapAuthenticated());
       await tester.pump();
 
       await tester.tap(find.text('Display'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('coming soon'), findsOneWidget);
+      // Placeholder is gone; real tab renders (loading → form).
+      expect(find.textContaining('coming soon'), findsNothing);
+      expect(find.byType(WebDisplayTab), findsOneWidget);
     });
 
     testWidgets('unauthenticated state shows login wall, not settings',
@@ -191,6 +202,7 @@ void main() {
                 onPush: (_) async {},
                 client: _MockClient(),
                 serverUrl: 'http://localhost:8080/',
+                displayId: 'display-test',
               ),
             ),
           ),

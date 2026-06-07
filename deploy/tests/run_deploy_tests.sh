@@ -47,5 +47,6 @@ run bash "${SCRIPT_DIR}/test_artifact_contract.sh"
 run bash "${SCRIPT_DIR}/test_caddyfile_routes.sh"
 run bash "${SCRIPT_DIR}/test_app_route_absent.sh"
 run bash "${SCRIPT_DIR}/test_fire_tv_android.sh"
+run bash "${REPO_ROOT}/tools/scripts/check_docs.sh"
 
 echo "Deployment tests passed."

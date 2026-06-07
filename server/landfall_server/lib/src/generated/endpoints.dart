@@ -25,20 +25,23 @@ import '../license/license_endpoint.dart' as _i12;
 import '../license/pack_endpoint.dart' as _i13;
 import '../photo/photo_endpoint.dart' as _i14;
 import '../profile/profile_endpoint.dart' as _i15;
-import '../settings/settings_endpoint.dart' as _i16;
-import '../theme/marketplace_endpoint.dart' as _i17;
-import '../theme/theme_endpoint.dart' as _i18;
-import '../weather/weather_endpoint.dart' as _i19;
+import '../settings/display_settings_endpoint.dart' as _i16;
+import '../settings/settings_endpoint.dart' as _i17;
+import '../theme/marketplace_endpoint.dart' as _i18;
+import '../theme/theme_endpoint.dart' as _i19;
+import '../weather/weather_endpoint.dart' as _i20;
 import 'package:landfall_server/src/generated/cards/card_push_request.dart'
-    as _i20;
-import 'package:landfall_server/src/generated/protocol.dart' as _i21;
+    as _i21;
+import 'package:landfall_server/src/generated/protocol.dart' as _i22;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
-    as _i22;
-import 'package:landfall_server/src/generated/layout/layout_config.dart'
     as _i23;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+import 'package:landfall_server/src/generated/layout/layout_config.dart'
     as _i24;
-import 'package:landfall_server/src/generated/future_calls.dart' as _i25;
+import 'package:landfall_server/src/generated/settings/remote_display_settings.dart'
+    as _i25;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _i26;
+import 'package:landfall_server/src/generated/future_calls.dart' as _i27;
 export 'future_calls.dart' show ServerpodFutureCallsGetter;
 
 class Endpoints extends _i1.EndpointDispatch {
@@ -129,25 +132,31 @@ class Endpoints extends _i1.EndpointDispatch {
           'profile',
           null,
         ),
-      'settings': _i16.SettingsEndpoint()
+      'displaySettings': _i16.DisplaySettingsEndpoint()
+        ..initialize(
+          server,
+          'displaySettings',
+          null,
+        ),
+      'settings': _i17.SettingsEndpoint()
         ..initialize(
           server,
           'settings',
           null,
         ),
-      'marketplace': _i17.MarketplaceEndpoint()
+      'marketplace': _i18.MarketplaceEndpoint()
         ..initialize(
           server,
           'marketplace',
           null,
         ),
-      'theme': _i18.ThemeEndpoint()
+      'theme': _i19.ThemeEndpoint()
         ..initialize(
           server,
           'theme',
           null,
         ),
-      'weather': _i19.WeatherEndpoint()
+      'weather': _i20.WeatherEndpoint()
         ..initialize(
           server,
           'weather',
@@ -186,7 +195,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i20.CardPushRequest>(),
+              type: _i1.getType<_i21.CardPushRequest>(),
               nullable: false,
             ),
           },
@@ -215,7 +224,7 @@ class Endpoints extends _i1.EndpointDispatch {
             ),
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i20.CardPushRequest>(),
+              type: _i1.getType<_i21.CardPushRequest>(),
               nullable: false,
             ),
           },
@@ -451,14 +460,14 @@ class Endpoints extends _i1.EndpointDispatch {
                 Map<String, dynamic> params,
               ) async => (endpoints['passkeyIdp'] as _i6.PasskeyIdpEndpoint)
                   .createChallenge(session)
-                  .then((record) => _i21.Protocol().mapRecordToJson(record)),
+                  .then((record) => _i22.Protocol().mapRecordToJson(record)),
         ),
         'register': _i1.MethodConnector(
           name: 'register',
           params: {
             'registrationRequest': _i1.ParameterDescription(
               name: 'registrationRequest',
-              type: _i1.getType<_i22.PasskeyRegistrationRequest>(),
+              type: _i1.getType<_i23.PasskeyRegistrationRequest>(),
               nullable: false,
             ),
           },
@@ -477,7 +486,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'loginRequest': _i1.ParameterDescription(
               name: 'loginRequest',
-              type: _i1.getType<_i22.PasskeyLoginRequest>(),
+              type: _i1.getType<_i23.PasskeyLoginRequest>(),
               nullable: false,
             ),
           },
@@ -548,7 +557,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i20.CardPushRequest>(),
+              type: _i1.getType<_i21.CardPushRequest>(),
               nullable: false,
             ),
           },
@@ -709,7 +718,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'layout': _i1.ParameterDescription(
               name: 'layout',
-              type: _i1.getType<_i23.LayoutConfig>(),
+              type: _i1.getType<_i24.LayoutConfig>(),
               nullable: false,
             ),
           },
@@ -1019,6 +1028,52 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
+    connectors['displaySettings'] = _i1.EndpointConnector(
+      name: 'displaySettings',
+      endpoint: endpoints['displaySettings']!,
+      methodConnectors: {
+        'get': _i1.MethodConnector(
+          name: 'get',
+          params: {
+            'displayId': _i1.ParameterDescription(
+              name: 'displayId',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['displaySettings'] as _i16.DisplaySettingsEndpoint)
+                      .get(
+                        session,
+                        params['displayId'],
+                      ),
+        ),
+        'save': _i1.MethodConnector(
+          name: 'save',
+          params: {
+            'settings': _i1.ParameterDescription(
+              name: 'settings',
+              type: _i1.getType<_i25.RemoteDisplaySettings>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['displaySettings'] as _i16.DisplaySettingsEndpoint)
+                      .save(
+                        session,
+                        params['settings'],
+                      ),
+        ),
+      },
+    );
     connectors['settings'] = _i1.EndpointConnector(
       name: 'settings',
       endpoint: endpoints['settings']!,
@@ -1030,7 +1085,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['settings'] as _i16.SettingsEndpoint)
+              ) async => (endpoints['settings'] as _i17.SettingsEndpoint)
                   .getLinkedCredentials(session),
         ),
         'getMyAuthUserId': _i1.MethodConnector(
@@ -1040,7 +1095,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['settings'] as _i16.SettingsEndpoint)
+              ) async => (endpoints['settings'] as _i17.SettingsEndpoint)
                   .getMyAuthUserId(session),
         ),
       },
@@ -1056,7 +1111,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['marketplace'] as _i17.MarketplaceEndpoint)
+              ) async => (endpoints['marketplace'] as _i18.MarketplaceEndpoint)
                   .listMarketplaceThemes(session),
         ),
         'getMarketplaceTheme': _i1.MethodConnector(
@@ -1072,7 +1127,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['marketplace'] as _i17.MarketplaceEndpoint)
+              ) async => (endpoints['marketplace'] as _i18.MarketplaceEndpoint)
                   .getMarketplaceTheme(
                     session,
                     params['themeId'],
@@ -1085,7 +1140,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['marketplace'] as _i17.MarketplaceEndpoint)
+              ) async => (endpoints['marketplace'] as _i18.MarketplaceEndpoint)
                   .getOwnedThemes(session),
         ),
       },
@@ -1101,7 +1156,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['theme'] as _i18.ThemeEndpoint).listThemes(
+              ) async => (endpoints['theme'] as _i19.ThemeEndpoint).listThemes(
                 session,
               ),
         ),
@@ -1118,7 +1173,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['theme'] as _i18.ThemeEndpoint).uploadTheme(
+              ) async => (endpoints['theme'] as _i19.ThemeEndpoint).uploadTheme(
                 session,
                 params['yaml'],
               ),
@@ -1136,7 +1191,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['theme'] as _i18.ThemeEndpoint).importTheme(
+              ) async => (endpoints['theme'] as _i19.ThemeEndpoint).importTheme(
                 session,
                 params['url'],
               ),
@@ -1154,7 +1209,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['theme'] as _i18.ThemeEndpoint).deleteTheme(
+              ) async => (endpoints['theme'] as _i19.ThemeEndpoint).deleteTheme(
                 session,
                 params['id'],
               ),
@@ -1173,7 +1228,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 _i1.Session session,
                 Map<String, dynamic> params,
               ) async =>
-                  (endpoints['theme'] as _i18.ThemeEndpoint).previewTheme(
+                  (endpoints['theme'] as _i19.ThemeEndpoint).previewTheme(
                     session,
                     params['id'],
                   ),
@@ -1196,7 +1251,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['theme'] as _i18.ThemeEndpoint).applyTheme(
+              ) async => (endpoints['theme'] as _i19.ThemeEndpoint).applyTheme(
                 session,
                 params['themeId'],
                 profileId: params['profileId'],
@@ -1215,7 +1270,7 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['weather'] as _i19.WeatherEndpoint)
+              ) async => (endpoints['weather'] as _i20.WeatherEndpoint)
                   .getCurrentWeather(session),
         ),
         'getForecast': _i1.MethodConnector(
@@ -1225,19 +1280,19 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['weather'] as _i19.WeatherEndpoint)
+              ) async => (endpoints['weather'] as _i20.WeatherEndpoint)
                   .getForecast(session),
         ),
       },
     );
-    modules['serverpod_auth_idp'] = _i22.Endpoints()
+    modules['serverpod_auth_idp'] = _i23.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_core'] = _i24.Endpoints()
+    modules['serverpod_auth_core'] = _i26.Endpoints()
       ..initializeEndpoints(server);
   }
 
   @override
   _i1.FutureCallDispatch? get futureCalls {
-    return _i25.FutureCalls();
+    return _i27.FutureCalls();
   }
 }

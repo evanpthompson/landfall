@@ -17,6 +17,8 @@ class _MockProfileReloader extends Mock implements ProfileReloader {}
 
 class _MockThemeReloader extends Mock implements ThemeReloader {}
 
+class _MockSettingsReloader extends Mock implements SettingsReloader {}
+
 // A poll service backed by a manually-controlled completer, so tests can
 // push actions at will and observe which callbacks fire.
 class _ControlledPollService implements CompanionPollService {
@@ -61,15 +63,19 @@ lf.CompanionAction _action(String kind) => lf.CompanionAction(
 void main() {
   late _MockProfileReloader profileReloader;
   late _MockThemeReloader themeReloader;
+  late _MockSettingsReloader settingsReloader;
   late CompanionEventBus bus;
 
   setUp(() {
     profileReloader = _MockProfileReloader();
     themeReloader = _MockThemeReloader();
+    settingsReloader = _MockSettingsReloader();
     bus = CompanionEventBus();
 
     when(() => profileReloader.loadProfiles()).thenAnswer((_) async {});
     when(() => themeReloader.loadThemes()).thenAnswer((_) async {});
+    when(() => settingsReloader.pullAndApply()).thenAnswer((_) async {});
+    when(() => settingsReloader.syncOnStartup()).thenAnswer((_) async {});
   });
 
   tearDown(() => bus.dispose());
@@ -135,7 +141,8 @@ void main() {
       expect(received, contains('pet'));
     });
 
-    test('settings.changed action does not throw and is a no-op', () async {
+    test('settings.changed action does not throw when no reloader provided',
+        () async {
       final poll = _ControlledPollService();
       final service = DisplayActionService(
         displayId: 'display-1',
@@ -147,7 +154,6 @@ void main() {
       addTearDown(service.dispose);
 
       await Future<void>.delayed(Duration.zero);
-      // Must not throw.
       expect(
         () async {
           poll.push(_action('settings.changed'));
@@ -155,6 +161,28 @@ void main() {
         },
         returnsNormally,
       );
+    });
+
+    test('settings.changed calls pullAndApply() when reloader provided',
+        () async {
+      final poll = _ControlledPollService();
+      final service = DisplayActionService(
+        displayId: 'display-1',
+        pollService: poll,
+        bus: bus,
+        profileReloader: profileReloader,
+        themeReloader: themeReloader,
+        settingsReloader: settingsReloader,
+      )..start();
+      addTearDown(service.dispose);
+
+      await Future<void>.delayed(Duration.zero);
+      poll.push(_action('settings.changed'));
+      await Future<void>.delayed(Duration.zero);
+
+      verify(() => settingsReloader.pullAndApply()).called(1);
+      verifyNever(() => profileReloader.loadProfiles());
+      verifyNever(() => themeReloader.loadThemes());
     });
 
     test('unknown kind is a no-op (no crash, no dispatch)', () async {

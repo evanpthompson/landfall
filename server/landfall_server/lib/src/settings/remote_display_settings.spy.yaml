@@ -1,0 +1,37 @@
+### Server-side record of a display's user-configurable settings.
+### Excludes device-local fields (serverUrl, wizardComplete, displayId-generation)
+### which have no meaning when edited remotely.
+### One row per displayId — upserted by the display app on startup and on every
+### TV-local edit; pulled by the web settings UI to populate WebDisplayTab.
+class: RemoteDisplaySettings
+table: remote_display_settings
+
+fields:
+  ### The stable display identifier this record belongs to.
+  displayId: String
+
+  ### Whether the scheduled dim mode is active.
+  dimEnabled: bool, default=true
+
+  ### Hour (0–23) at which dimming begins.
+  dimStartHour: int, default=22
+
+  ### Hour (0–23) at which dimming ends (display brightens).
+  dimEndHour: int, default=7
+
+  ### Opacity of the dim overlay (0.0 = transparent, 1.0 = fully black).
+  dimLevel: double, default=0.85
+
+  ### Optional display-name override for the weather card location label.
+  locationName: String, default=''
+
+  ### JSON-encoded PhotoSource. Null = default (Serverpod).
+  photoSourceJson: String?
+
+  ### When this record was last written. Used for last-write-wins conflict resolution.
+  updatedAt: DateTime
+
+indexes:
+  remote_display_settings_display_id_idx:
+    fields: displayId
+    unique: true

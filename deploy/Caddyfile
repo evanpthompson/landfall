@@ -54,6 +54,8 @@
     reverse_proxy @license server:8080
     @pack path /pack /pack/*
     reverse_proxy @pack server:8080
+    @displaySettings path /displaySettings /displaySettings/*
+    reverse_proxy @displaySettings server:8080
     reverse_proxy /photos/* server:8082
 
     # WebSocket endpoint for real-time card push
