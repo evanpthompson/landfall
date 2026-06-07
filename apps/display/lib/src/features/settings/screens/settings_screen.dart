@@ -28,10 +28,19 @@ import 'package:display/src/features/settings/widgets/layout_editor.dart';
 ///   Accounts — list of linked calendar/photo credentials + OAuth connect URLs
 ///   Layout   — drag-to-move grid editor
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key, required this.client, required this.serverUrl});
+  const SettingsScreen({
+    super.key,
+    required this.client,
+    required this.serverUrl,
+    this.leanback = false,
+  });
 
   final Client client;
   final String serverUrl;
+
+  /// Test seam for leanback detection. When true, the Layout tab shows a
+  /// remote-editing placeholder instead of the pointer-only LayoutEditor.
+  final bool leanback;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -57,7 +66,16 @@ class _SettingsScreenState extends State<SettingsScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: true,
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        // First Back press dismisses the soft keyboard; second press exits.
+        if (MediaQuery.of(context).viewInsets.bottom > 0) {
+          FocusManager.instance.primaryFocus?.unfocus();
+          return;
+        }
+        Navigator.of(context).pop();
+      },
       child: Shortcuts(
         shortcuts: const {
           SingleActivator(LogicalKeyboardKey.arrowDown): NextFocusIntent(),
@@ -115,7 +133,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               children: [
                 _DisplayTab(serverUrl: widget.serverUrl),
                 _AccountsTab(client: widget.client, serverUrl: widget.serverUrl),
-                const _LayoutTab(),
+                _LayoutTab(leanback: widget.leanback),
                 const _ThemesTab(),
                 const _LicenseTab(),
               ],
@@ -641,10 +659,42 @@ class _ConnectUrlTile extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _LayoutTab extends StatelessWidget {
-  const _LayoutTab();
+  const _LayoutTab({this.leanback = false});
+
+  final bool leanback;
 
   @override
   Widget build(BuildContext context) {
+    if (leanback) {
+      return const Center(
+        key: ValueKey('layout_leanback_placeholder'),
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.edit_off_outlined,
+                  size: 48, color: LandfallColors.textTertiary),
+              SizedBox(height: 16),
+              Text(
+                'Layout editing requires a touchscreen.',
+                style: TextStyle(
+                    color: LandfallColors.textPrimary, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Open Landfall in a browser or on your phone to rearrange cards.',
+                style: TextStyle(
+                    color: LandfallColors.textSecondary, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return BlocBuilder<DashboardProfileCubit, DashboardProfileState>(
       builder: (context, state) {
         if (state is! DashboardProfileLoaded) {

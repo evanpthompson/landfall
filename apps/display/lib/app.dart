@@ -253,12 +253,20 @@ class _AuthGateState extends State<_AuthGate> {
     // Integration tests bypass auth: either the server URL is injected
     // directly, or wizard mode is active (wizard completes then lands here).
     if (kIntegrationTestServerUrl.isNotEmpty || kIntegrationTestWizardMode) {
-      return DisplayScreen(client: widget.client, serverUrl: widget.serverUrl);
+      return DisplayScreen(
+  client: widget.client,
+  serverUrl: widget.serverUrl,
+  leanback: _leanback ?? false,
+);
     }
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
         if (state is AuthAuthenticated) {
-          return DisplayScreen(client: widget.client, serverUrl: widget.serverUrl);
+          return DisplayScreen(
+  client: widget.client,
+  serverUrl: widget.serverUrl,
+  leanback: _leanback ?? false,
+);
         }
         return LoginScreen(
           leanback: _leanback ?? false,

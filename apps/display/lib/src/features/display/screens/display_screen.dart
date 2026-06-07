@@ -56,10 +56,12 @@ class DisplayScreen extends StatefulWidget {
     super.key,
     required this.client,
     required this.serverUrl,
+    this.leanback = false,
   });
 
   final Client client;
   final String serverUrl;
+  final bool leanback;
 
   @override
   State<DisplayScreen> createState() => _DisplayScreenState();
@@ -106,7 +108,11 @@ class _DisplayScreenState extends State<DisplayScreen> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) =>
-            SettingsScreen(client: widget.client, serverUrl: widget.serverUrl),
+            SettingsScreen(
+          client: widget.client,
+          serverUrl: widget.serverUrl,
+          leanback: widget.leanback,
+        ),
       ),
     );
   }
