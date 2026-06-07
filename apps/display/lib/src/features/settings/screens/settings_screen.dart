@@ -50,6 +50,12 @@ class _SettingsScreenState extends State<SettingsScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
 
+  /// True while the leanback layout editor has a card in move mode.
+  bool _lbEditorInMoveMode = false;
+
+  /// Cancels an in-progress leanback move; set by the editor when move starts.
+  VoidCallback? _cancelLbEditorMove;
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +75,13 @@ class _SettingsScreenState extends State<SettingsScreen>
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
+        // Back while leanback editor is moving a card → cancel the move.
+        // The editor's cancelLbMove fires onMoveModeChanged(false) which
+        // sets _lbEditorInMoveMode back to false via the callback above.
+        if (_lbEditorInMoveMode) {
+          _cancelLbEditorMove?.call();
+          return;
+        }
         // First Back press dismisses the soft keyboard; second press exits.
         if (MediaQuery.of(context).viewInsets.bottom > 0) {
           FocusManager.instance.primaryFocus?.unfocus();
@@ -133,7 +146,13 @@ class _SettingsScreenState extends State<SettingsScreen>
               children: [
                 _DisplayTab(serverUrl: widget.serverUrl),
                 _AccountsTab(client: widget.client, serverUrl: widget.serverUrl),
-                _LayoutTab(leanback: widget.leanback),
+                _LayoutTab(
+                  leanback: widget.leanback,
+                  onMoveModeChanged: (v) =>
+                      setState(() => _lbEditorInMoveMode = v),
+                  onCancelMoveRegistered: (cancel) =>
+                      _cancelLbEditorMove = cancel,
+                ),
                 const _ThemesTab(),
                 const _LicenseTab(),
               ],
@@ -659,42 +678,18 @@ class _ConnectUrlTile extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _LayoutTab extends StatelessWidget {
-  const _LayoutTab({this.leanback = false});
+  const _LayoutTab({
+    this.leanback = false,
+    this.onMoveModeChanged,
+    this.onCancelMoveRegistered,
+  });
 
   final bool leanback;
+  final ValueChanged<bool>? onMoveModeChanged;
+  final ValueChanged<VoidCallback>? onCancelMoveRegistered;
 
   @override
   Widget build(BuildContext context) {
-    if (leanback) {
-      return const Center(
-        key: ValueKey('layout_leanback_placeholder'),
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.edit_off_outlined,
-                  size: 48, color: LandfallColors.textTertiary),
-              SizedBox(height: 16),
-              Text(
-                'Layout editing requires a touchscreen.',
-                style: TextStyle(
-                    color: LandfallColors.textPrimary, fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Open the Landfall app on a Mac or touchscreen device to rearrange cards.',
-                style: TextStyle(
-                    color: LandfallColors.textSecondary, fontSize: 13),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return BlocBuilder<DashboardProfileCubit, DashboardProfileState>(
       builder: (context, state) {
         if (state is! DashboardProfileLoaded) {
@@ -730,15 +725,22 @@ class _LayoutTab extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               _SectionHeader(
-                  'Tap to select  •  drag to move  •  drag corner to resize'),
+                leanback
+                    ? 'Arrow keys to focus  •  OK to move  •  OK to drop  •  Back to cancel'
+                    : 'Tap to select  •  drag to move  •  drag corner to resize',
+              ),
               const SizedBox(height: 16),
               Expanded(
                 child: LayoutEditor(
                   layout: state.active.layout,
                   onLayoutChanged: (updated) =>
                       context.read<DashboardProfileCubit>().saveActiveLayout(updated),
-                  onReset: () =>
-                      context.read<DashboardProfileCubit>().resetActiveLayout(),
+                  onReset: leanback
+                      ? null
+                      : () => context.read<DashboardProfileCubit>().resetActiveLayout(),
+                  leanback: leanback,
+                  onMoveModeChanged: onMoveModeChanged,
+                  onCancelMoveRegistered: onCancelMoveRegistered,
                 ),
               ),
             ],

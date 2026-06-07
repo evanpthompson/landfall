@@ -12,7 +12,6 @@ import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart'
 import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
 import 'package:display/src/features/settings/screens/settings_screen.dart';
-import 'package:display/src/features/settings/widgets/layout_editor.dart';
 import 'package:display/src/features/theme/cubit/theme_cubit.dart';
 import 'package:display/src/features/theme/cubit/theme_state.dart';
 
@@ -304,32 +303,16 @@ void main() {
 
     group('Layout tab — leanback', () {
       testWidgets(
-          'shows remote-editing placeholder instead of LayoutEditor when leanback=true',
+          'Layout tab does not show a placeholder — D-pad editor is used instead',
           (tester) async {
         await tester.pumpWidget(_wrap(leanback: true));
         await tester.pump();
 
         await tester.tap(find.text('Layout'));
-        await tester.pump(); // start tab animation
-        await tester.pump(const Duration(milliseconds: 500)); // complete
-
-        expect(
-          find.byKey(const ValueKey('layout_leanback_placeholder')),
-          findsOneWidget,
-        );
-        expect(find.byType(LayoutEditor), findsNothing);
-      });
-
-      testWidgets(
-          'does not show leanback placeholder when leanback=false',
-          (tester) async {
-        await tester.pumpWidget(_wrap());
         await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
 
-        await tester.tap(find.text('Layout'));
-        await tester.pump(); // start tab animation
-        await tester.pump(const Duration(milliseconds: 500)); // complete
-
+        // No placeholder — leanback mode now shows the LayoutEditor directly.
         expect(
           find.byKey(const ValueKey('layout_leanback_placeholder')),
           findsNothing,

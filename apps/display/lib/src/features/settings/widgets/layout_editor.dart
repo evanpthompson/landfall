@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
-/// Interactive drag-to-move grid layout editor with toolbar.
+/// Interactive grid layout editor.
 ///
-/// The toolbar (snap toggle, preview toggle, optional reset) sits above the
-/// canvas. Tapping a card selects it and opens the card HUD. Locked cards
-/// ignore drag and resize gestures.
+/// In pointer mode (default): tap to select a card and open the HUD; drag to
+/// move; drag the corner handle to resize. Locked cards ignore gestures.
+///
+/// In leanback mode ([leanback] = true): arrow keys navigate between cards,
+/// OK/Enter picks up the focused card, arrow keys then shift it one cell at a
+/// time, OK/Enter drops it, Escape cancels. Use [onMoveModeChanged] to be
+/// notified when the editor enters or leaves move mode (e.g. so a parent
+/// PopScope can intercept Back to cancel instead of popping the screen).
 class LayoutEditor extends StatefulWidget {
   const LayoutEditor({
     super.key,
     required this.layout,
     required this.onLayoutChanged,
     this.onReset,
+    this.leanback = false,
+    this.onMoveModeChanged,
+    this.onCancelMoveRegistered,
   });
 
   final DashboardLayout layout;
@@ -21,11 +30,23 @@ class LayoutEditor extends StatefulWidget {
   /// If provided, a reset button appears in the toolbar that calls this.
   final VoidCallback? onReset;
 
+  /// When true the editor uses D-pad navigation instead of pointer gestures.
+  final bool leanback;
+
+  /// Called with `true` when move mode is entered, `false` when it exits.
+  final ValueChanged<bool>? onMoveModeChanged;
+
+  /// Called when move mode starts with a [VoidCallback] that cancels the move.
+  /// Store the callback and invoke it from a parent [PopScope] so Back cancels
+  /// an in-progress move instead of popping the screen.
+  final ValueChanged<VoidCallback>? onCancelMoveRegistered;
+
   @override
   State<LayoutEditor> createState() => _LayoutEditorState();
 }
 
 class _LayoutEditorState extends State<LayoutEditor> {
+  // ── Pointer mode state ────────────────────────────────────────────────────
   String? _selectedId;
   String? _draggingId;
   int? _ghostCol;
@@ -48,6 +69,52 @@ class _LayoutEditorState extends State<LayoutEditor> {
   bool _snapEnabled = true;
   bool _previewMode = false;
 
+  // ── Leanback (D-pad) state ────────────────────────────────────────────────
+  /// ID of the card that currently has D-pad focus (browse mode).
+  String? _lbFocusedId;
+
+  /// ID of the card currently being moved (move mode).
+  String? _lbMovingId;
+
+  /// Proposed column while in move mode.
+  int? _lbMoveCol;
+
+  /// Proposed row while in move mode.
+  int? _lbMoveRow;
+
+  /// Focus nodes keyed by card ID, created lazily and disposed in [dispose].
+  final Map<String, FocusNode> _lbFocusNodes = {};
+
+  FocusNode _focusNodeFor(String id) =>
+      _lbFocusNodes.putIfAbsent(id, () => FocusNode(debugLabel: 'lb_card_$id'));
+
+  // ── Leanback public API ───────────────────────────────────────────────────
+
+  /// Called by the parent PopScope to cancel an in-progress move via Back.
+  void cancelLbMove() {
+    if (_lbMovingId == null) return;
+    setState(() {
+      _lbMovingId = null;
+      _lbMoveCol = null;
+      _lbMoveRow = null;
+    });
+    widget.onMoveModeChanged?.call(false);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------------------
+
+  @override
+  void dispose() {
+    for (final node in _lbFocusNodes.values) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
   // ---------------------------------------------------------------------------
   // Build
   // ---------------------------------------------------------------------------
@@ -56,17 +123,18 @@ class _LayoutEditorState extends State<LayoutEditor> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _EditorToolbar(
-          snapEnabled: _snapEnabled,
-          previewMode: _previewMode,
-          onSnapToggle: () => setState(() => _snapEnabled = !_snapEnabled),
-          onPreviewToggle: () => setState(() {
-            _previewMode = !_previewMode;
-            if (_previewMode) _selectedId = null;
-          }),
-          onSelectAll: _showSelectAllSheet,
-          onReset: widget.onReset,
-        ),
+        if (!widget.leanback)
+          _EditorToolbar(
+            snapEnabled: _snapEnabled,
+            previewMode: _previewMode,
+            onSnapToggle: () => setState(() => _snapEnabled = !_snapEnabled),
+            onPreviewToggle: () => setState(() {
+              _previewMode = !_previewMode;
+              if (_previewMode) _selectedId = null;
+            }),
+            onSelectAll: _showSelectAllSheet,
+            onReset: widget.onReset,
+          ),
         Expanded(child: _buildCanvas()),
       ],
     );
@@ -177,15 +245,23 @@ class _LayoutEditorState extends State<LayoutEditor> {
     final isSelected = _selectedId == config.id;
     final color = _cardColor(config.source);
 
-    return AnimatedPositioned(
+    // In leanback mode the card may be at its proposed move position.
+    final isLbMoving = widget.leanback && _lbMovingId == config.id;
+    final displayCol = isLbMoving ? _lbMoveCol! : slot.column;
+    final displayRow = isLbMoving ? _lbMoveRow! : slot.row;
+    final isLbFocused = widget.leanback && _lbFocusedId == config.id;
+
+    final tile = AnimatedPositioned(
       key: ValueKey('card_tile_${config.id}'),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutBack,
-      left: slot.column * cellW + _kGap,
-      top: slot.row * cellH + _kGap,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      left: displayCol * cellW + _kGap,
+      top: displayRow * cellH + _kGap,
       width: slot.columnSpan * cellW - _kGap * 2,
       height: slot.rowSpan * cellH - _kGap * 2,
-      child: GestureDetector(
+      child: widget.leanback
+          ? _buildLbCardContent(config, color, isLbFocused, isLbMoving)
+          : GestureDetector(
         onTap: _previewMode ? () => _exitPreview(config) : () => _selectCard(config),
         onPanStart: (_previewMode || config.locked)
             ? null
@@ -384,6 +460,262 @@ class _LayoutEditorState extends State<LayoutEditor> {
         ),
       ),
     );
+
+    return tile;
+  }
+
+  // ── Leanback card content ─────────────────────────────────────────────────
+
+  Widget _buildLbCardContent(
+    CardConfig config,
+    Color color,
+    bool isFocused,
+    bool isMoving,
+  ) {
+    final focusNode = _focusNodeFor(config.id);
+    final isFirstCard = widget.layout.cards.isNotEmpty &&
+        widget.layout.cards.first.id == config.id;
+
+    return Focus(
+      focusNode: focusNode,
+      autofocus: isFirstCard,
+      onFocusChange: (hasFocus) {
+        if (hasFocus && mounted) {
+          setState(() => _lbFocusedId = config.id);
+        }
+      },
+      onKeyEvent: (node, event) => _handleLbKey(config, event),
+      child: Stack(
+        children: [
+          // Card body
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.2),
+                border: Border.all(
+                  color: config.visible
+                      ? color.withValues(alpha: 0.7)
+                      : color.withValues(alpha: 0.3),
+                  width: 1.5,
+                ),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _cardLabel(config.source),
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (!config.visible) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'hidden',
+                        style: TextStyle(
+                          color: color.withValues(alpha: 0.5),
+                          fontSize: 9,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // D-pad focus ring (browse mode)
+          if (isFocused && !isMoving)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  key: ValueKey('lb_focus_ring_${config.id}'),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: LandfallColors.accent.withValues(alpha: 0.6),
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ),
+            ),
+          // Move mode highlight
+          if (isMoving)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  key: ValueKey('lb_move_mode_${config.id}'),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: LandfallColors.accent,
+                      width: 3,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                    color: LandfallColors.accent.withValues(alpha: 0.1),
+                  ),
+                ),
+              ),
+            ),
+          // Lock badge
+          if (config.locked)
+            Positioned(
+              left: 4,
+              bottom: 4,
+              child: Icon(
+                Icons.lock,
+                size: 12,
+                color: color.withValues(alpha: 0.8),
+              ),
+            ),
+          // Move hint shown when in move mode
+          if (isMoving)
+            const Positioned(
+              right: 4,
+              top: 4,
+              child: Icon(
+                Icons.open_with,
+                size: 14,
+                color: LandfallColors.accent,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ── Leanback key handling ─────────────────────────────────────────────────
+
+  KeyEventResult _handleLbKey(CardConfig config, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+
+    // ── Move mode ────────────────────────────────────────────────────────────
+    if (_lbMovingId == config.id) {
+      if (key == LogicalKeyboardKey.arrowRight) {
+        _lbShift(config, dc: 1, dr: 0);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowLeft) {
+        _lbShift(config, dc: -1, dr: 0);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowDown) {
+        _lbShift(config, dc: 0, dr: 1);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowUp) {
+        _lbShift(config, dc: 0, dr: -1);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.select || key == LogicalKeyboardKey.enter) {
+        _lbConfirm(config);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.escape) {
+        cancelLbMove();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    }
+
+    // ── Browse mode ──────────────────────────────────────────────────────────
+    if (_lbFocusedId == config.id) {
+      if (key == LogicalKeyboardKey.select || key == LogicalKeyboardKey.enter) {
+        if (!config.locked) _lbStartMove(config);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowRight) {
+        _lbNavigate(config, dx: 1, dy: 0);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowLeft) {
+        _lbNavigate(config, dx: -1, dy: 0);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowDown) {
+        _lbNavigate(config, dx: 0, dy: 1);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowUp) {
+        _lbNavigate(config, dx: 0, dy: -1);
+        return KeyEventResult.handled;
+      }
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  void _lbStartMove(CardConfig config) {
+    setState(() {
+      _lbMovingId = config.id;
+      _lbMoveCol = config.slot.column;
+      _lbMoveRow = config.slot.row;
+    });
+    widget.onMoveModeChanged?.call(true);
+    widget.onCancelMoveRegistered?.call(cancelLbMove);
+  }
+
+  void _lbShift(CardConfig config, {required int dc, required int dr}) {
+    final slot = config.slot;
+    final newCol = (_lbMoveCol! + dc)
+        .clamp(0, widget.layout.columns - slot.columnSpan);
+    final newRow = (_lbMoveRow! + dr)
+        .clamp(0, widget.layout.rows - slot.rowSpan);
+    setState(() {
+      _lbMoveCol = newCol;
+      _lbMoveRow = newRow;
+    });
+  }
+
+  void _lbConfirm(CardConfig config) {
+    if (_lbMoveCol != config.slot.column || _lbMoveRow != config.slot.row) {
+      _commitMove(config, _lbMoveCol!, _lbMoveRow!);
+    }
+    setState(() {
+      _lbMovingId = null;
+      _lbMoveCol = null;
+      _lbMoveRow = null;
+    });
+    widget.onMoveModeChanged?.call(false);
+  }
+
+  void _lbNavigate(CardConfig from, {required int dx, required int dy}) {
+    final fromCX = from.slot.column + from.slot.columnSpan / 2.0;
+    final fromCY = from.slot.row + from.slot.rowSpan / 2.0;
+
+    CardConfig? best;
+    double bestScore = double.infinity;
+
+    for (final card in widget.layout.cards) {
+      if (card.id == from.id) continue;
+      final toCX = card.slot.column + card.slot.columnSpan / 2.0;
+      final toCY = card.slot.row + card.slot.rowSpan / 2.0;
+      final relX = toCX - fromCX;
+      final relY = toCY - fromCY;
+
+      // Must be in the requested direction.
+      final inDir = (dx > 0 && relX > 0) ||
+          (dx < 0 && relX < 0) ||
+          (dy > 0 && relY > 0) ||
+          (dy < 0 && relY < 0);
+      if (!inDir) continue;
+
+      final score = relX * relX + relY * relY;
+      if (score < bestScore) {
+        bestScore = score;
+        best = card;
+      }
+    }
+
+    if (best != null) {
+      _focusNodeFor(best.id).requestFocus();
+    }
   }
 
   // ---------------------------------------------------------------------------
