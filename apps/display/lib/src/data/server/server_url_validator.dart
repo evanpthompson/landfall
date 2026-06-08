@@ -31,9 +31,14 @@ class ServerUrlOutcome {
 ///      (Pi/dev split-port builds) that fixed address is checked; otherwise
 ///      (Fire TV) the entered URL must itself be the web/Caddy origin.
 class ServerUrlValidator {
-  const ServerUrlValidator(this._health);
+  const ServerUrlValidator(this._health, {String? webServerUrlOverride})
+      : _webServerUrlOverride = webServerUrlOverride;
 
   final ServerHealthChecker _health;
+
+  /// Overrides [kLandfallWebServerUrl] — used in tests to inject the baked URL
+  /// without a compile-time dart-define.
+  final String? _webServerUrlOverride;
 
   /// Trims whitespace and ensures a single trailing slash.
   static String normalize(String raw) {
@@ -43,7 +48,8 @@ class ServerUrlValidator {
 
   Future<ServerUrlOutcome> validate(String raw) async {
     final url = normalize(raw);
-    final webUrl = kLandfallWebServerUrl.isNotEmpty ? kLandfallWebServerUrl : url;
+    final bakedWebUrl = _webServerUrlOverride ?? kLandfallWebServerUrl;
+    final webUrl = bakedWebUrl.isNotEmpty ? bakedWebUrl : url;
 
     if (!await _health.isReachable(url)) {
       return const ServerUrlOutcome.error(

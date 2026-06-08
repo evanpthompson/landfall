@@ -61,17 +61,18 @@ echo ""
 
 echo "${CYAN}${BOLD}Building Fire TV APK...${RESET}"
 
-# Optional server URLs, baked via --dart-define (both default to empty, which
-# preserves the stock behavior: first-run setup wizard, single-origin client).
-#
-# For direct-port LAN validation against a Caddy-less dev server, set both so
-# RPC and device-auth sign-in resolve to their separate ports (mirrors the Pi):
-#   LANDFALL_DEFAULT_SERVER_URL=http://192.168.1.167:8080/ \
-#   LANDFALL_WEB_SERVER_URL=http://192.168.1.167:8082/ \
-#   bash tools/scripts/build_apk.sh
-# Omit LANDFALL_DEFAULT_SERVER_URL to keep the setup wizard; LANDFALL_WEB_SERVER_URL
-# alone is enough for sign-in to reach the web server while you type the :8080
-# RPC URL in the wizard.
+# Server URLs baked via --dart-define. Without LANDFALL_DEFAULT_SERVER_URL the
+# app shows the setup wizard on first launch and forces the user to enter a URL.
+# To avoid that, this script auto-detects the Mac's LAN IP and bakes both the
+# API URL (:8080) and web URL (:8082) so the wizard is skipped entirely.
+# Override either variable before calling the script to target a different host.
+if [[ -z "${LANDFALL_DEFAULT_SERVER_URL:-}" ]]; then
+  _MAC_IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || true)
+  if [[ -n "${_MAC_IP}" ]]; then
+    LANDFALL_DEFAULT_SERVER_URL="http://${_MAC_IP}:8080/"
+    LANDFALL_WEB_SERVER_URL="${LANDFALL_WEB_SERVER_URL:-http://${_MAC_IP}:8082/}"
+  fi
+fi
 LANDFALL_DEFAULT_SERVER_URL="${LANDFALL_DEFAULT_SERVER_URL:-}"
 LANDFALL_WEB_SERVER_URL="${LANDFALL_WEB_SERVER_URL:-}"
 
