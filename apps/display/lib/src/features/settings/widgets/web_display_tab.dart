@@ -411,7 +411,7 @@ class _DimSection extends StatelessWidget {
                   color: LandfallColors.textSecondary, fontSize: 12)),
           value: dimEnabled,
           onChanged: onEnabledChanged,
-          activeColor: LandfallColors.accent,
+          activeThumbColor: LandfallColors.accent,
         ),
         if (dimEnabled) ...[
           const SizedBox(height: 12),
