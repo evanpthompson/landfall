@@ -48,6 +48,39 @@ jobs:
       - name: Assert APK artifact exists
         run: test -f apps/display/build/app/outputs/flutter-apk/app-release.apk
 
+  companion_web:
+    name: Companion Web Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Install workspace deps
+        run: dart pub get
+
+      - name: Build companion web app
+        working-directory: apps/display
+        run: flutter build web --release --target lib/companion_web_main.dart
+
+      - name: Assert build output exists
+        run: |
+          test -f apps/display/build/web/index.html
+          test -f apps/display/build/web/main.dart.js
+
   analyze_and_test:
     name: Analyze & Test
     runs-on: ubuntu-latest

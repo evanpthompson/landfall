@@ -162,15 +162,41 @@ echo "${CYAN}${BOLD}push-server.sh${RESET}   target: ${PI_USER}@${PI_IP}"
 [[ "${DRY_RUN}" -eq 1 ]] && echo "${YELLOW}(dry-run — no commands will execute)${RESET}"
 echo ""
 
-# 1. Build the arm64 image. --platform is non-negotiable: an amd64 build on a
+# 1. Build companion web app (must run before Docker so the image contains fresh
+#    assets). web/app is gitignored — it is a build artifact that must be
+#    regenerated from source. Skipping this step would bake stale companion UI
+#    into the image.
+echo "${CYAN}→ Build companion web app${RESET}"
+if [[ "${DRY_RUN}" -eq 1 ]]; then
+  echo "   flutter build web --release --target lib/companion_web_main.dart"
+else
+  if ! command -v flutter > /dev/null; then
+    error "flutter not found — required to build the companion web app."
+    error "Install Flutter from https://docs.flutter.dev/get-started/install"
+    exit 1
+  fi
+  (
+    cd "${REPO_ROOT}/apps/display"
+    flutter build web --release --target lib/companion_web_main.dart
+  )
+  rm -rf "${REPO_ROOT}/server/landfall_server/web/app"
+  cp -r "${REPO_ROOT}/apps/display/build/web" \
+        "${REPO_ROOT}/server/landfall_server/web/app"
+  ok "Companion web built and staged"
+fi
+
+# 2. Build the arm64 image. --platform is non-negotiable: an amd64 build on a
 #    dev Mac will load successfully on the Pi but fail at runtime with
 #    "exec format error".
+#    Build context must be the repo root (Dockerfile COPY paths are relative
+#    to it) and -f points explicitly at the Dockerfile location.
 run "Build arm64 image" \
   docker buildx build \
     --platform linux/arm64 \
     --load \
     -t "${IMAGE_TAG}" \
-    "${REPO_ROOT}/server/landfall_server"
+    -f "${REPO_ROOT}/server/landfall_server/Dockerfile" \
+    "${REPO_ROOT}"
 
 # 2. Save + gzip locally. Kept in /tmp on the dev machine so failed pushes
 #    don't litter the repo.
