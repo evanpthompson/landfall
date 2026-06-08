@@ -175,15 +175,22 @@ if [[ "${MODE_DEBUG}" == true ]]; then
     --dart-define=LANDFALL_DEFAULT_SERVER_URL=http://localhost:8080/
 fi
 
-# ── 4b. Build macOS app (optional) ───────────────────────────────────────────
+# ── 4b. Build macOS app + companion web (optional) ───────────────────────────
 
 if [[ "${MODE_BUILD}" == true ]]; then
   if ! command -v flutter > /dev/null; then
     fail "flutter not found. Install it from https://docs.flutter.dev/get-started/install/macos"
   fi
 
-  echo "${CYAN}${BOLD}Building macOS app...${RESET}"
+  echo "${CYAN}${BOLD}Building companion web app...${RESET}"
   cd "${DISPLAY_DIR}"
+  flutter build web --release --target lib/companion_web_main.dart
+  rm -rf "${REPO_ROOT}/server/landfall_server/web/app"
+  cp -r "${DISPLAY_DIR}/build/web" "${REPO_ROOT}/server/landfall_server/web/app"
+  ok "Companion web built and deployed to web/app"
+  echo ""
+
+  echo "${CYAN}${BOLD}Building macOS app...${RESET}"
   flutter build macos --release
   echo ""
   ok "Build complete"

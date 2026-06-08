@@ -182,7 +182,7 @@ class _CompanionWebAppState extends State<_CompanionWebApp> {
   }
 }
 
-class _CompanionHome extends StatelessWidget {
+class _CompanionHome extends StatefulWidget {
   const _CompanionHome({
     required this.displayId,
     required this.serverUrl,
@@ -196,53 +196,56 @@ class _CompanionHome extends StatelessWidget {
   final CompanionInfo? info;
 
   @override
+  State<_CompanionHome> createState() => _CompanionHomeState();
+}
+
+class _CompanionHomeState extends State<_CompanionHome> {
+  int _pageIndex = 0;
+
+  @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        CompanionMobileScreen(
-          displayId: displayId,
-          onAction: (kind) => client.companion.pushAction(displayId, kind),
-          info: info,
-        ),
-        Positioned(
-          top: 12,
-          right: 12,
-          child: SafeArea(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.settings),
-                  color: const Color(0x99FFFFFF),
-                  iconSize: 20,
-                  tooltip: 'Settings',
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => AuthGate(
-                        child: WebSettingsScreen(
-                          onPush: (kind) =>
-                              client.companion.pushAction(displayId, kind),
-                          client: client,
-                          serverUrl: serverUrl,
-                          displayId: displayId,
-                          onOpenUrl: (url) => web.window.open(url, '_blank'),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  color: const Color(0x66FFFFFF),
-                  iconSize: 20,
-                  tooltip: 'Refresh',
-                  onPressed: () => web.window.location.reload(),
-                ),
-              ],
+    return Scaffold(
+      backgroundColor: const Color(0xFF0D0F14),
+      body: IndexedStack(
+        index: _pageIndex,
+        children: [
+          CompanionMobileScreen(
+            displayId: widget.displayId,
+            onAction: (kind) =>
+                widget.client.companion.pushAction(widget.displayId, kind),
+            info: widget.info,
+          ),
+          AuthGate(
+            child: WebSettingsScreen(
+              onPush: (kind) =>
+                  widget.client.companion.pushAction(widget.displayId, kind),
+              client: widget.client,
+              serverUrl: widget.serverUrl,
+              displayId: widget.displayId,
+              onOpenUrl: (url) => web.window.open(url, '_blank'),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _pageIndex,
+        onDestinationSelected: (i) => setState(() => _pageIndex = i),
+        backgroundColor: const Color(0xFF0D0F14),
+        indicatorColor: const Color(0xFF4F8EF7).withValues(alpha: 0.15),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.pets_outlined),
+            selectedIcon: Icon(Icons.pets),
+            label: 'Companion',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+      ),
     );
   }
 }
