@@ -82,6 +82,8 @@ if [[ -n "${LANDFALL_WEB_SERVER_URL}" ]]; then
   info "Baking LANDFALL_WEB_SERVER_URL=${LANDFALL_WEB_SERVER_URL}"
 fi
 
+info "Cleaning build cache..."
+flutter clean
 info "Building release APK..."
 flutter build apk --release \
   --dart-define=LANDFALL_DEFAULT_SERVER_URL="${LANDFALL_DEFAULT_SERVER_URL}" \
