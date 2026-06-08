@@ -150,7 +150,7 @@ class _CompanionWebAppState extends State<_CompanionWebApp> {
           ),
         ),
         BlocProvider(
-          create: (_) => DashboardProfileCubit(profileRepository),
+          create: (_) => DashboardProfileCubit(profileRepository)..loadProfiles(),
         ),
         BlocProvider(
           create: (_) =>

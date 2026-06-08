@@ -36,6 +36,8 @@ class _LicenseView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
+        const _BetaBanner(),
+        const SizedBox(height: 24),
         _TierBadge(status: status),
         const SizedBox(height: 32),
         if (!status.isPro) ...[
@@ -48,6 +50,56 @@ class _LicenseView extends StatelessWidget {
         ],
         _ActivateKeySection(),
       ],
+    );
+  }
+}
+
+class _BetaBanner extends StatelessWidget {
+  const _BetaBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: LandfallColors.accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: LandfallColors.accent.withValues(alpha: 0.3),
+        ),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.rocket_launch_outlined,
+              color: LandfallColors.accent, size: 20),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Beta — All features unlocked, free',
+                  style: TextStyle(
+                    color: LandfallColors.accent,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'During the beta every feature is available at no cost. Beta participants will receive a discount on the Founding Member tier at launch.',
+                  style: TextStyle(
+                    color: LandfallColors.textSecondary,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -133,7 +185,7 @@ class _UpgradeSection extends StatelessWidget {
         _PriceCard(
           name: 'Founding Member',
           price: '\$80',
-          description: 'Pro + early access to new features for the first 18 months.',
+          description: 'Pro + early access to new features for the first 18 months. Beta participants get a discount at launch.',
           color: const Color(0xFFFFD700),
           onBuy: () => _copyPaymentLink(context, 'Founding Member'),
         ),

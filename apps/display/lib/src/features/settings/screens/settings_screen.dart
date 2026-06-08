@@ -80,8 +80,13 @@ class _SettingsScreenState extends State<SettingsScreen>
           _cancelLbEditorMove?.call();
           return;
         }
-        // First Back press dismisses the soft keyboard; second press exits.
-        if (MediaQuery.of(context).viewInsets.bottom > 0) {
+        // Dismiss the soft keyboard on Back if a text field has focus.
+        // viewInsets.bottom is unreliable on Fire TV (the IME runs as a
+        // separate activity and does not push layout insets), so check the
+        // focus tree directly.
+        final focus = FocusManager.instance.primaryFocus;
+        final textFieldFocused = focus?.context?.widget is EditableText;
+        if (MediaQuery.of(context).viewInsets.bottom > 0 || textFieldFocused) {
           FocusManager.instance.primaryFocus?.unfocus();
           return;
         }
