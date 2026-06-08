@@ -75,9 +75,81 @@ abstract final class LandfallTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(LandfallSpacing.sm),
           ),
+        ).copyWith(
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return const BorderSide(color: Colors.white, width: 2.5);
+            }
+            return BorderSide.none;
+          }),
         ),
       ),
-      focusColor: LandfallColors.accentMuted,
+      filledButtonTheme: FilledButtonThemeData(
+        style: ButtonStyle(
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return const BorderSide(color: Colors.white, width: 2.5);
+            }
+            return BorderSide.none;
+          }),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: ButtonStyle(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return LandfallColors.accent.withValues(alpha: 0.25);
+            }
+            return null;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return const BorderSide(color: LandfallColors.accent, width: 1.5);
+            }
+            return null;
+          }),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(LandfallSpacing.sm),
+            ),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: ButtonStyle(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return Colors.white.withValues(alpha: 0.12);
+            }
+            return null;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return const BorderSide(color: Colors.white, width: 2);
+            }
+            return null;
+          }),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: ButtonStyle(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return LandfallColors.accent.withValues(alpha: 0.3);
+            }
+            return null;
+          }),
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        overlayColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.focused)) {
+            return LandfallColors.accent.withValues(alpha: 0.2);
+          }
+          return null;
+        }),
+      ),
+      focusColor: LandfallColors.accent.withValues(alpha: 0.25),
     );
   }
 }

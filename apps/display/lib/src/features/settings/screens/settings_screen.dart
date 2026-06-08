@@ -292,17 +292,20 @@ class _DisplayFormBodyState extends State<_DisplayFormBody> {
         const SizedBox(height: 24),
         SectionHeader('Ambient Dim'),
         const SizedBox(height: 12),
-        SwitchListTile(
-          title: const Text('Enable dim schedule',
-              style: TextStyle(color: LandfallColors.textPrimary)),
-          subtitle: const Text('Dims the display during the configured hours',
-              style: TextStyle(color: LandfallColors.textSecondary)),
-          value: _dimEnabled,
-          activeThumbColor: LandfallColors.accent,
-          onChanged: (v) => setState(() {
-            _dimEnabled = v;
-            _save();
-          }),
+        LandfallFocusable(
+          borderRadius: BorderRadius.circular(4),
+          child: SwitchListTile(
+            title: const Text('Enable dim schedule',
+                style: TextStyle(color: LandfallColors.textPrimary)),
+            subtitle: const Text('Dims the display during the configured hours',
+                style: TextStyle(color: LandfallColors.textSecondary)),
+            value: _dimEnabled,
+            activeThumbColor: LandfallColors.accent,
+            onChanged: (v) => setState(() {
+              _dimEnabled = v;
+              _save();
+            }),
+          ),
         ),
         const SizedBox(height: 8),
         _HourRow(
@@ -472,20 +475,23 @@ class _HourRow extends StatelessWidget {
             ),
           ),
         ),
-        DropdownButton<int>(
-          value: hour,
-          dropdownColor: LandfallColors.surfaceElevated,
-          style: TextStyle(
-            color: enabled
-                ? LandfallColors.textPrimary
-                : LandfallColors.textTertiary,
+        LandfallFocusable(
+          borderRadius: BorderRadius.circular(4),
+          child: DropdownButton<int>(
+            value: hour,
+            dropdownColor: LandfallColors.surfaceElevated,
+            style: TextStyle(
+              color: enabled
+                  ? LandfallColors.textPrimary
+                  : LandfallColors.textTertiary,
+            ),
+            underline: const SizedBox.shrink(),
+            items: List.generate(24, (i) {
+              final label = _hourLabel(i);
+              return DropdownMenuItem(value: i, child: Text(label));
+            }),
+            onChanged: enabled ? (v) => onChanged(v!) : null,
           ),
-          underline: const SizedBox.shrink(),
-          items: List.generate(24, (i) {
-            final label = _hourLabel(i);
-            return DropdownMenuItem(value: i, child: Text(label));
-          }),
-          onChanged: enabled ? (v) => onChanged(v!) : null,
         ),
       ],
     );
@@ -517,17 +523,20 @@ class _NavTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: LandfallColors.accent, size: 22),
-      title: Text(title,
-          style: const TextStyle(color: LandfallColors.textPrimary)),
-      subtitle: Text(subtitle,
-          style: const TextStyle(
-              color: LandfallColors.textSecondary, fontSize: 12)),
-      trailing: const Icon(Icons.chevron_right,
-          color: LandfallColors.textTertiary, size: 18),
-      onTap: onTap,
+    return LandfallFocusable(
+      borderRadius: BorderRadius.circular(8),
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Icon(icon, color: LandfallColors.accent, size: 22),
+        title: Text(title,
+            style: const TextStyle(color: LandfallColors.textPrimary)),
+        subtitle: Text(subtitle,
+            style: const TextStyle(
+                color: LandfallColors.textSecondary, fontSize: 12)),
+        trailing: const Icon(Icons.chevron_right,
+            color: LandfallColors.textTertiary, size: 18),
+        onTap: onTap,
+      ),
     );
   }
 }

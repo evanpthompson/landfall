@@ -272,28 +272,34 @@ class _ConnectUrlTile extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _copyUrl(context),
-                    icon: const Icon(Icons.copy, size: 14),
-                    label: const Text('Copy URL'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: color,
-                      side: BorderSide(color: color.withValues(alpha: 0.5)),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: LandfallFocusable(
+                    borderRadius: BorderRadius.circular(4),
+                    child: OutlinedButton.icon(
+                      onPressed: () => _copyUrl(context),
+                      icon: const Icon(Icons.copy, size: 14),
+                      label: const Text('Copy URL'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: color,
+                        side: BorderSide(color: color.withValues(alpha: 0.5)),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
                     ),
                   ),
                 ),
                 if (onOpenUrl != null) ...[
                   const SizedBox(width: 8),
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => onOpenUrl!(url),
-                      icon: const Icon(Icons.open_in_new, size: 14),
-                      label: const Text('Open'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: color,
-                        side: BorderSide(color: color.withValues(alpha: 0.5)),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: LandfallFocusable(
+                      borderRadius: BorderRadius.circular(4),
+                      child: OutlinedButton.icon(
+                        onPressed: () => onOpenUrl!(url),
+                        icon: const Icon(Icons.open_in_new, size: 14),
+                        label: const Text('Open'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: color,
+                          side: BorderSide(color: color.withValues(alpha: 0.5)),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
                       ),
                     ),
                   ),
