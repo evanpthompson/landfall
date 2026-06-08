@@ -47,6 +47,20 @@ grep -q 'applicationId = "io.landfall.display"' "${GRADLE_FILE}" \
 
 cd "${DISPLAY_DIR}"
 
+# Always rebuild the companion web app before the APK so the server image never
+# serves stale UI. The web build is gitignored — it must be regenerated from
+# source on every build. Skipping this step silently bakes outdated companion
+# code into the server and has caused bugs in every deploy that omitted it.
+echo ""
+echo "${CYAN}${BOLD}Building companion web app...${RESET}"
+flutter build web --release --target lib/companion_web_main.dart
+rm -rf "${REPO_ROOT}/server/landfall_server/web/app"
+cp -r "${DISPLAY_DIR}/build/web" "${REPO_ROOT}/server/landfall_server/web/app"
+ok "Companion web built and staged to server/landfall_server/web/app"
+echo ""
+
+echo "${CYAN}${BOLD}Building Fire TV APK...${RESET}"
+
 # Optional server URLs, baked via --dart-define (both default to empty, which
 # preserves the stock behavior: first-run setup wizard, single-origin client).
 #
