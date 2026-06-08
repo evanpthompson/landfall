@@ -139,13 +139,20 @@ if (( STAGE_ONLY == 0 )); then
 fi
 
 HOST_OS="$(uname -s)"
+HOST_ARCH="$(uname -m)"
 if (( STAGE_ONLY == 0 )); then
   if [[ "${HOST_OS}" == "Linux" ]]; then
     if ! command -v qemu-aarch64 > /dev/null 2>&1 && \
        [[ ! -f /proc/sys/fs/binfmt_misc/qemu-aarch64 ]]; then
       die "qemu-aarch64 not found — install with: sudo apt-get install qemu-user-binfmt"
     fi
+  elif [[ "${HOST_ARCH}" == "arm64" ]]; then
+    # Apple Silicon: Docker Desktop's Linux VM is natively arm64, so arm64
+    # images run without emulation. Registering QEMU arm64 binfmt here would
+    # force the Dart AOT compiler to run under emulation and crash (exit 255).
+    info "Apple Silicon detected — skipping QEMU arm64 binfmt (Docker VM is native arm64)"
   else
+    # Intel Mac: arm64 Docker images require QEMU emulation.
     info "Registering QEMU ARM64 binfmt handlers in Docker Desktop VM..."
     docker run --privileged --rm tonistiigi/binfmt --install arm64 > /dev/null 2>&1 \
       && ok "QEMU ARM64 binfmt registered" \
@@ -163,6 +170,11 @@ else
   echo ""
   info "Building Flutter arm64 binary via Docker + QEMU (~20 min)..."
   echo ""
+
+  # Remove stale flutter_build artifacts left by a previous failed Docker run.
+  # The Dart AOT compiler creates the hash directory before writing app.so; a
+  # partial directory confuses subsequent builds and causes a repeat crash.
+  rm -rf "${REPO_ROOT}/apps/display/.dart_tool/flutter_build"
 
   docker run --rm --platform linux/arm64 \
     -v "${REPO_ROOT}":/app \
