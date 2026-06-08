@@ -4,11 +4,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'package:display/src/widgets/landfall_text_field.dart';
 import '../cubit/license_cubit.dart';
 
 /// Settings tab showing license status, upgrade paths, and key activation.
 class LicenseTab extends StatelessWidget {
-  const LicenseTab({super.key});
+  const LicenseTab({super.key, this.leanback = false});
+
+  final bool leanback;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +21,7 @@ class LicenseTab extends StatelessWidget {
             child: CircularProgressIndicator(),
           ),
         LicenseError(:final message) => _ErrorView(message: message),
-        LicenseLoaded(:final status) => _LicenseView(status: status),
+        LicenseLoaded(:final status) => _LicenseView(status: status, leanback: leanback),
       },
     );
   }
@@ -27,9 +30,10 @@ class LicenseTab extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _LicenseView extends StatelessWidget {
-  const _LicenseView({required this.status});
+  const _LicenseView({required this.status, required this.leanback});
 
   final LicenseStatus status;
+  final bool leanback;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +52,7 @@ class _LicenseView extends StatelessWidget {
           _ActiveLicenseSection(status: status),
           const SizedBox(height: 32),
         ],
-        _ActivateKeySection(),
+        _ActivateKeySection(leanback: leanback),
       ],
     );
   }
@@ -334,6 +338,8 @@ class _ActiveLicenseSection extends StatelessWidget {
 }
 
 class _ActivateKeySection extends StatefulWidget {
+  const _ActivateKeySection({this.leanback = false});
+  final bool leanback;
   @override
   State<_ActivateKeySection> createState() => _ActivateKeySectionState();
 }
@@ -369,8 +375,9 @@ class _ActivateKeySectionState extends State<_ActivateKeySection> {
         Row(
           children: [
             Expanded(
-              child: TextField(
+              child: LandfallTextField(
                 controller: _ctrl,
+                leanback: widget.leanback,
                 style: const TextStyle(
                   color: LandfallColors.textPrimary,
                   fontFamily: 'monospace',

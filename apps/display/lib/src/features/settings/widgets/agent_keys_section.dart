@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:landfall_client/landfall_client.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'package:display/src/widgets/landfall_text_field.dart';
+
 /// Displays the list of agent API keys and their usage metadata.
 ///
 /// Requires the caller to supply the management token via [onListKeys]. The
@@ -11,11 +13,13 @@ import 'package:ui_kit/ui_kit.dart';
 class AgentKeysSection extends StatefulWidget {
   const AgentKeysSection({
     super.key,
+    this.leanback = false,
     required this.onListKeys,
     required this.onGenerateKey,
     required this.onRevokeKey,
   });
 
+  final bool leanback;
   final Future<List<ApiKey>> Function(String token) onListKeys;
   final Future<ApiKeyCreateResponse> Function(String name, String token)
       onGenerateKey;
@@ -79,6 +83,7 @@ class _AgentKeysSectionState extends State<AgentKeysSection> {
         const SizedBox(height: 12),
         _TokenRow(
           controller: _tokenCtrl,
+          leanback: widget.leanback,
           loading: _loading,
           onLoad: _load,
         ),
@@ -141,19 +146,22 @@ class _TokenRow extends StatelessWidget {
     required this.controller,
     required this.loading,
     required this.onLoad,
+    this.leanback = false,
   });
 
   final TextEditingController controller;
   final bool loading;
   final VoidCallback onLoad;
+  final bool leanback;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: TextField(
+          child: LandfallTextField(
             controller: controller,
+            leanback: leanback,
             obscureText: true,
             style: const TextStyle(
               color: LandfallColors.textPrimary,

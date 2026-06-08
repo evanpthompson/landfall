@@ -11,6 +11,7 @@ class AccountsTabView extends StatefulWidget {
     super.key,
     required this.onLoad,
     required this.serverUrl,
+    this.leanback = false,
     this.onOpenUrl,
     this.onListKeys,
     this.onGenerateKey,
@@ -20,6 +21,7 @@ class AccountsTabView extends StatefulWidget {
   /// Loads (credentials, userId) from the server.
   final Future<(List<LinkedCredentialSummary>, String)> Function() onLoad;
   final String serverUrl;
+  final bool leanback;
 
   /// When provided (web context), connect tiles show an "Open" button that
   /// calls this with the OAuth URL. On TV (null), tiles show only "Copy URL".
@@ -65,6 +67,7 @@ class _AccountsTabViewState extends State<AccountsTabView> {
           credentials: credentials,
           userId: userId,
           serverUrl: widget.serverUrl,
+          leanback: widget.leanback,
           onRefresh: () => setState(() => _future = widget.onLoad()),
           onOpenUrl: widget.onOpenUrl,
           onListKeys: widget.onListKeys,
@@ -82,6 +85,7 @@ class _AccountsList extends StatelessWidget {
     required this.userId,
     required this.serverUrl,
     required this.onRefresh,
+    this.leanback = false,
     this.onOpenUrl,
     this.onListKeys,
     this.onGenerateKey,
@@ -92,6 +96,7 @@ class _AccountsList extends StatelessWidget {
   final String userId;
   final String serverUrl;
   final VoidCallback onRefresh;
+  final bool leanback;
   final void Function(String url)? onOpenUrl;
   final Future<List<ApiKey>> Function(String token)? onListKeys;
   final Future<ApiKeyCreateResponse> Function(String name, String token)?
@@ -155,6 +160,7 @@ class _AccountsList extends StatelessWidget {
             onRevokeKey != null) ...[
           const SizedBox(height: 32),
           AgentKeysSection(
+            leanback: leanback,
             onListKeys: onListKeys!,
             onGenerateKey: onGenerateKey!,
             onRevokeKey: onRevokeKey!,

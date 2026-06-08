@@ -5,6 +5,7 @@ import 'package:landfall_client/landfall_client.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'package:display/src/widgets/landfall_text_field.dart';
 import 'package:display/src/features/companion/companion_url.dart';
 import 'package:display/src/features/companion/cubit/companion_cubit.dart';
 import 'package:display/src/features/companion/widgets/companion_qr_code.dart';
@@ -147,8 +148,9 @@ class _SettingsScreenState extends State<SettingsScreen>
             body: TabBarView(
               controller: _tabs,
               children: [
-                _DisplayTab(serverUrl: widget.serverUrl),
+                _DisplayTab(serverUrl: widget.serverUrl, leanback: widget.leanback),
                 AccountsTabView(
+                  leanback: widget.leanback,
                   onLoad: () async {
                     final credentials =
                         await widget.client.settings.getLinkedCredentials();
@@ -172,7 +174,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       _cancelLbEditorMove = cancel,
                 ),
                 const ThemesTabView(),
-                const LicenseTab(),
+                LicenseTab(leanback: widget.leanback),
               ],
             ),
           ),
@@ -187,9 +189,10 @@ class _SettingsScreenState extends State<SettingsScreen>
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _DisplayTab extends StatelessWidget {
-  const _DisplayTab({required this.serverUrl});
+  const _DisplayTab({required this.serverUrl, required this.leanback});
 
   final String serverUrl;
+  final bool leanback;
 
   @override
   Widget build(BuildContext context) {
@@ -208,6 +211,7 @@ class _DisplayTab extends StatelessWidget {
             return _DisplayFormBody(
               settings: state.settings,
               serverUrl: serverUrl,
+              leanback: leanback,
             );
           },
         ),
@@ -217,10 +221,15 @@ class _DisplayTab extends StatelessWidget {
 }
 
 class _DisplayFormBody extends StatefulWidget {
-  const _DisplayFormBody({required this.settings, required this.serverUrl});
+  const _DisplayFormBody({
+    required this.settings,
+    required this.serverUrl,
+    required this.leanback,
+  });
 
   final DisplaySettings settings;
   final String serverUrl;
+  final bool leanback;
 
   @override
   State<_DisplayFormBody> createState() => _DisplayFormBodyState();
@@ -337,8 +346,9 @@ class _DisplayFormBodyState extends State<_DisplayFormBody> {
         const SizedBox(height: 24),
         SectionHeader('Location'),
         const SizedBox(height: 12),
-        TextField(
+        LandfallTextField(
           controller: _locationCtrl,
+          leanback: widget.leanback,
           style: const TextStyle(color: LandfallColors.textPrimary),
           decoration: InputDecoration(
             hintText: 'e.g. Seattle, WA',
@@ -359,7 +369,6 @@ class _DisplayFormBodyState extends State<_DisplayFormBody> {
             ),
           ),
           onSubmitted: (_) => _save(),
-          onEditingComplete: _save,
         ),
         const SizedBox(height: 8),
         Text(
