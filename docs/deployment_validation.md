@@ -51,6 +51,40 @@ Run these only after the cheap checks pass:
   [`manual_smoke_test.md`](manual_smoke_test.md) — the user-visible
   end-to-end pass
 
+## CSP Egress Contract
+
+The companion web app served from the Pi may only reach hosts the Caddyfile
+`Content-Security-Policy` `connect-src` allows. `deploy/pi-gen/check-csp-egress.sh`
+enforces this: it greps the compiled `main.dart.js` for absolute `http(s)`/`ws(s)`
+hosts and fails if any is neither in `connect-src` nor on the string-literal
+allowlist.
+
+```bash
+bash deploy/pi-gen/check-csp-egress.sh \
+  --main-js apps/display/build/web/main.dart.js \
+  --caddyfile deploy/Caddyfile \
+  --expected deploy/pi-gen/expected-components.yaml
+```
+
+The same script runs in two places, so the contract can't drift:
+
+- **`ci.yml` (`companion_web` job)** — against the fresh `flutter build web`
+  output, so a reintroduced fetchable URL fails the PR.
+- **`verify-artifact.sh` (section 8)** — against the staged image artifact, the
+  final gate on what ships.
+
+Common cause of a failure: an absolute URL placed in user-facing Dart strings
+(e.g. a `TextField` hint like `https://example.com/photo.jpg`) gets compiled
+into `main.dart.js` and is read as a fetchable host. Fix it at the source — use
+a non-URL placeholder — rather than widening `connect-src`. The widget tests
+`web_display_tab_test.dart` and `photo_sources_screen_test.dart` guard the URL
+hints against regressing.
+
+Inert hosts that only ever appear as string literals (framework error messages,
+package-metadata constants) go in `caddy.csp_connect_src_string_literal_hosts`
+in `expected-components.yaml` — but only after confirming in browser dev tools
+that no CSP violation is logged for them.
+
 ## Release Checklist
 
 - server starts through `deploy/docker-compose.prod.yml`
@@ -73,3 +107,4 @@ Key facts for helping users run deployment validation:
 - **Full Pi image build and QEMU boot smoke test** are the "nightly or RC" tier — only after the fast checks are clean. Plan 1–2 hours.
 - **Physical hardware validation** (the user-visible pass) is in [`manual_smoke_test.md`](manual_smoke_test.md). Run it before any public release.
 - **CI workflow:** `.github/workflows/ci.yml` — runs `run_deploy_tests.sh` automatically on every PR.
+- **CSP egress:** `deploy/pi-gen/check-csp-egress.sh` asserts the Caddyfile `connect-src` covers every absolute host in the compiled `main.dart.js`. Runs in CI (`companion_web` job) and in `verify-artifact.sh`. A failure usually means an absolute URL leaked into a user-facing Dart string — fix the source, don't widen the CSP.

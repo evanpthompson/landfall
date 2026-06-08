@@ -262,7 +262,7 @@ class PhotoSourcesScreen extends StatelessWidget {
           style: const TextStyle(color: LandfallColors.textPrimary),
           maxLines: 5,
           decoration: const InputDecoration(
-            hintText: 'One URL per line\nhttps://example.com/photo.jpg',
+            hintText: 'Paste image URLs, one per line',
             hintStyle: TextStyle(color: LandfallColors.textTertiary),
           ),
         ),

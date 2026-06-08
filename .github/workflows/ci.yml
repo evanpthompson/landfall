@@ -81,6 +81,16 @@ jobs:
           test -f apps/display/build/web/index.html
           test -f apps/display/build/web/main.dart.js
 
+      - name: Assert CSP connect-src covers all hosts in compiled JS (A05:2025)
+        # Egress contract: the served web app may only reach hosts the Caddyfile
+        # CSP allows. Enforced here against the fresh build so a reintroduced
+        # fetchable URL fails the PR, not just the later Pi image build.
+        run: |
+          bash deploy/pi-gen/check-csp-egress.sh \
+            --main-js apps/display/build/web/main.dart.js \
+            --caddyfile deploy/Caddyfile \
+            --expected deploy/pi-gen/expected-components.yaml
+
   analyze_and_test:
     name: Analyze & Test
     runs-on: ubuntu-latest

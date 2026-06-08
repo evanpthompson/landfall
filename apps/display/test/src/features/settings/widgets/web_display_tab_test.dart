@@ -255,6 +255,34 @@ void main() {
             containsAll(['https://new.com/a.jpg', 'https://new.com/b.jpg']));
       });
 
+      // Regression guard for the CSP egress contract: absolute URLs in
+      // user-facing strings get compiled into main.dart.js, where
+      // deploy/pi-gen/check-csp-egress.sh reads them as fetchable hosts the
+      // CSP connect-src must allow. Hints must not be URL-shaped.
+      testWidgets('network URL hint contains no absolute http(s) URL',
+          (tester) async {
+        await _pumpTab(
+          tester,
+          onLoad: () async => _settings(
+            photoSourceJson: _sourceJson(
+              const PhotoSourceNetwork(urls: ['https://old.com/img.jpg']),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final field = tester.widget<TextField>(
+          find.byKey(const Key('photo_source_network_urls')),
+        );
+        final hint = field.decoration?.hintText ?? '';
+        expect(
+          RegExp(r'https?://').hasMatch(hint),
+          isFalse,
+          reason: 'hint "$hint" bakes a fetchable host into main.dart.js; '
+              'use a non-URL placeholder (see check-csp-egress.sh)',
+        );
+      });
+
       testWidgets('save disabled when URL list is empty', (tester) async {
         await _pumpTab(
           tester,

@@ -579,8 +579,7 @@ class _PhotoSourceSection extends StatelessWidget {
                 color: LandfallColors.textPrimary, fontSize: 13),
             maxLines: 5,
             decoration: const InputDecoration(
-              hintText:
-                  'https://example.com/photo1.jpg\nhttps://example.com/photo2.jpg',
+              hintText: 'Paste image URLs, one per line',
               hintStyle:
                   TextStyle(color: LandfallColors.textTertiary, fontSize: 12),
               filled: true,

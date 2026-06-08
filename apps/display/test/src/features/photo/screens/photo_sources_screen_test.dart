@@ -57,5 +57,32 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Network URLs'), findsAtLeastNWidgets(1));
     });
+
+    // Regression guard for the CSP egress contract: absolute URLs in
+    // user-facing strings get compiled into main.dart.js, where
+    // deploy/pi-gen/check-csp-egress.sh reads them as fetchable hosts the CSP
+    // connect-src must allow. The dialog hint must not be URL-shaped.
+    testWidgets('network URLs dialog hint contains no absolute http(s) URL',
+        (tester) async {
+      await tester.pumpWidget(_wrap(cubit));
+      // The Network URLs source tile opens the URL-entry dialog directly.
+      final tile = find.text('A list of direct image URLs');
+      await tester.ensureVisible(tile);
+      await tester.pumpAndSettle();
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+
+      final fields = tester.widgetList<TextField>(find.byType(TextField));
+      expect(fields, isNotEmpty);
+      for (final field in fields) {
+        final hint = field.decoration?.hintText ?? '';
+        expect(
+          RegExp(r'https?://').hasMatch(hint),
+          isFalse,
+          reason: 'hint "$hint" bakes a fetchable host into main.dart.js; '
+              'use a non-URL placeholder (see check-csp-egress.sh)',
+        );
+      }
+    });
   });
 }

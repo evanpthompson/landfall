@@ -244,40 +244,17 @@ while IFS= read -r forbidden; do
 done < <(yaml_value stage.forbidden_paths || true)
 
 # ── 8. Caddyfile CSP connect-src ⊇ hosts in compiled JS ───────────────────────
+# Delegated to check-csp-egress.sh so the same egress contract is enforced here
+# (against the staged artifact) and earlier in ci.yml (against the fresh web
+# build). Keep the logic in one place to prevent the two gates from drifting.
 MAIN_JS="${TMP}/web_app/main.dart.js"
 if [[ -f "${MAIN_JS}" && -f "${CADDYFILE}" ]]; then
-  CSP_LINE="$(grep -E 'Content-Security-Policy' "${CADDYFILE}" || true)"
-  CONNECT_SRC="$(echo "${CSP_LINE}" | sed -nE 's/.*connect-src ([^;]*);.*/\1/p')"
-  # Hosts that appear only as string literals in framework messages — never fetched.
-  IGNORE_HOSTS="$(yaml_value caddy.csp_connect_src_string_literal_hosts || true)"
-  # Extract scheme://host patterns from main.dart.js. We accept self-only
-  # builds; the check fires only when an absolute URL appears in the JS.
-  HOSTS="$(grep -oE 'https?://[a-zA-Z0-9_.-]+|wss?://[a-zA-Z0-9_.-]+' "${MAIN_JS}" \
-            | sort -u || true)"
-  if [[ -z "${HOSTS}" ]]; then
-    pass "main.dart.js references no absolute http(s)/ws(s) hosts"
+  if EGRESS_OUT="$(bash "${SCRIPT_DIR}/check-csp-egress.sh" \
+        --main-js "${MAIN_JS}" --caddyfile "${CADDYFILE}" --expected "${EXPECTED}" 2>&1)"; then
+    echo "${EGRESS_OUT}"
   else
-    while IFS= read -r host; do
-      [[ -z "${host}" ]] && continue
-      origin="$(echo "${host}"   | sed -E 's#^(https?|wss?)://([^/]+).*#\1://\2#')"
-      hostname="$(echo "${host}" | sed -E 's#^[a-z]+://([^/]+).*#\1#')"
-      # Suppress string-literal-only hosts (framework error messages etc.).
-      if [[ -n "${IGNORE_HOSTS}" ]] && \
-         echo "${IGNORE_HOSTS}" | grep -qxF "${hostname}"; then
-        pass "CSP ignores string-literal host: ${origin}"
-        continue
-      fi
-      # Allow if the origin or hostname appears in connect-src verbatim, or if
-      # connect-src includes 'self' and the host is localhost / 127.0.0.1.
-      if echo "${CONNECT_SRC}" | grep -qE "(${hostname}|${origin})"; then
-        pass "CSP allows host from main.dart.js: ${origin}"
-      elif [[ "${hostname}" =~ ^(localhost|127\.0\.0\.1)$ ]] && \
-           echo "${CONNECT_SRC}" | grep -q "'self'"; then
-        pass "CSP 'self' covers loopback host: ${origin}"
-      else
-        fail "CSP connect-src missing host referenced from main.dart.js: ${origin}"
-      fi
-    done <<< "${HOSTS}"
+    echo "${EGRESS_OUT}"
+    fail "CSP connect-src does not cover all hosts referenced from main.dart.js (see above)"
   fi
 fi
 
