@@ -53,7 +53,10 @@ cd "${DISPLAY_DIR}"
 # code into the server and has caused bugs in every deploy that omitted it.
 echo ""
 echo "${CYAN}${BOLD}Building companion web app...${RESET}"
-flutter build web --release --target lib/companion_web_main.dart
+# --no-web-resources-cdn: serve CanvasKit from our own origin (useLocalCanvasKit)
+# to match the canonical server/pi-gen build. Without it the staged companion
+# web fetches CanvasKit from www.gstatic.com, which the Caddyfile CSP blocks.
+flutter build web --release --target lib/companion_web_main.dart --no-web-resources-cdn
 rm -rf "${REPO_ROOT}/server/landfall_server/web/app"
 cp -r "${DISPLAY_DIR}/build/web" "${REPO_ROOT}/server/landfall_server/web/app"
 ok "Companion web built and staged to server/landfall_server/web/app"

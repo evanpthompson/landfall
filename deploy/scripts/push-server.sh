@@ -168,7 +168,7 @@ echo ""
 #    into the image.
 echo "${CYAN}→ Build companion web app${RESET}"
 if [[ "${DRY_RUN}" -eq 1 ]]; then
-  echo "   flutter build web --release --target lib/companion_web_main.dart"
+  echo "   flutter build web --release --target lib/companion_web_main.dart --no-web-resources-cdn"
 else
   if ! command -v flutter > /dev/null; then
     error "flutter not found — required to build the companion web app."
@@ -177,7 +177,9 @@ else
   fi
   (
     cd "${REPO_ROOT}/apps/display"
-    flutter build web --release --target lib/companion_web_main.dart
+    # --no-web-resources-cdn: serve CanvasKit locally to match the canonical
+    # server/pi-gen build; otherwise the Caddyfile CSP blocks the gstatic fetch.
+    flutter build web --release --target lib/companion_web_main.dart --no-web-resources-cdn
   )
   rm -rf "${REPO_ROOT}/server/landfall_server/web/app"
   cp -r "${REPO_ROOT}/apps/display/build/web" \

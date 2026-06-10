@@ -184,7 +184,9 @@ if [[ "${MODE_BUILD}" == true ]]; then
 
   echo "${CYAN}${BOLD}Building companion web app...${RESET}"
   cd "${DISPLAY_DIR}"
-  flutter build web --release --target lib/companion_web_main.dart
+  # --no-web-resources-cdn: serve CanvasKit locally to match the canonical
+  # server/pi-gen build; otherwise the Caddyfile CSP blocks the gstatic fetch.
+  flutter build web --release --target lib/companion_web_main.dart --no-web-resources-cdn
   rm -rf "${REPO_ROOT}/server/landfall_server/web/app"
   cp -r "${DISPLAY_DIR}/build/web" "${REPO_ROOT}/server/landfall_server/web/app"
   ok "Companion web built and deployed to web/app"

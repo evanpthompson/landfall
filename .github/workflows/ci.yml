@@ -74,7 +74,12 @@ jobs:
 
       - name: Build companion web app
         working-directory: apps/display
-        run: flutter build web --release --target lib/companion_web_main.dart
+        # --no-web-resources-cdn matches the shipping build (server pubspec hook
+        # + pi-gen/build.sh): CanvasKit is served from our own origin, not
+        # www.gstatic.com. Without it Flutter stable embeds the gstatic CDN URL
+        # in main.dart.js, which the Caddyfile CSP (default-src 'self') blocks —
+        # so the egress check must build the app exactly as it ships.
+        run: flutter build web --release --target lib/companion_web_main.dart --no-web-resources-cdn
 
       - name: Assert build output exists
         run: |
