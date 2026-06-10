@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:serverpod/serverpod.dart';
 import '../../auth/auth_user_id.dart';
 import '../../generated/protocol.dart';
+import 'calendar_link_ticket.dart';
 import 'oauth_token_encryptor.dart';
 
 /// OAuth 2.0 routes for connecting a Google Calendar account.
@@ -51,37 +52,30 @@ class CalendarOAuthStartRoute extends Route {
     'email',
   ];
 
-  CalendarOAuthStartRoute() : super(methods: {Method.get});
+  CalendarOAuthStartRoute({CalendarLinkTicketStore? ticketStore})
+      : _ticketStore = ticketStore ?? calendarLinkTickets,
+        super(methods: {Method.get});
+
+  final CalendarLinkTicketStore _ticketStore;
 
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
-    // SEC-06: derive identity from the authenticated session, never from a
-    // caller-supplied query parameter — unless the one-time setup token path
-    // is used (see below).
+    // SEC-06: identity comes from the authenticated session, or from a
+    // single-use ticket that was minted *server-side* against an authenticated
+    // RPC caller (see CalendarLinkTicketStore). It is never read from a
+    // caller-supplied `authUserId` query parameter.
     final String authUserId;
 
     if (session.authenticated != null) {
       authUserId =
           authUserIdFromIdentifier(session.authenticated!.userIdentifier);
     } else {
-      // Setup token path: allows OAuth configuration from a phone browser
-      // before a full session exists on the display.  Only accepted when
-      // calendarOauthSetupToken is configured, the caller supplies the
-      // matching token, and authUserId is a well-formed UUID.
-      final setupToken = _password(session, 'calendarOauthSetupToken');
-      final providedToken = request.url.queryParameters['setup_token'];
-      final providedUserId = request.url.queryParameters['authUserId'];
+      // Ticket path: the companion (authenticated over RPC) minted this ticket
+      // via SettingsEndpoint.createCalendarLinkTicket, then navigated here.
+      final ticket = request.url.queryParameters['ticket'];
+      final ticketUserId = ticket == null ? null : _ticketStore.consume(ticket);
 
-      if (setupToken != null &&
-          providedToken == setupToken &&
-          providedUserId != null &&
-          _isValidUuid(providedUserId)) {
-        session.log(
-          'Calendar OAuth start via setup token for user $providedUserId',
-          level: LogLevel.warning,
-        );
-        authUserId = providedUserId;
-      } else {
+      if (ticketUserId == null) {
         return Response(
           401,
           body: Body.fromString(
@@ -89,6 +83,7 @@ class CalendarOAuthStartRoute extends Route {
           ),
         );
       }
+      authUserId = ticketUserId;
     }
 
     final clientId = _password(
@@ -292,10 +287,3 @@ String? _password(Session session, String key, {String? legacyKey}) {
   final legacyValue = session.passwords[legacyKey];
   return legacyValue != null && legacyValue.isNotEmpty ? legacyValue : null;
 }
-
-final _uuidPattern = RegExp(
-  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-  caseSensitive: false,
-);
-
-bool _isValidUuid(String s) => _uuidPattern.hasMatch(s);

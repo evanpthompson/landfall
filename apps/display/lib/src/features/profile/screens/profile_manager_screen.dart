@@ -193,8 +193,8 @@ class _ProfileTile extends StatelessWidget {
 /// Small chip below the profile name that surfaces the companion theme.
 ///
 /// Tapping it applies the theme to this profile when the theme is locally
-/// available. When the theme isn't loaded (not owned or not yet fetched), a
-/// snackbar prompts the user to browse the marketplace.
+/// available. When the theme isn't loaded (not installed or not yet fetched), a
+/// snackbar prompts the user to browse the available themes.
 class _CompanionThemeChip extends StatelessWidget {
   const _CompanionThemeChip({required this.slug, required this.profileId});
 
@@ -255,7 +255,7 @@ class _CompanionThemeChip extends StatelessWidget {
     }
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Browse the theme marketplace to get this look'),
+        content: Text('Open Themes to install this look'),
         duration: Duration(seconds: 3),
       ),
     );

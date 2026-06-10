@@ -159,6 +159,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     return (credentials, userId);
                   },
                   serverUrl: widget.serverUrl,
+                  webServerUrl: companionWebServerUrl(widget.serverUrl),
+                  onCreateLinkTicket: () =>
+                      widget.client.settings.createCalendarLinkTicket(),
                   onListKeys: (token) =>
                       widget.client.apiKey.listKeys(token),
                   onGenerateKey: (name, token) =>

@@ -161,26 +161,34 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        if (isBuiltIn)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: LandfallColors.surface,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: LandfallColors.cardBorder),
-            ),
-            child: const Text(
-              'Built-in',
-              style: TextStyle(
-                color: LandfallColors.textSecondary,
-                fontSize: 10,
-              ),
-            ),
-          )
-        else
-          const SizedBox.shrink(),
+        // Flexible so the Apply button always keeps its space on narrow cards
+        // (the badge clips with an ellipsis rather than pushing Apply off-edge).
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: isBuiltIn
+                ? Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: LandfallColors.surface,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: LandfallColors.cardBorder),
+                    ),
+                    child: const Text(
+                      'Built-in',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: LandfallColors.textSecondary,
+                        fontSize: 10,
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ),
         if (!isActive)
           SizedBox(
             height: 28,

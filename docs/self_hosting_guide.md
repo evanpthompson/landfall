@@ -265,37 +265,23 @@ Get a domain you control (any TLD Google accepts — `.com`, `.net`, `.io`, `.de
 
 Set `LANDFALL_DOMAIN=your-domain.example` in `.env`, register `https://your-domain.example/calendar/oauth/callback` in the Google Cloud Console, restart, and connect normally.
 
-### Option B — Use the setup-token bootstrap (one-time, advanced)
+### Option B — Tunnel a Google-resolvable domain, then connect from the companion (one-time, advanced)
 
-The server has a fallback path that accepts a bearer-token-authenticated OAuth start request without requiring a display session. This is intended as a one-time bootstrap, not a permanent setup.
+You don't need a permanent public domain to *complete* OAuth — you only need one that Google can resolve during the consent redirect. Connecting itself is done from the companion app, which is already signed in and authorizes the flow with a short-lived, single-use ticket (no manual tokens, no bearer secrets in URLs).
 
-1. Pick or generate a real, public-internet-resolvable domain. Even a free dynamic-DNS hostname works — the constraint is that Google can resolve it during the consent flow, not that traffic actually reaches your server from the public internet.
+1. Pick or generate a real, public-internet-resolvable domain. Even a free dynamic-DNS hostname works — the constraint is that Google can resolve it during the consent flow.
 
-2. Register `https://<that-domain>/calendar/oauth/callback` in your Google Cloud Console OAuth client.
+2. Register `https://<that-domain>/calendar/oauth/callback` in your Google Cloud Console OAuth client, and set the matching `googleOAuthRedirectUri` in your `.env`.
 
-3. Add a temporary local DNS override so requests to that domain hit your Pi:
+3. Point that domain at your Pi for the duration of the link:
    - On your phone: connect to the same WiFi; some routers let you add custom DNS entries.
-   - Simpler: use a tunnelling tool (e.g. `ngrok`) on your dev machine that points at the Pi.
+   - Simpler: use a tunnelling tool (e.g. `ngrok`) that fronts the Pi's web server.
 
-4. Generate a setup token, add it to `.env`, restart:
-   ```
-   CALENDAR_OAUTH_SETUP_TOKEN=$(openssl rand -base64 24)
-   ```
+4. On your phone, open the companion at `/c/<displayId>` (scan the QR on the companion card), sign in, and open **Settings → Accounts → Connect Google Calendar**. The companion mints a short-lived ticket and opens the consent flow — no token to copy.
 
-5. On your phone, open the bootstrap URL:
-   ```
-   https://<that-domain>/calendar/oauth/start?setup_token=<token>&authUserId=<uuid>
-   ```
-   `<uuid>` is any well-formed UUID — it labels the credential row. If you've already signed in to the display once, get yours from `landfall-doctor` or by inspecting `calendar_linked_credentials`.
+5. Complete the consent flow. Google redirects back to your domain → your Pi → the credential is stored.
 
-6. Complete the consent flow. Google redirects back to your domain → your Pi → the credential is stored.
-
-7. **Immediately clear the setup token:**
-   ```
-   sed -i '/CALENDAR_OAUTH_SETUP_TOKEN/d' deploy/.env
-   docker compose -f docker-compose.prod.yml up -d --no-deps server
-   ```
-   The token is a bearer secret. Leaving it in production means anyone who knows the URL can link a Google account to your display.
+There is no secret to clear afterwards: the link ticket is single-use and expires within minutes, and identity is always derived from the signed-in companion session (SEC-06), never from a value in the URL.
 
 ### Option C — Switch photos to a service account (skips OAuth entirely for Drive)
 

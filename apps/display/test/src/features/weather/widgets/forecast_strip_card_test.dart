@@ -3,11 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 import 'package:display/src/features/weather/widgets/forecast_strip_card.dart';
-import 'package:display/src/features/weather/widgets/weather_card.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
       theme: LandfallTheme.dark,
       home: Scaffold(body: SizedBox(width: 800, height: 150, child: child)),
+    );
+
+// Finds an Image whose AssetImage points at [assetName].
+Finder _assetIcon(String assetName) => find.byWidgetPredicate(
+      (w) => w is Image &&
+          w.image is AssetImage &&
+          (w.image as AssetImage).assetName == assetName,
     );
 
 ForecastDayEntity _day({
@@ -59,8 +65,8 @@ void main() {
 
     testWidgets('renders weather icon for each day', (tester) async {
       await tester.pumpWidget(_wrap(ForecastStripCard(forecast: days)));
-      // 5 days all with '01d' → 5 wb_sunny icons
-      expect(find.byIcon(Icons.wb_sunny), findsNWidgets(5));
+      // 5 days all with '01d' → 5 clear-day Meteocons assets
+      expect(_assetIcon('assets/weather/clear-day.png'), findsNWidgets(5));
     });
 
     // BUG-01: _DayColumn must not overflow its 110px slot height.
@@ -128,25 +134,17 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('renders mixed icon types correctly', (tester) async {
+    testWidgets('renders mixed full-colour icon assets correctly',
+        (tester) async {
       final mixed = [
-        _day(date: DateTime.utc(2026, 4, 20), iconCode: '01d'), // wb_sunny
-        _day(date: DateTime.utc(2026, 4, 21), iconCode: '13n'), // ac_unit
-        _day(date: DateTime.utc(2026, 4, 22), iconCode: '11d'), // flash_on
+        _day(date: DateTime.utc(2026, 4, 20), iconCode: '01d'), // clear-day
+        _day(date: DateTime.utc(2026, 4, 21), iconCode: '13n'), // snow
+        _day(date: DateTime.utc(2026, 4, 22), iconCode: '11d'), // thunderstorms
       ];
       await tester.pumpWidget(_wrap(ForecastStripCard(forecast: mixed)));
-      expect(
-        find.byIcon(WeatherCard.weatherIconData('01d')),
-        findsOneWidget,
-      );
-      expect(
-        find.byIcon(WeatherCard.weatherIconData('13n')),
-        findsOneWidget,
-      );
-      expect(
-        find.byIcon(WeatherCard.weatherIconData('11d')),
-        findsOneWidget,
-      );
+      expect(_assetIcon('assets/weather/clear-day.png'), findsOneWidget);
+      expect(_assetIcon('assets/weather/snow.png'), findsOneWidget);
+      expect(_assetIcon('assets/weather/thunderstorms.png'), findsOneWidget);
     });
   });
 }

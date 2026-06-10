@@ -9,9 +9,9 @@ import 'package:landfall_client/landfall_client.dart' as lf;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 
 import 'src/data/auth/web_local_key_value_storage.dart';
+import 'src/features/companion/companion_url.dart';
 import 'src/data/license/serverpod_license_repository.dart';
 import 'src/data/profile/serverpod_profile_repository.dart';
-import 'src/data/theme/serverpod_marketplace_repository.dart';
 import 'src/data/theme/serverpod_theme_repository.dart';
 import 'src/features/auth/cubit/auth_cubit.dart';
 import 'src/features/auth/widgets/auth_gate.dart';
@@ -19,7 +19,6 @@ import 'src/features/companion/widgets/companion_mobile_screen.dart';
 import 'src/features/license/cubit/license_cubit.dart';
 import 'src/features/profile/cubit/dashboard_profile_cubit.dart';
 import 'src/features/settings/screens/web_settings_screen.dart';
-import 'src/features/theme/cubit/marketplace_cubit.dart';
 import 'src/features/theme/cubit/theme_cubit.dart';
 
 // Reads the display ID injected by CompanionPageRoute into the page HTML.
@@ -43,6 +42,11 @@ void main() {
       ? '${uri.scheme}://${uri.host}/'
       : '${uri.scheme}://${uri.host}:${uri.port - 2}/';
 
+  // OAuth connect routes are served by the Serverpod web server — which is
+  // the very origin serving this companion page. Derive it from the page URL
+  // directly rather than from the API [serverUrl] (which points at :8080).
+  final webServerUrl = companionWebOriginFromPage(uri);
+
   // JWT stored in localStorage so sign-in persists across page reloads.
   final sessionManager = ClientAuthSessionManager(
     storage: KeyValueClientAuthSuccessStorage(
@@ -54,6 +58,7 @@ void main() {
   runApp(_CompanionWebApp(
     displayId: displayId,
     serverUrl: serverUrl,
+    webServerUrl: webServerUrl,
     client: client,
     sessionManager: sessionManager,
   ));
@@ -63,12 +68,14 @@ class _CompanionWebApp extends StatefulWidget {
   const _CompanionWebApp({
     required this.displayId,
     required this.serverUrl,
+    required this.webServerUrl,
     required this.client,
     required this.sessionManager,
   });
 
   final String displayId;
   final String serverUrl;
+  final String webServerUrl;
   final lf.Client client;
   final ClientAuthSessionManager sessionManager;
 
@@ -138,7 +145,6 @@ class _CompanionWebAppState extends State<_CompanionWebApp> {
     final base = ThemeData.dark(useMaterial3: true);
     final profileRepository = ServerpodProfileRepository(widget.client);
     final themeRepository = ServerpodThemeRepository(widget.client);
-    final marketplaceRepository = ServerpodMarketplaceRepository(widget.client);
     final licenseRepository = ServerpodLicenseRepository(widget.client);
 
     return MultiBlocProvider(
@@ -153,12 +159,14 @@ class _CompanionWebAppState extends State<_CompanionWebApp> {
           create: (_) => DashboardProfileCubit(profileRepository)..loadProfiles(),
         ),
         BlocProvider(
-          create: (_) =>
-              ThemeCubit(themeRepository)..loadThemes(),
-        ),
-        BlocProvider(
-          create: (_) =>
-              MarketplaceCubit(marketplaceRepository)..loadMarketplace(),
+          // profileRepository is required so applyTheme resolves the active
+          // profile id and persists the choice server-side. Without it the
+          // theme is applied with a null profileId, which the server treats
+          // as a no-op — so the dashboard never updates.
+          create: (_) => ThemeCubit(
+            themeRepository,
+            profileRepository: profileRepository,
+          )..loadThemes(),
         ),
         BlocProvider(
           create: (_) => LicenseCubit(licenseRepository)..loadStatus(),
@@ -174,6 +182,7 @@ class _CompanionWebAppState extends State<_CompanionWebApp> {
         home: _CompanionHome(
           displayId: widget.displayId,
           serverUrl: widget.serverUrl,
+          webServerUrl: widget.webServerUrl,
           client: widget.client,
           info: _info,
         ),
@@ -186,12 +195,14 @@ class _CompanionHome extends StatefulWidget {
   const _CompanionHome({
     required this.displayId,
     required this.serverUrl,
+    required this.webServerUrl,
     required this.client,
     required this.info,
   });
 
   final String displayId;
   final String serverUrl;
+  final String webServerUrl;
   final lf.Client client;
   final CompanionInfo? info;
 
@@ -221,6 +232,7 @@ class _CompanionHomeState extends State<_CompanionHome> {
                   widget.client.companion.pushAction(widget.displayId, kind),
               client: widget.client,
               serverUrl: widget.serverUrl,
+              webServerUrl: widget.webServerUrl,
               displayId: widget.displayId,
               onOpenUrl: (url) => web.window.open(url, '_blank'),
             ),

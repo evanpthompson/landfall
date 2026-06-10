@@ -11,8 +11,10 @@ class AccountsTabView extends StatefulWidget {
     super.key,
     required this.onLoad,
     required this.serverUrl,
+    this.webServerUrl,
     this.leanback = false,
     this.onOpenUrl,
+    this.onCreateLinkTicket,
     this.onListKeys,
     this.onGenerateKey,
     this.onRevokeKey,
@@ -20,12 +22,27 @@ class AccountsTabView extends StatefulWidget {
 
   /// Loads (credentials, userId) from the server.
   final Future<(List<LinkedCredentialSummary>, String)> Function() onLoad;
+
+  /// Base URL of the API (RPC) server. Used for display only.
   final String serverUrl;
+
+  /// Base URL of the Serverpod **web** server, where the OAuth connect
+  /// routes (`/calendar/oauth/start`, …) are registered. The API server
+  /// ([serverUrl]) does not serve these routes, so the connect links must
+  /// target this origin. Falls back to [serverUrl] when not provided.
+  final String? webServerUrl;
   final bool leanback;
 
   /// When provided (web context), connect tiles show an "Open" button that
   /// calls this with the OAuth URL. On TV (null), tiles show only "Copy URL".
   final void Function(String url)? onOpenUrl;
+
+  /// SEC-06: mints a short-lived, single-use link ticket bound to the
+  /// signed-in user, returning the ticket string (or null on failure). The
+  /// connect URL carries this ticket — never a caller-supplied identity — so
+  /// it is created fresh when the user taps Open/Copy. Required for the
+  /// connect buttons to be enabled.
+  final Future<String?> Function()? onCreateLinkTicket;
 
   // Agent key callbacks — optional so the widget can be rendered without them.
   final Future<List<ApiKey>> Function(String token)? onListKeys;
@@ -62,14 +79,17 @@ class _AccountsTabViewState extends State<AccountsTabView> {
             ),
           );
         }
-        final (credentials, userId) = snapshot.data!;
+        // userId is intentionally unused for URL construction: SEC-06 means
+        // identity travels in the server-minted ticket, never the URL.
+        final (credentials, _) = snapshot.data!;
         return _AccountsList(
           credentials: credentials,
-          userId: userId,
           serverUrl: widget.serverUrl,
+          webServerUrl: widget.webServerUrl ?? widget.serverUrl,
           leanback: widget.leanback,
           onRefresh: () => setState(() => _future = widget.onLoad()),
           onOpenUrl: widget.onOpenUrl,
+          onCreateLinkTicket: widget.onCreateLinkTicket,
           onListKeys: widget.onListKeys,
           onGenerateKey: widget.onGenerateKey,
           onRevokeKey: widget.onRevokeKey,
@@ -82,22 +102,24 @@ class _AccountsTabViewState extends State<AccountsTabView> {
 class _AccountsList extends StatelessWidget {
   const _AccountsList({
     required this.credentials,
-    required this.userId,
     required this.serverUrl,
+    required this.webServerUrl,
     required this.onRefresh,
     this.leanback = false,
     this.onOpenUrl,
+    this.onCreateLinkTicket,
     this.onListKeys,
     this.onGenerateKey,
     this.onRevokeKey,
   });
 
   final List<LinkedCredentialSummary> credentials;
-  final String userId;
   final String serverUrl;
+  final String webServerUrl;
   final VoidCallback onRefresh;
   final bool leanback;
   final void Function(String url)? onOpenUrl;
+  final Future<String?> Function()? onCreateLinkTicket;
   final Future<List<ApiKey>> Function(String token)? onListKeys;
   final Future<ApiKeyCreateResponse> Function(String name, String token)?
       onGenerateKey;
@@ -105,10 +127,12 @@ class _AccountsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final base = serverUrl.endsWith('/') ? serverUrl : '$serverUrl/';
-    final googleUrl = '${base}calendar/oauth/start?authUserId=$userId';
-    final microsoftUrl =
-        '${base}calendar/microsoft/oauth/start?authUserId=$userId';
+    // OAuth connect routes are registered on the Serverpod web server, not
+    // the API server, so build the connect URLs from [webServerUrl]. The
+    // single-use ticket is appended at tap time (see _ConnectUrlTile).
+    final base = webServerUrl.endsWith('/') ? webServerUrl : '$webServerUrl/';
+    final googleStartUrl = '${base}calendar/oauth/start';
+    final microsoftStartUrl = '${base}calendar/microsoft/oauth/start';
 
     return ListView(
       padding: const EdgeInsets.all(24),
@@ -129,22 +153,25 @@ class _AccountsList extends StatelessWidget {
         const SectionHeader('Connect an Account'),
         const SizedBox(height: 4),
         const Text(
-          'Visit the URL below from any device on the same network to link a calendar account.',
+          'Connect a calendar account from this signed-in device. The link is '
+          'authorized for your account and expires within minutes.',
           style: TextStyle(color: LandfallColors.textSecondary, fontSize: 13),
         ),
         const SizedBox(height: 16),
         _ConnectUrlTile(
           provider: 'Google Calendar',
           color: const Color(0xFF4285F4),
-          url: googleUrl,
+          startUrl: googleStartUrl,
           onOpenUrl: onOpenUrl,
+          onCreateLinkTicket: onCreateLinkTicket,
         ),
         const SizedBox(height: 12),
         _ConnectUrlTile(
           provider: 'Microsoft Calendar',
           color: const Color(0xFF00A4EF),
-          url: microsoftUrl,
+          startUrl: microsoftStartUrl,
           onOpenUrl: onOpenUrl,
+          onCreateLinkTicket: onCreateLinkTicket,
         ),
         const SizedBox(height: 24),
         TextButton.icon(
@@ -216,14 +243,21 @@ class _ConnectUrlTile extends StatelessWidget {
   const _ConnectUrlTile({
     required this.provider,
     required this.color,
-    required this.url,
+    required this.startUrl,
     this.onOpenUrl,
+    this.onCreateLinkTicket,
   });
 
   final String provider;
   final Color color;
-  final String url;
+
+  /// The OAuth start endpoint, without a ticket. A single-use ticket is
+  /// minted and appended when the user taps Open/Copy.
+  final String startUrl;
   final void Function(String url)? onOpenUrl;
+  final Future<String?> Function()? onCreateLinkTicket;
+
+  bool get _enabled => onCreateLinkTicket != null;
 
   @override
   Widget build(BuildContext context) {
@@ -260,22 +294,13 @@ class _ConnectUrlTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            SelectableText(
-              url,
-              style: const TextStyle(
-                color: LandfallColors.textSecondary,
-                fontSize: 11,
-                fontFamily: 'monospace',
-              ),
-            ),
-            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: LandfallFocusable(
                     borderRadius: BorderRadius.circular(4),
                     child: OutlinedButton.icon(
-                      onPressed: () => _copyUrl(context),
+                      onPressed: _enabled ? () => _copyUrl(context) : null,
                       icon: const Icon(Icons.copy, size: 14),
                       label: const Text('Copy URL'),
                       style: OutlinedButton.styleFrom(
@@ -292,7 +317,7 @@ class _ConnectUrlTile extends StatelessWidget {
                     child: LandfallFocusable(
                       borderRadius: BorderRadius.circular(4),
                       child: OutlinedButton.icon(
-                        onPressed: () => onOpenUrl!(url),
+                        onPressed: _enabled ? () => _open(context) : null,
                         icon: const Icon(Icons.open_in_new, size: 14),
                         label: const Text('Open'),
                         style: OutlinedButton.styleFrom(
@@ -312,12 +337,40 @@ class _ConnectUrlTile extends StatelessWidget {
     );
   }
 
-  void _copyUrl(BuildContext context) {
-    Clipboard.setData(ClipboardData(text: url));
-    ScaffoldMessenger.of(context).showSnackBar(
+  /// Mints a single-use ticket and returns the full connect URL, or null on
+  /// failure (after surfacing a message via [messenger]).
+  Future<String?> _ticketUrl(ScaffoldMessengerState messenger) async {
+    final create = onCreateLinkTicket;
+    if (create == null) return null;
+    final ticket = await create();
+    if (ticket == null || ticket.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Could not start the connection. Please try again.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return null;
+    }
+    final separator = startUrl.contains('?') ? '&' : '?';
+    return '$startUrl${separator}ticket=$ticket';
+  }
+
+  Future<void> _open(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final url = await _ticketUrl(messenger);
+    if (url != null) onOpenUrl!(url);
+  }
+
+  Future<void> _copyUrl(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final url = await _ticketUrl(messenger);
+    if (url == null) return;
+    await Clipboard.setData(ClipboardData(text: url));
+    messenger.showSnackBar(
       const SnackBar(
-        content: Text('URL copied to clipboard'),
-        duration: Duration(seconds: 2),
+        content: Text('Connect link copied — open it within a few minutes'),
+        duration: Duration(seconds: 3),
       ),
     );
   }

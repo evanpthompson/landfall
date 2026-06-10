@@ -25,6 +25,7 @@ class WebSettingsScreen extends StatefulWidget {
     required this.client,
     required this.serverUrl,
     required this.displayId,
+    this.webServerUrl,
     this.onOpenUrl,
   });
 
@@ -32,6 +33,11 @@ class WebSettingsScreen extends StatefulWidget {
   final lf.Client client;
   final String serverUrl;
   final String displayId;
+
+  /// Base URL of the Serverpod web server (where OAuth connect routes live).
+  /// For the companion this is the page's own origin. Falls back to
+  /// [serverUrl] when not provided.
+  final String? webServerUrl;
 
   /// When provided, connect tiles show an "Open" button that calls this with
   /// the OAuth URL so the host can open it in a browser tab.
@@ -130,7 +136,10 @@ class WebSettingsScreenState extends State<WebSettingsScreen>
               return (credentials, userId);
             },
             serverUrl: widget.serverUrl,
+            webServerUrl: widget.webServerUrl ?? widget.serverUrl,
             onOpenUrl: widget.onOpenUrl,
+            onCreateLinkTicket: () =>
+                widget.client.settings.createCalendarLinkTicket(),
             onListKeys: (token) => widget.client.apiKey.listKeys(token),
             onGenerateKey: (name, token) =>
                 widget.client.apiKey.generateKey(name, token),

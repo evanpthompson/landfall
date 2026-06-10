@@ -10,6 +10,13 @@ Widget _wrap(Widget child) => MaterialApp(
       home: Scaffold(body: SizedBox(width: 600, height: 300, child: child)),
     );
 
+// Finds an Image whose AssetImage points at [assetName].
+Finder _assetIcon(String assetName) => find.byWidgetPredicate(
+      (w) => w is Image &&
+          w.image is AssetImage &&
+          (w.image as AssetImage).assetName == assetName,
+    );
+
 WeatherEntity _entity({
   String locationName = 'Chicago',
   double tempC = 22.0,
@@ -73,26 +80,27 @@ void main() {
       expect(find.text('10 mph'), findsOneWidget);
     });
 
-    testWidgets('renders sunny icon for clear sky icon code', (tester) async {
+    testWidgets('renders clear-day Meteocons asset for clear sky code',
+        (tester) async {
       await tester.pumpWidget(
         _wrap(CurrentWeatherCard(entity: _entity(iconCode: '01d'))),
       );
-      expect(find.byIcon(Icons.wb_sunny), findsOneWidget);
+      expect(_assetIcon('assets/weather/clear-day.png'), findsOneWidget);
     });
 
-    testWidgets('renders snowflake icon for snow icon code', (tester) async {
+    testWidgets('renders snow Meteocons asset for snow code', (tester) async {
       await tester.pumpWidget(
         _wrap(CurrentWeatherCard(entity: _entity(iconCode: '13n'))),
       );
-      expect(find.byIcon(Icons.ac_unit), findsOneWidget);
+      expect(_assetIcon('assets/weather/snow.png'), findsOneWidget);
     });
 
-    testWidgets('renders lightning icon for thunderstorm icon code',
+    testWidgets('renders thunderstorms Meteocons asset for thunderstorm code',
         (tester) async {
       await tester.pumpWidget(
         _wrap(CurrentWeatherCard(entity: _entity(iconCode: '11d'))),
       );
-      expect(find.byIcon(Icons.flash_on), findsOneWidget);
+      expect(_assetIcon('assets/weather/thunderstorms.png'), findsOneWidget);
     });
 
     testWidgets('weatherIconData returns correct icon for all codes',

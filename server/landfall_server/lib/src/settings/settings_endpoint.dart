@@ -2,6 +2,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../auth/auth_user_id.dart';
 import '../generated/protocol.dart';
+import '../web/routes/calendar_link_ticket.dart';
 
 /// Provides settings data to the display client.
 ///
@@ -43,5 +44,22 @@ class SettingsEndpoint extends Endpoint {
       throw LandfallException(message: 'Authentication required.');
     }
     return authUserIdFromIdentifier(session.authenticated!.userIdentifier);
+  }
+
+  /// SEC-06: mints a short-lived, single-use ticket bound to the *caller's*
+  /// authenticated identity, for use connecting a calendar account from a
+  /// browser navigation that cannot present the JWT.
+  ///
+  /// The companion calls this over its authenticated RPC channel, then opens
+  /// `/calendar/oauth/start?ticket=<ticket>`. The start route exchanges the
+  /// ticket for the bound `authUserId` — it never trusts a caller-supplied
+  /// identity. The ticket expires within minutes and cannot be replayed.
+  Future<String> createCalendarLinkTicket(Session session) async {
+    if (session.authenticated == null) {
+      throw LandfallException(message: 'Authentication required.');
+    }
+    final authUserId =
+        authUserIdFromIdentifier(session.authenticated!.userIdentifier);
+    return calendarLinkTickets.issue(authUserId);
   }
 }

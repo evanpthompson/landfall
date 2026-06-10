@@ -77,10 +77,10 @@ class WeatherCard extends StatelessWidget {
                         const SizedBox(width: 14),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 12),
-                          child: Icon(
-                            weatherIconData(current.iconCode),
+                          child: weatherIcon(
+                            current.iconCode,
                             size: 40,
-                            color: textSecondary,
+                            fallbackColor: textSecondary,
                           ),
                         ),
                       ],
@@ -134,6 +134,50 @@ class WeatherCard extends StatelessWidget {
   }
 
   static int _toF(double c) => (c * 9 / 5 + 32).round();
+
+  /// Maps an OpenWeatherMap icon [code] (e.g. `01d`, `10n`) to a full-colour
+  /// Meteocons PNG asset path, honouring the day/night suffix. Returns null
+  /// for unknown codes so callers can fall back to [weatherIconData].
+  ///
+  /// Assets: Meteocons by Bas Milius (MIT) — see assets/weather/LICENSE.
+  static String? meteoconAssetFor(String code) {
+    if (code.isEmpty) return null;
+    final prefix = code.length >= 2 ? code.substring(0, 2) : code;
+    final isNight = code.endsWith('n');
+    final name = switch (prefix) {
+      '01' => isNight ? 'clear-night' : 'clear-day',
+      '02' => isNight ? 'partly-cloudy-night' : 'partly-cloudy-day',
+      '03' => 'cloudy',
+      '04' => isNight ? 'overcast-night' : 'overcast-day',
+      '09' => 'drizzle',
+      '10' => 'rain',
+      '11' => 'thunderstorms',
+      '13' => 'snow',
+      '50' => 'mist',
+      _ => null,
+    };
+    return name == null ? null : 'assets/weather/$name.png';
+  }
+
+  /// Full-colour weather icon for an OWM [code]. Renders the Meteocons asset
+  /// when available, falling back to the monochrome [weatherIconData] glyph
+  /// (tinted [fallbackColor]) for unknown codes.
+  static Widget weatherIcon(
+    String code, {
+    required double size,
+    Color? fallbackColor,
+  }) {
+    final asset = meteoconAssetFor(code);
+    if (asset != null) {
+      return Image.asset(
+        asset,
+        width: size,
+        height: size,
+        filterQuality: FilterQuality.medium,
+      );
+    }
+    return Icon(weatherIconData(code), size: size, color: fallbackColor);
+  }
 
   static IconData weatherIconData(String code) {
     final prefix = code.length >= 2 ? code.substring(0, 2) : code;
@@ -216,10 +260,10 @@ class _ForecastColumn extends StatelessWidget {
                 .copyWith(color: textTertiary),
           ),
           const SizedBox(height: 4),
-          Icon(
-            WeatherCard.weatherIconData(day.iconCode),
+          WeatherCard.weatherIcon(
+            day.iconCode,
             size: 22,
-            color: textSecondary,
+            fallbackColor: textSecondary,
           ),
           const SizedBox(height: 4),
           Text(

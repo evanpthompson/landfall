@@ -59,6 +59,7 @@ displaySettings:
 settings:
   - getLinkedCredentials:
   - getMyAuthUserId:
+  - createCalendarLinkTicket:
 marketplace:
   - listMarketplaceThemes:
   - getMarketplaceTheme:

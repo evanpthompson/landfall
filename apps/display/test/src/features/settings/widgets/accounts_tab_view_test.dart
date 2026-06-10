@@ -131,14 +131,16 @@ void main() {
       expect(find.text('Open'), findsWidgets);
     });
 
-    testWidgets('onOpenUrl receives correct OAuth URL when Open tapped',
+    testWidgets('Open mints a ticket and opens the ticket URL (no authUserId)',
         (tester) async {
       final opened = <String>[];
       await tester.pumpWidget(_wrap(
         AccountsTabView(
           onLoad: () async => (<LinkedCredentialSummary>[], 'uid-42'),
           serverUrl: 'http://localhost:8080/',
+          webServerUrl: 'http://localhost:8082/',
           onOpenUrl: opened.add,
+          onCreateLinkTicket: () async => 'ticket-abc',
         ),
       ));
       await tester.pump();
@@ -146,10 +148,87 @@ void main() {
 
       await tester.tap(find.text('Open').first);
       await tester.pump();
+      await tester.pump();
 
       expect(opened.length, 1);
       expect(opened.first, contains('calendar/oauth/start'));
-      expect(opened.first, contains('authUserId=uid-42'));
+      // SEC-06: identity rides in the ticket, never the URL.
+      expect(opened.first, contains('ticket=ticket-abc'));
+      expect(opened.first, isNot(contains('authUserId')));
+    });
+
+    testWidgets('OAuth connect URL uses webServerUrl, not the API serverUrl',
+        (tester) async {
+      final opened = <String>[];
+      await tester.pumpWidget(_wrap(
+        AccountsTabView(
+          onLoad: () async => (<LinkedCredentialSummary>[], 'uid-42'),
+          serverUrl: 'http://localhost:8080/',
+          webServerUrl: 'http://localhost:8082/',
+          onOpenUrl: opened.add,
+          onCreateLinkTicket: () async => 'ticket-abc',
+        ),
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.text('Open').first);
+      await tester.pump();
+      await tester.pump();
+
+      expect(opened.length, 1);
+      // OAuth routes are registered on the Serverpod web server (8082), not
+      // the API server (8080). The connect URL must target the web server.
+      expect(
+        opened.first,
+        startsWith('http://localhost:8082/calendar/oauth/start'),
+      );
+    });
+
+    testWidgets('webServerUrl defaults to serverUrl when omitted',
+        (tester) async {
+      final opened = <String>[];
+      await tester.pumpWidget(_wrap(
+        AccountsTabView(
+          onLoad: () async => (<LinkedCredentialSummary>[], 'uid-42'),
+          serverUrl: 'http://localhost:8082/',
+          onOpenUrl: opened.add,
+          onCreateLinkTicket: () async => 'ticket-abc',
+        ),
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.text('Open').first);
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        opened.first,
+        startsWith('http://localhost:8082/calendar/oauth/start'),
+      );
+    });
+
+    testWidgets('connect buttons are disabled without a ticket minter',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        AccountsTabView(
+          onLoad: () async => (<LinkedCredentialSummary>[], 'uid-42'),
+          serverUrl: 'http://localhost:8082/',
+          onOpenUrl: (_) {},
+          // no onCreateLinkTicket
+        ),
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      final openButton = tester.widget<OutlinedButton>(
+        find.ancestor(
+          of: find.text('Open').first,
+          matching: find.byType(OutlinedButton),
+        ).first,
+      );
+      expect(openButton.onPressed, isNull);
     });
   });
 }

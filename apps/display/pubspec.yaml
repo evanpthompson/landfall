@@ -59,6 +59,9 @@ flutter:
   uses-material-design: true
   assets:
     - assets/companions/
+    # Full-colour weather icons — Meteocons by Bas Milius (MIT).
+    # See assets/weather/LICENSE.
+    - assets/weather/
     # Landfall font registry (architecture_decisions.md §22). Bundled at
     # build time so theme.fontFamily references resolve offline — no
     # fonts.gstatic.com fetches at runtime. Populated by

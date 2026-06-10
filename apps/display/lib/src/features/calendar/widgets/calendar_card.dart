@@ -68,57 +68,102 @@ class _DailyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final grouped = _groupByDay(events);
+    final now = DateTime.now();
+    final todayKey = _dayKey(now);
+    final todayEvents = events
+        .where((e) => _dayKey(e.startTime.toLocal()) == todayKey)
+        .toList()
+      ..sort((a, b) => a.startTime.compareTo(b.startTime));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _CalendarLabel(text: 'CALENDAR — TODAY'),
+        const SizedBox(height: 4),
+        _DateHeadline(date: now),
         const SizedBox(height: 12),
+        // The date is always visible above; the body shows today's events or
+        // an explicit empty note so the card never collapses to a heading.
         Expanded(
-          child: ListView.builder(
-            padding: EdgeInsets.zero,
-            itemCount: grouped.length,
-            itemBuilder: (context, i) => _DayGroup(group: grouped[i]),
-          ),
+          child: todayEvents.isEmpty
+              ? const _EmptyDayNote(text: 'No events scheduled today')
+              : ListView.builder(
+                  padding: EdgeInsets.zero,
+                  itemCount: todayEvents.length,
+                  itemBuilder: (context, i) => _EventRow(event: todayEvents[i]),
+                ),
         ),
       ],
     );
   }
+}
 
-  static List<_DayData> _groupByDay(List<CalendarEventEntity> events) {
-    final Map<String, List<CalendarEventEntity>> byDay = {};
-    for (final event in events) {
-      final key = _dayKey(event.startTime.toLocal());
-      byDay.putIfAbsent(key, () => []).add(event);
-    }
+// Full date headline shown above the daily list (e.g. "Monday, June 9").
+class _DateHeadline extends StatelessWidget {
+  const _DateHeadline({required this.date});
 
-    final now = DateTime.now();
-    return byDay.entries
-        .map((e) => _DayData(label: _dayLabel(e.key, now), events: e.value))
-        .toList();
+  final DateTime date;
+
+  static const _weekdays = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+  ];
+  static const _months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = LandfallActiveTheme.of(context);
+    final text =
+        '${_weekdays[date.weekday - 1]}, ${_months[date.month - 1]} ${date.day}';
+    return Text(
+      text,
+      style: LandfallTypography.eventTitle
+          .copyWith(color: tokenColor(tokens.colorTextPrimary)),
+    );
   }
+}
 
-  static String _dayKey(DateTime dt) =>
-      '${dt.year.toString().padLeft(4, '0')}-'
-      '${dt.month.toString().padLeft(2, '0')}-'
-      '${dt.day.toString().padLeft(2, '0')}';
+// Placeholder shown when a day has no events.
+class _EmptyDayNote extends StatelessWidget {
+  const _EmptyDayNote({required this.text});
 
-  static String _dayLabel(String key, DateTime now) {
-    final today = _dayKey(now);
-    final tomorrow = _dayKey(now.add(const Duration(days: 1)));
-    if (key == today) return 'Today';
-    if (key == tomorrow) return 'Tomorrow';
-    final parts = key.split('-');
-    final dt = DateTime(
-        int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
-    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return '${weekdays[dt.weekday - 1]}, ${months[dt.month - 1]} ${dt.day}';
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTertiary =
+        tokenColor(LandfallActiveTheme.of(context).colorTextTertiary);
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 13, color: textTertiary),
+      ),
+    );
   }
+}
+
+String _dayKey(DateTime dt) =>
+    '${dt.year.toString().padLeft(4, '0')}-'
+    '${dt.month.toString().padLeft(2, '0')}-'
+    '${dt.day.toString().padLeft(2, '0')}';
+
+String _dayLabel(String key, DateTime now) {
+  final today = _dayKey(now);
+  final tomorrow = _dayKey(now.add(const Duration(days: 1)));
+  if (key == today) return 'Today';
+  if (key == tomorrow) return 'Tomorrow';
+  final parts = key.split('-');
+  final dt =
+      DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  return '${weekdays[dt.weekday - 1]}, ${months[dt.month - 1]} ${dt.day}';
 }
 
 class _DayData {
@@ -232,9 +277,11 @@ class _BiweeklyView extends StatelessWidget {
 
   final List<CalendarEventEntity> events;
 
+  static const _spanDays = 14;
+
   @override
   Widget build(BuildContext context) {
-    final grouped = _groupByDay(events);
+    final days = _buildDays(events);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,55 +291,36 @@ class _BiweeklyView extends StatelessWidget {
         Expanded(
           child: ListView.builder(
             padding: EdgeInsets.zero,
-            itemCount: grouped.length,
-            itemBuilder: (context, i) => _DayGroup(group: grouped[i]),
+            itemCount: days.length,
+            itemBuilder: (context, i) => _DayGroup(group: days[i]),
           ),
         ),
       ],
     );
   }
 
-  static List<_DayData> _groupByDay(List<CalendarEventEntity> events) {
+  // Always returns one entry per day across the next 14 days so the dates and
+  // days are visible even when no events fall in the window. Events are bucketed
+  // into their day; days without events render with just their label.
+  static List<_DayData> _buildDays(List<CalendarEventEntity> events) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final cutoff = today.add(const Duration(days: 14));
 
     final Map<String, List<CalendarEventEntity>> byDay = {};
     for (final event in events) {
       final local = event.startTime.toLocal();
       final eventDay = DateTime(local.year, local.month, local.day);
-      if (eventDay.isBefore(today) || !eventDay.isBefore(cutoff)) continue;
-      final key = _dayKey(local);
-      byDay.putIfAbsent(key, () => []).add(event);
+      final offset = eventDay.difference(today).inDays;
+      if (offset < 0 || offset >= _spanDays) continue;
+      byDay.putIfAbsent(_dayKey(local), () => []).add(event);
     }
 
-    final entries = byDay.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-
-    return entries
-        .map((e) => _DayData(label: _dayLabel(e.key, now), events: e.value))
-        .toList();
-  }
-
-  static String _dayKey(DateTime dt) =>
-      '${dt.year.toString().padLeft(4, '0')}-'
-      '${dt.month.toString().padLeft(2, '0')}-'
-      '${dt.day.toString().padLeft(2, '0')}';
-
-  static String _dayLabel(String key, DateTime now) {
-    final today = _dayKey(now);
-    final tomorrow = _dayKey(now.add(const Duration(days: 1)));
-    if (key == today) return 'Today';
-    if (key == tomorrow) return 'Tomorrow';
-    final parts = key.split('-');
-    final dt = DateTime(
-        int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
-    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return '${weekdays[dt.weekday - 1]}, ${months[dt.month - 1]} ${dt.day}';
+    return List.generate(_spanDays, (i) {
+      final day = today.add(Duration(days: i));
+      final key = _dayKey(day);
+      final dayEvents = byDay[key] ?? const <CalendarEventEntity>[];
+      return _DayData(label: _dayLabel(key, now), events: dayEvents);
+    });
   }
 }
 

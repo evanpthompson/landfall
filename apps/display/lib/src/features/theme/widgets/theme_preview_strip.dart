@@ -104,24 +104,28 @@ class _MiniClockTile extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '12:00',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: textPrimary,
-                letterSpacing: -0.5,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '12:00',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: textPrimary,
+                  letterSpacing: -0.5,
+                ),
               ),
-            ),
-            Text(
-              'Tuesday, May 5',
-              style: TextStyle(fontSize: 10, color: textSecondary),
-            ),
-          ],
+              Text(
+                'Tuesday, May 5',
+                style: TextStyle(fontSize: 10, color: textSecondary),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -151,30 +155,36 @@ class _MiniWeatherTile extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('New York', style: TextStyle(fontSize: 9, color: textTertiary)),
-            Row(
-              children: [
-                Text(
-                  '72°',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: textPrimary,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('New York',
+                  style: TextStyle(fontSize: 9, color: textTertiary)),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '72°',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                const Text('☀️', style: TextStyle(fontSize: 16)),
-              ],
-            ),
-            Text(
-              'Clear',
-              style: TextStyle(fontSize: 10, color: textSecondary),
-            ),
-          ],
+                  const SizedBox(width: 6),
+                  const Text('☀️', style: TextStyle(fontSize: 16)),
+                ],
+              ),
+              Text(
+                'Clear',
+                style: TextStyle(fontSize: 10, color: textSecondary),
+              ),
+            ],
+          ),
         ),
       ),
     );

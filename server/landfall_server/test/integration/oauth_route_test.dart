@@ -5,6 +5,7 @@ import 'package:serverpod/serverpod.dart';
 import 'package:test/test.dart';
 
 import 'package:landfall_server/src/generated/protocol.dart';
+import 'package:landfall_server/src/web/routes/calendar_link_ticket.dart';
 import 'package:landfall_server/src/web/routes/calendar_oauth_route.dart';
 import 'package:landfall_server/src/web/routes/microsoft_calendar_oauth_route.dart';
 import 'package:landfall_server/src/web/routes/oauth_token_encryptor.dart';
@@ -78,78 +79,75 @@ void main() {
         );
       });
 
-      test('setup token with correct token + valid UUID is redirected (303)',
-          () async {
+      test('valid single-use ticket is redirected (303)', () async {
+        final store = CalendarLinkTicketStore();
+        final ticket = store.issue('00000000-0000-4000-8000-100000000042');
         final session = sessionBuilder.build();
         final request = RequestInternal.create(
           Method.get,
-          Uri.parse(
-            'http://localhost/calendar/oauth/start'
-            '?setup_token=test-setup-token'
-            '&authUserId=00000000-0000-0000-0000-000000000042',
-          ),
+          Uri.parse('http://localhost/calendar/oauth/start?ticket=$ticket'),
           Object(),
         );
 
-        final result =
-            await CalendarOAuthStartRoute().handleCall(session, request);
+        final result = await CalendarOAuthStartRoute(ticketStore: store)
+            .handleCall(session, request);
         expect(
           (result as Response).statusCode,
           equals(303),
-          reason: 'Valid setup token + UUID must be redirected to Google',
+          reason: 'A valid ticket must be redirected to Google',
         );
       });
 
-      test('setup token is rejected when token value is wrong', () async {
+      test('a consumed ticket cannot be replayed (401)', () async {
+        final store = CalendarLinkTicketStore();
+        final ticket = store.issue('00000000-0000-4000-8000-100000000042');
+        final session = sessionBuilder.build();
+        Request req() => RequestInternal.create(
+              Method.get,
+              Uri.parse('http://localhost/calendar/oauth/start?ticket=$ticket'),
+              Object(),
+            );
+
+        final first = await CalendarOAuthStartRoute(ticketStore: store)
+            .handleCall(session, req());
+        expect((first as Response).statusCode, equals(303));
+
+        final second = await CalendarOAuthStartRoute(ticketStore: store)
+            .handleCall(session, req());
+        expect(
+          (second as Response).statusCode,
+          equals(401),
+          reason: 'A single-use ticket must not be replayable',
+        );
+      });
+
+      test('an unknown ticket is rejected (401)', () async {
         final session = sessionBuilder.build();
         final request = RequestInternal.create(
           Method.get,
-          Uri.parse(
-            'http://localhost/calendar/oauth/start'
-            '?setup_token=wrong-token'
-            '&authUserId=00000000-0000-0000-0000-000000000042',
-          ),
+          Uri.parse('http://localhost/calendar/oauth/start?ticket=bogus'),
           Object(),
         );
 
-        final result =
-            await CalendarOAuthStartRoute().handleCall(session, request);
+        final result = await CalendarOAuthStartRoute(
+          ticketStore: CalendarLinkTicketStore(),
+        ).handleCall(session, request);
         expect(
           (result as Response).statusCode,
           equals(401),
-          reason: 'Wrong setup token must be rejected',
+          reason: 'An unknown ticket must be rejected',
         );
       });
 
-      test('setup token is rejected when authUserId is missing', () async {
-        final session = sessionBuilder.build();
-        final request = RequestInternal.create(
-          Method.get,
-          Uri.parse(
-            'http://localhost/calendar/oauth/start'
-            '?setup_token=test-setup-token',
-          ),
-          Object(),
-        );
-
-        final result =
-            await CalendarOAuthStartRoute().handleCall(session, request);
-        expect(
-          (result as Response).statusCode,
-          equals(401),
-          reason: 'Setup token without authUserId must be rejected',
-        );
-      });
-
-      test('setup token is rejected when authUserId is not a valid UUID',
+      test('a caller-supplied authUserId without a ticket is rejected (401)',
           () async {
+        // SEC-06 regression: identity must never come from a query parameter.
         final session = sessionBuilder.build();
         final request = RequestInternal.create(
           Method.get,
           Uri.parse(
             'http://localhost/calendar/oauth/start'
-            '?setup_token=test-setup-token'
-            '&authUserId=not-a-valid-uuid',
+            '?authUserId=00000000-0000-0000-0000-000000000042',
           ),
           Object(),
         );
@@ -159,7 +157,7 @@ void main() {
         expect(
           (result as Response).statusCode,
           equals(401),
-          reason: 'Setup token with non-UUID authUserId must be rejected',
+          reason: 'A bare authUserId query param must not authorize the flow',
         );
       });
     });
@@ -198,6 +196,40 @@ void main() {
             .handleCall(session, request);
         // Microsoft client ID is empty in test config → 500 (not 401 and not 303).
         expect((result as Response).statusCode, isNot(401));
+      });
+
+      test('a valid ticket authorizes the flow (past the 401 gate)', () async {
+        final store = CalendarLinkTicketStore();
+        final ticket = store.issue('00000000-0000-4000-8000-100000000042');
+        final session = sessionBuilder.build();
+        final request = RequestInternal.create(
+          Method.get,
+          Uri.parse(
+            'http://localhost/calendar/microsoft/oauth/start?ticket=$ticket',
+          ),
+          Object(),
+        );
+
+        final result = await MicrosoftCalendarOAuthStartRoute(ticketStore: store)
+            .handleCall(session, request);
+        // Ticket clears the auth gate; config is empty in tests → not a 401.
+        expect((result as Response).statusCode, isNot(401));
+      });
+
+      test('an unknown ticket is rejected (401)', () async {
+        final session = sessionBuilder.build();
+        final request = RequestInternal.create(
+          Method.get,
+          Uri.parse(
+            'http://localhost/calendar/microsoft/oauth/start?ticket=bogus',
+          ),
+          Object(),
+        );
+
+        final result = await MicrosoftCalendarOAuthStartRoute(
+          ticketStore: CalendarLinkTicketStore(),
+        ).handleCall(session, request);
+        expect((result as Response).statusCode, equals(401));
       });
     });
   });

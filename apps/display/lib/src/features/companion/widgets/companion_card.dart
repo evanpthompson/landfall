@@ -141,7 +141,9 @@ class _CompanionCardState extends State<CompanionCard>
     String serverReportedBaseUrl,
   ) {
     final tokens = LandfallActiveTheme.of(context);
-    const bgColor = Color(0xFF111318);
+    // Track the active theme's card fill rather than a hardcoded near-black,
+    // so the companion card matches the dashboard theme.
+    final bgColor = tokenColor(tokens.cardFill);
     final borderColor = tokenColor(tokens.cardBorderColor);
     final radius = tokens.cardRadius.toDouble();
 

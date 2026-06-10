@@ -819,6 +819,21 @@ class EndpointSettings extends _i1.EndpointRef {
     'getMyAuthUserId',
     {},
   );
+
+  /// SEC-06: mints a short-lived, single-use ticket bound to the *caller's*
+  /// authenticated identity, for use connecting a calendar account from a
+  /// browser navigation that cannot present the JWT.
+  ///
+  /// The companion calls this over its authenticated RPC channel, then opens
+  /// `/calendar/oauth/start?ticket=<ticket>`. The start route exchanges the
+  /// ticket for the bound `authUserId` — it never trusts a caller-supplied
+  /// identity. The ticket expires within minutes and cannot be replayed.
+  _i2.Future<String> createCalendarLinkTicket() =>
+      caller.callServerEndpoint<String>(
+        'settings',
+        'createCalendarLinkTicket',
+        {},
+      );
 }
 
 /// Marketplace-specific theme queries.

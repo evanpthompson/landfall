@@ -128,9 +128,12 @@ Each system card must render correctly. Allow up to 1 minute for first-load fetc
 
 - [ ] **ClockCard** — shows correct local time, updates every second, no per-tick rescale (BUG-04 regression)
 - [ ] **ClockCard** — date line shows today's day-of-week + month + day
-- [ ] **CurrentWeatherCard** — shows current conditions for the configured location (or hides gracefully if OWM not set)
-- [ ] **ForecastStripCard** — 5 day columns with high/low; no overflow (BUG-05 regression)
+- [ ] **CurrentWeatherCard** — shows current conditions for the configured location (or hides gracefully if OWM not set); the condition icon is **full-colour** (Meteocons), with the correct **day vs night** variant
+- [ ] **ForecastStripCard** — 5 day columns with high/low; full-colour weather icons; no overflow (BUG-05 regression)
 - [ ] **CalendarCard (daily)** — events from the linked Google account appear
+- [ ] **CalendarCard (daily, no events)** — with no events today the card still shows today's date headline + "No events scheduled today" (never a bare heading)
+- [ ] **CalendarCard (2-week)** — toggle via Card HUD; the full 14-day scaffold renders with each day's date/label, events bucketed under their day
+- [ ] **CalendarCard (2-week, no events)** — with no events in the window the 14 day rows (Today, Tomorrow, …) are still visible
 - [ ] **CalendarCard (weekly)** — toggle via Card HUD; 7-column grid renders
 - [ ] **CalendarCard (monthly)** — toggle via Card HUD; month grid + event dots render
 - [ ] **PhotoFrameCard** — cycles through photos from the configured Drive folder; transitions are smooth
@@ -201,7 +204,11 @@ curl -X POST http://<mac-lan-ip>:8080/api/v1/cards \
 ### 2.10 Settings → Accounts
 
 - [ ] Linked Accounts list shows the Google account from the wizard
-- [ ] Add a Microsoft account (if testing) → OAuth URL is copyable, link works
+- [ ] Connect tiles show "Copy URL"; buttons are **enabled** (a ticket minter is wired)
+- [ ] Tap **Copy URL** for Google → the copied URL targets the **web server** port (`:8082` on direct-port, or the bare domain behind Caddy) and contains `?ticket=…` — **not** `:8080` and **not** `authUserId=`
+- [ ] Open the copied URL within a few minutes on a phone/browser → reaches Google consent (not a 404 or "Authentication required")
+- [ ] Reusing the same copied URL a second time fails (single-use ticket) — re-copy to retry
+- [ ] Add a Microsoft account (if testing) → same ticket-based flow works
 - [ ] Revoke an account → it disappears from the list; calendar card shows "Reconnect" prompt
 
 **macOS pass:** [ ] all of 2.x ticked.
@@ -308,7 +315,7 @@ Repeat **Part 2** card-by-card validation (2.3, 2.4, 2.5, 2.7, 2.8) on the Fire 
 ### 4.4 Remote-only navigation sanity
 
 - [ ] Settings reachable from the remote (long-press a card or use the gear pill)
-- [ ] OAuth account linking — copy the URL from the screen, open it on phone, complete consent
+- [ ] OAuth account linking — copy the URL (carries a single-use `?ticket=`), open it on a phone within a few minutes, complete consent
 - [ ] Calendar card refreshes within 1 minute of linking
 
 ### 4.5 Resilience
@@ -405,11 +412,23 @@ user-visible ones.
 - [ ] Drag one card to a new slot → Save button appears (or auto-save fires)
 - [ ] Save → within ~5 seconds the TV display recomposes to the new layout
 
+### 7.5b Themes tab from web
+
+- [ ] Tap **Themes** → tiles render; on a ≤390px phone viewport the **Apply** button is fully visible on each tile (not clipped) and the preview strips are not squished/overflowing
+- [ ] Open **Browse Themes** → a single Themes list (no Installed/Marketplace tabs); **no prices, no Free/Owned badges, no Purchase button** anywhere — each theme has only **Apply**
+- [ ] Apply a different theme from the companion → within ~5 seconds the **TV dashboard repaints** with the new theme (this is the profileId-persistence fix)
+- [ ] The **companion card** on the TV uses the theme's card colour (not a fixed black) after the theme change
+
 ### 7.6 Accounts tab
 
 - [ ] **Accounts** tab loads the linked credentials list
 - [ ] The Google account added during setup is listed
-- [ ] "Add account" flows work (OAuth URL displayed / copyable)
+- [ ] Connect tiles show **Open** + **Copy URL**, both enabled
+- [ ] Tap **Open** for Google → a new tab opens to the **web-server origin** (same origin as the companion page) with `?ticket=…` in the URL, and reaches Google consent — **not** a 404 or "Authentication required to connect a calendar"
+  - This is the core end-to-end check for the OAuth ticket path: the companion mints a single-use ticket over its authenticated session, so no JWT/cookie is needed on the navigation. Requires a Google-resolvable redirect domain (see `self_hosting_guide.md` → "OAuth without a public domain").
+- [ ] Complete consent → confirmation page shows the connected email
+- [ ] Back in the Accounts list (Refresh) the new credential appears as **Connected**
+- [ ] On the TV display, the calendar card pulls the account's events within ~1 minute (`CalendarRefreshCall`)
 
 ### 7.7 Sign-out
 

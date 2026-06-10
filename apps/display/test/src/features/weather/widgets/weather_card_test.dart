@@ -11,6 +11,13 @@ Widget _wrap(Widget child) => MaterialApp(
       ),
     );
 
+// Finds an Image whose AssetImage points at [assetName].
+Finder _assetIcon(String assetName) => find.byWidgetPredicate(
+      (w) => w is Image &&
+          w.image is AssetImage &&
+          (w.image as AssetImage).assetName == assetName,
+    );
+
 WeatherEntity _current({
   String locationName = 'Olathe',
   double tempC = 19.4,
@@ -73,14 +80,14 @@ void main() {
     });
 
     testWidgets('renders current conditions icon', (tester) async {
-      // iconCode '04d' → Icons.cloud
+      // iconCode '04d' → overcast-day Meteocons asset
       await tester.pumpWidget(
         _wrap(WeatherCard(
           current: _current(iconCode: '04d'),
           forecast: _forecast(),
         )),
       );
-      expect(find.byIcon(Icons.cloud), findsWidgets);
+      expect(_assetIcon('assets/weather/overcast-day.png'), findsWidgets);
     });
 
     testWidgets('renders TODAY label for first forecast column', (tester) async {

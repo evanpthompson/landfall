@@ -74,7 +74,7 @@ class _DayColumn extends StatelessWidget {
               style: LandfallTypography.widgetHeading
                   .copyWith(color: textTertiary)),
           const SizedBox(height: 4),
-          Icon(WeatherCard.weatherIconData(day.iconCode), size: 24, color: textSecondary),
+          WeatherCard.weatherIcon(day.iconCode, size: 24, fallbackColor: textSecondary),
           const SizedBox(height: 4),
           Text('$hi°',
               style: LandfallTypography.cardBody.copyWith(color: textPrimary)),

@@ -23,6 +23,8 @@ Every doc in the repo, in one place. Add a new `.md` file anywhere and it goes h
 - [Manual smoke test](manual_smoke_test.md) — runnable cold checklist for a build (release gate)
 - [End-to-end feature test](e2e_feature_test.md) — exhaustive feature-by-feature regression sweep
 - [Beta known limitations](beta_known_limitations.md) — intentionally-deferred items, workflows, and pointers to future work
+- [Beta QA findings](beta_qa_findings.md) — open bugs and verification items found during beta QA (must clear before sign-off)
+- [Beta release plan](beta_release_plan.md) — detailed specs + session-by-session plan for clearing the QA findings
 
 ## For agent integrators
 

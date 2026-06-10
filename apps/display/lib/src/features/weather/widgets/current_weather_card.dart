@@ -66,10 +66,10 @@ class CurrentWeatherCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: Icon(
-                      WeatherCard.weatherIconData(entity.iconCode),
+                    child: WeatherCard.weatherIcon(
+                      entity.iconCode,
                       size: 36,
-                      color: textSecondary,
+                      fallbackColor: textSecondary,
                     ),
                   ),
                 ],

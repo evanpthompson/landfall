@@ -215,5 +215,26 @@ void main() {
         expect(id1, isNot(equals(id2)));
       });
     });
+
+    group('createCalendarLinkTicket', () {
+      test('rejects unauthenticated caller', () async {
+        expect(
+          () => endpoints.settings.createCalendarLinkTicket(sessionBuilder),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('returns a non-empty ticket for an authenticated caller', () async {
+        final ticket =
+            await endpoints.settings.createCalendarLinkTicket(authed);
+        expect(ticket, isNotEmpty);
+      });
+
+      test('mints a distinct ticket on each call (single-use)', () async {
+        final a = await endpoints.settings.createCalendarLinkTicket(authed);
+        final b = await endpoints.settings.createCalendarLinkTicket(authed);
+        expect(a, isNot(equals(b)));
+      });
+    });
   });
 }

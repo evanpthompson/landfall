@@ -93,6 +93,26 @@ void main() {
       )));
       expect(find.text('Daily Event'), findsOneWidget);
     });
+
+    testWidgets('shows today date and a no-events note when empty',
+        (tester) async {
+      await tester.pumpWidget(_wrap(CalendarCard(
+        events: const [],
+        displayConfig: const {'view': 'daily'},
+      )));
+      // The day scaffold is always visible — the card never collapses to a
+      // bare heading when there are no events.
+      expect(find.text('CALENDAR — TODAY'), findsOneWidget);
+      expect(find.textContaining('No events'), findsOneWidget);
+
+      // Today's date is shown (month name proves a date headline rendered).
+      const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December',
+      ];
+      final month = months[DateTime.now().month - 1];
+      expect(find.textContaining(month), findsWidgets);
+    });
   });
 
   // ── Biweekly view (default) ────────────────────────────────────────────────
@@ -146,6 +166,19 @@ void main() {
       await tester.pump();
       expect(find.text('CALENDAR — TODAY'), findsNothing);
       expect(find.text('CALENDAR — THIS WEEK'), findsNothing);
+    });
+
+    testWidgets('shows the day scaffold (Today/Tomorrow) even with no events',
+        (tester) async {
+      await tester.pumpWidget(_wrap(CalendarCard(
+        events: const [],
+        displayConfig: const {'view': 'biweekly'},
+      )));
+      await tester.pump();
+      // The 14-day scaffold is always rendered, so the days/dates are visible
+      // regardless of whether any events fall in the window.
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.text('Tomorrow'), findsOneWidget);
     });
 
     testWidgets('does not overflow in a 200x200 slot (biweekly)', (tester) async {

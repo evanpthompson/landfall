@@ -6,17 +6,12 @@ import 'package:landfall_shared/landfall_shared.dart' hide Card;
 import 'package:mocktail/mocktail.dart';
 import 'package:ui_kit/ui_kit.dart';
 
-import 'package:display/src/features/theme/cubit/marketplace_cubit.dart';
-import 'package:display/src/features/theme/cubit/marketplace_state.dart';
 import 'package:display/src/features/theme/cubit/theme_cubit.dart';
 import 'package:display/src/features/theme/cubit/theme_state.dart';
 import 'package:display/src/features/theme/screens/theme_browser_screen.dart';
 import 'package:display/src/features/settings/widgets/themes_tab_view.dart';
 
 class _MockThemeCubit extends MockCubit<ThemeState> implements ThemeCubit {}
-
-class _MockMarketplaceCubit extends MockCubit<MarketplaceState>
-    implements MarketplaceCubit {}
 
 // ── fixtures ──────────────────────────────────────────────────────────────────
 
@@ -88,19 +83,10 @@ final _dark = _theme(1, 'default-dark', 'Default Dark');
 
 Widget _wrap(
   _MockThemeCubit themeCubit, {
-  _MockMarketplaceCubit? mktCubit,
   Future<void> Function()? onAfterThemeApplied,
 }) {
-  final mc = mktCubit ?? _MockMarketplaceCubit();
-  if (mktCubit == null) {
-    when(() => mc.state).thenReturn(const MarketplaceInitial());
-    whenListen(mc, Stream<MarketplaceState>.value(const MarketplaceInitial()));
-  }
-  return MultiBlocProvider(
-    providers: [
-      BlocProvider<ThemeCubit>.value(value: themeCubit),
-      BlocProvider<MarketplaceCubit>.value(value: mc),
-    ],
+  return BlocProvider<ThemeCubit>.value(
+    value: themeCubit,
     child: MaterialApp(
       theme: LandfallTheme.dark,
       home: Scaffold(
@@ -176,14 +162,11 @@ void main() {
     testWidgets('Browse Themes navigates to ThemeBrowserScreen',
         (tester) async {
       final cubit = _MockThemeCubit();
-      final mc = _MockMarketplaceCubit();
       final state = ThemeLoaded(_dark);
       when(() => cubit.state).thenReturn(state);
       whenListen(cubit, Stream<ThemeState>.value(state));
-      when(() => mc.state).thenReturn(const MarketplaceInitial());
-      whenListen(mc, Stream<MarketplaceState>.value(const MarketplaceInitial()));
 
-      await tester.pumpWidget(_wrap(cubit, mktCubit: mc));
+      await tester.pumpWidget(_wrap(cubit));
       await tester.pump();
 
       await tester.tap(find.text('Browse Themes'));
@@ -195,16 +178,13 @@ void main() {
     testWidgets('onAfterThemeApplied called when Browse Themes screen pops',
         (tester) async {
       final cubit = _MockThemeCubit();
-      final mc = _MockMarketplaceCubit();
       final state = ThemeLoaded(_dark);
       when(() => cubit.state).thenReturn(state);
       whenListen(cubit, Stream<ThemeState>.value(state));
-      when(() => mc.state).thenReturn(const MarketplaceInitial());
-      whenListen(mc, Stream<MarketplaceState>.value(const MarketplaceInitial()));
 
       var called = false;
       await tester.pumpWidget(
-        _wrap(cubit, mktCubit: mc, onAfterThemeApplied: () async {
+        _wrap(cubit, onAfterThemeApplied: () async {
           called = true;
         }),
       );

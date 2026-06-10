@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:serverpod/serverpod.dart';
 import '../../auth/auth_user_id.dart';
 import '../../generated/protocol.dart';
+import 'calendar_link_ticket.dart';
 import 'oauth_token_encryptor.dart';
 
 /// OAuth 2.0 routes for connecting a Microsoft Calendar account.
@@ -47,18 +48,33 @@ class MicrosoftCalendarOAuthStartRoute extends Route {
       'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
   static const _scopes = 'Calendars.Read offline_access';
 
-  MicrosoftCalendarOAuthStartRoute() : super(methods: {Method.get});
+  MicrosoftCalendarOAuthStartRoute({CalendarLinkTicketStore? ticketStore})
+      : _ticketStore = ticketStore ?? calendarLinkTickets,
+        super(methods: {Method.get});
+
+  final CalendarLinkTicketStore _ticketStore;
 
   @override
   FutureOr<Result> handleCall(Session session, Request request) async {
-    // SEC-06: derive identity from session, not from caller-supplied query param.
-    if (session.authenticated == null) {
-      return Response(
-        401,
-        body: Body.fromString(
-          'Authentication required to connect a calendar.',
-        ),
-      );
+    // SEC-06: identity comes from the authenticated session, or from a
+    // single-use ticket minted server-side for an authenticated RPC caller —
+    // never from a caller-supplied query parameter.
+    final String authUserId;
+    if (session.authenticated != null) {
+      authUserId =
+          authUserIdFromIdentifier(session.authenticated!.userIdentifier);
+    } else {
+      final ticket = request.url.queryParameters['ticket'];
+      final ticketUserId = ticket == null ? null : _ticketStore.consume(ticket);
+      if (ticketUserId == null) {
+        return Response(
+          401,
+          body: Body.fromString(
+            'Authentication required to connect a calendar.',
+          ),
+        );
+      }
+      authUserId = ticketUserId;
     }
 
     final clientId = session.passwords['microsoftClientId'];
@@ -71,9 +87,6 @@ class MicrosoftCalendarOAuthStartRoute extends Route {
         ),
       );
     }
-
-    final authUserId =
-        authUserIdFromIdentifier(session.authenticated!.userIdentifier);
 
     final now = DateTime.now().toUtc();
     _pendingStates.removeWhere((_, v) => v.expiresAt.isBefore(now));

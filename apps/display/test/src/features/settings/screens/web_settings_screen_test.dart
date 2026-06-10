@@ -15,8 +15,6 @@ import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart'
 import 'package:display/src/features/settings/screens/web_settings_screen.dart';
 import 'package:display/src/features/settings/widgets/layout_tab_view.dart';
 import 'package:display/src/features/settings/widgets/web_display_tab.dart';
-import 'package:display/src/features/theme/cubit/marketplace_cubit.dart';
-import 'package:display/src/features/theme/cubit/marketplace_state.dart';
 import 'package:display/src/features/theme/cubit/theme_cubit.dart';
 import 'package:display/src/features/theme/cubit/theme_state.dart';
 
@@ -30,9 +28,6 @@ class _MockDashboardProfileCubit extends MockCubit<DashboardProfileState>
     implements DashboardProfileCubit {}
 
 class _MockThemeCubit extends MockCubit<ThemeState> implements ThemeCubit {}
-
-class _MockMarketplaceCubit extends MockCubit<MarketplaceState>
-    implements MarketplaceCubit {}
 
 class _MockLicenseCubit extends MockCubit<LicenseState>
     implements LicenseCubit {}
@@ -84,10 +79,6 @@ Widget _wrapAuthenticated({
     whenListen(tCubit, Stream<ThemeState>.value(const ThemeInitial()));
   }
 
-  final mktCubit = _MockMarketplaceCubit();
-  when(() => mktCubit.state).thenReturn(const MarketplaceInitial());
-  whenListen(mktCubit, Stream<MarketplaceState>.value(const MarketplaceInitial()));
-
   final lCubit = licenseCubit ?? _MockLicenseCubit();
   if (licenseCubit == null) {
     when(() => lCubit.state).thenReturn(const LicenseLoading());
@@ -104,7 +95,6 @@ Widget _wrapAuthenticated({
       BlocProvider<AuthCubit>.value(value: authCubit),
       BlocProvider<DashboardProfileCubit>.value(value: pCubit),
       BlocProvider<ThemeCubit>.value(value: tCubit),
-      BlocProvider<MarketplaceCubit>.value(value: mktCubit),
       BlocProvider<LicenseCubit>.value(value: lCubit),
     ],
     child: MaterialApp(
@@ -172,7 +162,6 @@ void main() {
       final authCubit = _MockAuthCubit();
       final pCubit = _MockDashboardProfileCubit();
       final tCubit = _MockThemeCubit();
-      final mktCubit = _MockMarketplaceCubit();
       final lCubit = _MockLicenseCubit();
 
       when(() => authCubit.state).thenReturn(const AuthUnauthenticated());
@@ -181,8 +170,6 @@ void main() {
       whenListen(pCubit, Stream<DashboardProfileState>.value(const DashboardProfileLoading()));
       when(() => tCubit.state).thenReturn(const ThemeInitial());
       whenListen(tCubit, Stream<ThemeState>.value(const ThemeInitial()));
-      when(() => mktCubit.state).thenReturn(const MarketplaceInitial());
-      whenListen(mktCubit, Stream<MarketplaceState>.value(const MarketplaceInitial()));
       when(() => lCubit.state).thenReturn(const LicenseLoading());
       whenListen(lCubit, Stream<LicenseState>.value(const LicenseLoading()));
 
@@ -192,7 +179,6 @@ void main() {
             BlocProvider<AuthCubit>.value(value: authCubit),
             BlocProvider<DashboardProfileCubit>.value(value: pCubit),
             BlocProvider<ThemeCubit>.value(value: tCubit),
-            BlocProvider<MarketplaceCubit>.value(value: mktCubit),
             BlocProvider<LicenseCubit>.value(value: lCubit),
           ],
           child: MaterialApp(
