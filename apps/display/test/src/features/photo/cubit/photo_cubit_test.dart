@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:landfall_shared/landfall_shared.dart';
@@ -171,5 +173,91 @@ void main() {
       },
       expect: () => [isA<PhotoLoading>(), isA<PhotoEmpty>()],
     );
+
+    group('applyRemoteSource', () {
+      blocTest<PhotoCubit, PhotoState>(
+        'switches to the source encoded in settings and reloads',
+        build: () {
+          when(() => repository.getPhotos()).thenAnswer((_) async => []);
+          return PhotoCubit(repository, settingsRepository);
+        },
+        act: (c) => c.applyRemoteSource(
+          DisplaySettings(
+            photoSourceJson: jsonEncode(
+              const PhotoSourceNetwork(urls: ['https://c.com/x.jpg']).toJson(),
+            ),
+          ),
+        ),
+        expect: () => [
+          isA<PhotoLoading>(),
+          isA<PhotoLoaded>().having(
+            (s) => s.photos.first.imageUrl,
+            'imageUrl',
+            'https://c.com/x.jpg',
+          ),
+        ],
+        verify: (c) {
+          expect(c.activeSource, isA<PhotoSourceNetwork>());
+        },
+      );
+
+      blocTest<PhotoCubit, PhotoState>(
+        'does not re-persist — the source was already saved by the sync service',
+        build: () {
+          when(() => repository.getPhotos()).thenAnswer((_) async => []);
+          return PhotoCubit(repository, settingsRepository);
+        },
+        act: (c) => c.applyRemoteSource(
+          DisplaySettings(
+            photoSourceJson: jsonEncode(
+              const PhotoSourceLocalDirectory(path: '/tmp/p').toJson(),
+            ),
+          ),
+        ),
+        verify: (_) {
+          verifyNever(() => settingsRepository.saveSettings(any()));
+        },
+      );
+
+      blocTest<PhotoCubit, PhotoState>(
+        'no-ops when the encoded source equals the active source',
+        build: () => PhotoCubit(repository, settingsRepository),
+        seed: () => PhotoLoaded(
+          photos: [_photo(1, 'https://a.com/1.jpg')],
+          currentIndex: 0,
+        ),
+        act: (c) => c.applyRemoteSource(
+          DisplaySettings(
+            photoSourceJson:
+                jsonEncode(const PhotoSourceServerpod().toJson()),
+          ),
+        ),
+        expect: () => <PhotoState>[],
+      );
+
+      blocTest<PhotoCubit, PhotoState>(
+        'ignores null photoSourceJson',
+        build: () => PhotoCubit(repository, settingsRepository),
+        seed: () => PhotoLoaded(
+          photos: [_photo(1, 'https://a.com/1.jpg')],
+          currentIndex: 0,
+        ),
+        act: (c) => c.applyRemoteSource(const DisplaySettings()),
+        expect: () => <PhotoState>[],
+      );
+
+      blocTest<PhotoCubit, PhotoState>(
+        'ignores malformed photoSourceJson',
+        build: () => PhotoCubit(repository, settingsRepository),
+        seed: () => PhotoLoaded(
+          photos: [_photo(1, 'https://a.com/1.jpg')],
+          currentIndex: 0,
+        ),
+        act: (c) => c.applyRemoteSource(
+          const DisplaySettings(photoSourceJson: '{not valid json'),
+        ),
+        expect: () => <PhotoState>[],
+      );
+    });
   });
 }

@@ -266,7 +266,13 @@ class _DisplayActionRouterState extends State<_DisplayActionRouter> {
       // Rebind onApplySettings now that the BLoC tree is ready.
       final syncSvc = context.read<DisplaySettingsSyncService>();
       final settingsCubit = context.read<DisplaySettingsCubit>();
-      syncSvc.onApplySettings = (_) => settingsCubit.loadSettings();
+      final photoCubit = context.read<PhotoCubit>();
+      syncSvc.onApplySettings = (settings) async {
+        await settingsCubit.loadSettings();
+        // Re-point the slideshow if the photo source changed in the web
+        // companion, so it takes effect live without an app restart.
+        await photoCubit.applyRemoteSource(settings);
+      };
 
       _service = DisplayActionService(
         displayId: widget.displayId,

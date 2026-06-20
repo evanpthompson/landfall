@@ -73,6 +73,39 @@ class PhotoCubit extends Cubit<PhotoState> {
     await loadPhotos();
   }
 
+  /// Applies a photo source that arrived via remote settings sync.
+  ///
+  /// Called from the `settings.changed` action path so a source chosen in the
+  /// web companion takes effect live, without restarting the app. Unlike
+  /// [setSource] this does **not** persist — [DisplaySettingsSyncService] has
+  /// already written the settings locally before invoking the apply callback.
+  ///
+  /// No-ops when [DisplaySettings.photoSourceJson] is null/blank/malformed, or
+  /// when the encoded source already equals [activeSource] (avoids a redundant
+  /// reload flash on unrelated settings changes such as a dim-level tweak).
+  Future<void> applyRemoteSource(DisplaySettings settings) async {
+    final json = settings.photoSourceJson;
+    if (json == null || json.isEmpty) return;
+
+    final PhotoSource source;
+    try {
+      source = PhotoSource.fromJson(jsonDecode(json) as Map<String, dynamic>);
+    } catch (e) {
+      dev.log(
+        'applyRemoteSource: failed to parse source: $e',
+        name: 'landfall.photo',
+      );
+      return;
+    }
+
+    if (source == _activeSource) return;
+
+    _activeSource = source;
+    _repository = _repositoryForSource(source);
+    emit(const PhotoLoading());
+    await loadPhotos();
+  }
+
   PhotoRepository _repositoryForSource(PhotoSource source) =>
       switch (source) {
         PhotoSourceServerpod() => _serverpodRepository,

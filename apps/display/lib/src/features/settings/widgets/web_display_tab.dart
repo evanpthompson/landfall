@@ -43,7 +43,7 @@ class _Error extends _TabState {
 
 // ── Photo source type (for the segmented picker) ──────────────────────────────
 
-enum _SourceType { server, network }
+enum _SourceType { server, network, localDirectory }
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -62,6 +62,7 @@ class _WebDisplayTabState extends State<WebDisplayTab> {
   _SourceType? _sourceType; // null = read-only (local_directory / unknown)
   PhotoSource? _readOnlySource;
   late final TextEditingController _networkUrlsCtrl;
+  late final TextEditingController _localDirCtrl;
 
   bool _saving = false;
 
@@ -70,6 +71,7 @@ class _WebDisplayTabState extends State<WebDisplayTab> {
     super.initState();
     _locationCtrl = TextEditingController();
     _networkUrlsCtrl = TextEditingController();
+    _localDirCtrl = TextEditingController();
     _load();
   }
 
@@ -77,6 +79,7 @@ class _WebDisplayTabState extends State<WebDisplayTab> {
   void dispose() {
     _locationCtrl.dispose();
     _networkUrlsCtrl.dispose();
+    _localDirCtrl.dispose();
     super.dispose();
   }
 
@@ -114,11 +117,15 @@ class _WebDisplayTabState extends State<WebDisplayTab> {
         _sourceType = _SourceType.network;
         _networkUrlsCtrl.text = urls.join('\n');
         _readOnlySource = null;
+      case PhotoSourceLocalDirectory(:final path):
+        _sourceType = _SourceType.localDirectory;
+        _localDirCtrl.text = path;
+        _readOnlySource = null;
       case null:
         _sourceType = _SourceType.server;
         _readOnlySource = null;
       default:
-        // local_directory, s3, or unknown — read-only
+        // s3 or unknown — read-only
         _sourceType = null;
         _readOnlySource = source;
     }
@@ -140,6 +147,9 @@ class _WebDisplayTabState extends State<WebDisplayTab> {
     if (_sourceType == _SourceType.network) {
       return _networkUrlsCtrl.text.trim().isNotEmpty;
     }
+    if (_sourceType == _SourceType.localDirectory) {
+      return _localDirCtrl.text.trim().isNotEmpty;
+    }
     return true;
   }
 
@@ -153,6 +163,8 @@ class _WebDisplayTabState extends State<WebDisplayTab> {
               .where((u) => u.isNotEmpty)
               .toList(),
         ),
+      _SourceType.localDirectory =>
+        PhotoSourceLocalDirectory(path: _localDirCtrl.text.trim()),
       null => _readOnlySource ?? const PhotoSourceServerpod(),
     };
 
@@ -217,6 +229,7 @@ class _WebDisplayTabState extends State<WebDisplayTab> {
           sourceType: _sourceType,
           readOnlySource: _readOnlySource,
           networkUrlsCtrl: _networkUrlsCtrl,
+          localDirCtrl: _localDirCtrl,
           canSave: _canSave,
           saving: _saving,
           onDimEnabledChanged: (v) => setState(() => _dimEnabled = v),
@@ -225,6 +238,7 @@ class _WebDisplayTabState extends State<WebDisplayTab> {
           onDimLevelChanged: (v) => setState(() => _dimLevel = v),
           onSourceTypeChanged: (v) => setState(() => _sourceType = v),
           onNetworkUrlsChanged: (_) => setState(() {}),
+          onLocalDirChanged: (_) => setState(() {}),
           onSave: _save,
         ),
     };
@@ -265,6 +279,7 @@ class _FormBody extends StatelessWidget {
     required this.sourceType,
     required this.readOnlySource,
     required this.networkUrlsCtrl,
+    required this.localDirCtrl,
     required this.canSave,
     required this.saving,
     required this.onDimEnabledChanged,
@@ -273,6 +288,7 @@ class _FormBody extends StatelessWidget {
     required this.onDimLevelChanged,
     required this.onSourceTypeChanged,
     required this.onNetworkUrlsChanged,
+    required this.onLocalDirChanged,
     required this.onSave,
   });
 
@@ -285,6 +301,7 @@ class _FormBody extends StatelessWidget {
   final _SourceType? sourceType;
   final PhotoSource? readOnlySource;
   final TextEditingController networkUrlsCtrl;
+  final TextEditingController localDirCtrl;
   final bool canSave;
   final bool saving;
   final ValueChanged<bool> onDimEnabledChanged;
@@ -293,6 +310,7 @@ class _FormBody extends StatelessWidget {
   final ValueChanged<double> onDimLevelChanged;
   final ValueChanged<_SourceType> onSourceTypeChanged;
   final ValueChanged<String> onNetworkUrlsChanged;
+  final ValueChanged<String> onLocalDirChanged;
   final VoidCallback onSave;
 
   @override
@@ -342,8 +360,10 @@ class _FormBody extends StatelessWidget {
             sourceType: sourceType,
             readOnlySource: readOnlySource,
             networkUrlsCtrl: networkUrlsCtrl,
+            localDirCtrl: localDirCtrl,
             onSourceTypeChanged: onSourceTypeChanged,
             onNetworkUrlsChanged: onNetworkUrlsChanged,
+            onLocalDirChanged: onLocalDirChanged,
           ),
           const SizedBox(height: 32),
 
@@ -517,19 +537,23 @@ class _PhotoSourceSection extends StatelessWidget {
     required this.sourceType,
     required this.readOnlySource,
     required this.networkUrlsCtrl,
+    required this.localDirCtrl,
     required this.onSourceTypeChanged,
     required this.onNetworkUrlsChanged,
+    required this.onLocalDirChanged,
   });
 
   final _SourceType? sourceType;
   final PhotoSource? readOnlySource;
   final TextEditingController networkUrlsCtrl;
+  final TextEditingController localDirCtrl;
   final ValueChanged<_SourceType> onSourceTypeChanged;
   final ValueChanged<String> onNetworkUrlsChanged;
+  final ValueChanged<String> onLocalDirChanged;
 
   @override
   Widget build(BuildContext context) {
-    // Read-only: local_directory or unrecognised source.
+    // Read-only: S3 or unrecognised source (not editable from the web app).
     if (sourceType == null) {
       return _ReadOnlySourceNotice(source: readOnlySource);
     }
@@ -538,7 +562,9 @@ class _PhotoSourceSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Type selector
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
             _SourceChip(
               label: 'Landfall Server',
@@ -553,7 +579,12 @@ class _PhotoSourceSection extends StatelessWidget {
                 onPressed: () => _showServerInfo(context),
               ),
             ),
-            const SizedBox(width: 8),
+            _SourceChip(
+              label: 'Local Directory',
+              selected: sourceType == _SourceType.localDirectory,
+              onSelected: () =>
+                  onSourceTypeChanged(_SourceType.localDirectory),
+            ),
             _SourceChip(
               label: 'Network URLs',
               selected: sourceType == _SourceType.network,
@@ -561,6 +592,35 @@ class _PhotoSourceSection extends StatelessWidget {
             ),
           ],
         ),
+
+        // Per-type fields
+        if (sourceType == _SourceType.localDirectory) ...[
+          const SizedBox(height: 12),
+          const Text(
+            'Absolute path to a folder of images on the device — '
+            'images are shown in random order',
+            style: TextStyle(
+                color: LandfallColors.textSecondary, fontSize: 12),
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            key: const Key('photo_source_local_dir'),
+            controller: localDirCtrl,
+            onChanged: onLocalDirChanged,
+            style: const TextStyle(
+                color: LandfallColors.textPrimary, fontSize: 13),
+            decoration: const InputDecoration(
+              hintText: '/home/landfall/Documents/Us',
+              hintStyle:
+                  TextStyle(color: LandfallColors.textTertiary, fontSize: 12),
+              filled: true,
+              fillColor: LandfallColors.surface,
+              border: OutlineInputBorder(),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+          ),
+        ],
 
         // Per-type fields
         if (sourceType == _SourceType.network) ...[

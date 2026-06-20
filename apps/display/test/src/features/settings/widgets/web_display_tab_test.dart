@@ -308,19 +308,113 @@ void main() {
       });
     });
 
-    group('photo source — read-only sources', () {
-      testWidgets('local_directory source shows read-only notice',
+    group('photo source — Local Directory', () {
+      testWidgets('path field shown and pre-filled when local_directory loaded',
           (tester) async {
         await _pumpTab(
           tester,
           onLoad: () async => _settings(
             photoSourceJson: _sourceJson(
-              const PhotoSourceLocalDirectory(path: '/home/pi/photos'),
+              const PhotoSourceLocalDirectory(path: '/home/landfall/Documents/Us'),
             ),
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.textContaining('device'), findsOneWidget);
+        final field = tester.widget<TextField>(
+          find.byKey(const Key('photo_source_local_dir')),
+        );
+        expect(field.controller?.text, '/home/landfall/Documents/Us');
+      });
+
+      testWidgets('save encodes the local directory path into photoSourceJson',
+          (tester) async {
+        final saved = <lf.RemoteDisplaySettings>[];
+        await _pumpTab(
+          tester,
+          onLoad: () async => _settings(
+            photoSourceJson: _sourceJson(
+              const PhotoSourceLocalDirectory(path: '/old/path'),
+            ),
+          ),
+          onSave: (s) async => saved.add(s),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const Key('photo_source_local_dir')),
+          '/home/landfall/Documents/Us',
+        );
+        await _scrollToSave(tester);
+        await tester.tap(find.byKey(_saveKey));
+        await tester.pumpAndSettle();
+
+        expect(saved.length, 1);
+        final source = PhotoSource.fromJson(
+          jsonDecode(saved.first.photoSourceJson!) as Map<String, dynamic>,
+        ) as PhotoSourceLocalDirectory;
+        expect(source.path, '/home/landfall/Documents/Us');
+      });
+
+      testWidgets('save disabled when the local directory path is empty',
+          (tester) async {
+        await _pumpTab(
+          tester,
+          onLoad: () async => _settings(
+            photoSourceJson: _sourceJson(
+              const PhotoSourceLocalDirectory(path: '/some/path'),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const Key('photo_source_local_dir')),
+          '',
+        );
+        await tester.pump();
+
+        await _scrollToSave(tester);
+        final saveButton =
+            tester.widget<ElevatedButton>(find.byKey(_saveKey));
+        expect(saveButton.onPressed, isNull);
+      });
+
+      testWidgets('selecting Local Directory reveals the path field',
+          (tester) async {
+        await _pumpTab(
+          tester,
+          onLoad: () async => _settings(
+            photoSourceJson: _sourceJson(const PhotoSourceServerpod()),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('photo_source_local_dir')), findsNothing);
+
+        await tester.tap(find.text('Local Directory'));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('photo_source_local_dir')),
+          findsOneWidget,
+        );
+      });
+    });
+
+    group('photo source — read-only sources', () {
+      testWidgets('s3 source shows read-only notice', (tester) async {
+        await _pumpTab(
+          tester,
+          onLoad: () async => _settings(
+            photoSourceJson: _sourceJson(
+              const PhotoSourceS3(
+                bucket: 'my-bucket',
+                region: 'us-east-1',
+                prefix: '',
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.textContaining('TV'), findsOneWidget);
       });
 
       testWidgets('null photoSourceJson defaults to Landfall Server',
