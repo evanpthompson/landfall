@@ -17,6 +17,7 @@ Every doc in the repo, in one place. Add a new `.md` file anywhere and it goes h
 - [Fire TV guide](fire_tv_guide.md) — APK build and sideload
 - [macOS local dev](macos_local_dev.md) — run the full stack on a Mac, no Pi required
 - [Debugging a Pi image](debugging_pi.md) — SSH + dev telemetry baked in
+- [Pi backup & log runbook](pi_backup_and_log_runbook.md) — empty-backup and display-log growth root causes + fixes
 - [Pi dev workflow](pi_dev_workflow.md) — hot reload against a live Pi server
 - [Updating a Pi](updating.md) — default new-image path plus in-place edge cases
 - [Deployment validation](deployment_validation.md) — checks before long image builds
