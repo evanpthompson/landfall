@@ -343,9 +343,9 @@ divergence. Use the same backend for all three displays.
 
 ## Part 6 — Security spot-checks (alpha hardening regressions)
 
-Quick post-Phase-2 verification. The full security_hardening_phase
-audit lives in the maintainer's private notes; these are the
-user-visible ones.
+Quick post-Phase-2 verification. The full hardening audit lives in the
+maintainer's private notes (see [`SECURITY.md`](../SECURITY.md) for
+scope and disclosure process); these are the user-visible ones.
 
 - [ ] **CORS**: From a browser console on `https://example.com`, `fetch('http://<backend>:8080/api/v1/cards', {headers: {Authorization: 'Bearer XXX'}})` returns 401 with no `Access-Control-*` headers (commit `1928faf`)
 - [ ] **SSRF**: Settings → Theme → Import → enter `https://192.168.0.1/x.yaml` → error: "URL refers to a restricted host" (commit `7ced66b`)

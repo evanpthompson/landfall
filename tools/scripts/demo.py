@@ -829,7 +829,7 @@ animation:
         info("• Management token rejections log api_key.setup_token_rejected")
         info("• generateKey and revokeKey log api_key.generated / api_key.revoked (info)")
         print()
-        ok("Full audit documented in docs/security_hardening_phase.md")
+        ok("See SECURITY.md for the hardening scope and disclosure process")
 
         # Launch display
         pause("Ready to launch. The wizard will appear on a fresh install — walk through it, "
