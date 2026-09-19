@@ -4,6 +4,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../generated/protocol.dart';
 import 'calendar_service.dart';
+import 'credential_integrity.dart';
 import 'google_calendar_service.dart';
 import 'microsoft_calendar_service.dart';
 
@@ -43,10 +44,10 @@ class CalendarRefreshCall extends FutureCall<SerializableModel> {
   }
 
   Future<void> _refreshAll(Session session) async {
-    final credentials = await LinkedCredential.db.find(
-      session,
-      where: (t) => t.isActive.equals(true),
-    );
+    // Skips rows whose authUserId cannot be deserialized. Without this the
+    // query itself throws, so the per-credential try/catch below never runs
+    // and no account refreshes at all.
+    final credentials = await findReadableCredentials(session);
 
     if (credentials.isEmpty) return;
 

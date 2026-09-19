@@ -1,6 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 
 import '../auth/auth_user_id.dart';
+import '../calendar/credential_integrity.dart';
 import '../generated/protocol.dart';
 import '../web/routes/calendar_link_ticket.dart';
 
@@ -15,9 +16,11 @@ class SettingsEndpoint extends Endpoint {
     if (session.authenticated == null) {
       throw LandfallException(message: 'Authentication required.');
     }
-    final credentials = await LinkedCredential.db.find(
+    // A row Dart cannot deserialize is skipped and logged rather than being
+    // allowed to fail the whole call — one corrupt authUserId used to turn
+    // this endpoint into a 500 for every user.
+    final credentials = await findReadableCredentials(
       session,
-      where: (t) => t.isActive.equals(true),
       orderBy: (t) => t.createdAt,
     );
 

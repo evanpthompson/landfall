@@ -66,8 +66,16 @@ String authUserIdFromIdentifier(String userIdentifier) {
   );
 }
 
+/// RFC 4122 layout, matching what the `uuid` package accepts when Serverpod
+/// deserializes a `UuidValue`: version nibble 0–8, variant nibble 8/9/a/b.
+///
+/// Deliberately stricter than "32 hex digits". A looser pattern used to let a
+/// value like `00000000-0000-0000-0000-000000000001` through, which Postgres
+/// stores happily and Dart then refuses to read — one such row threw
+/// FormatException for every read of the table (2026-05-03). Rejecting it here
+/// keeps unreadable data out of the database in the first place.
 final _uuidPattern = RegExp(
-  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
   caseSensitive: false,
 );
 

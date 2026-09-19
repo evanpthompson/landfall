@@ -88,4 +88,31 @@ void main() {
       }
     });
   });
+
+  group('rejects UUIDs Serverpod cannot read back', () {
+    // Regression: the pattern used to accept any hex in the version and
+    // variant positions, so a value like the one below could be stored and
+    // then crash every read of the row with a FormatException from the uuid
+    // package's RFC 4122 validation. Logged 2026-05-03.
+    test('rejects the all-zero sentinel', () {
+      expect(
+        () => authUserIdFromIdentifier('00000000-0000-0000-0000-000000000001'),
+        throwsArgumentError,
+      );
+    });
+
+    test('rejects a bad variant nibble', () {
+      expect(
+        () => authUserIdFromIdentifier('019e330e-abf0-7666-02d0-ece4ee3a1287'),
+        throwsArgumentError,
+      );
+    });
+
+    test('still accepts the v4 layout it generates itself', () {
+      expect(
+        authUserIdFromIdentifier('00000000-0000-4000-8000-000000000042'),
+        '00000000-0000-4000-8000-000000000042',
+      );
+    });
+  });
 }

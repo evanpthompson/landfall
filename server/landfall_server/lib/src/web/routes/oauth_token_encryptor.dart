@@ -7,6 +7,7 @@ import 'package:pointycastle/block/modes/gcm.dart';
 import 'package:pointycastle/pointycastle.dart';
 import 'package:serverpod/serverpod.dart';
 
+import '../../calendar/credential_integrity.dart';
 import '../../generated/protocol.dart';
 
 /// Prefix written before every encrypted value stored in the database.
@@ -113,9 +114,12 @@ class OAuthTokenMigration {
   const OAuthTokenMigration._();
 
   static Future<void> encryptAll(Session session, String hexKey) async {
-    final credentials = await LinkedCredential.db.find(
+    // Skips rows whose authUserId cannot be deserialized. Reading them
+    // directly throws, which would abort the migration and leave every other
+    // account's tokens in plaintext.
+    final credentials = await findReadableCredentials(
       session,
-      where: (t) => t.id > 0,
+      activeOnly: false,
     );
 
     final toUpdate = credentials

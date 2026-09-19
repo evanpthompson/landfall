@@ -297,7 +297,7 @@ DELETE FROM calendar_linked_credentials WHERE "providerEmail" = 'demo@landfall.l
 INSERT INTO calendar_linked_credentials
   ("authUserId", provider, "providerEmail", "accessToken", "isActive", "createdAt", "updatedAt")
 VALUES
-  ('00000000-0000-0000-0000-000000000001', 'google', 'demo@landfall.local',
+  ('00000000-0000-4000-8000-000000000001', 'google', 'demo@landfall.local',
    'demo-access-token', true, now(), now());
 
 WITH cred AS (SELECT id FROM calendar_linked_credentials WHERE "providerEmail" = 'demo@landfall.local')
@@ -547,7 +547,7 @@ SELECT c.id, 'primary',      'Work',     'demo-planning', 'Q3 planning session',
         print()
         if self.google_oauth_ready:
             print(f"  {Colours.BOLD}Connect a Google Calendar account:{Colours.RESET}")
-            print(f"  {Colours.CYAN}  {SERVER_URL}/calendar/oauth/start?authUserId=00000000-0000-0000-0000-000000000001{Colours.RESET}")
+            print(f"  {Colours.CYAN}  {SERVER_URL}/calendar/oauth/start?authUserId=00000000-0000-4000-8000-000000000001{Colours.RESET}")
             print()
 
         step("Seeding demo calendar events")
