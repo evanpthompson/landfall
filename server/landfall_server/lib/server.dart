@@ -5,6 +5,7 @@ import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:serverpod_auth_idp_server/providers/passkey.dart';
 
 import 'src/calendar/calendar_refresh_call.dart';
+import 'src/config/passwords_file_guard.dart';
 import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
 import 'src/license/stripe_webhook_route.dart';
@@ -29,7 +30,7 @@ import 'src/weather/weather_refresh_call.dart';
 
 /// The starting point of the Serverpod server.
 void run(List<String> args) async {
-  _checkPasswordsYamlPermissions();
+  _checkPasswordsYamlPermissions(args);
 
   // Initialize Serverpod and connect it with your generated code.
   final pod = Serverpod(args, Protocol(), Endpoints());
@@ -173,26 +174,38 @@ void run(List<String> args) async {
   await pod.futureCallWithDelay('profileSchedule', null, Duration.zero);
 }
 
-/// Warns if config/passwords.yaml is world-readable (A02:2025).
+/// Refuses to start if config/passwords.yaml is world-readable (A02:2025).
 ///
 /// On non-POSIX platforms (Windows) the check is skipped since permission
-/// bits work differently. On POSIX, if the file is readable by "other"
-/// (mode & 0x4 != 0), the server logs a prominent warning but continues —
-/// a hard exit would prevent recovery in single-user dev setups where the
-/// file is intentionally 644.
-void _checkPasswordsYamlPermissions() {
+/// bits work differently. On POSIX, a world-readable secrets file is a
+/// warning in development and test — where a 644 checkout has to stay
+/// fixable from a running server — and a hard refusal everywhere else,
+/// including in an unrecognised run mode. See [passwordsFileVerdict].
+void _checkPasswordsYamlPermissions(List<String> args) {
   if (!Platform.isLinux && !Platform.isMacOS) return;
   final file = File('config/passwords.yaml');
   if (!file.existsSync()) return;
   final stat = file.statSync();
-  // Bit 2 of the lowest octet = world-read permission.
-  if (stat.mode & 0x4 != 0) {
+  final runMode = resolveRunMode(args);
+  final verdict = passwordsFileVerdict(mode: stat.mode, runMode: runMode);
+  if (verdict == PasswordsFileVerdict.ok) return;
+
+  final detail =
+      'config/passwords.yaml is world-readable (mode ${stat.mode.toRadixString(8)}). '
+      'Run: chmod 600 config/passwords.yaml';
+
+  if (verdict == PasswordsFileVerdict.warn) {
     // ignore: avoid_print
-    print(
-      '\n⚠️  SECURITY WARNING: config/passwords.yaml is world-readable '
-      '(mode ${stat.mode.toRadixString(8)}). '
-      'Run: chmod 600 config/passwords.yaml\n',
-    );
+    print('\n⚠️  SECURITY WARNING: $detail\n');
+    return;
   }
+
+  // ignore: avoid_print
+  print(
+    '\n⛔ REFUSING TO START in run mode "$runMode": $detail\n'
+    'Every secret in that file — OAuth client secrets, the API key HMAC, the '
+    'Stripe webhook secret — is readable by any account on this machine.\n',
+  );
+  exit(1);
 }
 
