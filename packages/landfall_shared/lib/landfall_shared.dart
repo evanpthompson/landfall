@@ -37,3 +37,4 @@ export 'src/repositories/marketplace_repository.dart';
 export 'src/models/companion/companion_animation_state.dart';
 export 'src/models/companion/companion_entity.dart';
 export 'src/models/companion/companion_trigger.dart';
+export 'src/errors/session_expired_exception.dart';

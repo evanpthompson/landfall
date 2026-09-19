@@ -29,6 +29,22 @@ final class DashboardProfileLoaded extends DashboardProfileState {
   int get hashCode => Object.hash(active, Object.hashAll(profiles));
 }
 
+/// The server rejected this display's credentials.
+///
+/// Separate from [DashboardProfileError] because it is not a layout problem and
+/// there is nothing to show: the app has to go back to the login screen. The
+/// auth gate listens for this state and signs the device out.
+final class DashboardProfileSessionExpired extends DashboardProfileState {
+  const DashboardProfileSessionExpired();
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is DashboardProfileSessionExpired;
+
+  @override
+  int get hashCode => (DashboardProfileSessionExpired).hashCode;
+}
+
 final class DashboardProfileError extends DashboardProfileState {
   const DashboardProfileError(this.message);
 

@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:landfall_client/landfall_client.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 
+import 'package:display/src/data/auth/session_guard.dart';
+
 /// Production [DashboardProfileRepository] backed by the Serverpod
 /// [ProfileEndpoint].
 ///
@@ -18,7 +20,7 @@ class ServerpodProfileRepository implements DashboardProfileRepository {
 
   @override
   Future<List<ProfileInfo>> listProfiles() async {
-    final profiles = await _client.profile.listProfiles();
+    final profiles = await guardSession(() => _client.profile.listProfiles());
     return profiles.map(_toDomain).toList();
   }
 
@@ -44,9 +46,8 @@ class ServerpodProfileRepository implements DashboardProfileRepository {
     final cardsJson = layout != null
         ? jsonEncode(layout.cards.map((c) => c.toJson()).toList())
         : null;
-    final result = await _client.profile.createProfile(
-      name,
-      cardsJson: cardsJson,
+    final result = await guardSession(
+      () => _client.profile.createProfile(name, cardsJson: cardsJson),
     );
     return _toDomain(result);
   }
@@ -59,30 +60,37 @@ class ServerpodProfileRepository implements DashboardProfileRepository {
     ProfileCardFilter? cardFilter,
     ProfileSchedule? schedule,
   }) async {
-    final result = await _client.profile.updateProfile(
-      id,
-      name: name,
-      cardsJson: layout != null
-          ? jsonEncode(layout.cards.map((c) => c.toJson()).toList())
-          : null,
-      cardFilterJson: cardFilter != null ? jsonEncode(cardFilter.toJson()) : null,
-      scheduleJson: schedule != null ? jsonEncode(schedule.toJson()) : null,
+    final result = await guardSession(
+      () => _client.profile.updateProfile(
+        id,
+        name: name,
+        cardsJson: layout != null
+            ? jsonEncode(layout.cards.map((c) => c.toJson()).toList())
+            : null,
+        cardFilterJson:
+            cardFilter != null ? jsonEncode(cardFilter.toJson()) : null,
+        scheduleJson: schedule != null ? jsonEncode(schedule.toJson()) : null,
+      ),
     );
     return _toDomain(result);
   }
 
   @override
-  Future<void> deleteProfile(int id) => _client.profile.deleteProfile(id);
+  Future<void> deleteProfile(int id) =>
+      guardSession(() => _client.profile.deleteProfile(id));
 
   @override
   Future<ProfileInfo> activateProfile(int id) async {
-    final result = await _client.profile.activateProfile(id);
+    final result =
+        await guardSession(() => _client.profile.activateProfile(id));
     return _toDomain(result);
   }
 
   @override
   Future<ProfileInfo> duplicateProfile(int id, String newName) async {
-    final result = await _client.profile.duplicateProfile(id, newName);
+    final result = await guardSession(
+      () => _client.profile.duplicateProfile(id, newName),
+    );
     return _toDomain(result);
   }
 

@@ -48,7 +48,9 @@ class ProfileManagerScreen extends StatelessWidget {
       body: BlocBuilder<DashboardProfileCubit, DashboardProfileState>(
         builder: (context, state) {
           return switch (state) {
-            DashboardProfileLoading() =>
+            DashboardProfileLoading() ||
+            // Signed out under us — the auth gate is taking over.
+            DashboardProfileSessionExpired() =>
               const Center(child: CircularProgressIndicator()),
             DashboardProfileError(:final message) => Center(
                 child: Text(

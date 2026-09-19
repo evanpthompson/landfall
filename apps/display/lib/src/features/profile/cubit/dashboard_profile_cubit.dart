@@ -36,6 +36,8 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
       final active =
           all.firstWhere((p) => p.isActive, orElse: () => all.first);
       emit(DashboardProfileLoaded(active, profiles: all));
+    } on SessionExpiredException {
+      emit(const DashboardProfileSessionExpired());
     } catch (e) {
       emit(DashboardProfileError(e.toString()));
     }
@@ -90,6 +92,8 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
       await _repository.activateProfile(id);
       await _refreshAfterWrite();
       _emitProfileTrigger();
+    } on SessionExpiredException {
+      emit(const DashboardProfileSessionExpired());
     } catch (e) {
       emit(DashboardProfileError(e.toString()));
     }
@@ -124,6 +128,9 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
     ));
     try {
       await _repository.updateProfile(previous.active.id, layout: layout);
+    } on SessionExpiredException {
+      emit(previous);
+      emit(const DashboardProfileSessionExpired());
     } catch (e) {
       emit(previous);
       emit(DashboardProfileError(e.toString()));
@@ -141,6 +148,8 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
     try {
       await _repository.updateProfile(current.active.id, layout: defaultLayout);
       await _refreshAfterWrite();
+    } on SessionExpiredException {
+      emit(const DashboardProfileSessionExpired());
     } catch (e) {
       emit(DashboardProfileError(e.toString()));
     }
@@ -158,6 +167,8 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
     try {
       await _repository.createProfile(name, layout: layout);
       await _refreshAfterWrite();
+    } on SessionExpiredException {
+      emit(const DashboardProfileSessionExpired());
     } catch (e) {
       emit(DashboardProfileError(e.toString()));
     }
@@ -168,6 +179,8 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
     try {
       await _repository.updateProfile(id, name: newName);
       await _refreshAfterWrite();
+    } on SessionExpiredException {
+      emit(const DashboardProfileSessionExpired());
     } catch (e) {
       emit(DashboardProfileError(e.toString()));
     }
@@ -178,6 +191,8 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
     try {
       await _repository.duplicateProfile(id, newName);
       await _refreshAfterWrite();
+    } on SessionExpiredException {
+      emit(const DashboardProfileSessionExpired());
     } catch (e) {
       emit(DashboardProfileError(e.toString()));
     }
@@ -188,6 +203,8 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
     try {
       await _repository.deleteProfile(id);
       await _refreshAfterWrite();
+    } on SessionExpiredException {
+      emit(const DashboardProfileSessionExpired());
     } catch (e) {
       emit(DashboardProfileError(e.toString()));
     }
@@ -202,6 +219,8 @@ class DashboardProfileCubit extends Cubit<DashboardProfileState> {
           ? _fallback()
           : all.firstWhere((p) => p.isActive, orElse: () => all.first);
       emit(DashboardProfileLoaded(active, profiles: all));
+    } on SessionExpiredException {
+      emit(const DashboardProfileSessionExpired());
     } catch (e) {
       emit(DashboardProfileError(e.toString()));
     }

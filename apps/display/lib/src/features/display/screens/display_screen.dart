@@ -213,6 +213,11 @@ class _DisplayScreenState extends State<DisplayScreen> {
                             DashboardProfileLoading() => const _LoadingView(),
                             DashboardProfileLoaded(:final active) =>
                               _DisplayBody(layout: active.layout),
+                            // The auth gate is already swapping this screen for
+                            // the login screen — show the spinner, not an error
+                            // nobody standing in front of the wall can act on.
+                            DashboardProfileSessionExpired() =>
+                              const _LoadingView(),
                             DashboardProfileError(:final message) => _ErrorView(
                               message: message,
                             ),

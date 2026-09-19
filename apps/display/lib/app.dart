@@ -27,6 +27,7 @@ import 'package:display/src/features/cards/cubit/card_cubit.dart';
 import 'package:display/src/features/clock/cubit/clock_cubit.dart';
 import 'package:display/src/features/display/screens/display_screen.dart';
 import 'package:display/src/features/profile/cubit/dashboard_profile_cubit.dart';
+import 'package:display/src/features/profile/cubit/dashboard_profile_state.dart';
 import 'package:display/src/features/photo/cubit/photo_cubit.dart';
 import 'package:display/src/features/license/cubit/license_cubit.dart';
 import 'package:display/src/features/settings/cubit/display_settings_cubit.dart';
@@ -230,7 +231,17 @@ class LandfallApp extends StatelessWidget {
                       );
                     }
                   : null,
-              home: _AuthGate(client: client, serverUrl: serverUrl),
+              // A session the server rejects mid-run must return the app to the
+              // login screen. Left alone it renders as an unactionable error on
+              // a wall-mounted display, and survives restarts because the dead
+              // credential stays on disk.
+              home: BlocListener<DashboardProfileCubit, DashboardProfileState>(
+                listenWhen: (_, state) =>
+                    state is DashboardProfileSessionExpired,
+                listener: (context, _) =>
+                    context.read<AuthCubit>().sessionExpired(),
+                child: _AuthGate(client: client, serverUrl: serverUrl),
+              ),
             );
           },
           ),
