@@ -72,4 +72,40 @@ void main() {
       );
     });
   });
+
+    test('no style in the system falls below the legibility floor', () {
+      // Landfall is read across a room. A style below this floor is not small
+      // text, it is text nobody can read — and once one exists, it spreads by
+      // copy-paste. See LandfallTypography.minChromeFontSize for the numbers.
+      final styles = <String, TextStyle>{
+        'timeDisplay': LandfallTypography.timeDisplay,
+        'timeSeconds': LandfallTypography.timeSeconds,
+        'dateLabel': LandfallTypography.dateLabel,
+        'cardLabel': LandfallTypography.cardLabel,
+        'cardTitle': LandfallTypography.cardTitle,
+        'cardBody': LandfallTypography.cardBody,
+        'cardSource': LandfallTypography.cardSource,
+        'widgetHeading': LandfallTypography.widgetHeading,
+        'weatherTemp': LandfallTypography.weatherTemp,
+        'weatherCondition': LandfallTypography.weatherCondition,
+        'eventTitle': LandfallTypography.eventTitle,
+        'eventTime': LandfallTypography.eventTime,
+        'calendarGroupLabel': LandfallTypography.calendarGroupLabel,
+        'calendarDayHeader': LandfallTypography.calendarDayHeader,
+        'calendarMeta': LandfallTypography.calendarMeta,
+        'calendarGridEvent': LandfallTypography.calendarGridEvent,
+        'body': LandfallTypography.body,
+        'caption': LandfallTypography.caption,
+        'button': LandfallTypography.button,
+      };
+
+      for (final entry in styles.entries) {
+        expect(
+          entry.value.fontSize,
+          greaterThanOrEqualTo(LandfallTypography.minChromeFontSize),
+          reason: '${entry.key} is ${entry.value.fontSize}px',
+        );
+      }
+    });
+
 }

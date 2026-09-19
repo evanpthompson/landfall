@@ -229,7 +229,12 @@ class _MetaRow extends StatelessWidget {
     final style = LandfallTypography.caption.copyWith(color: textTertiary);
     final dot = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Text('·', style: TextStyle(color: textTertiary)),
+      // Sized explicitly like everything else: a separator that inherits an
+      // ambient style is a separator that shrinks when the theme changes.
+      child: Text(
+        '·',
+        style: LandfallTypography.caption.copyWith(color: textTertiary),
+      ),
     );
     return Row(
       mainAxisSize: MainAxisSize.min,

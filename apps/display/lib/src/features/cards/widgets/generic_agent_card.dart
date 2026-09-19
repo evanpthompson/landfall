@@ -119,12 +119,12 @@ class _SourceBadge extends StatelessWidget {
       ),
       child: Text(
         source,
-        style: TextStyle(
-          fontSize: 11,
+        // Which agent pushed the card decides whether it is worth reading, so
+        // it takes the shared source size rather than a local 11 px.
+        style: LandfallTypography.cardSource.copyWith(
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
           color: color,
-          height: 1.2,
         ),
       ),
     );

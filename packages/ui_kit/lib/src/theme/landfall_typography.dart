@@ -42,10 +42,13 @@ abstract final class LandfallTypography {
 
   // ── Card ────────────────────────────────────────────────────────────────────
 
-  /// Card section label. Small ALL-CAPS eyebrow above card content.
+  /// Card section label. ALL-CAPS eyebrow above card content.
   /// e.g. "CLOCK", "WEATHER", "CALENDAR — TODAY"
+  ///
+  /// At 11 px this was decoration rather than a label: unreadable from the
+  /// sofa, so nothing it said could be relied on to orient a viewer.
   static const TextStyle cardLabel = TextStyle(
-    fontSize: 11,
+    fontSize: 16,
     fontWeight: FontWeight.w600,
     letterSpacing: 1.5,
     color: LandfallColors.textTertiary,
@@ -68,10 +71,13 @@ abstract final class LandfallTypography {
     height: 1.5,
   );
 
-  /// Card source label. Small badge identifying card origin.
+  /// Card source label. Badge identifying card origin.
   /// e.g. "agent.claude", "system.weather"
+  ///
+  /// Which agent pushed a card is the difference between trusting it and
+  /// ignoring it, so it has to be readable from where the card is read.
   static const TextStyle cardSource = TextStyle(
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: FontWeight.w500,
     letterSpacing: 0.8,
     color: LandfallColors.textTertiary,
@@ -83,7 +89,7 @@ abstract final class LandfallTypography {
   /// Widget section heading. Used for labeled groups within a card.
   /// e.g. "5-Day Forecast", "Upcoming Events"
   static const TextStyle widgetHeading = TextStyle(
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: FontWeight.w600,
     letterSpacing: 1.2,
     color: LandfallColors.textTertiary,
@@ -179,7 +185,7 @@ abstract final class LandfallTypography {
 
   /// Standard body text for settings and UI screens.
   static const TextStyle body = TextStyle(
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: FontWeight.w400,
     color: LandfallColors.textPrimary,
     height: 1.5,
@@ -187,7 +193,7 @@ abstract final class LandfallTypography {
 
   /// Caption / metadata text.
   static const TextStyle caption = TextStyle(
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: FontWeight.w400,
     color: LandfallColors.textTertiary,
     height: 1.4,
