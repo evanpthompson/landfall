@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'package:display/src/widgets/stale_badge.dart';
+
 /// Displays calendar events in daily, weekly, or monthly view.
 ///
 /// Pure presentational — wrap with [BlocBuilder<CalendarCubit, CalendarState>].
@@ -11,10 +13,16 @@ class CalendarCard extends StatelessWidget {
     super.key,
     required this.events,
     this.displayConfig = const {},
+    this.staleSince,
   });
 
   final List<CalendarEventEntity> events;
   final Map<String, dynamic> displayConfig;
+
+  /// When set, these events could not be refreshed and were last fetched at
+  /// this time. Shown as a footnote so a week-old agenda cannot masquerade as
+  /// today's.
+  final DateTime? staleSince;
 
   @override
   Widget build(BuildContext context) {
@@ -30,12 +38,24 @@ class CalendarCard extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: switch (displayConfig['view']) {
-          'daily' => _DailyView(events: events),
-          'weekly' => _WeeklyView(events: events),
-          'monthly' => _MonthlyView(events: events),
-          _ => _BiweeklyView(events: events),
-        },
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: switch (displayConfig['view']) {
+                'daily' => _DailyView(events: events),
+                'weekly' => _WeeklyView(events: events),
+                'monthly' => _MonthlyView(events: events),
+                _ => _BiweeklyView(events: events),
+              },
+            ),
+            if (staleSince != null)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: StaleBadge(fetchedAt: staleSince!),
+              ),
+          ],
+        ),
       ),
     );
   }

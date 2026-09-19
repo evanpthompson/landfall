@@ -131,7 +131,9 @@ void main() {
         expect: () => [
           isA<WeatherLoading>(),
           isA<WeatherLoaded>(),
-          isA<WeatherLoaded>(), // second refresh: no WeatherLoading, data updates silently
+          isA<WeatherLoaded>()
+              .having((s) => s.isStale, 'isStale', isFalse),
+          // second refresh: no WeatherLoading, data updates silently
         ],
       );
 
@@ -152,8 +154,13 @@ void main() {
         },
         expect: () => [
           isA<WeatherLoading>(),
-          isA<WeatherLoaded>(),
-          // null on refresh: no error emitted, stale WeatherLoaded stays
+          isA<WeatherLoaded>()
+              .having((s) => s.isStale, 'isStale', isFalse),
+          // null on refresh: no error, the reading stays but is marked stale
+          // so the card can say when it was actually taken.
+          isA<WeatherLoaded>()
+              .having((s) => s.isStale, 'isStale', isTrue)
+              .having((s) => s.current, 'current', _weather),
         ],
       );
 
@@ -174,8 +181,13 @@ void main() {
         },
         expect: () => [
           isA<WeatherLoading>(),
-          isA<WeatherLoaded>(),
-          // error on refresh: no error emitted, stale WeatherLoaded stays
+          isA<WeatherLoaded>()
+              .having((s) => s.isStale, 'isStale', isFalse),
+          // error on refresh: no error state, the reading stays but is
+          // labelled rather than passed off as current.
+          isA<WeatherLoaded>()
+              .having((s) => s.isStale, 'isStale', isTrue)
+              .having((s) => s.current, 'current', _weather),
         ],
       );
     });

@@ -367,11 +367,18 @@ class _GridView extends StatelessWidget {
       ),
       'system.weather' => BlocBuilder<WeatherCubit, WeatherState>(
         builder: (_, state) => switch (state) {
-          WeatherLoaded(:final current, :final forecast) => WeatherCard(
-            current: current,
-            forecast: forecast,
-            displayConfig: config.displayConfig,
-          ),
+          WeatherLoaded(
+            :final current,
+            :final forecast,
+            :final fetchedAt,
+            :final isStale
+          ) =>
+            WeatherCard(
+              current: current,
+              forecast: forecast,
+              displayConfig: config.displayConfig,
+              staleSince: isStale ? fetchedAt : null,
+            ),
           _ => const _PlaceholderTile(source: 'system.weather'),
         },
       ),
@@ -380,10 +387,12 @@ class _GridView extends StatelessWidget {
       'system.weather.forecast' => const SizedBox.shrink(),
       'system.calendar' => BlocBuilder<CalendarCubit, CalendarState>(
         builder: (_, state) => switch (state) {
-          CalendarLoaded(:final events) => CalendarCard(
-            events: events,
-            displayConfig: config.displayConfig,
-          ),
+          CalendarLoaded(:final events, :final fetchedAt, :final isStale) =>
+            CalendarCard(
+              events: events,
+              displayConfig: config.displayConfig,
+              staleSince: isStale ? fetchedAt : null,
+            ),
           CalendarLoading() => const _PlaceholderTile(source: 'system.calendar'),
           _ => CalendarCard(events: const [], displayConfig: config.displayConfig),
         },

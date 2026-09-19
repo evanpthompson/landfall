@@ -10,12 +10,14 @@ import 'package:display/src/features/weather/cubit/weather_state.dart';
 /// keep data fresh. The cubit reads from the server-side cache; the
 /// repository handles local Drift caching and offline fallback transparently.
 class WeatherCubit extends Cubit<WeatherState> {
-  WeatherCubit(this._repository, {CompanionEventBus? bus})
+  WeatherCubit(this._repository, {CompanionEventBus? bus, DateTime Function()? now})
       : _bus = bus,
+        _now = now ?? DateTime.now,
         super(const WeatherLoading());
 
   final WeatherRepository _repository;
   final CompanionEventBus? _bus;
+  final DateTime Function() _now;
 
   String? _lastCondition;
 
@@ -34,16 +36,26 @@ class WeatherCubit extends Cubit<WeatherState> {
       if (current == null) {
         if (previous is! WeatherLoaded) {
           emit(const WeatherError('No weather data available yet.'));
+          return;
         }
+        emit(previous.copyWith(isStale: true));
         return;
       }
       _emitBusTrigger(current.condition);
       _lastCondition = current.condition;
-      emit(WeatherLoaded(current: current, forecast: forecast));
+      emit(WeatherLoaded(
+        current: current,
+        forecast: forecast,
+        fetchedAt: _now(),
+      ));
     } catch (e) {
+      // Stale weather beats no weather on a wall display, but it is labelled
+      // rather than passed off as the current reading.
       if (previous is! WeatherLoaded) {
         emit(WeatherError(e.toString()));
+        return;
       }
+      emit(previous.copyWith(isStale: true));
     }
   }
 

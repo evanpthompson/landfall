@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:landfall_shared/landfall_shared.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import 'package:display/src/widgets/stale_badge.dart';
+
 /// Combined current-conditions + forecast card.
 ///
 /// Displays location, temperature, icon, condition, meta row, then a
@@ -17,11 +19,16 @@ class WeatherCard extends StatelessWidget {
     required this.current,
     required this.forecast,
     this.displayConfig = const {},
+    this.staleSince,
   });
 
   final WeatherEntity current;
   final List<ForecastDayEntity> forecast;
   final Map<String, dynamic> displayConfig;
+
+  /// When set, the reading could not be refreshed and was last fetched at this
+  /// time — the card says so instead of passing it off as current.
+  final DateTime? staleSince;
 
   @override
   Widget build(BuildContext context) {
@@ -52,9 +59,17 @@ class WeatherCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('WEATHER',
-                style: LandfallTypography.cardLabel
-                    .copyWith(color: textTertiary)),
+            Row(
+              children: [
+                Text('WEATHER',
+                    style: LandfallTypography.cardLabel
+                        .copyWith(color: textTertiary)),
+                if (staleSince != null) ...[
+                  const Spacer(),
+                  StaleBadge(fetchedAt: staleSince!),
+                ],
+              ],
+            ),
             const SizedBox(height: 10),
             // Current conditions — FittedBox scales down width if slot is narrow.
             Flexible(
