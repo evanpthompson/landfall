@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as dev;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -63,35 +64,84 @@ typedef MemoryReclaimer = void Function();
 /// resources. Once those textures are unreferenced the kernel frees the
 /// regions. This is a defensive backstop; the primary fix is decoding photos
 /// at display resolution (see `kMaxPhotoDecodeEdge` in `photo_frame_card`).
+///
+/// Reclaiming is deliberately rare. On the Pi the framebuffer itself is CMA,
+/// so free memory can sit under the pressure threshold indefinitely; firing on
+/// every tick meant purging and re-uploading every texture every 15 seconds,
+/// which is the stall this class exists to prevent, plus a photo that
+/// re-decodes so often it looks broken. Two brakes prevent that:
+///
+/// * a **cooldown** — at most one reclaim per [reclaimCooldown];
+/// * **hysteresis** — after firing, the watchdog re-arms early only once free
+///   memory climbs back above [recoveryThreshold], so hovering at the
+///   threshold counts as one episode rather than many.
 class CmaMemoryWatchdog {
   CmaMemoryWatchdog({
     double pressureThreshold = 0.15,
+    double recoveryThreshold = 0.25,
+    Duration reclaimCooldown = const Duration(minutes: 5),
     CmaReader? read,
     MemoryReclaimer? reclaim,
+    DateTime Function()? now,
   })  : assert(
           pressureThreshold > 0 && pressureThreshold < 1,
           'pressureThreshold must be a fraction in (0, 1)',
         ),
+        assert(
+          recoveryThreshold >= pressureThreshold,
+          'recoveryThreshold must be at or above pressureThreshold',
+        ),
         _threshold = pressureThreshold,
+        _recoveryThreshold = recoveryThreshold,
+        _cooldown = reclaimCooldown,
         _read = read ?? _readProcMeminfo,
-        _reclaim = reclaim ?? _defaultReclaim;
+        _reclaim = reclaim ?? _defaultReclaim,
+        _now = now ?? DateTime.now;
 
   final double _threshold;
+  final double _recoveryThreshold;
+  final Duration _cooldown;
   final CmaReader _read;
   final MemoryReclaimer _reclaim;
+  final DateTime Function() _now;
   Timer? _timer;
+
+  /// When the reclaimer last ran. Null until it has run once.
+  DateTime? _lastReclaimAt;
+
+  /// False while inside a pressure episode that has already been reclaimed.
+  bool _armed = true;
 
   /// Reads CMA once and, if free memory is at or below [pressureThreshold] of
   /// the pool, runs the reclaimer. Returns true if reclamation fired.
   ///
-  /// No-ops (returns false) when the pool is unreadable — a non-Linux host or
-  /// a CMA-less kernel reads as null, so this is safe to call anywhere.
+  /// Returns false — without reclaiming — when the pool is unreadable (a
+  /// non-Linux host or a CMA-less kernel reads as null, so this is safe to
+  /// call anywhere), when there is no pressure, or when the cooldown since the
+  /// last reclaim has not elapsed.
   bool tick() {
     final status = _read();
     if (status == null) return false;
-    if (status.freeFraction > _threshold) return false;
+
+    if (status.freeFraction > _threshold) {
+      // Recovered past the upper threshold: the next dip is a new episode and
+      // may reclaim immediately.
+      if (status.freeFraction >= _recoveryThreshold) _armed = true;
+      return false;
+    }
+
+    if (!_armed && !_cooldownElapsed()) return false;
+
     _reclaim();
+    _lastReclaimAt = _now();
+    _armed = false;
     return true;
+  }
+
+  bool _cooldownElapsed() {
+    final last = _lastReclaimAt;
+    if (last == null) return true;
+    return _now().difference(last) >= _cooldown;
   }
 
   /// Begins polling [tick] on [interval]. Idempotent: a second call while
@@ -118,9 +168,15 @@ class CmaMemoryWatchdog {
   }
 
   static void _defaultReclaim() {
-    final cache = PaintingBinding.instance.imageCache;
-    cache.clear();
-    cache.clearLiveImages();
+    dev.log(
+      'CMA pressure: releasing cached image textures',
+      name: 'landfall.cma',
+    );
+    // Only the cache, not the live set: clearing live images drops the photo
+    // currently on screen, which is then decoded again immediately. That
+    // costs a visible blank frame and frees nothing for longer than an
+    // instant.
+    PaintingBinding.instance.imageCache.clear();
     // Drops decoded-image references and asks the engine to purge unlocked
     // GPU/Skia resources back to CMA. The Linux embedder never fires a
     // low-memory signal on its own, so we trigger the same path manually.

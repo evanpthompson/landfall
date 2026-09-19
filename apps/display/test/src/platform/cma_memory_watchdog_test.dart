@@ -81,21 +81,126 @@ void main() {
     });
   });
 
+  group('CmaMemoryWatchdog cooldown', () {
+    test('does not reclaim again on the next tick under sustained pressure',
+        () {
+      // The Pi sits below the threshold more or less permanently — its own
+      // framebuffer is CMA. Reclaiming on every tick meant purging and
+      // re-uploading every texture every 15 seconds, which is the stall the
+      // watchdog was supposed to prevent.
+      var reclaimed = 0;
+      var now = DateTime(2026, 9, 19, 12);
+      final watchdog = CmaMemoryWatchdog(
+        pressureThreshold: 0.15,
+        reclaimCooldown: const Duration(minutes: 5),
+        read: () => const CmaStatus(totalKb: 1000, freeKb: 4),
+        reclaim: () => reclaimed++,
+        now: () => now,
+      );
+
+      expect(watchdog.tick(), isTrue);
+      now = now.add(const Duration(seconds: 15));
+      expect(watchdog.tick(), isFalse);
+      now = now.add(const Duration(seconds: 15));
+      expect(watchdog.tick(), isFalse);
+      expect(reclaimed, 1);
+    });
+
+    test('reclaims again once the cooldown has elapsed', () {
+      var reclaimed = 0;
+      var now = DateTime(2026, 9, 19, 12);
+      final watchdog = CmaMemoryWatchdog(
+        pressureThreshold: 0.15,
+        reclaimCooldown: const Duration(minutes: 5),
+        read: () => const CmaStatus(totalKb: 1000, freeKb: 4),
+        reclaim: () => reclaimed++,
+        now: () => now,
+      );
+
+      expect(watchdog.tick(), isTrue);
+      now = now.add(const Duration(minutes: 5));
+      expect(watchdog.tick(), isTrue);
+      expect(reclaimed, 2);
+    });
+
+    test('re-arms immediately when free memory recovers', () {
+      var reclaimed = 0;
+      var freeKb = 40; // 4% — under pressure
+      var now = DateTime(2026, 9, 19, 12);
+      final watchdog = CmaMemoryWatchdog(
+        pressureThreshold: 0.15,
+        recoveryThreshold: 0.25,
+        reclaimCooldown: const Duration(minutes: 5),
+        read: () => CmaStatus(totalKb: 1000, freeKb: freeKb),
+        reclaim: () => reclaimed++,
+        now: () => now,
+      );
+
+      expect(watchdog.tick(), isTrue);
+      freeKb = 300; // 30% — recovered past the upper threshold
+      now = now.add(const Duration(seconds: 15));
+      expect(watchdog.tick(), isFalse);
+      freeKb = 40; // pressure returns
+      now = now.add(const Duration(seconds: 15));
+      expect(
+        watchdog.tick(),
+        isTrue,
+        reason: 'a genuine new pressure episode should not wait out the '
+            'cooldown',
+      );
+      expect(reclaimed, 2);
+    });
+
+    test('does not re-arm inside the hysteresis band', () {
+      var reclaimed = 0;
+      var freeKb = 40;
+      var now = DateTime(2026, 9, 19, 12);
+      final watchdog = CmaMemoryWatchdog(
+        pressureThreshold: 0.15,
+        recoveryThreshold: 0.25,
+        reclaimCooldown: const Duration(minutes: 5),
+        read: () => CmaStatus(totalKb: 1000, freeKb: freeKb),
+        reclaim: () => reclaimed++,
+        now: () => now,
+      );
+
+      expect(watchdog.tick(), isTrue);
+      freeKb = 200; // 20% — above pressure, below recovery
+      now = now.add(const Duration(seconds: 15));
+      expect(watchdog.tick(), isFalse);
+      freeKb = 40;
+      now = now.add(const Duration(seconds: 15));
+      expect(
+        watchdog.tick(),
+        isFalse,
+        reason: 'hovering around the threshold is the same episode, not a '
+            'new one',
+      );
+      expect(reclaimed, 1);
+    });
+  });
+
   group('CmaMemoryWatchdog.start/stop', () {
-    test('polls on the configured interval and stops cleanly', () {
+    test('keeps polling but rate-limits reclaims under sustained pressure', () {
       fakeAsync((async) {
         var reclaimed = 0;
+        var reads = 0;
         final watchdog = CmaMemoryWatchdog(
           pressureThreshold: 0.15,
-          read: () => const CmaStatus(totalKb: 1000, freeKb: 10),
+          reclaimCooldown: const Duration(minutes: 5),
+          read: () {
+            reads++;
+            return const CmaStatus(totalKb: 1000, freeKb: 10);
+          },
           reclaim: () => reclaimed++,
         );
         watchdog.start(interval: const Duration(seconds: 15));
         async.elapse(const Duration(seconds: 46)); // 3 ticks
-        expect(reclaimed, 3);
+        expect(reads, 3, reason: 'the watchdog must keep watching');
+        expect(reclaimed, 1, reason: 'but reclaim at most once per cooldown');
         watchdog.stop();
-        async.elapse(const Duration(minutes: 5));
-        expect(reclaimed, 3, reason: 'stop() must cancel the timer');
+        async.elapse(const Duration(minutes: 10));
+        expect(reads, 3, reason: 'stop() must cancel the timer');
       });
     });
   });
