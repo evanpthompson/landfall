@@ -110,20 +110,69 @@ abstract final class LandfallTypography {
 
   // ── Calendar ────────────────────────────────────────────────────────────────
 
-  /// Calendar event title.
+  /// The floor for any text on a card, including chrome such as section
+  /// labels.
+  ///
+  /// Landfall is read from across a room, not from a desk. A 1080p panel at
+  /// roughly three metres puts a logical pixel at about half a millimetre of
+  /// apparent height, and comfortable reading wants a cap height near ten
+  /// millimetres — so text a viewer is expected to *read* starts around 18 px
+  /// and content sits well above it. Anything below this floor is not small
+  /// text, it is invisible text.
+  static const double minChromeFontSize = 16;
+
+  /// The floor for information the card exists to convey — an event title, a
+  /// date, a temperature. See [minChromeFontSize] for where the numbers come
+  /// from.
+  static const double minContentFontSize = 18;
+
+  /// Calendar event title. The thing you are trying to read from the sofa.
   static const TextStyle eventTitle = TextStyle(
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: FontWeight.w500,
     color: LandfallColors.textPrimary,
-    height: 1.3,
+    height: 1.25,
   );
 
   /// Calendar event time prefix. "2:00 PM"
   static const TextStyle eventTime = TextStyle(
-    fontSize: 16,
+    fontSize: 22,
     fontWeight: FontWeight.w400,
     color: LandfallColors.textSecondary,
-    height: 1.4,
+    height: 1.3,
+  );
+
+  /// Section label inside a calendar view — "TOMORROW", "THIS WEEK".
+  static const TextStyle calendarGroupLabel = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 1.0,
+    color: LandfallColors.textTertiary,
+  );
+
+  /// Day-of-week heading in the weekly and monthly grids.
+  static const TextStyle calendarDayHeader = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.8,
+    color: LandfallColors.textTertiary,
+  );
+
+  /// Supporting detail on an event — the calendar it came from, an empty-day
+  /// note.
+  static const TextStyle calendarMeta = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w400,
+    color: LandfallColors.textTertiary,
+  );
+
+  /// Event title inside a dense grid cell, where a full-size title would fit
+  /// two words. Still above [minContentFontSize].
+  static const TextStyle calendarGridEvent = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w500,
+    color: LandfallColors.textPrimary,
+    height: 1.2,
   );
 
   // ── Settings & UI ──────────────────────────────────────────────────────────

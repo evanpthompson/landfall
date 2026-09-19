@@ -38,7 +38,8 @@ class CalendarCard extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Stack(
+        child: _ScaleToFit(
+          child: Stack(
           children: [
             Positioned.fill(
               child: switch (displayConfig['view']) {
@@ -54,9 +55,46 @@ class CalendarCard extends StatelessWidget {
                 right: 0,
                 child: StaleBadge(fetchedAt: staleSince!),
               ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// Renders [child] at the size the calendar views are designed for, scaled
+/// down proportionally when the slot is smaller than that.
+///
+/// The type scale targets a wall: an event title is 28 px because it is read
+/// from a sofa. A user dragging the card down to a corner of the layout editor
+/// must not get an overflow instead of a preview, and shrinking everything
+/// together keeps the design intact rather than clipping the bottom off it. At
+/// or above the design size this is a no-op, so the wall gets full-size type.
+class _ScaleToFit extends StatelessWidget {
+  const _ScaleToFit({required this.child});
+
+  /// The smallest slot the views lay out comfortably at.
+  static const Size designSize = Size(520, 340);
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fits = constraints.maxWidth >= designSize.width &&
+            constraints.maxHeight >= designSize.height;
+        if (fits) return child;
+        return FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox(
+            width: designSize.width,
+            height: designSize.height,
+            child: child,
+          ),
+        );
+      },
     );
   }
 }
@@ -71,7 +109,7 @@ class _CalendarLabel extends StatelessWidget {
     final tokens = LandfallActiveTheme.of(context);
     return Text(
       text,
-      style: LandfallTypography.cardLabel
+      style: LandfallTypography.calendarGroupLabel
           .copyWith(color: tokenColor(tokens.colorTextTertiary)),
     );
   }
@@ -159,7 +197,7 @@ class _EmptyDayNote extends StatelessWidget {
       alignment: Alignment.topLeft,
       child: Text(
         text,
-        style: TextStyle(fontSize: 13, color: textTertiary),
+        style: LandfallTypography.calendarMeta.copyWith(color: textTertiary),
       ),
     );
   }
@@ -208,12 +246,8 @@ class _DayGroup extends StatelessWidget {
         children: [
           Text(
             group.label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.0,
-              color: textTertiary,
-            ),
+            style: LandfallTypography.calendarGroupLabel
+                .copyWith(color: textTertiary),
           ),
           const SizedBox(height: 6),
           ...group.events.map((e) => _EventRow(event: e)),
@@ -240,7 +274,7 @@ class _EventRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 72,
+            width: 104,
             child: Text(_timeLabel,
                 style: LandfallTypography.eventTime.copyWith(
                   color: tokenColor(tokens.colorAccent),
@@ -262,11 +296,8 @@ class _EventRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   event.calendarName,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: textTertiary,
-                  ),
+                  style:
+                      LandfallTypography.calendarMeta.copyWith(color: textTertiary),
                 ),
               ],
             ),
@@ -391,19 +422,13 @@ class _WeeklyView extends StatelessWidget {
                 children: [
                   Text(
                     _dayAbbr[i],
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.8,
-                      color: textTertiary,
-                    ),
+                    style: LandfallTypography.calendarDayHeader
+                        .copyWith(color: textTertiary),
                   ),
                   Text(
                     '${day.day}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: textSecondary,
-                    ),
+                    style: LandfallTypography.eventTime
+                        .copyWith(color: textSecondary),
                   ),
                 ],
               ),
@@ -460,10 +485,8 @@ class _WeekEventBlock extends StatelessWidget {
       ),
       child: Text(
         event.title,
-        style: TextStyle(
-          fontSize: 10,
-          color: textPrimary,
-        ),
+        style: LandfallTypography.calendarGridEvent
+            .copyWith(color: textPrimary),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),
@@ -523,11 +546,8 @@ class _MonthlyView extends StatelessWidget {
                     child: Center(
                       child: Text(
                         h,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: textTertiary,
-                        ),
+                        style: LandfallTypography.calendarDayHeader
+                            .copyWith(color: textTertiary),
                       ),
                     ),
                   ))
@@ -586,62 +606,101 @@ class _MonthCell extends StatelessWidget {
     final overflow = events.length > _maxDots ? events.length - _maxDots : 0;
     final dotCount = events.length.clamp(0, _maxDots);
 
-    return Padding(
-      padding: const EdgeInsets.all(1),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Day number
-            Container(
-              width: 22,
-              height: 22,
-              decoration: isToday
-                  ? BoxDecoration(color: accent, shape: BoxShape.circle)
-                  : null,
-              child: Center(
-                child: Text(
-                  '$day',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight:
-                        isToday ? FontWeight.w700 : FontWeight.w400,
-                    color: isToday ? Colors.white : textPrimary,
-                  ),
+    // The date sizes itself from the cell rather than sitting at a fixed 12 px
+    // inside a shrink-to-fit box. The old arrangement scaled *down* as the grid
+    // got tighter, so the one thing a month view has to communicate — which
+    // square is today, and how busy it is — was the first thing to become
+    // unreadable from across the room.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The cell has to hold a date, up to three dots and possibly a "+N"
+        // line. Sizing the date off the full height ignored the other two and
+        // overflowed a busy day by a few pixels.
+        final hasExtras = dotCount > 0 || overflow > 0;
+        final dateSize = (constraints.maxHeight * (hasExtras ? 0.38 : 0.52))
+            .clamp(LandfallTypography.minContentFontSize, 44.0)
+            .toDouble();
+        final circle = dateSize * 1.6;
+        final dot = (dateSize * 0.22).clamp(5.0, 10.0).toDouble();
+
+        // Drop the "+N" line before squeezing the date: the dots already say
+        // the day is busy, and the date is what has to stay readable.
+        final pillHeight = dateSize * 1.32;
+        final dotsHeight = dotCount > 0 ? dot * 2.2 : 0.0;
+        final labelHeight = LandfallTypography.minChromeFontSize * 1.5;
+        final showOverflowLabel = overflow > 0 &&
+            pillHeight + dotsHeight + labelHeight + 6 <= constraints.maxHeight;
+
+        return Padding(
+          padding: const EdgeInsets.all(2),
+          // Fail-safe only: the budget above is meant to fit, and this turns
+          // any residual miscalculation into slightly smaller type rather than
+          // an overflow stripe across the wall.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // A pill rather than a fixed-diameter circle: it hugs the
+              // number, so a two-digit date cannot spill outside its own
+              // highlight at large type sizes.
+              Container(
+                constraints: BoxConstraints(minWidth: circle),
+                padding: EdgeInsets.symmetric(
+                  horizontal: dateSize * 0.3,
+                  vertical: dateSize * 0.16,
                 ),
+                decoration: isToday
+                    ? BoxDecoration(
+                        color: accent,
+                        borderRadius: BorderRadius.circular(circle),
+                      )
+                    : const BoxDecoration(),
+                child: Center(
+                    widthFactor: 1,
+                    heightFactor: 1,
+                    child: Text(
+                      '$day',
+                      style: TextStyle(
+                        fontSize: dateSize,
+                        fontWeight:
+                            isToday ? FontWeight.w700 : FontWeight.w400,
+                        color: isToday ? Colors.white : textPrimary,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
               ),
-            ),
-            if (dotCount > 0) ...[
-              const SizedBox(height: 2),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  dotCount,
-                  (_) => Container(
-                    width: 4,
-                    height: 4,
-                    margin: const EdgeInsets.symmetric(horizontal: 1),
-                    decoration: BoxDecoration(
-                      color: accent,
-                      shape: BoxShape.circle,
+              if (dotCount > 0) ...[
+                SizedBox(height: dot * 0.6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    dotCount,
+                    (_) => Container(
+                      width: dot,
+                      height: dot,
+                      margin: EdgeInsets.symmetric(horizontal: dot * 0.25),
+                      decoration: BoxDecoration(
+                        color: accent,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-            if (overflow > 0)
-              Text(
-                '+$overflow',
-                style: TextStyle(
-                  fontSize: 9,
-                  color: textTertiary,
+              ],
+              if (showOverflowLabel)
+                Text(
+                  '+$overflow',
+                  style: LandfallTypography.calendarMeta
+                      .copyWith(color: textTertiary),
                 ),
-              ),
-          ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
