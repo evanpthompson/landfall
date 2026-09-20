@@ -235,6 +235,9 @@ install -m 755 "${STAGE_FILES}/landfall-diagnostic.py" \
                "${ROOTFS_DIR}/opt/landfall/landfall-diagnostic.py"
 
 # ── Operator tooling: doctor + bug-report + watchdog + maintenance + repair ──
+install -m 644 "${STAGE_FILES}/landfall-display-log.logrotate" \
+  "${ROOTFS_DIR}/etc/logrotate.d/landfall-display"
+
 install -m 755 "${STAGE_FILES}/landfall-doctor.sh" \
                "${ROOTFS_DIR}/opt/landfall/landfall-doctor.sh"
 install -m 755 "${STAGE_FILES}/landfall-bug-report.sh" \

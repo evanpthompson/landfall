@@ -22,8 +22,15 @@ unclutter -idle 1 &
 
 # Keep the Flutter GTK embedder on X11 in the Openbox session.
 export GDK_BACKEND=x11
-# Logged when display app launches to make GL failures visible in journal.
-export LIBGL_DEBUG=verbose
+# Verbose Mesa logging is opt-in. Left on by default it wrote 8.8 million
+# "export failed" lines into a 138 MB log on a Pi under CMA pressure — the
+# signal that mattered ("Failed to export gem bo N to dmabuf") was buried in
+# its own repetition, and the writes cost SD-card I/O the display needed.
+# Touch the flag file to turn it back on for a debugging session.
+if [[ -e /etc/landfall/gl-debug ]]; then
+  export LIBGL_DEBUG=verbose
+  log "LIBGL_DEBUG=verbose (flag file present)"
+fi
 
 # Start gnome-keyring secret service if available. Linux kiosk auth now uses
 # file-backed tokens, so keyring startup must not block the display.

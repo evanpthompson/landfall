@@ -1,0 +1,13 @@
+# The display session tees stdout and stderr to this file. Mesa can be chatty
+# — a single Pi produced 8.8 million "export failed" lines and a 138 MB log —
+# so rotate it rather than letting the SD card absorb the difference.
+/home/landfall/.landfall-display.log {
+    size 10M
+    rotate 3
+    compress
+    missingok
+    notifempty
+    copytruncate
+    su landfall landfall
+    create 0664 landfall landfall
+}

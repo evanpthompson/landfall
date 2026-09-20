@@ -85,4 +85,26 @@ if grep -q 'pgrep' "${COMPOSE}"; then
   pass "pgrep healthcheck has procps installed alongside it"
 fi
 
+# ── 5. Verbose GL logging is not a production default ───────────────────────
+# LIBGL_DEBUG=verbose left on unconditionally wrote 8.8 million lines and
+# 138 MB on one Pi, burying the one message that mattered in its own repeats.
+SESSION="${REPO_ROOT}/deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-display-session.sh"
+# Column zero means it is not inside the conditional — the indented export
+# within the flag-file guard is the intended form.
+if grep -nE '^export LIBGL_DEBUG' "${SESSION}" > /dev/null; then
+  fail "LIBGL_DEBUG is exported unconditionally; gate it behind the flag file"
+fi
+grep -q 'gl-debug' "${SESSION}" \
+  || fail "no gl-debug flag file check; verbose logging has no way to be enabled"
+pass "verbose GL logging is opt-in"
+
+# ── 6. The display log is rotated ───────────────────────────────────────────
+LOGROTATE="${REPO_ROOT}/deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-display-log.logrotate"
+[[ -f "${LOGROTATE}" ]] || fail "no logrotate config for the display log"
+grep -q 'copytruncate' "${LOGROTATE}" \
+  || fail "rotation must use copytruncate — the session holds the file open"
+grep -q 'landfall-display-log.logrotate' "${REPO_ROOT}/deploy/pi-gen/stage2-landfall/00-landfall/00-run.sh" \
+  || fail "logrotate config exists but the image build never installs it"
+pass "display log is rotated, and the rotation is actually installed"
+
 echo "  All health-check integrity tests passed"
