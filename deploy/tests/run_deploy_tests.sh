@@ -30,6 +30,7 @@ syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-maintenanc
 syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-repair.sh
 syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-db-check.sh
 syntax_check deploy/pi-gen/stage2-landfall/00-landfall/files/landfall-update.sh
+syntax_check deploy/tests/test_health_checks.sh
 syntax_check tools/scripts/build_apk.sh
 syntax_check tools/scripts/build_linux.sh
 syntax_check tools/scripts/mint_api_key.sh
@@ -44,6 +45,7 @@ run bash "${SCRIPT_DIR}/test_configure.sh"
 run bash "${SCRIPT_DIR}/test_configure_yaml_drift.sh"
 run bash "${SCRIPT_DIR}/test_build_stage_only.sh"
 run bash "${SCRIPT_DIR}/test_artifact_contract.sh"
+run bash "${SCRIPT_DIR}/test_health_checks.sh"
 run bash "${SCRIPT_DIR}/test_caddyfile_routes.sh"
 run bash "${SCRIPT_DIR}/test_app_route_absent.sh"
 run bash "${SCRIPT_DIR}/test_fire_tv_android.sh"

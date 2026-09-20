@@ -109,7 +109,7 @@ services:
     entrypoint: >
       sh -c "
         apt-get update -q &&
-        apt-get install -y --no-install-recommends cron &&
+        apt-get install -y --no-install-recommends cron procps &&
         echo '0 2 * * * /backup.sh' | crontab - &&
         cron -f
       "
@@ -120,6 +120,12 @@ services:
     # the entrypoint script ever dies, the container is marked unhealthy
     # and `restart: unless-stopped` brings it back. Combined, this means
     # nightly backups recover from any single-process failure.
+    #
+    # procps is installed above because pgrep is not in the base image. It
+    # was not, and the check had therefore failed every minute since the
+    # container started — 4,333 consecutive failures on the live Pi, which
+    # means a genuine backup failure would have looked exactly the same as
+    # the permanent false alarm everyone had learned to ignore.
     healthcheck:
       test: ["CMD-SHELL", "pgrep cron > /dev/null || exit 1"]
       interval: 60s

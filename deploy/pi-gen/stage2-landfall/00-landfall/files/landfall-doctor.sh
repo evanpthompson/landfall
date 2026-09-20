@@ -193,7 +193,13 @@ fi
 crash_log="/home/landfall/.landfall-display.log"
 if [[ -f "${crash_log}" ]]; then
   today="$(date +%Y-%m-%d)"
-  todays_crashes=$(grep -c "${today}.*Flutter display exited" "${crash_log}" 2>/dev/null || echo 0)
+  # `grep -c` prints 0 *and* exits 1 when nothing matches, so the old
+  # `|| echo 0` appended a second line: the value became "0\n0", the
+  # arithmetic test below threw a syntax error, and a display that had never
+  # crashed was reported as a crash-loop. Capture the count, then default only
+  # if the variable is genuinely unset.
+  todays_crashes="$(grep -c "${today}.*Flutter display exited" "${crash_log}" 2>/dev/null)" || true
+  todays_crashes="${todays_crashes:-0}"
   if [[ ${todays_crashes} -eq 0 ]]; then
     pass "display crash log clean today"
   elif [[ ${todays_crashes} -lt 5 ]]; then
@@ -212,24 +218,24 @@ sect "Health trends (last 7 days)"
 if [[ -f "${crash_log}" ]]; then
   cutoff="$(date -d '7 days ago' +%Y-%m-%d 2>/dev/null || echo '')"
   if [[ -n "${cutoff}" ]]; then
+    # POSIX awk only: the Pi ships mawk, which has no three-argument match().
+    # Lines start with "[YYYY-MM-DD…", so the date is a fixed substring.
     launches=$(awk -v c="${cutoff}" '
       /launching Flutter display/ {
-        # Extract YYYY-MM-DD from the leading [ISO timestamp]
-        match($0, /\[([0-9]{4}-[0-9]{2}-[0-9]{2})/, m)
-        if (m[1] >= c) count++
+        if (substr($0, 2, 10) >= c) count++
       }
       END { print count + 0 }
     ' "${crash_log}")
     # Sum uptimes for averaging + count fast crashes (<5s).
     read -r total_uptime exits fast_crashes <<< "$(awk -v c="${cutoff}" '
       /Flutter display exited/ {
-        match($0, /\[([0-9]{4}-[0-9]{2}-[0-9]{2})/, m)
-        if (m[1] < c) next
-        match($0, /uptime=([0-9]+)s/, u)
-        if (u[1] == "") next
-        total += u[1] + 0
+        if (substr($0, 2, 10) < c) next
+        if (match($0, /uptime=[0-9]+s/) == 0) next
+        # Strip "uptime=" (7 chars) and the trailing "s" (1 char).
+        u = substr($0, RSTART + 7, RLENGTH - 8)
+        total += u + 0
         count++
-        if (u[1] + 0 < 5) fast++
+        if (u + 0 < 5) fast++
       }
       END { print (total+0), (count+0), (fast+0) }
     ' "${crash_log}")"
@@ -255,7 +261,13 @@ fi
 
 # Repair attempts last 7 days — if these are non-zero something's been broken.
 repair_state="/var/lib/landfall/repair-state"
-if [[ -f "${repair_state}" ]]; then
+if [[ -f "${repair_state}" && ! -r "${repair_state}" ]]; then
+  # Root-owned, and the doctor is meant to be runnable as the landfall user.
+  # Say which check could not run: an unreadable file is not a clean bill of
+  # health, and a bare awk permission error further down reads like a bug in
+  # the tool rather than a check that was skipped.
+  warn "repair history unreadable as $(id -un) — run: sudo landfall-doctor"
+elif [[ -f "${repair_state}" ]]; then
   cutoff="$(date -d '7 days ago' +%Y-%m-%d 2>/dev/null || echo '')"
   if [[ -n "${cutoff}" ]]; then
     while IFS= read -r line; do
