@@ -107,4 +107,12 @@ grep -q 'landfall-display-log.logrotate' "${REPO_ROOT}/deploy/pi-gen/stage2-land
   || fail "logrotate config exists but the image build never installs it"
 pass "display log is rotated, and the rotation is actually installed"
 
+# ── 7. The descriptor ceiling is raised where the display actually starts ───
+# landfall-display.service is inactive on a running Pi — the display is
+# launched from the openbox session — so LimitNOFILE in the unit file is not
+# enough on its own.
+grep -q 'ulimit -n' "${SESSION}" \
+  || fail "the session script does not raise the descriptor limit; the unit file alone does not apply"
+pass "descriptor ceiling is raised in the session that launches the display"
+
 echo "  All health-check integrity tests passed"

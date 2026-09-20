@@ -43,6 +43,18 @@ fi
 log "launching boot splash"
 python3 /opt/landfall/landfall-splash.py || log "splash exited non-zero (continuing)"
 
+# Raise the descriptor ceiling for the display and everything it launches.
+# This is where it has to happen: the display is started by this session, not
+# by landfall-display.service, so LimitNOFILE in that unit never applies on a
+# running Pi. The soft limit is raised toward the inherited hard limit, which
+# an unprivileged process is allowed to do.
+#
+# A backstop, not a fix — a descriptor leak exhausts any ceiling. The leak
+# itself was a client timeout shorter than the long poll it wrapped, fixed in
+# apps/display/lib/src/app/poll_timeouts.dart.
+ulimit -n 8192 2>/dev/null || log "could not raise the descriptor limit (continuing)"
+log "descriptor limit: $(ulimit -n)"
+
 # Restart loop. If the display exits successfully (>0s uptime) we reset the
 # crash counter; back-to-back fast crashes trip the diagnostic fallback so the
 # operator sees ssh instructions instead of a black screen with a cursor.
