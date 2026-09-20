@@ -6,6 +6,7 @@ import 'package:landfall_client/landfall_client.dart' hide LandfallTheme;
 import 'package:landfall_shared/landfall_shared.dart';
 
 import 'package:display/src/app/app_config.dart';
+import 'package:display/src/app/poll_timeouts.dart';
 import 'package:display/src/data/auth/file_client_auth_success_storage.dart';
 import 'package:display/src/data/calendar/serverpod_calendar_repository.dart';
 import 'package:display/src/data/cards/serverpod_card_repository.dart';
@@ -82,7 +83,13 @@ class LandfallApp extends StatelessWidget {
     final sessionManager = ClientAuthSessionManager(
       storage: FileClientAuthSuccessStorage(),
     );
-    final client = Client(serverUrl)..authSessionManager = sessionManager;
+    // The timeout has to outlast the companion long poll, or every poll
+    // abandons its socket and the display runs out of descriptors. See
+    // poll_timeouts.dart.
+    final client = Client(
+      serverUrl,
+      connectionTimeout: kClientConnectionTimeout,
+    )..authSessionManager = sessionManager;
 
     final profileRepository = ServerpodProfileRepository(client);
     final cardRepository = ServerpodCardRepository(client);

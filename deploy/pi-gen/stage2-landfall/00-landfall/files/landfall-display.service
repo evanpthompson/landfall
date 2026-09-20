@@ -7,6 +7,11 @@ Wants=landfall-server.service
 Type=simple
 User=landfall
 Environment=DISPLAY=:0
+# Backstop, not a fix. The descriptor leak that pinned a Pi at the default
+# 1024 was a client timeout shorter than the long poll it wrapped (see
+# apps/display/lib/src/app/poll_timeouts.dart); a leak will exhaust any
+# ceiling eventually. This buys time to notice rather than hiding it.
+LimitNOFILE=8192
 Environment=XAUTHORITY=/home/landfall/.Xauthority
 WorkingDirectory=/home/landfall/landfall/display
 ExecStart=/home/landfall/landfall/display/display

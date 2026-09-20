@@ -1,3 +1,4 @@
+import 'package:display/src/app/poll_timeouts.dart';
 import 'dart:js_interop';
 
 import 'package:web/web.dart' as web;
@@ -53,7 +54,10 @@ void main() {
       keyValueStorage: const WebLocalKeyValueStorage(),
     ),
   );
-  final client = lf.Client(serverUrl)..authSessionManager = sessionManager;
+  final client = lf.Client(
+    serverUrl,
+    connectionTimeout: kClientConnectionTimeout,
+  )..authSessionManager = sessionManager;
 
   runApp(_CompanionWebApp(
     displayId: displayId,

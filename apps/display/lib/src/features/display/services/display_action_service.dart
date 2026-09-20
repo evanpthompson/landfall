@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:display/src/data/companion/companion_poll_service.dart';
 import 'package:display/src/features/companion/companion_event_bus.dart';
+import 'package:display/src/app/poll_timeouts.dart';
 
 /// Callback interface for reloading dashboard profiles (implemented by DashboardProfileCubit).
 abstract class ProfileReloader {
@@ -68,7 +69,7 @@ class DisplayActionService {
       try {
         final action = await _pollService.pollForEvents(
           _displayId,
-          timeoutSeconds: 30,
+          timeoutSeconds: kCompanionPollTimeout.inSeconds,
         );
         if (!_running) break;
         if (action == null) continue;
