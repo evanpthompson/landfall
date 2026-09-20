@@ -190,7 +190,48 @@ else
 fi
 
 # Crash count today
-crash_log="/home/landfall/.landfall-display.log"
+crash_log="${LANDFALL_DISPLAY_LOG:-/home/landfall/.landfall-display.log}"
+
+# Every display-history question has to read the rotated archives as well as
+# the live file. Rotation used to erase the answer: minutes after logrotate
+# first ran, the 7-day trend reported "steady-state operation" because the week
+# it was summarising had moved into .1.gz. An all-clear computed from an empty
+# window is the same failure as an all-clear computed from a broken parser.
+display_log_sources() {
+  local n
+  for n in 9 8 7 6 5 4 3 2 1; do
+    [[ -f "${crash_log}.${n}.gz" ]] && printf '%s\n' "${crash_log}.${n}.gz"
+    [[ -f "${crash_log}.${n}" ]] && printf '%s\n' "${crash_log}.${n}"
+  done
+  [[ -f "${crash_log}" ]] && printf '%s\n' "${crash_log}"
+  return 0
+}
+
+# Oldest first, decompressing archives, and filtered to the two markers before
+# anything parses them — the archive of a chatty log can be millions of lines,
+# and grep is the cheap way to throw away the 99% nobody is asking about.
+#
+# Materialised once, in this shell, and reused. Building it lazily inside the
+# reader did not work: every caller invokes it through $( ), which runs in a
+# subshell, so the cached path never survived back to the parent — the archive
+# was decompressed four times anyway and each subshell leaked its temp file.
+_display_history_file="$(mktemp)"
+trap 'rm -f "${_display_history_file}"' EXIT
+
+build_display_history() {
+  local f
+  while IFS= read -r f; do
+    case "${f}" in
+      *.gz) gzip -dc -- "${f}" 2>/dev/null ;;
+      *)    cat -- "${f}" 2>/dev/null ;;
+    esac
+  done < <(display_log_sources) \
+    | grep -aE 'launching Flutter display|Flutter display exited' \
+    > "${_display_history_file}" || true
+}
+build_display_history
+
+read_display_history() { cat -- "${_display_history_file}"; }
 if [[ -f "${crash_log}" ]]; then
   today="$(date +%Y-%m-%d)"
   # `grep -c` prints 0 *and* exits 1 when nothing matches, so the old
@@ -198,7 +239,7 @@ if [[ -f "${crash_log}" ]]; then
   # arithmetic test below threw a syntax error, and a display that had never
   # crashed was reported as a crash-loop. Capture the count, then default only
   # if the variable is genuinely unset.
-  todays_crashes="$(grep -c "${today}.*Flutter display exited" "${crash_log}" 2>/dev/null)" || true
+  todays_crashes="$(read_display_history | grep -c "${today}.*Flutter display exited")" || true
   todays_crashes="${todays_crashes:-0}"
   if [[ ${todays_crashes} -eq 0 ]]; then
     pass "display crash log clean today"
@@ -220,14 +261,24 @@ if [[ -f "${crash_log}" ]]; then
   if [[ -n "${cutoff}" ]]; then
     # POSIX awk only: the Pi ships mawk, which has no three-argument match().
     # Lines start with "[YYYY-MM-DD…", so the date is a fixed substring.
-    launches=$(awk -v c="${cutoff}" '
+    # How far back the logs actually reach. A 7-day heading over 20 minutes of
+    # data is a false all-clear dressed as a week.
+    earliest="$(read_display_history | awk '
+      /^\[/ {
+        d = substr($0, 2, 10)
+        if (first == "" || d < first) first = d
+      }
+      END { print first }
+    ')"
+
+    launches=$(read_display_history | awk -v c="${cutoff}" '
       /launching Flutter display/ {
         if (substr($0, 2, 10) >= c) count++
       }
       END { print count + 0 }
-    ' "${crash_log}")
+    ')
     # Sum uptimes for averaging + count fast crashes (<5s).
-    read -r total_uptime exits fast_crashes <<< "$(awk -v c="${cutoff}" '
+    read -r total_uptime exits fast_crashes <<< "$(read_display_history | awk -v c="${cutoff}" '
       /Flutter display exited/ {
         if (substr($0, 2, 10) < c) next
         if (match($0, /uptime=[0-9]+s/) == 0) next
@@ -238,7 +289,11 @@ if [[ -f "${crash_log}" ]]; then
         if (u + 0 < 5) fast++
       }
       END { print (total+0), (count+0), (fast+0) }
-    ' "${crash_log}")"
+    ')"
+
+    if [[ -n "${earliest}" && "${earliest}" > "${cutoff}" ]]; then
+      warn "history only reaches back to ${earliest}, not the full 7 days"
+    fi
 
     if [[ ${exits:-0} -gt 0 ]]; then
       avg_uptime=$((total_uptime / exits))

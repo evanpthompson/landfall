@@ -115,4 +115,67 @@ grep -q 'ulimit -n' "${SESSION}" \
   || fail "the session script does not raise the descriptor limit; the unit file alone does not apply"
 pass "descriptor ceiling is raised in the session that launches the display"
 
+# ── 8. History survives rotation ────────────────────────────────────────────
+# Rotation used to erase the answer: minutes after logrotate first ran, the
+# 7-day trend reported "steady-state operation" because the week it summarised
+# had moved into .1.gz. The same shape of lie as a parser that fails silently.
+if grep -nE "(awk|grep)[^|]*"\$\{crash_log\}"" "${DOCTOR}" > /dev/null; then
+  fail "a history check reads only the live log; rotated archives are ignored"
+fi
+grep -q 'read_display_history' "${DOCTOR}" \
+  || fail "no rotated-archive reader in landfall-doctor"
+pass "display history is read across rotated archives"
+
+# And prove the reader actually reads them, gzip and all.
+histdir="$(mktemp -d)"
+trap 'rm -rf "${fixture}" "${histdir}"' EXIT
+printf '[2026-09-10T01:00:00-05:00] Flutter display exited status=0 uptime=100s\n' \
+  | gzip > "${histdir}/log.2.gz"
+printf '[2026-09-12T01:00:00-05:00] Flutter display exited status=0 uptime=200s\n' \
+  | gzip > "${histdir}/log.1.gz"
+printf '[2026-09-19T01:00:00-05:00] Flutter display exited status=0 uptime=300s\n' \
+  > "${histdir}/log"
+
+crash_log="${histdir}/log"
+display_log_sources() {
+  local n
+  for n in 9 8 7 6 5 4 3 2 1; do
+    [[ -f "${crash_log}.${n}.gz" ]] && printf '%s\n' "${crash_log}.${n}.gz"
+    [[ -f "${crash_log}.${n}" ]] && printf '%s\n' "${crash_log}.${n}"
+  done
+  [[ -f "${crash_log}" ]] && printf '%s\n' "${crash_log}"
+  return 0
+}
+read_display_history() {
+  local f
+  while IFS= read -r f; do
+    case "${f}" in
+      *.gz) gzip -dc -- "${f}" 2>/dev/null ;;
+      *)    cat -- "${f}" 2>/dev/null ;;
+    esac
+  done < <(display_log_sources) \
+    | grep -aE 'launching Flutter display|Flutter display exited' || true
+}
+
+seen="$(read_display_history | wc -l | tr -d ' ')"
+[[ "${seen}" == "3" ]] || fail "reader saw ${seen} history lines across rotation, expected 3"
+oldest="$(read_display_history | head -1 | cut -c2-11)"
+[[ "${oldest}" == "2026-09-10" ]] || fail "reader returned '${oldest}' first, expected the oldest archive"
+pass "reader spans .2.gz, .1.gz and the live log, oldest first"
+
+# ── 9. The history is decompressed once, and cleaned up ─────────────────────
+# Every caller reads this through $( ), which is a subshell. A cache built
+# lazily inside the reader therefore never survived back to the parent: the
+# archive was decompressed on all four calls anyway, and each subshell leaked
+# its temp file into /tmp. Build it in the main shell, or not at all.
+reader_body="$(grep -A 1 '^read_display_history()' "${DOCTOR}")"
+if grep -qE 'mktemp|gzip' <<< "${reader_body}"; then
+  fail "read_display_history builds its own cache; in a subshell that neither caches nor cleans up"
+fi
+grep -qE "^trap .*rm -f .*_display_history_file" "${DOCTOR}" \
+  || fail "no trap removing the history temp file; every run would leak one"
+[[ "$(grep -c 'mktemp' "${DOCTOR}")" == "1" ]] \
+  || fail "more than one mktemp in landfall-doctor; only the top-level cache should allocate"
+pass "history is decompressed once in the main shell and cleaned up on exit"
+
 echo "  All health-check integrity tests passed"
