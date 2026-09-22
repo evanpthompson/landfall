@@ -1,6 +1,6 @@
 # Landfall Documentation Index
 
-Every doc in the repo, in one place. Add a new `.md` file anywhere and it goes here in the same commit — see [CLAUDE.md](../CLAUDE.md) for why.
+Every doc in the repo, in one place. Add a new `.md` file anywhere and it goes here in the same commit — see [AGENTS.md](../AGENTS.md) for why.
 
 ## Start here
 
@@ -8,7 +8,7 @@ Every doc in the repo, in one place. Add a new `.md` file anywhere and it goes h
 - [Community](community.md) — GitHub Discussions, issue templates, where to ask for help
 - [CONTRIBUTING](../CONTRIBUTING.md) — how to propose changes
 - [SECURITY](../SECURITY.md) — private disclosure process for security issues
-- [CLAUDE.md](../CLAUDE.md) — TDD rules and commit discipline (also applies to humans)
+- [AGENTS.md](../AGENTS.md) — **read first.** Public-repo rules, the three secret files, reaching the Pi, repo-vs-machine drift, TDD and commit discipline. `CLAUDE.md` is a symlink to it.
 
 ## For operators (self-hosting & devices)
 
