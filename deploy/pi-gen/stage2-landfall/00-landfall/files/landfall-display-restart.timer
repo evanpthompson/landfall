@@ -1,0 +1,17 @@
+[Unit]
+Description=Restart the Landfall display nightly
+
+[Timer]
+# 04:00 local. No RandomizedDelaySec and no Persistent, deliberately, and both
+# differ from landfall-maintenance.timer on purpose:
+#
+#   - The jitter there exists so a fleet does not all vacuum at once. There is
+#     one display, and fuzzing the time only makes "was it done before anyone
+#     looked at the wall?" harder to answer.
+#   - Persistent=true would fire a catch-up run at boot. The display has just
+#     started at that point and its RSS is already at the floor, so the only
+#     effect would be blanking the screen for no reason.
+OnCalendar=*-*-* 04:00:00
+
+[Install]
+WantedBy=timers.target

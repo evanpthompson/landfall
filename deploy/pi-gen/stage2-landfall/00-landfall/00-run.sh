@@ -250,6 +250,8 @@ install -m 755 "${STAGE_FILES}/landfall-maintenance.sh" \
                "${ROOTFS_DIR}/opt/landfall/landfall-maintenance.sh"
 install -m 755 "${STAGE_FILES}/landfall-repair.sh" \
                "${ROOTFS_DIR}/opt/landfall/landfall-repair.sh"
+install -m 755 "${STAGE_FILES}/landfall-display-restart.sh" \
+               "${ROOTFS_DIR}/opt/landfall/landfall-display-restart.sh"
 install -m 755 "${STAGE_FILES}/landfall-db-check.sh" \
                "${ROOTFS_DIR}/opt/landfall/landfall-db-check.sh"
 install -m 755 "${STAGE_FILES}/landfall-update.sh" \
@@ -291,6 +293,11 @@ install -m 644 "${STAGE_FILES}/landfall-repair.service" \
 install -m 644 "${STAGE_FILES}/landfall-repair.timer" \
                "${ROOTFS_DIR}/etc/systemd/system/landfall-repair.timer"
 
+install -m 644 "${STAGE_FILES}/landfall-display-restart.service" \
+               "${ROOTFS_DIR}/etc/systemd/system/landfall-display-restart.service"
+install -m 644 "${STAGE_FILES}/landfall-display-restart.timer" \
+               "${ROOTFS_DIR}/etc/systemd/system/landfall-display-restart.timer"
+
 on_chroot << 'EOF'
 systemctl enable landfall-firstboot
 systemctl enable landfall-server
@@ -298,6 +305,7 @@ systemctl enable landfall-display-prep
 systemctl enable landfall-display-watchdog
 systemctl enable landfall-maintenance.timer
 systemctl enable landfall-repair.timer
+systemctl enable landfall-display-restart.timer
 # Block boot until clock is synced — landfall-firstboot waits on this and
 # Pi hardware has no RTC, so without it the first boot writes a .env with
 # a date set to the kernel build time.

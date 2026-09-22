@@ -1,0 +1,11 @@
+[Unit]
+Description=Landfall nightly display restart — interim mitigation for the display memory leak
+After=lightdm.service
+ConditionPathExists=/var/lib/landfall/.initialized
+
+[Service]
+Type=oneshot
+ExecStart=/opt/landfall/landfall-display-restart.sh
+TimeoutStartSec=120
+StandardOutput=journal
+StandardError=journal
