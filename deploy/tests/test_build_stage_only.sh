@@ -115,8 +115,8 @@ PI_HOSTNAME=static-pi
 PI_TIMEZONE=America/New_York
 SSH_AUTHORIZED_KEY='ssh-ed25519 AAAATESTKEY user@host'
 SSH_PASSWORD='stagedpass'
-STATIC_IP_CIDR=192.168.1.129/24
-STATIC_GATEWAY=192.168.1.1
+STATIC_IP_CIDR=192.168.7.42/24
+STATIC_GATEWAY=192.168.7.1
 STATIC_DNS=1.1.1.1,8.8.8.8
 STATIC_INTERFACE=eth0
 OWM_API_KEY=''
@@ -142,7 +142,7 @@ grep -q 'ssh-ed25519 AAAATESTKEY' "${stage}/authorized_keys"
 [[ "$(cat "${stage}/ssh-password")" == "stagedpass" ]]
 
 [[ -f "${stage}/static-ip.nmconnection" ]]
-grep -q 'address1=192.168.1.129/24,192.168.1.1' "${stage}/static-ip.nmconnection"
+grep -q 'address1=192.168.7.42/24,192.168.7.1' "${stage}/static-ip.nmconnection"
 grep -q 'interface-name=eth0' "${stage}/static-ip.nmconnection"
 grep -q 'dns=1.1.1.1;8.8.8.8;' "${stage}/static-ip.nmconnection"
 

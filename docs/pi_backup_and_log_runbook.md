@@ -1,10 +1,22 @@
 # Pi backup & display-log issues — investigation and resolution
 
-Investigated 2026-06-20 on the production Pi (`landfall@192.168.1.129`, image
+Investigated 2026-06-20 on the production Pi (`$LANDFALL_PI`, image
 reflashed 2026-06-08). Two operator-visible symptoms were reported: a 301 MB
 display log and a `deploy-backup-1` container stuck **unhealthy**. Both were
 investigated live; fixes below are not yet applied — they are staged for a
 post-event maintenance window.
+
+> **Host addressing.** Commands below use `$LANDFALL_PI`, which this repo
+> resolves the same way `deploy/scripts/push-server.sh` does — the
+> `LANDFALL_PI_IP` environment variable, or a `LANDFALL_PI_IP=` line in the
+> gitignored `deploy/.env`. Set it once per shell:
+>
+> ```bash
+> export LANDFALL_PI=landfall@${LANDFALL_PI_IP:-landfall.local}
+> ```
+>
+> `landfall.local` works out of the box via mDNS (`avahi-daemon` ships in the
+> image), so the fallback needs no configuration on a normal LAN.
 
 ---
 
@@ -74,7 +86,7 @@ A correct backup already exists from the manual run during investigation:
 `/backups/landfall_20260620_233319.sql.gz` (345 KB). To take a fresh known-good
 dump on demand:
 ```
-ssh landfall@192.168.1.129 'docker exec deploy-backup-1 /backup.sh'
+ssh "$LANDFALL_PI" 'docker exec deploy-backup-1 /backup.sh'
 ```
 (works because exec inherits the env). Pull one off-box for safety:
 ```
@@ -140,7 +152,7 @@ loop (current healthy instance sits at ~58 fds, so not actively leaking).
 ### Immediate one-time remediation (safe now)
 Reclaim the 301 MB without disturbing the running app (tee re-appends from 0):
 ```
-ssh landfall@192.168.1.129 ': > ~/.landfall-display.log'
+ssh "$LANDFALL_PI" ': > ~/.landfall-display.log'
 ```
 
 ---

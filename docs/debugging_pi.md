@@ -10,6 +10,18 @@ production image, it has:
    no API key, no minting.
 3. **All Tier 1–3 self-healing** — identical to production.
 
+> **Host addressing.** Commands below use `$LANDFALL_PI`, which this repo
+> resolves the same way `deploy/scripts/push-server.sh` does — the
+> `LANDFALL_PI_IP` environment variable, or a `LANDFALL_PI_IP=` line in the
+> gitignored `deploy/.env`. Set it once per shell:
+>
+> ```bash
+> export LANDFALL_PI=landfall@${LANDFALL_PI_IP:-landfall.local}
+> ```
+>
+> `landfall.local` works out of the box via mDNS (`avahi-daemon` ships in the
+> image), so the fallback needs no configuration on a normal LAN.
+
 That's it. The Pi is self-contained. You SSH in, run `landfall-doctor`, and
 read the events from the Pi's own journal.
 
@@ -30,8 +42,8 @@ production:
   sshPassword: 'pick-something-or-leave-out'   # optional, key auth alone works
 
   # ── Static IP (optional but recommended for headless setups) ──────────────
-  staticIpCidr: '192.168.1.129/24'
-  staticGateway: '192.168.1.1'
+  staticIpCidr: '192.168.7.42/24'      # your LAN, not this example
+  staticGateway: '192.168.7.1'
   staticDns: '1.1.1.1,8.8.8.8'
   staticInterface: 'eth0'
 ```
@@ -93,7 +105,7 @@ overwrite SSH/user/WiFi/hostname and break authentication.
 ## After first boot (~2 minutes)
 
 ```bash
-ssh landfall@192.168.1.129       # or landfall-debug.local
+ssh "$LANDFALL_PI"               # or landfall-debug.local
 landfall-doctor                  # should be all-green
 
 # Telemetry events land in the Pi's own journal:
@@ -105,7 +117,7 @@ If anything's wrong:
 ```bash
 landfall-bug-report
 exit
-scp landfall@192.168.1.129:landfall-bug-report-*.tgz .
+scp "$LANDFALL_PI":landfall-bug-report-*.tgz .
 ```
 
 That `.tgz` has the redacted `.env`, every relevant journal tail, compose

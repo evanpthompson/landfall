@@ -340,7 +340,7 @@ else
   dim "Configure a fixed IP for this device. Leave blank to use DHCP (default)."
   dim "Useful for routers that don't support DHCP reservations or running headless."
   echo ""
-  ask "Static IP address with CIDR (e.g. 192.168.1.129/24) [blank for DHCP]:"
+  ask "Static IP address with CIDR (e.g. 192.168.7.42/24) [blank for DHCP]:"
   read -r STATIC_IP_CIDR
   STATIC_GATEWAY=""
   STATIC_DNS=""

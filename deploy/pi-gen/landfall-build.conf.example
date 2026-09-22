@@ -40,7 +40,7 @@ SSH_PASSWORD=''
 
 # ── Static IP (optional — blank STATIC_IP_CIDR uses DHCP) ────────────────────
 # Useful when your router cannot reserve DHCP leases or for headless setups.
-STATIC_IP_CIDR=          # e.g. 192.168.1.129/24
+STATIC_IP_CIDR=          # e.g. 192.168.7.42/24
 STATIC_GATEWAY=          # e.g. 192.168.1.1
 STATIC_DNS=              # comma-separated, e.g. 1.1.1.1,8.8.8.8
 STATIC_INTERFACE=eth0    # eth0 for wired, wlan0 for WiFi static

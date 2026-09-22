@@ -11,7 +11,7 @@ void main() {
         '172.16.0.1',
         '172.31.255.255',
         '192.168.0.1',
-        '192.168.1.129',
+        '192.168.7.42',
       ];
       const rejected = [
         '127.0.0.1', // loopback
@@ -56,9 +56,9 @@ void main() {
     test('falls back to RFC1918 IP on :8082 when no domain is set', () async {
       final url = await resolveLanBaseUrl(
         environment: const {},
-        listIpv4Addresses: () async => ['127.0.0.1', '192.168.1.129'],
+        listIpv4Addresses: () async => ['127.0.0.1', '192.168.7.42'],
       );
-      expect(url, 'http://192.168.1.129:8082');
+      expect(url, 'http://192.168.7.42:8082');
     });
 
     test('never advertises 127.0.0.1', () async {
